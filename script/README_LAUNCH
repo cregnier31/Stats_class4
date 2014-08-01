@@ -1,0 +1,14 @@
+## Examples of launcher
+## Launch for a period
+python TEP_CLASS4.py --config=PSY3QV3R3 --date1=20140701 --date2=20140701 --src=GODAE --data=SST
+## Launch 1 Day in delayed time 15 days before today
+python TEP_CLASS4.py --config=PSY3QV3R3 --delta=15 --src=GODAE --data=SST
+## Launch 1 week in delayed time depending on a a rundate
+python TEP_CLASS4.py --config=PSY3V3R3 --daterun=20140730 --nbdate=7 --delta=14 --src=CORIO --data=profile
+
+## Run optim Launch 1 week in delayed time depending on a a rundate
+python TEP_CLASS4_optim.py --config=PSY3V3R3 --daterun=20140730 --nbdate=7 --delta=14 --src=CORIO --data=profile
+## Run optim  with GODAE DATASET
+python TEP_CLASS4_optim.py --config=PSY3QV3R3 --date1=20140701 --date2=20140701 --src=GODAE --data=SST
+python TEP_CLASS4_optim.py --config=PRESAL36QV1R1 --date1=20140705 --date2=20140705 --src=GODAE --data=SST
+

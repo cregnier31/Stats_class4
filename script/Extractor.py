@@ -1,0 +1,242 @@
+from __future__ import generators
+import os,sys,string,shutil,glob,re
+import numpy as np
+import logging
+import tarfile
+from sytoolkit.sydate import SyDate
+from nco import Nco
+
+##############################################################
+## C.REGNIER Juin 2014
+## Class Extractor to extract profile : the selection depends on date
+##############################################################
+
+class Extractor(object) :
+    """ Factory extract file depending on type """
+    def factory(self,type):
+        #return eval(type + "()")
+        if type == "CORA3": return Extract_cora3()
+        if type == "CORA4": return Extract_cora4()
+        if type == "CORIOLIS": return ExtractCorio()
+        if type == "ENS": return ExtractEns()
+        if type == "ARMOR_CO" or type == "ARMOR_AR" : return Extract_ARMOR()
+        if type == "GODAE" : return Extract_GODAE()
+
+
+class Extract_GODAE(Extractor):
+      def run(self,date1,date2,dirdata,dirtmp,typedata,template):
+        if typedata != "SLA" and  typedata != "SST" and typedata != "profile" :
+	   print "Data %s not known !!! " %(typedata)
+           sys.exit(1)
+        # =============== 
+        # LOGGER
+        # ===============
+        logging.basicConfig(format='%(asctime)s %(message)s')
+        log = logging.getLogger("Extract GODAE")
+        log.setLevel(logging.INFO)
+        ## Level of logging output
+        valeurj=date1
+        liste_tot=[]
+        ## Nco constructor
+        nco = Nco()
+        while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
+           dateval=SyDate.__str__(valeurj)
+           log.info('Day  %s ' % (dateval)) 
+           liste_file=glob.glob(dirdata+'/class4*'+dateval+'*'+typedata+'*.nc')
+	   print dirdata+'/class4*'+dateval+'*'+typedata+'*.nc'
+           #liste_file=glob.glob(dirdata+'/*[TS]*'+dateval+'*.nc')
+           log.info('Liste file %s ' % (liste_file)) 
+           for new_file in liste_file :
+               try :
+                  filename=os.path.basename(new_file)
+		  filename=re.sub('FOAM_orca025_12.0',template,filename)
+		  ## Copy extracted value of GODAE file with nco module
+                  #shutil.copy(new_file,dirtmp)
+	          options = []
+		  if typedata == "SLA" :
+                     options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference'])
+	          else : 
+                     options.extend(['-h','-O','-xv','best_estimate,forecast,persistence'])
+                  nco.ncks(input=new_file,output=dirtmp+filename, fortran=True ,options=options)
+                  liste_tot.append(dirtmp+filename)
+		  ##  Design output File
+	          #Design_file('GODAE').run(dirtmp+filename)
+               except IOError as e:
+                  print "I/O error({0}): {1}".format(e.errno, e.strerror)
+           valeurj=valeurj.goforward(1)
+
+        return liste_tot
+
+
+
+class Extract_ARMOR(Extractor):
+      def run(self,date1,date2,dirdata,dirtmp,typedata,template):
+        # ===============
+        # LOGGER
+        # ===============
+        logging.basicConfig(format='%(asctime)s %(message)s')
+        log = logging.getLogger("Extract_ARMOR")
+        log.setLevel(logging.INFO)
+        ## Level of logging output
+        valeurj=date1
+	liste_tot=[]
+        while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
+           dateval=SyDate.__str__(valeurj)
+           log.info('Day %s ' % (dateval)) 
+           frame=dirdata+'*'+dateval.strip()+'*.nc'
+	   print frame
+           liste_file=glob.glob(frame)
+           #liste_file=glob.glob(dirdata+'/*[TS]*'+dateval+'*.nc')
+           log.info('Liste file %s ' % (liste_file)) 
+	   print 'OK'
+           for new_file in liste_file :
+	       try :
+	          filename=os.path.basename(new_file)
+                  shutil.copy(new_file,dirtmp)
+                  liste_tot.append(dirtmp+filename)
+	       except IOError as e:
+	          print "I/O error({0}): {1}".format(e.errno, e.strerror)
+           valeurj=valeurj.goforward(1)
+
+	return liste_tot
+
+
+class Extract_cora3(Extractor) :
+     def __init__(self):
+	self.PREFIX='cora3.4_merc'
+     def run(self,date1,date2,dirdata,dirtmp,typedata):
+        # ===============
+        # LOGGER
+        # ===============
+        logging.basicConfig(format='%(asctime)s %(message)s')
+        log = logging.getLogger("Extract_cora3")
+        log.setLevel(logging.INFO)
+        ## Level of logging output
+        log.info('Extraction of Cora 3 dataset') 
+	presmonth=SyDate.__str__(date2)[:6]
+	backmonth=SyDate.__str__(date1)[:6]     
+        liste_month=[]
+	liste_file=[]
+	if presmonth == backmonth : 
+  	   file=self.PREFIX+"_"+presmonth+".tgz"
+	   print "Same month %s " %(file)
+	   liste_file.append(file)
+           liste_month.append(presmonth)
+	else :
+	    file1=self.PREFIX+"_"+presmonth+".tgz"
+	    liste_file.append(file1)
+	    file2=self.PREFIX+"_"+backmonth+".tgz"
+	    liste_file.append(file2)
+            liste_month.append(presmonth)
+            liste_month.append(backmonth)
+        ## Extract and copy file
+	for file in liste_file : 
+	    file_path=dirdata+file
+	    if os.path.isfile(file_path)  : 
+	       print 'file ok'	
+	       try : 
+                  shutil.copy(file_path,dirtmp)
+                  os.chdir(dirtmp)
+                  tar = tarfile.open(file)
+                  tar.extractall()
+                  tar.close()
+                  os.remove(file)
+	       except  IOError as e :
+		   print "I/O error({0}): {1}".format(e.errno, e.strerror)
+                   #print 'Problem with copy or extraction'
+	    else :
+	       print 'file not known %s ' %(file_path) 
+	       sys.exit(1)	
+        liste_tot=[]
+	for month in liste_month : 
+            valeurj=date1
+            year=SyDate.__str__(valeurj)[:4]
+            while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
+                dateval=SyDate.__str__(valeurj)
+                log.info('Day  %s ' % (dateval)) 
+                liste_file=glob.glob(dirtmp+'/'+year+'/*'+dateval+'*.nc')
+                log.info('Day list %s ' % (liste_file)) 
+                for new_file in liste_file :
+		    try :
+			print new_file,dirtmp
+		       # os.rename(new_file,dirtmp)
+		       # shutil.move(dirtmp,new_file)
+                        shutil.copy(new_file,dirtmp)
+                        liste_tot.append(new_file)
+		    except IOError as e:
+	                print "I/O error({0}): {1}".format(e.errno, e.strerror)
+                valeurj=valeurj.goforward(1)
+            ## Remove directory 
+	    shutil.rmtree(dirtmp+year)     
+        return liste_tot
+		  
+
+
+class Extract_cora4(Extractor) :
+     def __init__(self):
+	self.PREFIX='cora4.0_merc'
+     def run(self,date1,date2,dirdata,dirtmp):
+        # ===============
+        # LOGGER
+        # ===============
+        logging.basicConfig(format='%(asctime)s %(message)s')
+        log = logging.getLogger("Extract_cora3")
+        ## Level of logging output
+        log.setLevel(logging.INFO)
+	presyear=SyDate.__str__(date2)[:4]
+	backyear=SyDate.__str__(date1)[:4]     
+	liste_file=[]
+        liste_year=[]
+	if presyear == backyear : 
+  	    file=self.PREFIX+"_"+presyear+".tgz"
+	    print "Same year %s " %(file)
+	    file=self.PREFIX+"_"+presyear+".tgz"
+	    liste_file.append(file)
+            liste_year.append(presyear)
+	else :
+	    file1=self.PREFIX+"_"+presyear+".tgz"
+	    liste_file.append(file1)
+	    file2=self.PREFIX+"_"+backyear+".tgz"
+	    liste_file.append(file2)
+            liste_year.append(presyear)
+            liste_year.append(backyear)
+        ## Extract and copy file
+	for file in liste_file : 
+	    file_path=dirdata+file
+	    if os.path.isfile(file_path)  : 
+	       print 'file ok'	
+	       try : 
+                  shutil.copy(file_path,dirtmp)
+                  os.chdir(dirtmp)
+                  tar = tarfile.open(file)
+                  tar.extractall()
+                  tar.close()
+                  os.remove(file)
+	       except  IOError as e :
+		   print "I/O error({0}): {1}".format(e.errno, e.strerror)
+                   #print 'Problem with copy or extraction'
+	    else :
+	       print 'file not known %s ' %(file_path) 	
+               sys.exit(1)
+	## Remove file
+        liste_tot=[]
+	for year in liste_year : 
+            valeurj=date1
+            while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
+                dateval=SyDate.__str__(valeurj)
+                log.info('Day  %s ' % (dateval)) 
+                liste_file=glob.glob(dirtmp+'/'+year+'/*'+dateval+'*.nc')
+                log.info('Day List %s ' % (liste_file)) 
+                for new_file in liste_file :
+		    try :
+			print new_file,dirtmp
+		       # os.rename(new_file,dirtmp)
+		       # shutil.move(dirtmp,new_file)
+                        shutil.copy(new_file,dirtmp)
+                        liste_tot.append(new_file)
+		    except IOError as e:
+	                print "I/O error({0}): {1}".format(e.errno, e.strerror)
+                valeurj=valeurj.goforward(1)
+            ## Remove directory 
+	    shutil.rmtree(dirtmp+year)     
+        return liste_tot
