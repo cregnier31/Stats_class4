@@ -16,7 +16,7 @@ class Extractor(object) :
     def factory(self,type):
         #return eval(type + "()")
         if type == "CORA3": return Extract_cora3()
-        if type == "CORA4": return Extract_cora4()
+        if type == "cora4.0_merc": return Extract_cora4()
         if type == "CORIOLIS": return ExtractCorio()
         if type == "ENS": return ExtractEns()
         if type == "ARMOR_CO" or type == "ARMOR_AR" : return Extract_ARMOR()
@@ -104,7 +104,7 @@ class Extract_ARMOR(Extractor):
 class Extract_cora3(Extractor) :
      def __init__(self):
 	self.PREFIX='cora3.4_merc'
-     def run(self,date1,date2,dirdata,dirtmp,typedata):
+     def run(self,date1,date2,dirdata,dirtmp,typedata,template):
         # ===============
         # LOGGER
         # ===============
@@ -175,12 +175,12 @@ class Extract_cora3(Extractor) :
 class Extract_cora4(Extractor) :
      def __init__(self):
 	self.PREFIX='cora4.0_merc'
-     def run(self,date1,date2,dirdata,dirtmp):
+     def run(self,date1,date2,dirdata,dirtmp,typedata,template):
         # ===============
         # LOGGER
         # ===============
         logging.basicConfig(format='%(asctime)s %(message)s')
-        log = logging.getLogger("Extract_cora3")
+        log = logging.getLogger("Extract_cora4")
         ## Level of logging output
         log.setLevel(logging.INFO)
 	presyear=SyDate.__str__(date2)[:4]
@@ -188,8 +188,6 @@ class Extract_cora4(Extractor) :
 	liste_file=[]
         liste_year=[]
 	if presyear == backyear : 
-  	    file=self.PREFIX+"_"+presyear+".tgz"
-	    print "Same year %s " %(file)
 	    file=self.PREFIX+"_"+presyear+".tgz"
 	    liste_file.append(file)
             liste_year.append(presyear)
@@ -204,7 +202,6 @@ class Extract_cora4(Extractor) :
 	for file in liste_file : 
 	    file_path=dirdata+file
 	    if os.path.isfile(file_path)  : 
-	       print 'file ok'	
 	       try : 
                   shutil.copy(file_path,dirtmp)
                   os.chdir(dirtmp)
@@ -225,15 +222,13 @@ class Extract_cora4(Extractor) :
             while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 dateval=SyDate.__str__(valeurj)
                 log.info('Day  %s ' % (dateval)) 
-                liste_file=glob.glob(dirtmp+'/'+year+'/*'+dateval+'*.nc')
-                log.info('Day List %s ' % (liste_file)) 
-                for new_file in liste_file :
+		liste_file=glob.glob(dirtmp+'/'+year+'/*'+dateval+'*.nc')
+                for file in liste_file :
 		    try :
-			print new_file,dirtmp
-		       # os.rename(new_file,dirtmp)
-		       # shutil.move(dirtmp,new_file)
-                        shutil.copy(new_file,dirtmp)
-                        liste_tot.append(new_file)
+		      log.info('Fichier  %s ' % (file))
+	       	      shutil.move(file,dirtmp)
+                      filename=os.path.basename(file)
+		      liste_tot.append(dirtmp+filename)
 		    except IOError as e:
 	                print "I/O error({0}): {1}".format(e.errno, e.strerror)
                 valeurj=valeurj.goforward(1)

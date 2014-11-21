@@ -487,15 +487,13 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
      CALL SYSTEM_CLOCK(count=il_t2, count_rate=il_ir)
      WRITE(0,*) "Temps interp_model_file :",REAL(il_t2 - il_t1) / il_ir
 #endif
-!#if defined key_debug
-!        WRITE(0,*),'interp_model_field ok'
-!        WRITE(0,*),'rla_modelValueT :: ',rla_modelvalue_T(1,1,:)
-!        WRITE(0,*),'rla_interpValueT :: ',rla_interpValueT(:,1)
-!#endif
+#if defined key_debug
+       WRITE(0,*),'interp_model_field ok'
        WRITE(0,*),'rla_modelValueT :: ',rla_modelvalue_T(1,1,:)
        WRITE(0,*),'rla_interpValueT :: ',rla_interpValueT(:,1)
        WRITE(0,*),'rla_modelValueS :: ',rla_modelvalue_S(1,1,:)
        WRITE(0,*),'rla_interpValueS :: ',rla_interpValueS(:,1)
+#endif
         !
         !
         !------------------------------------------------------------------

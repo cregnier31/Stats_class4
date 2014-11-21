@@ -228,7 +228,7 @@ class QCCorio(QCcontrol):
          ## JULD_QC_OK = 0 1 5 8 
          ## POSITION QC_OK = 0 1 5 8
          ## TEMP_QC PSAL_QC =1 
-         ## DEPH_QC et PRES_QC =1 et PRES et DEPTH /= 9999
+         ## DEPH_QC et PRES_QC =1  or = 0 et PRES et DEPTH /= 9999
          ## Validation Position
 	 flag_lonlat='9'
 	 if  val_lat < 91. and val_lat > -91  :  

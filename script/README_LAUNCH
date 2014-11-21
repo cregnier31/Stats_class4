@@ -6,6 +6,9 @@ python TEP_CLASS4.py --config=PSY3QV3R3 --delta=15 --src=GODAE --data=SST
 ## Launch 1 week in delayed time depending on a a rundate
 python TEP_CLASS4.py --config=PSY3V3R3 --daterun=20140730 --nbdate=7 --delta=14 --src=CORIO --data=profile
 
+python TEP_CLASS4.py --config=GLORYS2V3 --date1=200501 --date2=201212 --src=CORA4 --data=profile
+
+
 ## Run optim Launch 1 week in delayed time depending on a a rundate
 python TEP_CLASS4_optim.py --config=PSY3V3R3 --daterun=20140730 --nbdate=7 --delta=14 --src=CORIO --data=profile
 ## Run optim  with GODAE DATASET

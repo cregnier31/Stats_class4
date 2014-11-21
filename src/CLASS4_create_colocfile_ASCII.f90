@@ -97,7 +97,7 @@ PROGRAM COLOCALIZE
                         cl_var
   CHARACTER(LEN=255), DIMENSION(:), POINTER :: clpa_dimname
  !optionnel
-  LOGICAL :: ll_exist,ll_lat,ll_lon,ll_mask
+  LOGICAL :: ll_exist,ll_exist_grid,ll_lat,ll_lon,ll_mask
   LOGICAL,DIMENSION(4)                      :: lla_nbr_vertex
   CHARACTER(LEN=26)     ::   cl_fread                                                                                                                    
   DATA  cl_fread    /'(f12.5,2x,f12.5,2x,f12.5)'/
@@ -136,14 +136,18 @@ PROGRAM COLOCALIZE
   !
   il_tot=0
   ll_exist=.FALSE. 
+  ll_exist_grid=.FALSE.
   !------------------------------------------------------------------------
   ! Lecture du fichier contenant les positions 
   !
+#if defined key_debug
+  WRITE(0,*) 'Lecture du fichier contenant les positions',cl_resFile
+#endif
   CALL MIOL_getFreeLU(il_fic)
-  OPEN(il_fic, file=TRIM(cl_resFile), &
-       status='old', &
-       form='formatted')
-
+!  OPEN(il_fic, file=TRIM(cl_resFile), &
+!       status='old', &
+!       form='formatted')
+!
   eofbis=0
   eof=0
   OPEN(il_fic, file=TRIM(cl_resFile), &
@@ -167,6 +171,9 @@ PROGRAM COLOCALIZE
       ENDIF
   ENDDO
   CLOSE(il_fic)
+#if defined key_debug
+  WRITE(0,*) 'Nombre d enregistrements : ',il_l
+#endif
   !** Nombre de fichiers à traiter
   il_nb_files=il_l
 
@@ -199,11 +206,22 @@ PROGRAM COLOCALIZE
   WRITE(0,*) ' lecture du fichier grillé ', TRIM(cl_gridFile)
   WRITE(0,*) 'Read dimension'
 #endif
-  CALL MIOL_openr_file_NC(cl_gridFile, il_file_id)
+  INQUIRE (FILE=TRIM(cl_gridFile), EXIST=ll_exist_grid)
+  IF ( ll_exist_grid ) THEN
+     WRITE(0,*) 'File exist'
+     CALL MIOL_openr_file_NC(TRIM(cl_gridFile), il_file_id)
+     WRITE(0,*) 'File exist ok'
+#if defined key_debug
+  WRITE(0,*) 'Open OK'
+#endif
   CALL MIOL_inquire_dimensions_NC(il_file_id, &
                                   il_nbdim, &
                                   clpa_dimname, &
                                   ilpa_dimlen)
+  ELSE
+     WRITE(0,*) 'File doesn t exist'
+     STOP
+  ENDIF
 #if defined key_debug
   WRITE(0,*) 'Dimensions ::',ilpa_dimlen
 #endif
@@ -432,6 +450,7 @@ PROGRAM COLOCALIZE
     rla_findlon(:)=9999.
     rla_findlat(:)=9999.
     rla_finddist(:)=0.
+    rla_poids(4,:)=0.
     !
     !
     !* Lecture des positions
@@ -502,28 +521,27 @@ PROGRAM COLOCALIZE
                            ila_vertyindex(:),&
                            lla_nbr_vertex(:),&
                            rla_dist_vertex(:))
-  		    IF ( SUM(rla_poids_vertex(:)) > 1.01 ) THEN
-  			WRITE(0,*) 'Somme des poids > 1 :: ',SUM(rla_poids_vertex(:))
-  			WRITE(0,*) 'Valeur des vertex en x :: ',ila_vertxindex(:)
-  			WRITE(0,*) 'Valeur des vertex en y :: ',ila_vertyindex(:)
-  			WRITE(0,*) 'nombre de vextex :: ',lla_nbr_vertex(:)
-  			WRITE(0,*) 'position du point :: ',rla_lonpos(il_jk),rla_latpos(il_jk)
-  			STOP
-  		   ! ELSE
-  		   !     WRITE(0,*) 'nombre de vextex :: ',lla_nbr_vertex(:)
-                   !     WRITE(0,*) 'poids associés :: ',rla_poids_vertex(:)
-                   !     WRITE(0,*) 'distance associés :: ',rla_dist_vertex(:)
-                   !     WRITE(0,*) 'Somme des poids associés :: ',SUM(rla_poids_vertex(:))
-  		    ENDIF
-                    ila_xindex(:,il_jk)=ila_vertxindex(:)
-                    ila_yindex(:,il_jk)=ila_vertyindex(:)
-                    rla_poids(:,il_jk)=rla_poids_vertex(:)
-                    il_loc=MAXLOC(rla_poids_vertex(:))
-                    ila_findxindex(il_jk)=ila_vertxindex(il_loc(1))
-                    ila_findyindex(il_jk)=ila_vertyindex(il_loc(1))
-                    rla_findlon(il_jk)=rlpa_gridlonvalue(ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1)))
-                    rla_findlat(il_jk)=rlpa_gridlatvalue(ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1)))
-                    rla_finddist(il_jk)=rla_dist_vertex(il_loc(1))
+  		      IF ( SUM(rla_poids_vertex(:)) > 1.01 ) THEN
+  		           WRITE(0,*) 'Somme des poids > 1 :: ',SUM(rla_poids_vertex(:))
+  		           WRITE(0,*) 'Valeur des vertex en x :: ',ila_vertxindex(:)
+  		           WRITE(0,*) 'Valeur des vertex en y :: ',ila_vertyindex(:)
+  		           WRITE(0,*) 'nombre de vextex :: ',lla_nbr_vertex(:)
+  		           WRITE(0,*) 'position du point :: ',rla_lonpos(il_jk),rla_latpos(il_jk)
+  		           STOP
+  		      ! ELSE
+  		      !     WRITE(0,*) 'nombre de vextex :: ',lla_nbr_vertex(:)
+                      !     WRITE(0,*) 'poids associés :: ',rla_poids_vertex(:)
+                      !     WRITE(0,*) 'distance associés :: ',rla_dist_vertex(:)
+                      !     WRITE(0,*) 'Somme des poids associés :: ',SUM(rla_poids_vertex(:))
+  		      ENDIF
+                      il_loc=MAXLOC(rla_poids_vertex(:))
+                      ila_findxindex(il_jk)=ila_vertxindex(il_loc(1))
+                      ila_findyindex(il_jk)=ila_vertyindex(il_loc(1))
+                      rla_findlon(il_jk)=rlpa_gridlonvalue(ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1)))
+                      rla_findlat(il_jk)=rlpa_gridlatvalue(ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1)))
+                      rla_finddist(il_jk)=rla_dist_vertex(il_loc(1))
+                      ila_xindex(:,il_jk)=ila_vertxindex(:)
+                      ila_yindex(:,il_jk)=ila_vertyindex(:)
                    ELSE
 #if defined key_debug
   		      WRITE(0,*) 'position du point :: ',rla_lonpos(il_jk),rla_latpos(il_jk)
@@ -532,6 +550,7 @@ PROGRAM COLOCALIZE
 #endif
                       rla_poids_vertex(:)=0.0
                    ENDIF
+                   rla_poids(:,il_jk)=rla_poids_vertex(:)                   
 #if defined key_debug
                    WRITE (0,*) 'Position du point le plus proche ::',ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1))
                    WRITE (0,*) 'Poids le plus proche ::',rla_poids_vertex(il_loc(1))

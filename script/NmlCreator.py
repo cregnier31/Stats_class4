@@ -100,7 +100,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
         self.ll_mssh=ll_mssh
         self.mssh_shift=mssh_shift
       def run(self,nml,modele,mean_type,type_data,outputVarname, \
-	      dirmodel,dircoloc,output,listdir,dateval,gridtemp,gridsal):
+	      dirmodel,dircoloc,output,listdir,dateval,gridtemp,gridsal,schedule):
         # =============== 
         # LOGGER
         # ===============
@@ -113,34 +113,63 @@ class NmlCreator_CORIOLIS(NmlCreator):
         model_varname_S="vosaline"
         input_varname_T="TEMP"
         input_varname_S="PSAL"
-	if listdir == 'hdct' :
-	     prefix_var='HDCST'
+	daterun=dateval
+	yearval=dateval[0:4]
+        searchdir=listdir
+        if listdir == 'hdct' or listdir == 'best_estimate' :
+	   prefix_var='HDCST'
 	elif listdir == 'nwct' :
-	     prefix_var='ANA'
-	elif listdir == 'fcst3' :
-	     prefix_var='FRCST3D'
-	elif listdir == 'fcst6' :
-	     prefix_var='FRCST6D'
-        elif listdir == 'pers' :
-	      prefix_var='PERS'
+           prefix_var='ANA'
+        elif listdir == 'fcst3' :
+           prefix_var='FRCST3D'
+        elif listdir == 'fcst6' :
+	   prefix_var='FRCST6D'
+	elif listdir == 'pers' :
+           prefix_var='PERS'
 	else :
-	      prefix_var=listdir
+	   prefix_var=listdir
+	if schedule == 'm' : 
+	   searchdir="MONTHLY_"+yearval 	
+ 	   print "monthly values"
+           daterun=dateval[0:6]
+	   template=dirmodel+searchdir+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
+	else :
+           template=dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
+
 	output_varname_T=prefix_var+'_'+input_varname_T
         output_varname_S=prefix_var+'_'+input_varname_S
-	daterun=dateval
-	if listdir == 'clim1' :
+        log.info('listdir %s '%(listdir[0:4])) 
+	if listdir[0:4] == 'CLIM' :
+           log.info('Passe la') 
+	   daterun=dateval[0:6]   
+	   monthval=dateval[4:6]
+	   searchdir=dirmodel
+	   template=searchdir+'*M'+monthval+'*.nc'
+           model_varname_T="temperature"
+           model_varname_S="salinity"
+	if listdir == 'CLIM_WOA09' :
 	   output_varname_T='TMLEV09'
 	   output_varname_S='SMLEV09'   
-	   daterun==dateval[0:6]   
-	elif listdir == 'clim2' :
+	elif listdir == 'CLIM_WOA05' :
+	   output_varname_T='TMLEV05'
+	   output_varname_S='SMLEV05'   
+	elif listdir == 'CLIM_ARV11' :
 	   output_varname_T='TMARV11'
 	   output_varname_S='SMARV11'
-	   daterun==dateval[0:6]   
+	elif listdir == 'CLIM_WOA13' :
+	   output_varname_T='TMLEV13'
+	   output_varname_S='SMLEV13'
 	## List model
-	print dirmodel+listdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
-	for file in glob.glob(dirmodel+listdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc') : 
-	  fic_temp=file
-	  fic_psal=re.sub(gridtemp,gridsal,fic_temp)
+        #for file in glob.glob(dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc') : 
+        log.info('Template %s' %(template)) 
+        for file in glob.glob(template) : 
+          fic_temp=file
+	  if listdir[0:4] != 'CLIM' :
+             fic_psal=re.sub(gridtemp,gridsal,fic_temp)
+	  else :
+	     fic_psal=fic_temp
+        log.info('Fichier temp %s' %(fic_temp)) 
+        log.info('Fichier psal %s' %(fic_psal)) 
 	nbfile=len(glob.glob(output+"*"+str(dateval)+"*.nc"))
 	# Write Namelist
         obFichier=open(nml,'w')

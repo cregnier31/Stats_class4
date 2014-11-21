@@ -11,6 +11,7 @@ import datetime as dt
 from datetime import date
 from sytoolkit.sydate import SyDate
 from Logger import Logger                                                                                                   
+from calendar import monthrange
  
 ##############################################################
 ## C.REGNIER Juin 2014
@@ -78,6 +79,7 @@ class InputLoader(Loader):
         list_var.append(ll_date2)
         list_var.append(ll_daterun)
         list_var.append(ll_nbdate)
+	cl_schedule='d'
         if not ll_config :
             log.error("Config is missing : add --config= in the launcher")
             log.error("Type TEP_CLASS4.py --data=XXX --src=XXX --config=XXX --date1=XXXX --date2=XXXX or ")
@@ -97,8 +99,25 @@ class InputLoader(Loader):
              date2=date1
         elif ll_date1 and ll_date2 and not ll_delta and not ll_daterun :
              log.info("Case 2 Date1 Date2")
-             date1=SyDate(cl_start_date)
-             date2=SyDate(cl_end_date)
+             ## Test LEN of input date
+	     datelen1=len(cl_start_date)
+	     datelen2=len(cl_end_date)
+	     if  datelen1 == datelen2 and datelen1 == 6 :  
+		log.info("Monthly values")
+	        nb_day1=monthrange(int(cl_start_date[0:4]),int(cl_start_date[5:6]))[1]
+		cl_start_date2=cl_start_date+"01"
+		cl_end_date2=cl_start_date+str(nb_day1)
+		log.info(cl_start_date2)
+		log.info(cl_end_date2)
+                date1=SyDate(cl_start_date2)
+                date2=SyDate(cl_end_date2)
+	        cl_schedule='m'
+	     elif  datelen1 == datelen2 and datelen1 == 8 :  
+                log.info("Daily values")
+                date1=SyDate(cl_start_date)
+                date2=SyDate(cl_end_date)
+	     else :
+                log.error("Input date must be in month or day")
         elif ll_daterun and ll_nbdate and ll_delta :
              log.info("Case 3 Backward run")
              jrun=SyDate(cl_daterun)
@@ -112,7 +131,7 @@ class InputLoader(Loader):
 			    (for example 1 week before today -14 and today -7)")
 	     sys.exit(1)
 	confname='config_'+str(cl_config)+'_'+str(cl_src)+'.cfg'
-        return date1,date2,confname,cl_data,cl_daterun
+        return date1,date2,confname,cl_data,cl_daterun,cl_schedule,cl_src
 
 class NmlLoader(Loader): 
    def load(self,filename,level):
@@ -128,7 +147,7 @@ class NmlLoader(Loader):
 class LoaderNCcorio(Loader):
 
     def read_pos(self,filename):
-       #print 'read netcdf file : %s ' %(filename)
+       print 'read netcdf file : %s ' %(filename)
        nc = netCDF4.Dataset(filename,'r')        
        variable = 'LONGITUDE'
        rla_lon = nc.variables[variable][:]

@@ -4,6 +4,10 @@ from sytoolkit.sydate import SyDate
 from sytoolkit.sydate import SyDate as sy
 from Logger import Logger
 from ModuleTime import Time
+##############################################################
+## C.REGNIER Juin 2014
+## Class Sorter to sort data values 
+##############################################################
 class Sorter():
 
        def symlink(self,src, dst):
