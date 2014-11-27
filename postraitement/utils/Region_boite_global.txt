@@ -1,0 +1,4717 @@
+#--------------------------------------------------
+# Fichier Global.txt (Partition Globale de l'ocean)
+#--------------------------------------------------
+#
+# FHZ: convention des longitudes: [-180,180]
+#
+#---------------------------
+#nbregion, nblocmax, valeur0
+412 11 998.0
+#---------------------------
+#
+#
+#-------------------------------------
+#                                    #
+#                                    #
+#       Region Mediterranean         #
+#                                    #
+#                                    #
+#-------------------------------------
+#
+#
+#---------------------------
+#nbregion, nblocmax, valeur0
+#23 3 998.0
+#---------------------------
+#
+#
+# Alboran
+#--------
+#typeregion, nbloc1, valeur1
+1 1 1000.0
+#lonmin, latmin, lonmax, latmax
+-5.25 35.0 -1.25 38.0
+#
+# Oran 1 (Algerie)
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 1010.0
+#lonmin, latmin, lonmax, latmax
+-1.25 35.0 0.0 38.75
+#
+# Oran 2 (Algerie)
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 1020.0
+#lonmin, latmin, lonmax, latmax
+-1.25 38.75 0.0 40.5
+#
+# Algerie
+#--------
+#typeregion, nbloc1, valeur1
+1 1 1030.0
+#lonmin, latmin, lonmax, latmax
+0.0 35.0 9.0 39.5
+#
+# Baleares
+#---------
+#typeregion, nbloc1, valeur1
+3 2 1040.0
+#
+#nb point
+4
+#
+0.0 44.5
+0.0 39.5
+9.0 39.5
+9.0 41.75
+#
+#nb point
+4
+#
+0.0 44.5
+9.0 41.75
+9.5 41.75
+9.5 44.5
+#
+# Thyrrhenian 1
+#--------------
+#typeregion, nbloc1, valeur1
+3 2 1050.0
+#
+#nb point
+5
+#
+9.0 39.5
+9.0 36.0
+15.0 36.0
+15.0 38.25
+9.5 39.5
+#
+#nb point
+6
+#
+9.5 39.5
+9.5 41.75
+15.0 41.75
+16.25 40.25
+16.25 38.25
+15.0 38.25
+#
+# Thyrrhenian 3
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 1060.0
+#lonmin, latmin, lonmax, latmax
+9.0 39.5 9.5 41.75
+#
+# Thyrrhenian 2
+#--------------
+#typeregion, nbloc1, valeur1
+3 2 1070.0
+#
+#nb point
+4
+#
+9.5 44.5
+9.5 41.75
+12.0 42.0
+12.0 44.5
+#
+#nb point
+4
+#
+9.5 41.75
+12.0 42.0
+12.5 42.0
+12.5 41.75
+#
+# South Adriatic Sea 
+#-------------------
+#typeregion, nbloc1, valeur1
+3 3 1080.0
+#
+#nb point
+4
+#
+15.0 42.0
+15.0 41.75
+16.25 40.25
+17.0 40.5
+#
+#nb point
+4
+#
+15.0 42.0
+17.0 40.5
+18.0 40.5
+21.0 42.0
+#
+#nb point
+4
+#
+18.0 40.5
+18.25 40.0
+21.0 40.0
+21.0 42.0
+#
+# West Adriatic Sea
+#------------------
+#typeregion, nbloc1, valeur1
+3 2 1090.0
+#
+#nb point
+3
+#
+11.0 46.0
+12.0 44.5
+15.0 46.0
+#
+#nb point
+4
+#
+12.0 44.5
+12.0 42.0   #Vatican
+15.0 42.0
+15.0 46.0
+#
+# East Adriatic Sea
+#------------------
+#typeregion, nbloc1, valeur1
+1 1 1100.0
+#lonmin, latmin, lonmax, latmax
+15.0 42.0 19.5 46.0
+#
+# Otrant
+#-------
+#typeregion, nbloc1, valeur1
+3 2 1110.0
+#
+#nb point
+4
+#
+16.25 36.0
+18.25 40.0
+21.75 40.0
+21.75 36.0
+#
+#nb point
+5
+#
+16.25 36.0
+16.25 40.25
+17.0 40.5
+18.0 40.5
+18.25 40.0
+#
+# Sicile 1
+#---------
+#typeregion, nbloc1, valeur1
+1 1 1120.0
+#lonmin, latmin, lonmax, latmax
+8.0 32.25 15.25 36.0
+#
+# Sicile 2
+#---------
+#typeregion, nbloc1, valeur1
+1 1 1130.0
+#lonmin, latmin, lonmax, latmax
+15.0 36.0 16.25 38.25
+#
+# Ionan
+#------
+#typeregion, nbloc1, valeur1
+1 1 1140.0
+#lonmin, latmin, lonmax, latmax
+15.25 30.0 21.75 36.0
+#
+# Egee
+#-----
+#typeregion, nbloc1, valeur1
+3 2 1150.0
+#nb point
+4
+#
+22.0 38.0
+23.0 37.75
+27.5 41.5
+22.0 41.5
+#
+#nb point
+4
+#
+23.0 37.75
+23.0 35.25
+27.5 35.25
+27.5 41.5
+#
+# Ierepetra (Pelopse) 1
+#----------------------
+#typeregion, nbloc1, valeur1
+1 1 1160.0
+#lonmin, latmin, lonmax, latmax
+21.75 35.25 23.0 37.75
+#
+# Ierepetra (Pelopse) 2
+#----------------------
+#typeregion, nbloc1, valeur1
+1 1 1170.0
+#lonmin, latmin, lonmax, latmax
+21.75 30.5 26.25 35.25
+#
+# Rhodes 1
+#---------
+#typeregion, nbloc1, valeur1
+1 1 1180.0
+#lonmi , latmin, lonmax, latmax
+26.25 33.75 32.75 35.25
+#
+# Mer Noire
+#----------
+#typeregion, nbloc1, valeur1
+3 2 1190.0
+#nb point
+3
+#
+20.0 50.0    #Pologne
+27.5 41.5  #Turquie
+45.0 50.0
+#nb point
+5
+#
+27.5 41.5
+27.5 40.0
+30.0 40.0
+45.0 40.0
+45.0 50.0
+#
+# Rhodes 2
+#---------
+#typeregion, nbloc1, valeur1
+1 1 1200.0
+#lonmin, latmin, lonmax, latmax
+27.5 35.25 32.75 40.0
+#
+# Marsa-Matruh
+#-------------
+#typeregion, nbloc1, valeur1
+1 1 1210.0
+#lonmin, latmin, lonmax, latmax
+26.25 30.5 32.75 33.75
+#
+# Asia Minor
+#-----------
+#typeregion, nbloc1, valeur1
+1 1 1220.0
+#lonmin, latmin, lonmax, latmax
+32.75 30.5 36.5 40.0
+#
+#
+#---------------------------------------------
+#                                            #
+#                                            #
+#       Region South Atlantic Ocean          #
+#                                            #
+#                                            #
+#---------------------------------------------
+#
+#
+#-----------------------------------------------
+# Region Atlantic Sud Extratropical (30°S->70°S)
+#-----------------------------------------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#40 2 998.0
+#-------------------------
+#
+#
+# Southern Atlantic
+#-------------------------
+#typeregion, nbloc1, valeur1
+1 1 2000.0
+#lonmin, latmin, lonmax, latmax
+-40.0 -40.0 5.0 -30.0
+#
+# Cape Basin (Courant des Aiguilles)
+#-----------------------------------
+#typeregion, nbloc1, valeur1
+1 1 2010.0
+#lonmin, latmin, lonmax, latmax
+5.0 -40.0 20.0 -30.0
+#
+# Rio Grande Ridge (Confluence)
+#------------------------------
+#typeregion, nbloc1, valeur1
+1 1 2020.0
+#lonmin, latmin, lonmax, latmax
+-70.0 -40.0 -40.0 -30.0
+#
+# Argentine Basin (Confluence)
+#-----------------------------
+#typeregion, nbloc1, valeur1
+1 1 2030.0
+#lonmin, latmin, lonmax, latmax
+-70.0 -55.0 -40.0 -40.0
+#
+# South Georgia Rise
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 2040.0
+#lonmin, latmin, lonmax, latmax
+-40.0 -55.0 5.0 -40.0
+#
+# Cape Rise
+#----------
+#typeregion, nbloc1, valeur1
+1 1 2050.0
+#lonmin, latmin, lonmax, latmax
+5.0 -55.0 20.0 -40.0
+#
+# Atlantic-Indian Basin 1
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 2060.0
+#lonmin, latmin, lonmax, latmax
+5.0 -70.0 20.0 -65.0
+#
+# Atlantic-Indian Basin 2
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 2070.0
+#lonmin, latmin, lonmax, latmax
+5.0 -65.0 20.0 -55.0
+#
+# Scotia Sea West 1
+#------------------
+#typeregion, nbloc1, valeur1
+1 1 2080.0
+#lonmin, latmin, lonmax, latmax
+-70.0 -65.0 -40.0 -55.0
+#
+# Scotia Sea West 2
+#------------------
+#typeregion, nbloc1, valeur1
+1 1 2090.0
+#lonmin, latmin, lonmax, latmax
+-62.0 -70.0 -40.0 -65.0
+#
+# Scotia Sea East 1
+#------------------
+#typeregion, nbloc1, valeur1
+1 1 2100.0
+#lonmin, latmin, lonmax, latmax
+-40.0 -70.0 5.0 -65.0
+#
+# Scotia Sea East 2
+#------------------
+#typeregion, nbloc1, valeur1
+1 1 2110.0
+#lonmin, latmin, lonmax, latmax
+-40.0 -65.0 5.0 -55.0
+#
+#
+#-----------------------------
+#Region Subtropical (30°S->0°)
+#-----------------------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#25 2 998.0
+#-------------------------
+#
+#
+# Brazil 2 (Courant de Guyane)
+#-----------------------------
+#typeregion, nbloc1, valeur1
+1 1 2120.0
+#lonmin,latmin,longmax,latmax
+-60.0 -2.0 -40.0 0.0
+#
+# Brazil 5 (Courant de Guyane)
+#-----------------------------
+#typeregion, nbloc1, valeur1
+1 1 2130.0
+#lonmin,latmin,longmax,latmax
+-40.0 -2.0 -20.0 0.0
+#
+# South Guinea Basin 1 (Courant de Guinee)
+#-----------------------------------------
+#typeregion, nbloc1, valeur1
+1 1 2140.0
+#lonmin,latmin,longmax,latmax
+-20.0 -2.0 0.0 0.0
+#
+# South Guinea Basin 2 (Courant de Guinee)
+#-----------------------------------------
+#typeregion, nbloc1, valeur1
+1 1 2150.0
+#lonmin,latmin,longmax,latmax
+-20.0 -3.0 0.0 -2.0
+#
+# Guinea Rise 1
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 2160.0
+#lonmin,latmin,longmax,latmax
+0.0 -2.0 5.0 0.0
+#
+# Guinea Rise 2 (Courant de Guinee)
+#----------------------------------
+#typeregion, nbloc1, valeur1
+1 1 2170.0
+#lonmin,latmin,longmax,latmax
+0.0 -3.0 5.0 -2.0
+#
+# North East Guinea Rise 1
+#-------------------------
+#typeregion, nbloc1, valeur1
+1 1 2180.0
+#lonmin,latmin,longmax,latmax
+5.0 -2.0 10.0 0.0
+#
+# East Guinea Rise 1
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 2190.0
+#lonmin,latmin,longmax,latmax
+5.0 -3.0 10.0 -2.0
+#
+# Brazil 5
+#---------
+#typeregion, nbloc1, valeur1
+1 1 2200.0
+#lonmin,latmin,longmax,latmax
+-60.0 -5.0 -40.0 -2.0
+#
+# East Guinea Rise 2
+#-------------------
+#typeregion, nbloc1, valeur1
+3 2 2210.0
+#
+#nbpoint
+4
+#
+5.0 -5.0
+5.0 -3.0
+10.0 -3.0
+15.0 -5.0
+#
+4
+#
+10.0 -3.0
+10.0 -2.0
+15.0 -2.0
+15.0 -5.0
+#
+# Mid Atlantic Ridge 1
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 2220.0
+#lonmin,latmin,longmax,latmax
+-40.0 -5.0 -20.0 -2.0
+#
+# Mid Atlantic Ridge 3
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 2230.0
+#lonmin,latmin,longmax,latmax
+-20.0 -5.0 5.0 -3.0
+#
+# Mid Atlantic Ridge 2
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 2240.0
+#lonmin,latmin,longmax,latmax
+-40.0 -10.0 -30.0 -5.0
+#
+# Mid Atlantic Ridge 4
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 2250.0
+#lonmin,latmin,longmax,latmax
+-30.0 -10.0 -10.0 -5.0
+#
+# Mid Atlantic Ridge 5
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 2260.0
+#lonmin,latmin,longmax,latmax
+-10.0 -10.0 5.0 -5.0
+#
+# Angola/Zaïre
+#-------------
+#typeregion, nbloc1, valeur1
+1 1 2270.0
+#lonmin,latmin,longmax,latmax
+5.0 -10.0 15.0 -5.0
+#
+# Brazil Basin 1
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 2280.0
+#lonmin,latmin,longmax,latmax
+-45.0 -20.0 -30.0 -10.0
+#
+# Brazil Basin 2
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 2290.0
+#lonmin,latmin,longmax,latmax
+-30.0 -20.0 -10.0 -10.0
+#
+# Angola Basin 1
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 2300.0
+#lonmin,latmin,longmax,latmax
+-10.0 -20.0 5.0 -10.0
+#
+# Angola Basin 2
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 2310.0
+#lonmin,latmin,longmax,latmax
+5.0 -20.0 20.0 -10.0
+#
+# Rio de Janeiro
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 2320.0
+#lonmin,latmin,longmax,latmax
+-60.0 -30.0 -40.0 -20.0
+#
+# Mid-Atlantic Ridge 6
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 2330.0
+#lonmin,latmin,longmax,latmax
+-40.0 -30.0 -30.0 -20.0
+#
+# Mid-Atlantic Ridge 7
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 2340.0
+#lonmin,latmin,longmax,latmax
+-30.0 -30.0 -10.0 -20.0
+#
+# Walvis Ridge 1
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 2350.0
+#lonmin,latmin,longmax,latmax
+-10.0 -30.0 5.0 -20.0
+#
+# Walvis Ridge 2
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 2360.0
+#lonmin,latmin,longmax,latmax
+5.0 -30.0 20.0 -20.0
+#
+#
+#-----------------
+# Region Antarctic
+#-----------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#3 1 998.0
+#-------------------------
+#
+#
+# Weddel Sea 1
+#-------------
+#typeregion, nbloc1, valeur1
+1 1 2370.0
+#lonmin, latmin, lonmax, latmax
+-70.0 -80.0 -40.0 -70.0
+#
+# Weddel Sea 2
+#-------------
+#typeregion, nbloc1, valeur1
+1 1 2380.0
+#lonmin, latmin, lonmax, latmax
+-40.0 -80.0 20.0 -70.0
+#
+# Biscoe Islands
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 2390.0
+#lonmin, latmin, lonmax, latmax
+-70.0 -70.0 -62.0 -65.0
+#
+#
+#---------------------------------------------
+#                                            #
+#                                            #
+#       Region North Atlantic Ocean          #
+#                                            #
+#                                            #
+#---------------------------------------------
+#
+#
+#--------------------------------------------------
+# Region North Atlantic Extra Tropical (30°N->70°N)
+#--------------------------------------------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#80 6 998.0
+#-------------------------
+#
+#
+# Hudson Bay
+#-----------
+#typeregion, nbloc1, valeur1
+3 3 3000.0
+#nbpoint
+5
+#
+-110.0 66.0
+-110.0 45.0
+-80.0 45.0
+-70.0 53.0
+-93.0 66.0
+#
+#nb point
+4
+#
+-93.0 66.0
+-70.0 53.0
+-85.0 67.0
+-90.0 67.0
+#
+#nb point
+7
+#
+-85.0 68.0
+-85.0 67.0
+-70.0 53.0
+-70.0 66.0
+-67.5 67.0
+-75.0 70.0
+-84.0 70.0
+#
+# Baffin Island
+#--------------
+#typeregion, nbloc1, valeur1
+3 1 3010.0
+#nbpoint
+5
+#
+-70.0 60.0
+-70.0 66.0
+-67.5 67.0
+-60.0 66.0
+-60.0 60.0
+#
+# Ungava Bay
+#-----------
+#typeregion, nbloc1, valeur1
+1 1 3020.0
+#lonmin,latmin,longmax,latmax
+-70.0 54.0 -64.75 60.0
+#
+# Torngat Mountains (Newfoundland)
+#---------------------------------
+#typeregion, nbloc1, valeur1
+1 1 3030.0
+#lonmin,latmin,longmax,latmax
+-64.75 54.0 -60.0 60.0
+#
+# Southwest Greenland
+#--------------------
+#typeregion, nbloc1, valeur1
+1 1 3040.0
+#lonmin,latmin,longmax,latmax
+-60.0 60.0 -45.0 66.0
+#
+# Southeast Greenland
+#--------------------
+#typeregion, nbloc1, valeur1
+1 1 3050.0
+#lonmin,latmin,longmax,latmax
+-45.0 60.0 -15.0 65.0
+#
+# Greenland-Iceland Rise
+#-----------------------
+#typeregion, nbloc1, valeur1
+1 1 3060.0
+#lonmin,latmin,longmax,latmax
+-45.0 65.0 -10.0 70.0
+#
+# Iceland
+#--------
+#typeregion, nbloc1, valeur1
+1 1 3070.0
+#lonmin,latmin,longmax,latmax
+-15.0 60.0 -10.0 65.0
+#
+# Norwegian Sea
+#--------------
+#typeregion, nbloc1, valeur1
+3 3 3080.0
+#nbpoint
+3
+#
+-10.0 70.0
+24.0 70.0
+17.0 67.0
+#
+#nbpoint
+4
+#
+-10.0 70.0
+17.0 67.0
+17.0 66.0
+15.0 64.0
+#
+#nb point
+4
+#
+-10.0 70.0
+15.0 64.0
+15.0 60.0
+-10.0 60.0
+#
+# North Sea 1
+#------------
+#typeregion, nbloc1, valeur1
+3 1 3090.0
+#
+#nbpoint
+5
+#
+0.0 52.5
+9.0 52.5
+12.0 50.0
+12.0 48.0
+0.0 48.0
+#
+# North Sea 2
+#------------
+#typeregion, nbloc1, valeur1
+3 2 3100.0
+#
+#nb point
+4
+#
+0.0 60.0
+9.0 55.0
+9.0 52.5
+0.0 52.5
+#
+#nb point
+4
+#
+0.0 60.0
+9.0 55.0
+15.0 57.0
+15.0 60.0
+#
+# Baltic Sea 1
+#-------------
+#typeregion, nbloc1, valeur1
+3 3 3110.0
+#nbpoint
+4
+#
+17.0 66.0
+17.0 67.0
+28.0 67.0
+28.0 63.0
+#
+#nbpoint
+5
+#
+15.0 57.0
+15.0 64.0
+17.0 66.0
+28.0 63.0
+15.0 50.0
+#
+#nbpoint
+4
+#
+15.0 50.0
+28.0 63.0
+34.0 63.0
+34.0 50.0
+#
+# Baltic Sea 2
+#-------------
+#typeregion, nbloc1, valeur1
+3 1 3120.0
+#nbpoint
+4
+#
+9.0 55.0
+12.0 50.0
+15.0 50.0
+15.0 57.0
+#
+# Labrador Sea
+#-------------
+#typeregion, nbloc1, valeur1
+3 3 3130.0
+#
+#nb point
+4
+#
+-60.0 60.0
+-60.0 53.0
+-57.0 53.0
+-50.0 60.0
+#
+#nb point
+3
+#
+-57.0 53.0
+-56.5 51.0
+-50.0 60.0
+#
+#nb point
+4
+#
+-56.5 51.0
+-57.0 50.0
+-50.0 50.0
+-50.0 60.0
+#
+# Labrador Basin
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 3140.0
+#lonmin,latmin,longmax,latmax
+-50.0 50.0 -40.0 60.0
+#
+# North Extratropical Atlantic
+#-----------------------------
+#typeregion, nbloc1, valeur1
+1 1 3150.0
+#lonmin,latmin,longmax,latmax
+-40.0 50.0 -20.0 60.0
+#
+# West Ireland
+#-------------
+#typeregion, nbloc1, valeur1
+1 1 3160.0
+#lonmin,latmin,longmax,latmax
+-20.0 50.0 -15.0 60.0
+#
+# Rockall Rise (West Ireland) 
+#----------------------------
+#typeregion, nbloc1, valeur1
+3 2 3170.0
+#
+#nb point
+4
+#
+-10.0 54.0
+-10.0 52.0
+-8.5 52.0
+-8.5 54.0
+#
+#nb point
+6
+#
+-10.0 60.0
+-10.0 54.0
+-10.0 52.0
+-10.0 50.0
+-15.0 50.0
+-15.0 60.0
+#
+# North West United Kingdom
+#--------------------------
+#typeregion, nbloc1, valeur1
+3 1 3180.0
+#
+#nb point
+5
+#
+-10.0 60.0
+-10.0 54.0
+-8.5 54.0
+-4.5 56.5
+-4.5 60.0
+#
+# North East United Kingdom
+#--------------------------
+#typeregion, nbloc1, valeur1
+3 1 3190.0
+#
+#nb point
+4
+#
+-4.5 60.0
+-4.5 56.5
+0.0 52.0
+0.0 60.0
+#
+# Irish Sea
+#----------
+#typeregion, nbloc1, valeur1
+3 1 3200.0
+#
+#nb point
+4
+#
+-8.5 54.0
+-8.5 52.0
+0.0 52.0
+-4.5 56.5
+#
+# St George's Channel
+#--------------------
+#typeregion, nbloc1, valeur1
+3 1 3210.0
+#
+#nb point
+6
+#
+-10.0 52.0
+-10.0 50.0
+-5.75 50.0
+-4.5 50.5
+-2.0 51.0
+-2.0 52.0
+#
+# English Channel 1
+#------------------
+#typeregion, nbloc1, valeur1
+3 2 3220.0
+#
+#nb point
+4
+#
+-4.5 50.5
+-4.5 48.5
+0.0 48.5
+-2.0 51.0
+#
+#nb point
+4
+#
+-2.0 51.0
+-2.0 52.0
+0.0 52.0
+0.0 48.5
+#
+# English Channel 2 
+#------------------
+#typeregion, nbloc1, valeur1
+3 2 3230.0
+#
+#nb point
+4
+#
+-10.0 50.0
+-10.0 48.5
+-4.5 48.5
+-5.75 50.0
+#
+#nb point
+3
+#
+-5.75 50.0
+-4.5 48.5
+-4.5 50.5
+#
+# Gulf of St Lawrence
+#--------------------
+#typeregion, nbloc1, valeur1
+3 4 3240.0
+#nbpoint
+6
+#
+-72.0 46.5
+-70.0 53.0
+-57.0 53.0 
+-57.0 50.0
+-57.0 49.0
+-65.5 46.5
+#
+#nbpoint
+3
+#
+-57.0 53.0
+-56.5 51.0
+-57.0 50.0
+#
+#nb point
+4
+#
+-65.5 46.5
+-65.0 46.0
+-63.0 45.5
+-57.0 49.0
+#
+#nb point
+4
+#
+-63.0 45.5
+-62.0 45.25
+-61.0 46.0
+-57.0 49.0
+#
+# Halifax 1
+#----------
+#typeregion, nbloc1, valeur1
+3 3 3250.0
+#nbpoint
+7
+#
+-77.0 40.0
+-77.0 46.5
+-65.5 46.5
+-65.0 46.0
+-63.0 45.5
+-62.0 45.25
+-70.0 40.0
+#
+#nb point
+3
+#
+-70.0 40.0
+-62.0 45.25
+-61.0 43.0
+#
+#nbpoint
+3
+#
+-61.0 43.0
+-61.0 46.0
+-62.0 45.25
+#
+# Halifax 2
+#----------
+#typeregion, nbloc1, valeur1
+3 1 3260.0
+#
+#nb point
+3
+#
+-70.0 40.0
+-61.0 40.0
+-61.0 43.0
+#
+# Newfoundland 1
+#---------------
+#typeregion, nbloc1, valeur1
+3 2 3270.0
+#
+#nb point
+5
+#
+-57.0 50.0
+-57.0 49.0
+-57.0 44.0
+-50.0 44.0
+-50.0 50.0
+#
+#nb point
+4
+#
+-57.0 49.0
+-57.0 44.0
+-61.0 43.0
+-61.0 46.0
+#
+# Newfoundland 2
+#---------------
+#typeregion, nbloc1, valeur1
+3 1 3280.0
+#
+#nb point
+5
+#
+-61.0 43.0
+-61.0 40.0
+-50.0 40.0 
+-50.0 44.0
+-57.0 44.0
+#
+# Newfoundland Basin 1
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 3290.0
+#lonmin,latmin,longmax,latmax
+-50.0 44.0 -40.0 50.0
+#
+# Newfoundland Basin 2
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 3300.0
+#lonmin,latmin,longmax,latmax
+-50.0 40.0 -40.0 44.0
+#
+# Azores
+#-------
+#typeregion, nbloc1, valeur1
+1 1 3310.0
+#lonmin,latmin,longmax,latmax
+-40.0 40.0 -20.0 50.0
+#
+# West European Basin
+#--------------------
+#typeregion, nbloc1, valeur1
+1 1 3320.0
+#lonmin,latmin,longmax,latmax
+-20.0 40.0 -10.0 50.0
+#
+# Bay of Biscay
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 3330.0
+#lonmin,latmin,longmax,latmax
+-10.0 43.25 0.0 48.5
+#
+# Iberian Basin
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 3340.0
+#lonmin,latmin,longmax,latmax
+-10.0 40.0 0.0 43.25
+#
+# Nord Est Floride
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 3350.0
+#lonmin,latmin,longmax,latmax
+-82.5 30.0 -77.0 40.0
+#
+# Bermude 1
+#----------
+#typeregion, nbloc1, valeur1
+3 1 3360.0
+#
+#nb point
+4
+#
+-77.0 35.0
+-77.0 30.0
+-70.0 30.0
+-70.0 40.0
+#
+# Norfolk (USA)
+#--------------
+#typeregion, nbloc1, valeur1
+3 1 3370.0
+#
+#nb point
+3
+#
+-77.0 35.0
+-77.0 40.0
+-70.0 40.0
+#
+# Bermude 2
+#----------
+#typeregion, nbloc1, valeur1
+1 1 3380.0
+#lonmin,latmin,longmax,latmax
+-70.0 30.0 -60.0 40.0
+#
+# Bermude 3
+#----------
+#typeregion, nbloc1, valeur1
+1 1 3390.0
+#lonmin,latmin,longmax,latmax
+-60.0 30.0 -40.0 40.0
+#
+# Azores-Gibraltar
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 3400.0
+#lonmin,latmin,longmax,latmax
+-20.0 30.0 -10.0 40.0
+#
+# Strait of Gibraltar 1
+#----------------------
+#typeregion, nbloc1, valeur1
+1 1 3410.0
+#lonmin,latmin,longmax,latmax
+-10.0 30.0 -5.25 35.0
+#
+# Strait of Gibraltar 2
+#----------------------
+#typeregion, nbloc1, valeur1
+1 1 3420.0
+#lonmin,latmin,longmax,latmax
+-10.0 35.0 -5.25 40.0
+#
+# Azores Plateau
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 3430.0
+#lonmin,latmin,longmax,latmax
+-40.0 30.0 -20.0 40.0
+#
+#
+#------------------------------------
+# Region North Subtropical (0°->30°N)
+#------------------------------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#37 2 998.0
+#-------------------------
+#
+#
+# Gulf of Mexico
+#---------------
+#typeregion, nbloc1, valeur1
+3 1 3440.0
+#nbpoint
+5
+#
+-100.0 30.0
+-100.0 20.0
+-95.0 17.2
+-90.0 18.0
+-90.0 30.0
+#
+# Gulf of Mexico
+#---------------
+#typeregion, nbloc1, valeur1
+3 2 3450.0
+#nbpoint
+6
+#
+-90.0 32.0
+-90.0 18.0
+-88.0 21.0
+-84.0 22.0
+-82.0 23.0
+-83.0 30.0
+#
+#nbpoint
+4
+#
+-83.0 30.0
+-82.0 23.0
+-80.5 22.5
+-80.5 26.0
+#
+# Caribbean Sea
+#--------------
+#typeregion, nbloc1, valeur1
+3 2 3460.0
+#nbpoint
+5
+#
+-90.0 18.0
+-90.0 15.0
+-85.0 11.0
+-84.0 22.0
+-88.0 21.0
+#
+#nb point
+7
+#
+-85.0 11.0
+-84.0 22.0
+-82.0 23.0
+-80.5 22.25
+-80.5 9.0
+-81.0 8.5
+-82.25 8.5
+#
+# Bahamas 1
+#----------
+#typeregion, nbloc1, valeur1
+3 3 3470.0
+#
+#nb point
+4
+#
+-80.5 22.5
+-80.5 30.0
+-77.0 30.0
+-79.0 22.0
+#
+#nb point
+3
+#
+-79.0 22.0
+-77.0 21.0
+-77.0 30.0
+#
+#nb point
+3
+#
+-83.0 30.0
+-80.5 26.0
+-80.5 30.0
+#
+# Cuba 1
+#-------
+#typeregion, nbloc1, valeur1
+3 1 3480.0
+#
+#nb point
+5
+#
+-80.5 22.5
+-80.5 20.0
+-77.0 20.0
+-77.0 21.0
+-79.0 22.0
+#
+# Bahamas 2
+#----------
+#typeregion, nbloc1, valeur1
+1 1 3490.0
+#lonmin,latmin,longmax,latmax
+-77.0 20.0 -60.0 30.0
+#
+# Bermude
+#--------
+#typeregion, nbloc1, valeur1
+1 1 3500.0
+#lonmin,latmin,longmax,latmax
+-60.0 20.0 -40.0 30.0
+#
+# Canary Islands 1
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 3510.0
+#lonmin,latmin,longmax,latmax
+-20.0 26.0 -5.0 30.0
+#
+# Canary Islands 2
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 3520.0
+#lonmin,latmin,longmax,latmax
+-20.0 20.0 -5.0 26.0
+#
+# Canary Basin
+#-------------
+#typeregion, nbloc1, valeur1
+1 1 3530.0
+#lonmin,latmin,longmax,latmax
+-40.0 20.0 -20.0 30.0
+#
+# Caribbean Sea 1 (Courant des Antilles)
+#---------------------------------------
+#typeregion, nbloc1, valeur1
+3 2 3540.0
+#nbpoint
+4
+#
+-80.5 8.5
+-79.0 9.2
+-77.0 20.0
+-80.5 20.0
+#
+#nbpoint
+4
+#
+-79.0 9.2
+-78.25 8.5
+-77.0 7.0
+-77.0 20.0
+#
+# Cuba 2   
+#-------
+#typeregion, nbloc1, valeur1
+1 1 3550.0
+#lonmin,latmin,longmax,latmax
+-77.0 7.5 -72.5 20.0
+#
+# Caribean Sea 2 (Courant des Antilles)
+#--------------------------------------
+#typeregion, nbloc1, valeur1
+3 1 3560.0
+#
+#nb point
+7
+#
+-72.5 19.0
+-72.5 7.5
+-61.0 7.5
+-61.0 14.5
+-63.0 14.5
+-63.0 18.0
+-67.0 18.25
+#
+# Haiti
+#------
+#typeregion, nbloc1, valeur1
+3 1 3570.0
+#
+#nb point
+6
+#
+-72.5 20.0 
+-72.5 19.0
+-67.0 18.25
+-63.0 18.0
+-60.0 18.0
+-60.0 20.0
+#
+# Petites Antilles
+#-----------------
+#typeregion, nbloc1, valeur1
+3 2 3580.0
+#
+#nb point
+4
+#
+-61.0 10.0
+-60.0 10.0
+-60.0 18.0
+-61.0 14.5
+#
+#nb point
+4
+#
+-61.0 14.5
+-60.0 18.0
+-63.0 18.0
+-63.0 14.5
+#
+#Cape Verde West Basin
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 3590.0
+#lonmin,latmin,longmax,latmax
+-60.0 10.0 -40.0 20.0
+#
+# Cape Verde East Basin
+#----------------------
+#typeregion, nbloc1, valeur1
+1 1 3600.0
+#lonmin,latmin,longmax,latmax
+-40.0 10.0 -5.0 20.0
+#
+# Guiana Basin 1
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 3610.0
+#lonmin,latmin,longmax,latmax
+-61.0 5.0 -45.0 10.0
+#
+# Guiana Basin 2
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 3620.0
+#lonmin,latmin,longmax,latmax
+-45.0 5.0 -40.0 10.0
+#
+# Sierra Leone Rise
+#------------------
+#typeregion, nbloc1, valeur1
+1 1 3630.0
+#lonmin,latmin,longmax,latmax
+-40.0 5.0 -20.0 10.0
+#
+# Sierra Leone Basin
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 3640.0
+#lonmin,latmin,longmax,latmax
+-20.0 5.0 -8.0 10.0
+#
+# Gulf of Guinea
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 3650.0
+#lonmin,latmin,longmax,latmax
+-8.0 5.0 10.0 10.0
+#
+# French Guiana
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 3660.0
+#lonmin,latmin,longmax,latmax
+-60.0 2.0 -45.0 5.0
+#
+# South Guiana Basin 
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 3670.0
+#lonmin,latmin,longmax,latmax
+-45.0 2.0 -40.0 5.0
+#
+# South Sierra Leone Rise
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 3680.0
+#lonmin,latmin,longmax,latmax
+-40.0 2.0 -20.0 5.0
+#
+# Guinea Basin 1 (Courant de Guinee)
+#-----------------------------------
+#typeregion, nbloc1, valeur1
+1 1 3690.0
+#lonmin,latmin,longmax,latmax
+-20.0 3.0 5.0 5.0
+#
+# Guinea Basin 2 (courant de Guinee)
+#-----------------------------------
+#typeregion, nbloc1, valeur1
+3 2 3700.0
+#nbpoint
+4
+#
+5.0 3.0
+5.0 5.0
+15.0 5.0
+10.0 3.0
+#
+4
+#
+10.0 3.0
+15.0 5.0
+15.0 2.0
+10.0 2.0
+#
+# Brazil 1 (Courant de Guyane)
+#-----------------------------
+#typeregion, nbloc1, valeur1
+1 1 3710.0
+#lonmin,latmin,longmax,latmax
+-60.0 0.0 -45.0 2.0
+#
+# Brazil 3 (Courant de Guyane)
+#-----------------------------
+#typeregion, nbloc1, valeur1
+1 1 3720.0
+#lonmin,latmin,longmax,latmax
+-45.0 0.0 -40.0 2.0
+#
+# Brazil 4 (Courant de Guyane)
+#-----------------------------
+#typeregion, nbloc1, valeur1
+1 1 3730.0
+#lonmin,latmin,longmax,latmax
+-40.0 0.0 -20.0 2.0
+#
+# Guinea Basin 3 (Courant de Guinee)
+#-----------------------------------
+#typeregion, nbloc1, valeur1
+1 1 3740.0
+#lonmin,latmin,longmax,latmax
+-20.0 2.0 0.0 3.0
+#
+# South Guinea Basin 3 (Courant de Guinee)
+#-----------------------------------------
+#typeregion, nbloc1, valeur1
+1 1 3750.0
+#lonmin,latmin,longmax,latmax
+0.0 2.0 5.0 3.0
+#
+# South Guinea Basin 4 (courant de Guinee)
+#-----------------------------------------
+#typeregion, nbloc1, valeur1
+1 1 3760.0
+#lonmin,latmin,longmax,latmax
+-20.0 0.0 0.0 2.0
+#
+# Guinea Rise 3
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 3770.0
+#lonmin,latmin,longmax,latmax
+0.0 0.0 5.0 2.0
+#
+# Sao Tome and Principe (Guinee Equatoriale)
+#-------------------------------------------
+#typeregion, nbloc1, valeur1
+1 1 3780.0
+#lonmin,latmin,longmax,latmax
+5.0 2.0 10.0 3.0
+#
+# North East Guinea Rise 2
+#-------------------------
+#typeregion, nbloc1, valeur1
+1 1 3790.0
+#lonmin,latmin,longmax,latmax
+5.0 0.0 10.0 2.0
+#
+#
+#---------------------------------------------
+#                                            #
+#                                            #
+#       Region South Pacific Ocean           #
+#                                            #
+#                                            #
+#---------------------------------------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#81 4 998.0
+#-------------------------
+#
+#
+#----------------------------------
+# Region Pacific Equator (10°S->0°)
+#----------------------------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#35 3 998.0
+#-------------------------
+#
+#
+# Molucca Sea 1 (Indonesia)
+#--------------------------
+#typeregion, nbloc1, valeur1
+1 1 4000.0
+#lonmin,latmin,longmax,latmax
+120.0 -2.0 125.0 0.0
+#
+# Molucca Sea 2 (Indonesia)
+#--------------------------
+#typeregion, nbloc1, valeur1
+1 1 4010.0
+#lonmin,latmin,longmax,latmax
+125.0 -2.0 130.0 0.0
+#
+# North West New Guinea
+#-----------------------------
+#typeregion, nbloc1, valeur1
+3 2 4020.0
+#nb point
+4
+#
+130.0 -2.0
+140.0 -2.0
+140.0 0.0
+130.0 0.0
+#
+#nb point
+5
+#
+133.0 -2.0
+134.0 -3.0
+137.0 -4.0
+140.0 -4.0
+140.0 -2.0
+#
+# North Papua New Guinea
+#-----------------------
+#typeregion, nbloc1, valeur1
+1 1 4030.0
+#lonmin,latmin,longmax,latmax
+140.0 -2.0 150.0 0.0
+#
+# Malum Islands (Papua New Guinea)
+#---------------------------------
+#typeregion, nbloc1, valeur1
+1 1 4040.0
+#lonmin,latmin,longmax,latmax
+150.0 -2.0 160.0 0.0
+#
+# South Gilbert Islands
+#----------------------
+#typeregion, nbloc1, valeur1
+1 1 4050.0
+#lonmin,latmin,longmax,latmax
+160.0 -2.0 180.0 0.0
+#
+# Canton and Enderbury 1
+#-----------------------
+#typeregion, nbloc1, valeur1
+1 1 4060.0
+#lonmin,latmin,longmax,latmax
+-180.0 -2.0 -170.0 0.0
+#
+# Canton and Enderbury 2
+#-----------------------
+#typeregion, nbloc1, valeur1
+1 1 4070.0
+#lonmin,latmin,longmax,latmax
+-170.0 -2.0 -150.0 0.0
+#
+# East South Equatorial Pacific 1
+#--------------------------------
+#typeregion, nbloc1, valeur1
+1 1 4080.0
+#lonmin,latmin,longmax,latmax
+-150.0 -2.0 -130.0 0.0
+#
+# East South Equatorial Pacific 2
+#--------------------------------
+#typeregion, nbloc1, valeur1
+1 1 4090.0
+#lonmin,latmin,longmax,latmax
+-130.0 -2.0 -120.0 0.0
+#
+# Galapagos Islands
+#------------------
+#typeregion, nbloc1, valeur1
+1 1 4100.0
+#lonmin,latmin,longmax,latmax
+-120.0 -2.0 -90.0 0.0
+#
+# Ecuador (South America) 
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 4110.0
+#lonmin,latmin,longmax,latmax
+-90.0 -2.0 -80.0 0.0
+#
+# Teluk Bone
+#-----------
+#typeregion, nbloc1, valeur1
+3 2 4120.0
+#nb point
+4
+#
+120.0 -2.0
+120.0 -5.0
+122.0 -4.0
+121.0 -2.0 
+#
+#nb point
+3
+#
+120.0 -5.0
+122.5 -5.0
+122.0 -4.0
+#
+# North West Banda Sea
+#---------------------
+#typeregion, nbloc1, valeur1
+3 1 4130.0
+#nb point
+5
+#
+121.0 -2.0
+125.0 -2.0
+125.0 -5.0
+122.5 -5.0
+122.0 -4.0
+#
+# Seram (Idonesia)
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 4140.0
+#lonmin,latmin,longmax,latmax
+125.0 -5.0 130.0 -2.0
+#
+# West New Guinea
+#----------------
+#typeregion, nbloc1, valeur1
+3 2 4150.0
+#nb point
+4
+#
+130.0 -2.0
+133.0 -2.0
+134.0 -3.0
+130.0 -5.0
+#
+#nb point
+4
+#
+130.0 -5.0
+140.0 -5.0
+137.0 -4.0
+134.0 -3.0
+#
+# Bismarck Sea
+#-------------
+#typeregion, nbloc1, valeur1
+1 1 4160.0
+#lonmin,latmin,longmax,latmax
+140.0 -5.0 150.0 -2.0
+#
+# Malum Islands (Papua New Guinea)
+#---------------------------------
+#typeregion, nbloc1, valeur1
+1 1 4170.0
+#lonmin,latmin,longmax,latmax
+150.0 -5.0 160.0 -2.0
+#
+# West South Equatorial Pacific
+#------------------------------
+#typeregion, nbloc1, valeur1
+1 1 4180.0
+#lonmin,latmin,longmax,latmax
+160.0 -5.0 180.0 -2.0
+#
+# Canton and Enderbury 3
+#-----------------------
+#typeregion, nbloc1, valeur1
+1 1 4190.0
+#lonmin,latmin,longmax,latmax
+-180.0 -5.0 -170.0 -2.0
+#
+# Line Islands
+#-------------
+#typeregion, nbloc1, valeur1
+1 1 4200.0
+#lonmin,latmin,longmax,latmax
+-170.0 -5.0 -150.0 -2.0
+#
+# East South Equatorial Pacific 3
+#--------------------------------
+#typeregion, nbloc1, valeur1
+1 1 4210.0
+#lonmin,latmin,longmax,latmax
+-150.0 -5.0 -130.0 -2.0
+#
+# East South Equatorial Pacific 4
+#--------------------------------
+#typeregion, nbloc1, valeur1
+1 1 4220.0
+#lonmin,latmin,longmax,latmax
+-130.0 -5.0 -120.0 -2.0
+#
+# East South Equatorial Pacific 5
+#--------------------------------
+#typeregion, nbloc1, valeur1
+1 1 4230.0
+#lonmin,latmin,longmax,latmax
+-120.0 -5.0 -90.0 -2.0
+#
+# Ecuador-Perus 
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 4240.0
+#lonmin,latmin,longmax,latmax
+-90.0 -5.0 -80.0 -2.0
+#
+# Banda Sea
+#----------
+#typeregion, nbloc1, valeur1
+1 1 4250.0
+#lonmin,latmin,longmax,latmax
+120.0 -10.0 125.0 -5.0
+#
+# Banda & Arafura Seas
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 4260.0
+#lonmin,latmin,longmax,latmax
+125.0 -10.0 140.0 -5.0
+#
+# Gulf of Papua
+#--------------
+#typeregion, nbloc1, valeur1
+3 1 4270.0
+#nb point
+6
+#
+140.0 -10.0
+149.0 -10.0
+147.0 -8.0
+144.0 -6.0
+142.0 -5.0
+140.0 -5.0
+#
+# Solomon Sea
+#------------
+#typeregion, nbloc1, valeur1
+3 3 4280.0
+#nb point
+3
+#
+142.0 -5.0
+160.0 -5.0
+144.0 -6.0
+#
+#nb point
+4
+#
+144.0 -6.0
+160.0 -5.0
+160.0 -10.0
+147.0 -8.0
+#
+#nb point
+3
+#
+149.0 -10.0
+160.0 -10.0
+147.0 -8.0
+#
+# Solomon Islands & Tuvalu 
+#-------------------------
+#typeregion, nbloc1, valeur1
+1 1 4290.0
+#lonmin,latmin,longmax,latmax
+160.0 -10.0 180.0 -5.0
+#
+# North Tokelau Through
+#----------------------
+#typeregion, nbloc1, valeur1
+1 1 4300.0
+#lonmin,latmin,longmax,latmax
+-180.0 -10.0 -150.0 -5.0
+#
+# Iles Marquises
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 4310.0
+#lonmin,latmin,longmax,latmax
+-150.0 -10.0 -120.0 -5.0
+#
+# East South Subtropical Pacific 1
+#---------------------------------
+#typeregion, nbloc1, valeur1
+1 1 4320.0
+#lonmin,latmin,longmax,latmax
+-120.0 -10.0 -90.0 -5.0
+#
+# North Cordillera 1
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 4330.0
+#lonmin,latmin,longmax,latmax
+-90.0 -10.0 -80.0 -5.0
+#
+# North Cordillera 2
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 4340.0
+#lonmin,latmin,longmax,latmax
+-80.0 -10.0 -75.0 -5.0
+#
+#
+#--------------------------------------------------
+# Region South Pacific Subtropical (30°S->10°S)
+#--------------------------------------------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#19 1 998.0
+#-------------------------
+#
+#
+# Coral Sea Basin
+#----------------
+#typeregion, nbloc1, valeur1
+1 1 4350.0
+#lonmin,latmin,longmax,latmax
+143.0 -20.0 150.0 -10.0
+#
+# Coral Sea 1
+#------------
+#typeregion, nbloc1, valeur1
+1 1 4360.0
+#lonmin,latmin,longmax,latmax
+150.0 -20.0 160.0 -10.0
+#
+# New Hebrides & North Fiji Basins
+#---------------------------------
+#typeregion, nbloc1, valeur1
+1 1 4370.0
+#lonmin,latmin,longmax,latmax
+160.0 -20.0 180.0 -10.0
+#
+# Wallis And Futuna
+#------------------
+#typeregion, nbloc1, valeur1
+1 1 4380.0
+#lonmin,latmin,longmax,latmax
+-180.0 -20.0 -160.0 -10.0
+#
+# Iles de La Societe
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 4390.0
+#lonmin,latmin,longmax,latmax
+-160.0 -20.0 -150.0 -10.0
+#
+# French Polynesia 1
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 4400.0
+#lonmin,latmin,longmax,latmax
+-150.0 -20.0 -140.0 -10.0
+#
+# French Polynesia 2
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 4410.0
+#lonmin,latmin,longmax,latmax
+-140.0 -20.0 -120.0 -10.0
+#
+# East South Subtropical Pacific 2
+#---------------------------------
+#typeregion, nbloc1, valeur1
+1 1 4420.0
+#lonmin,latmin,longmax,latmax
+-120.0 -20.0 -90.0 -10.0
+#
+# Carnegie Ridge
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 4430.0
+#lonmin,latmin,longmax,latmax
+-90.0 -20.0 -80.0 -10.0
+#
+# Perus
+#------
+#typeregion, nbloc1, valeur1
+1 1 4440.0
+#lonmin,latmin,longmax,latmax
+-80.0 -20.0 -60.0 -10.0
+#
+# Coral Sea 2
+#------------
+#typeregion, nbloc1, valeur1
+1 1 4450.0
+#lonmin,latmin,longmax,latmax
+143.0 -30.0 160.0 -20.0
+#
+# New Caledonia
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 4460.0
+#lonmin,latmin,longmax,latmax
+160.0 -30.0 180.0 -20.0
+#
+# Tonga - Cook Islands
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 4470.0
+#lonmin,latmin,longmax,latmax
+-180.0 -30.0 -160.0 -20.0
+#
+# Austral Seamount Chain
+#-----------------------
+#typeregion, nbloc1, valeur1
+1 1 4480.0
+#lonmin,latmin,longmax,latmax
+-160.0 -30.0 -150.0 -20.0
+#
+# French Polynesia 3
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 4490.0
+#lonmin,latmin,longmax,latmax
+-150.0 -30.0 -140.0 -20.0
+#
+# Pitcairn
+#---------
+#typeregion, nbloc1, valeur1
+1 1 4500.0
+#lonmin,latmin,longmax,latmax
+-140.0 -30.0 -120.0 -20.0
+#
+# Easter Island
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 4510.0
+#lonmin,latmin,longmax,latmax
+-120.0 -30.0 -90.0 -20.0
+#
+# Isla San Felix
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 4520.0
+#lonmin,latmin,longmax,latmax
+-90.0 -30.0 -80.0 -20.0
+#
+# Chile 1
+#--------
+#typeregion, nbloc1, valeur1
+1 1 4530.0
+#lonmin,latmin,longmax,latmax
+-80.0 -30.0 -60.0 -20.0
+#
+#
+#-------------------------------------------------
+# Region South Pacific Extra Tropical (71°S->30°S)
+#-------------------------------------------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#23 4 -1.0
+#-------------------------
+#
+# Tasman Sea 1
+#-------------
+#typeregion, nbloc1, valeur1
+1 1 4540.0
+#lonmin, latmin, lonmax, latmax
+150.0 -38.0 160.0 -30.0
+#
+# Tasman Sea 2
+#-------------
+#typeregion, nbloc1, valeur1
+1 1 4550.0
+#lonmin, latmin, lonmax, latmax
+150.0 -45.0 160.0 -38.0
+#
+# North West New Zealand
+#-----------------------
+#typeregion, nbloc1, valeur1
+3 3 4560.0
+#nb point
+6
+#
+160.0 -45.0
+170.5 -45.0
+173.0 -42.0
+173.0 -35.3
+173.0 -30.0
+160.0 -30.0
+#
+#nb point
+4
+#
+173.0 -42.0
+173.0 -35.3
+174.2 -36.0
+174.0 -41.25
+#
+#nb point
+4
+#
+174.0 -41.25
+174.2 -36.0
+176.0 -39.0
+175.25 -41.25
+#
+# North East New Zealand
+#-----------------------
+#typeregion, nbloc1, valeur1
+3 4 4570.0
+#nb point
+5
+#
+170.5 -45.0
+175.25 -45.0
+175.25 -41.25
+174.0 -41.25
+173.0 -42.0
+#
+#nb point
+4
+#
+175.25 -45.0
+175.25 -41.25
+176.0 -39.0
+180.0 -45.0
+#
+#nb point
+4
+#
+180.0 -45.0 
+180.0 -30.0
+174.2 -36.0
+176.0 -39.0
+#
+#nb point
+4
+#
+180.0 -30.0
+174.2 -36.0
+173.0 -35.3
+173.0 -30.0
+#
+# Southwestern Pacific Basin 1
+#-----------------------------
+#typeregion, nbloc1, valeur1
+1 1 4580.0
+#lonmin, latmin, lonmax, latmax
+-180.0 -45.0 -140.0 -30.0
+#
+# Southwestern Pacific Basin 2
+#-----------------------------
+#typeregion, nbloc1, valeur1
+1 1 4590.0
+#lonmin, latmin, lonmax, latmax
+-140.0 -45.0 -100.0 -30.0
+#
+# Chile Rise
+#-----------
+#typeregion, nbloc1, valeur1
+1 1 4600.0
+#lonmin, latmin, lonmax, latmax
+-100.0 -45.0 -82.0 -30.0
+#
+# Chile 2
+#--------
+#typeregion, nbloc1, valeur1
+1 1 4610.0
+#lonmin, latmin, lonmax, latmax
+-82.0 -45.0 -70.0 -30.0
+#
+# Tasman Basin
+#-------------
+#typeregion, nbloc1, valeur1
+1 1 4620.0
+#lonmin, latmin, lonmax, latmax
+150.0 -55.0 160.0 -45.0
+#
+# South Island 1 (New Zealand)
+#-----------------------------
+#typeregion, nbloc1, valeur1
+1 1 4630.0
+#lonmin, latmin, lonmax, latmax
+160.0 -55.0 170.5 -45.0
+#
+# South Island 2 (New Zealand)
+#-----------------------------
+#typeregion, nbloc1, valeur1
+1 1 4640.0
+#lonmin, latmin, lonmax, latmax
+170.5 -55.0 180.0 -45.0
+#
+# Southwestern Pacific Basin 3
+#-----------------------------
+#typeregion, nbloc1, valeur1
+1 1 4650.0
+#lonmin, latmin, lonmax, latmax
+-180.0 -55.0 -140.0 -45.0
+#
+# Albatross Cordillera
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 4660.0
+#lonmin, latmin, lonmax, latmax
+-140.0 -55.0 -100.0 -45.0
+#
+# Southeast Pacific Basin 1
+#--------------------------
+#typeregion, nbloc1, valeur1
+1 1 4670.0
+#lonmin, latmin, lonmax, latmax
+-100.0 -55.0 -82.0 -45.0
+#
+# South Chile 
+#------------
+#typeregion, nbloc1, valeur1
+1 1 4680.0
+#lonmin, latmin, lonmax, latmax
+-82.0 -55.0 -70.0 -45.0
+#
+# Hjort & Emerald Basins
+#-----------------------
+#typeregion, nbloc1, valeur1
+1 1 4690.0
+#lonmin, latmin, lonmax, latmax
+150.0 -65.0 180.0 -55.0
+#
+# Emerald Basin
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 4700.0
+#lonmin, latmin, lonmax, latmax
+-180.0 -65.0 -140.0 -55.0
+#
+# Southeast Pacific Basin 2
+#--------------------------
+#typeregion, nbloc1, valeur1
+1 1 4710.0
+#lonmin, latmin, lonmax, latmax
+-140.0 -65.0 -100.0 -55.0
+#
+# Southeast Pacific Basin 3
+#--------------------------
+#typeregion, nbloc1, valeur1
+1 1 4720.0
+#lonmin, latmin, lonmax, latmax
+-100.0 -65.0 -70.0 -55.0
+#
+# Hjort Basin
+#------------
+#typeregion, nbloc1, valeur1
+1 1 4730.0
+#lonmin, latmin, lonmax, latmax
+150.0 -70.0 180.0 -65.0
+#
+# West South Extratropical Pacific
+#---------------------------------
+#typeregion, nbloc1, valeur1
+1 1 4740.0
+#lonmin, latmin, lonmax, latmax
+-180.0 -70.0 -140.0 -65.0
+#
+# Southeast Pacific Basin 4
+#--------------------------
+#typeregion, nbloc1, valeur1
+1 1 4750.0
+#lonmin, latmin, lonmax, latmax
+-140.0 -70.0 -100.0 -65.0
+#
+# Bellinghausen Sea 1
+#--------------------
+#typeregion, nbloc1, valeur1
+1 1 4760.0
+#lonmin, latmin, lonmax, latmax
+-100.0 -70.0 -70.0 -65.0
+#
+#
+#----------------
+# Region Antartic
+#----------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#4 1 998.0
+#-------------------------
+#
+#
+# Ross Sea 1
+#-----------
+#typeregion, nbloc1, valeur1
+1 1 4770.0
+#lonmin, latmin, lonmax, latmax
+150.0 -80.0 180.0 -70.0
+#
+# Ross Sea 2
+#-----------
+#typeregion, nbloc1, valeur1
+1 1 4780.0
+#lonmin, latmin, lonmax, latmax
+-180.0 -80.0 -140.0 -70.0
+#
+# Amundsen Sea
+#-------------
+#typeregion, nbloc1, valeur1
+1 1 4790.0
+#lonmin, latmin, lonmax, latmax
+-140.0 -80.0 -100.0 -70.0
+#
+# Bellinqshausen Sea 2
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 4800.0
+#lonmin, latmin, lonmax, latmax
+-100.0 -80.0 -70.0 -70.0
+#
+#
+#
+#---------------------------------------------
+#                                            #
+#                                            #
+#       Region North Atlantic Ocean          #
+#                                            #
+#                                            #
+#---------------------------------------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#89 11 998.0
+#-------------------------
+#
+#
+#------------------------------------------------
+# Region North Pacific Extratropical (30°N->71°N)
+#------------------------------------------------
+#
+#
+#nbregion,nblocmax,valeur0
+#32 11 -1.0
+#
+# Bering Sea 1
+#-------------
+#typeregion, nbloc1, valeur1
+3 2 5000.0
+#nb point
+3
+#
+165.0 61.25
+166.25 61.25
+170.0 62.5
+#
+#nb point
+#
+4
+#
+166.25 60.0
+166.25 61.25
+170.0 62.5
+170.0 60.0
+#
+# Bering Sea 2
+#-------------
+#typeregion, nbloc1, valeur1
+3 5 5010.0
+#nb point
+3
+#
+170.0 60.0
+180.0 60.0
+170.0 62.5
+#
+#nb point
+#
+4
+#
+170.0 62.5
+170.0 66.0
+176.0 66.0
+180.0 60.0
+#
+#nb point
+#
+4
+#
+180.0 60.0
+176.0 66.0
+176.0 67.0
+180.0 67.0
+#
+#nb point
+4
+#
+-180.0 60.0
+-180.0 67.0
+-177.0 67.0
+-177.0 66.0
+#
+#nb point
+4
+#
+-180.0 60.0
+-177.0 66.0
+-170.0 66.0
+-170.0 60.0
+#
+# Bering Sea 3
+#-------------
+#typeregion, nbloc1, valeur1
+3 1 5020.0
+#nb point
+6
+#
+-170.0 60.0
+-164.0 60.0
+-164.0 61.0
+-156.0 61.0
+-156.0 66.0
+-170.0 66.0
+#
+# Bering Sea 4
+#-------------
+#typeregion, nbloc1, valeur1
+3 3 5030.0
+#nb point
+4
+#
+162.5 60.0
+166.25 60.0
+166.25 61.25
+165.0 61.25
+#
+#nb point
+7
+#
+160.0 57.5
+162.5 56.0
+166.0 55.0
+173.0 52.9
+180.0 51.9
+180.0 60.0
+162.5 60.0
+#
+#nb point
+5
+#
+-180.0 51.9
+-180.0 60.0
+-170.0 60.0
+-170.0 52.8
+-177.3 51.9
+#
+# Bering Sea 5
+#-------------
+#typeregion, nbloc1, valeur1
+3 2 5040.0
+#nb point
+6
+#
+-170.0 52.8
+-168.5 53.3
+-160.0 56.0
+-156.0 58.0
+-156.0 60.0
+-170.0 60.0
+#
+#nb point
+4
+#
+-164.0 60.0
+-164.0 61.0
+-156.0 61.0
+-156.0 60.0
+#
+# Alaska Current 1
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 5050.0
+#lonmin, latmin, lonmax, latmax
+-156.0 60.0 -150.0 64.0
+#
+# Alaska Current 2
+#-----------------
+#typeregion, nbloc1, valeur1
+3 2 5060.0
+#nb point
+4
+#
+-150.0 60.0
+-144.0 60.0
+-144.0 60.5
+-150.0 64.0
+#
+#nb point
+4
+#
+-144.0 60.5
+-150.0 64.0
+-115.4 60.5
+-115.4 64.0
+# 
+# Alaska Current 3
+#-----------------
+#typeregion, nbloc1, valeur1
+3 4 5070.0
+#nb point
+3
+#
+-170.0 52.8
+-161.0 52.8
+-168.5 53.3
+#
+#nb point
+3
+#
+-168.5 53.3
+-161.0 52.8
+-160.0 56.0
+#
+#nb point
+4
+#
+-161.0 52.8
+-160.0 56.0
+-156.0 58.0
+-150.0 58.0
+#
+#nb point
+4
+#
+-156.0 58.0
+-150.0 58.0
+-150.0 60.0
+-156.0 60.0
+#
+# Alaska Current 4
+#-----------------
+#typeregion, nbloc1, valeur1
+3 3 5080.0
+#nb point
+4
+#
+-144.0 60.0 
+-115.4 60.0
+-115.4 60.5
+-144.0 60.5
+#
+#nb point
+4
+#
+-150.0 58.0
+-140.0 58.0
+-115.4 60.0
+-150.0 60.0
+#
+#nb point
+4
+#
+-135.0 52.8
+-115.4 52.8
+-115.4 60.0
+-140.0 58.0
+#
+# Alaska Current 5
+#-----------------
+#typeregion, nbloc1, valeur1
+3 1 5090.0
+#nb point
+3
+#
+-161.0 52.8
+-150.0 52.8
+-150.0 58.0
+#
+# Alaska Current 6
+#-----------------
+#typeregion, nbloc1, valeur1
+3 1 5100.0
+#nb point
+4
+#
+-150.0 52.8
+-135.0 52.8
+-140.0 58.0
+-150.0 58.0
+#
+# Sea of Okhotsk 1
+#-----------------
+#typeregion, nbloc1, valeur1
+3 1 5110.0
+#nb point
+5
+#
+125.0 60.0
+162.5 60.0
+170.0 62.5
+170.0 66.0
+125.0 66.0
+#
+# Sea of Okhotsk 2
+#-----------------
+#typeregion, nbloc1, valeur1
+3 2 5120.0
+#nb point
+5
+#
+125.0 52.5
+142.2 52.5
+160.0 57.5
+162.5 60.0
+125.0 60.0
+#
+#nb point
+8
+#
+142.2 52.5
+142.2 45.0
+145.0 43.0
+147.5 45.0
+152.0 47.0
+154.5 49.0
+157.5 52.5
+160.0 57.5
+#
+# West Sub-Arc Gyre
+#------------------
+#typeregion, nbloc1, valeur1
+3 11 5130.0
+#nb point
+3
+#
+-170.0 52.8
+-170.0 43.0
+-177.3 51.9
+#
+#nb point
+4
+#
+-180.0 43.0
+-170.0 43.0
+-177.3 51.9
+-180.0 51.9
+#
+#nb point
+3
+#
+145.0 43.0
+180.0 43.0
+180.0 51.9
+#
+#nb point
+3
+#
+145.0 43.0
+180.0 51.9
+147.5 45.0
+#
+#nb point
+3
+#
+147.5 45.0
+180.0 51.9
+152.0 47.0
+#
+#nb point
+3
+#
+152.0 47.0
+180.0 51.9
+154.5 49.0
+#
+#nb point
+3
+#
+154.5 49.0
+180.0 51.9
+157.5 52.5
+#
+#nb point
+3
+#
+157.5 52.5
+180.0 51.9
+173.0 52.9
+#
+#nb point
+3
+#
+157.5 52.5
+173.0 52.9
+166.0 55.0
+#
+#nb point
+3
+#
+157.5 52.5
+166.0 55.0
+162.5 56.0
+#
+#nb point
+3
+#
+157.5 52.5
+162.5 56.0
+160.0 57.5
+#
+# East Sub-Arc Gyre 1
+#--------------------
+#typeregion, nbloc1, valeur1
+1 1 5140.0
+#lonmin, latmin, lonmax, latmax
+-170.0 43.0 -150.0 52.8
+#
+# East Sub-Arc Gyre 2
+#--------------------
+#typeregion, nbloc1, valeur1
+1 1 5150.0
+#lonmin, latmin, lonmax, latmax
+-150.0 43.0 -135.0 52.8
+#
+# Queen Charlotte Sound
+#----------------------
+#typeregion, nbloc1, valeur1
+1 1 5160.0
+#lonmin, latmin, lonmax, latmax
+-135.0 50.2 -115.4 52.8
+#
+# California Current
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 5170.0
+#lonmin, latmin, lonmax, latmax
+-135.0 43.0 -115.4 50.2
+#
+# Sea of Japan
+#-------------
+#typeregion, nbloc1, valeur1
+3 7 5180.0
+#nb point
+4
+#
+126.0 40.0
+126.0 52.5
+140.0 42.5
+128.0 37.0
+#
+#nb point
+4
+#
+126.0 52.5
+142.2 52.5
+141.5 43.0
+140.0 42.5
+#
+#nb point
+3
+#
+141.0 43.0
+142.2 52.5
+142.2 43.0
+#
+#nb point
+4
+#
+128.0 36.0
+128.0 37.0
+140.0 42.5
+139.5 37.0
+#
+#nb point
+6
+#
+139.5 37.0
+140.0 42.5
+141.25 41.6
+141.35 41.3
+141.35 41.0
+141.0 40.0
+#
+#nb point
+4
+#
+128.0 36.0
+134.0 35.0
+136.0 35.0
+139.5 37.0
+#
+#nb point
+4
+#
+128.0 36.0
+129.5 34.5
+131.0 34.25
+134.0 35.0
+#
+# Kuroshio Current 1
+#-------------------
+#typeregion, nbloc1, valeur1
+3 5 5190.0
+#nb point
+3
+#
+136.0 35.0
+143.2 35.0
+139.5 37.0
+#
+#nb point
+4
+#
+139.5 37.0
+141.0 40.0
+141.35 41.0
+143.2 35.0
+#
+#nb point
+4
+#
+143.2 35.0
+141.35 41.0
+141.35 41.3
+155.5 35.0
+#
+#nb point
+4
+#
+155.5 35.0
+141.35 41.3
+141.25 41.6
+155.5 43.0
+#
+#nb point
+5
+#
+140.0 42.5
+141.0 43.0
+142.0 43.0
+155.5 43.0
+141.25 41.6
+#
+# West Extratropical Pacific 1
+#-----------------------------
+#typeregion, nbloc1, valeur1
+3 2 5200.0
+#nb point
+4
+#
+155.5 35.0
+180.0 35.0
+180.0 43.0
+155.5 43.0
+#
+#nb point
+4
+#
+-180.0 35.0
+-170.0 35.0
+-170.0 43.0
+-180.0 43.0
+#
+# East Extratropical Pacific
+#---------------------------
+#typeregion, nbloc1, valeur1
+1 1 5210.0
+#lonmin, latmin, lonmax, latmax
+-170.0 35.0 -150.0 43.0
+#
+# Mendocino Seascarp
+#-------------------
+#typeregion, nbloc1, valeur1
+3 1 5220.0
+#nb point
+4
+#
+-150.0 35.0
+-131.0 35.0
+-135.0 43.0
+-150.0 43.0
+#
+# California Current 1
+#---------------------
+#typeregion, nbloc1, valeur1
+3 1 5230.0
+#nb point
+4
+#
+-131.0 35.0
+-115.4 35.0
+-115.4 43.0
+-135.0 43.0
+#
+# Bohai (China)
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 5240.0
+#lonmin, latmin, lonmax, latmax
+110.0 36.6 120.0 45.0
+#
+# Yellow Sea 
+#-----------
+#typeregion, nbloc1, valeur1
+3 5 5250.0
+#nb point
+4
+#
+110.0 30.0
+120.0 30.0
+120.0 36.6
+110.0 36.6
+#
+#nb point
+4
+#
+120.0 30.0
+120.0 45.0
+126.0 45.0
+126.0 40.0
+#
+#nb point
+4
+#
+120.0 30.0
+126.0 40.0
+128.0 37.0
+128.0 36.0
+#
+#nb point
+3
+#
+120.0 30.0
+128.0 36.0
+129.5 34.5
+#
+#nb point
+4
+#
+120.0 30.0
+129.5 34.5
+131.0 34.25
+131.0 30.0
+#
+# Kuroshio Current 2
+#-------------------
+#typeregion, nbloc1, valeur1
+3 2 5280.0
+#nb point
+5
+#
+131.0 30.0
+131.0 34.25
+134.0 35.0
+136.0 35.0
+143.2 30.0
+#
+#nb point
+3
+#
+136.0 35.0
+143.2 35.0
+143.2 30.0
+#
+# Kuroshio Current 3
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 5290.0
+#lonmin, latmin, lonmax, latmax
+143.2 30.0 155.5 35.0
+#
+# West Extratropical Pacific 2
+#-----------------------------
+#typeregion, nbloc1, valeur1
+3 2 5300.0
+#nb point
+4
+#
+155.5 30.0
+180.0 30.0
+180.0 35.0
+155.5 35.0
+#
+#nb point
+4
+#
+-180.0 30.0
+-170.0 30.0
+-170.0 35.0
+-180.0 35.0
+#
+# North Hawaiian Seamount Range
+#------------------------------
+#typeregion, nbloc1, valeur1
+1 1 5310.0
+#lonmin, latmin, lonmax, latmax
+-170.0 30.0 -150.0 35.0
+#
+# Murray Fracture Zone
+#---------------------
+#typeregion, nbloc1, valeur1
+3 1 5320.0
+#nb point
+4
+#
+-150.0 30.0
+-124.0 30.0
+-131.0 35.0
+-150.0 35.0
+#
+# California Current 2
+#---------------------
+#typeregion, nbloc1, valeur1
+3 1 5330.0
+#nb point
+4
+#
+-124.0 30.0
+-115.4 30.0
+-115.4 35.0
+-131.0 35.0
+#
+#
+#--------------------------------------
+# Region North Subtropical (10°N->30°N)
+#--------------------------------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#22 3 998.0
+#-------------------------
+#
+#
+# East China Sea 1
+#-----------------
+#typeregion, nbloc1, valeur1
+3 1 5260.0
+#nb point
+7
+#
+110.0 30.0
+117.0 26.0
+120.0 25.0
+121.0 24.0
+124.0 24.3
+125.0 24.7
+125.0 30.0
+#
+# East China Sea 2
+#-----------------
+#typeregion, nbloc1, valeur1
+3 1 5270.0
+#nb point
+5
+#
+125.0 24.7
+128.0 26.6
+129.25 28.25
+131.0 30.0
+125.0 30.0
+#
+# Philippine Sea 1
+#-----------------
+#typeregion, nbloc1, valeur1
+3 2 5340.0
+#nb point
+5
+#
+120.0 20.0
+125.0 20.0
+124.0 24.3
+121.0 24.0
+120.0 22.0
+#
+#nb point
+3
+#
+125.0 20.0
+125.0 24.7
+124.0 24.3
+#
+# Philippine Sea 2
+#-----------------
+#typeregion, nbloc1, valeur1
+3 3 5350.0
+#nb point
+4
+#
+125.0 20.0
+140.0 20.0
+128.0 26.6
+125.0 24.7
+#
+#nb point
+3
+#
+140.0 20.0
+128.0 26.6
+129.25 28.25
+#
+#nb point
+4
+#
+140.0 20.0
+129.25 28.25
+131.0 30.0
+140.0 30.0
+#
+# West Subtropical Pacific
+#-------------------------
+#typeregion, nbloc1, valeur1
+1 1 5360.0
+#lonmin,latmin,longmax,latmax
+140.0 20.0 160.0 30.0
+#
+# Midway Islands
+#---------------
+#typeregion, nbloc1, valeur1
+3 2 5370.0
+#nbpoint
+4
+#
+160.0 20.0
+180.0 20.0
+180.0 30.0
+160.0 30.0
+#
+#nbpoint
+4
+#
+-180.0 30.0
+-180.0 20.0
+-170.0 20.0
+-170.0 30.0
+#
+# Hawaiian Islands
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 5380.0
+#lonmin,latmin,longmax,latmax
+-170.0 20.0 -150.0 30.0
+#
+# East Subropical Pacific
+#------------------------
+#typeregion, nbloc1, valeur1
+3 1 5390.0
+#nb point
+4
+#
+-150.0 20.0
+-119.0 20.0
+-124.5 30.0
+-150.0 30.0
+#
+# California Current 3
+#---------------------
+#typeregion, nbloc1, valeur1
+3 1 5400.0
+#nb point
+6
+#
+-124.5 30.0
+-119.0 20.0
+-105.0 20.0
+-110.0 23.5
+-113.5 28.0
+-115.0 30.0
+#
+# Gulf of California 1
+#---------------------
+#typeregion, nbloc1, valeur1
+3 1 5410.0
+#nb point
+5
+#
+-116.0 33.0
+-116.0 32.0
+-115.0 30.0
+-104.0 30.0
+-104.0 33.0
+#
+# Gulf of California 2
+#---------------------
+#typeregion, nbloc1, valeur1
+3 1 5420.0
+#nb point
+6
+#
+-113.5 28.0
+-110.0 23.5
+-105.0 20.0
+-104.0 20.0
+-104.0 30.0
+-115.0 30.0
+#
+# China Sea
+#----------
+#typeregion, nbloc1, valeur1
+3 3 5430.0
+#nb point
+4
+#
+105.0 10.0
+117.0 26.0
+110.0 30.0
+105.0 30.0
+#
+#nb point
+4
+#
+105.0 10.0
+117.0 26.0
+120.0 25.0
+120.0 10.0
+#
+#nb point
+3
+#
+120.0 22.0
+121.0 24.0
+120.0 25.0
+#
+# Philippine Sea 3
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 5440.0
+#lonmin,latmin,longmax,latmax
+120.0 10.0 125.0 20.0
+#
+# Philippine Sea 4
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 5450.0
+#lonmin,latmin,longmax,latmax
+125.0 10.0 140.0 20.0
+#
+# North Equatorial Current 1
+#---------------------------
+#typeregion, nbloc1, valeur1
+1 1 5460.0
+#lonmin,latmin,longmax,latmax
+140.0 16.0 160.0 20.0
+#
+# North Equatorial Current 2
+#---------------------------
+#typeregion, nbloc1, valeur1
+1 1 5470.0
+#lonmin,latmin,longmax,latmax
+140.0 10.0 160.0 16.0
+#
+# North Equatorial Current 3
+#---------------------------
+#typeregion, nbloc1, valeur1
+1 1 5480.0
+#lonmin,latmin,longmax,latmax
+160.0 10.0 180.0 20.0
+#
+# North Equatorial Current 4
+#---------------------------
+#typeregion, nbloc1, valeur1
+1 1 5490.0
+#lonmin,latmin,longmax,latmax
+-180.0 10.0 -170.0 20.0
+#
+# North Equatorial Current 5
+#---------------------------
+#typeregion, nbloc1, valeur1
+1 1 5500.0
+#lonmin,latmin,longmax,latmax
+-170.0 10.0 -150.0 20.0
+# North Equatorial Current 6
+#---------------------------
+#typeregion, nbloc1, valeur1
+1 1 5510.0
+#lonmin,latmin,longmax,latmax
+-150.0 10.0 -119.0 20.0
+#
+# South West Mexico
+#------------------
+#typeregion, nbloc1, valeur1
+1 1 5520.0
+#lonmin,latmin,longmax,latmax
+-119.0 10.0 -100.0 20.0
+#
+# Gulf of Tehuantepec
+#--------------------
+#typeregion, nbloc1, valeur1
+1 1 5530.0
+#lonmin,latmin,longmax,latmax
+-100.0 10.0 -90.0 17.2
+#
+#
+#----------------------------------
+# Region Pacific Equator (0°->10°N)
+#----------------------------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#35 3 998.0
+#-------------------------
+#
+#
+# South West Philippines
+#-----------------------
+#typeregion, nbloc1, valeur1
+1 1 5540.0
+#lonmin,latmin,longmax,latmax
+120.0 5.0 125.0 10.0
+#
+# South East Philippines
+#-----------------------
+#typeregion, nbloc1, valeur1
+1 1 5550.0
+#lonmin,latmin,longmax,latmax
+125.0 5.0 140.0 10.0
+#
+# Caroline Islands 1
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 5560.0
+#lonmin,latmin,longmax,latmax
+140.0 8.0 160.0 10.0
+#
+# Caroline Islands 2
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 5570.0
+#lonmin,latmin,longmax,latmax
+140.0 5.0 160.0 8.0
+#
+# Marshall Islands
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 5580.0
+#lonmin,latmin,longmax,latmax
+160.0 5.0 180.0 10.0
+#
+# Central Pacific Basin 1
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 5590.0
+#lonmin,latmin,longmax,latmax
+-180.0 5.0 -150.0 10.0
+#
+# East Pacific Basin 1
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 5600.0
+#lonmin,latmin,longmax,latmax
+-150.0 5.0 -119.0 10.0
+#
+# North East Equatorial Pacific 1
+#--------------------------------
+#typeregion, nbloc1, valeur1
+1 1 5610.0
+#lonmin,latmin,longmax,latmax
+-119.0 5.0 -100.0 10.0
+#
+# North East Equatorial Pacific 2
+#--------------------------------
+#typeregion, nbloc1, valeur1
+1 1 5620.0
+#lonmin,latmin,longmax,latmax
+-100.0 5.0 -90.0 10.0
+#
+# Cocos Ridge
+#------------
+#typeregion, nbloc1, valeur1
+3 3 5630.0
+#nb point
+4
+#
+-90.0 15.0
+-85.0 11.0
+-82.0 8.5
+-90.0 5.0
+#
+#nb point
+4
+#
+-90.0 5.0
+-82.0 8.5
+-81.0 8.5
+-81.0 8.4
+#
+#nb point
+4
+#
+-90.0 5.0
+-80.0 5.0
+-80.0 7.4
+-81.0 8.4
+#
+# Celebes Sea 1
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 5640.0
+#lonmin,latmin,longmax,latmax
+120.0 2.0 125.0 5.0
+#
+# North Halmahera (Indonesia)
+#----------------------------
+#typeregion, nbloc1, valeur1
+1 1 5650.0
+#lonmin,latmin,longmax,latmax
+125.0 2.0 130.0 5.0
+#
+# South West Caroline Islands
+#----------------------------
+#typeregion, nbloc1, valeur1
+1 1 5660.0
+#lonmin,latmin,longmax,latmax
+130.0 2.0 140.0 5.0
+#
+# East Caroline Basin 2
+#----------------------
+#typeregion, nbloc1, valeur1
+1 1 5670.0
+#lonmin,latmin,longmax,latmax
+140.0 2.0 150.0 5.0
+#
+# Caroline Islands 3 
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 5680.0
+#lonmin,latmin,longmax,latmax
+150.0 2.0 160.0 5.0
+#
+# Gilbert Islands 1
+#------------------
+#typeregion, nbloc1, valeur1
+1 1 5690.0
+#lonmin,latmin,longmax,latmax
+160.0 2.0 180.0 5.0
+#
+# Central Pacific Basin 2
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 5700.0
+#lonmin,latmin,longmax,latmax
+-180.0 2.0 -170.0 5.0
+#
+# Northwest Christmas Island Ridge
+#---------------------------------
+#typeregion, nbloc1, valeur1
+1 1 5710.0
+#lonmin,latmin,longmax,latmax
+-170.0 2.0 -150.0 5.0
+#
+# North East Equatorial Pacific 3
+#--------------------------------
+#typeregion, nbloc1, valeur1
+1 1 5720.0
+#lonmin,latmin,longmax,latmax
+-150.0 2.0 -130.0 5.0
+#
+# North East Equatorial Pacific 4
+#--------------------------------
+#typeregion, nbloc1, valeur1
+1 1 5730.0
+#lonmin,latmin,longmax,latmax
+-130.0 2.0 -120.0 5.0
+#
+# Galapagos Islands 1
+#--------------------
+#typeregion, nbloc1, valeur1
+1 1 5740.0
+#lonmin,latmin,longmax,latmax
+-120.0 2.0 -90.0 5.0
+#
+# Cocos Ridge 2
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 5750.0
+#lonmin,latmin,longmax,latmax
+-90.0 2.0 -80.0 5.0
+#
+# Gulf of Panama
+#---------------
+#typeregion, nbloc1, valeur1
+3 2 5760.0
+#nbpoint
+3
+#
+-80.0 7.4
+-81.0 8.4
+-80.0 8.9
+#
+#nbpoint
+6
+#
+-80.0 -1.0
+-80.0 8.9
+-79.0 9.2
+-78.0 8.5
+-77.0 7.0
+-77.0 -1.0
+#
+# Celebes Sea 2
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 5770.0
+#lonmin,latmin,longmax,latmax
+120.0 0.0 125.0 2.0
+#
+# Halmahera (Indonesia)
+#----------------------
+#typeregion, nbloc1, valeur1
+1 1 5780.0
+#lonmin,latmin,longmax,latmax
+125.0 0.0 130.0 2.0
+#
+# West Carolin Basin
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 5790.0
+#lonmin,latmin,longmax,latmax
+130.0 0.0 140.0 2.0
+#
+# East Carolin Basin 3 
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 5800.0
+#lonmin,latmin,longmax,latmax
+140.0 0.0 150.0 2.0
+#
+# South Caroline Islands
+#-----------------------
+#typeregion, nbloc1, valeur1
+1 1 5810.0
+#lonmin,latmin,longmax,latmax
+150.0 0.0 160.0 2.0
+#
+# Gilbert Islands 2
+#------------------
+#typeregion, nbloc1, valeur1
+1 1 5820.0
+#lonmin,latmin,longmax,latmax
+160.0 0.0 180.0 2.0
+#
+# Central Pacific Basin 3
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 5830.0
+#lonmin,latmin,longmax,latmax
+-180.0 0.0 -170.0 2.0
+#
+# Central Pacific Basin 4
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 5840.0
+#lonmin,latmin,longmax,latmax
+-170.0 0.0 -150.0 2.0
+#
+# North East Equatorial Pacific 5
+#--------------------------------
+#typeregion, nbloc1, valeur1
+1 1 5850.0
+#lonmin,latmin,longmax,latmax
+-150.0 0.0 -130.0 2.0
+#
+# North East Equatorial Pacific 6
+#--------------------------------
+#typeregion, nbloc1, valeur1
+1 1 5860.0
+#lonmin,latmin,longmax,latmax
+-130.0 0.0 -120.0 2.0
+#
+# Galapagos Islands 2
+#--------------------
+#typeregion, nbloc1, valeur1
+1 1 5870.0
+#lonmin,latmin,longmax,latmax
+-120.0 0.0 -90.0 2.0
+#
+# Cocos Ridge 3
+#--------------
+#typeregion, nbloc1, valeur1
+1 1 5880.0
+#lonmin,latmin,longmax,latmax
+-90.0 0.0 -80.0 2.0
+#
+#
+#-------------------------------------
+#                                    #
+#                                    #
+#       Region Indian Ocean          #
+#                                    # 
+#                                    #
+#-------------------------------------
+#
+#
+#--------------------------
+#nbregion, nblocmax, valeur
+#78 4 998.0
+#--------------------------
+#
+#
+# Mer Rouge
+#----------
+#typeregion, nbloc1, valeur1
+3 1 6000.0
+#nb point
+4
+#
+44.0 15.0  #Yemen
+44.0 8.0  #Ethiopie
+30.0 30.5
+38.0 30.5
+#
+# South Indian Basin 1
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 6010.0
+#lonmin, latmin, lonmax, latmax
+20.0 -65.0 130.0 -55.0
+#
+# South Indian Basin 4
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 6020.0
+#lonmin, latmin, lonmax, latmax
+20.0 -80.0 99.0 -65.0
+#
+# South Indian Basin 5
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 6030.0
+#lonmin, latmin, lonmax, latmax
+99.0 -80.0 130.0 -65.0
+#
+# Kerguelen-Gaussberg Ridge
+#--------------------------
+#typeregion, nbloc1, valeur1
+1 1 6040.0
+#lonmin, latmin, lonmax, latmax
+54.0 -55.0 105.0 -45.0
+#
+# Australian-Antarctic Rise 
+#--------------------------
+#typeregion, nbloc1, valeur1
+1 1 6050.0
+#lonmin, latmin, lonmax, latmax
+105.0 -55.0 130.0 -45.0
+#
+# Atlantic-Indian Rise
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 6060.0
+#lonmin, latmin, lonmax, latmax
+20.0 -55.0 54.0 -45.0
+#
+# Australian-Antarctic Basin
+#---------------------------
+#typeregion, nbloc1, valeur1
+1 1 6070.0
+#lonmin, latmin, lonmax, latmax
+130.0 -55.0 150.0 -45.0
+#
+# South Indian Basin 2
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 6080.0
+#lonmin, latmin, lonmax, latmax
+135.0 -80.0 150.0 -65.0
+#
+# South Indian Basin 6
+#--------------------
+#typeregion, nbloc1, valeur1
+1 1 6090.0
+#lonmin, latmin, lonmax, latmax
+130.0 -80.0 135.0 -65.0
+#
+# South Indian Basin 3
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 6100.0
+#lonmin, latmin, lonmax, latmax
+130.0 -65.0 150.0 -55.0
+#
+# South Autralian Basin 
+#----------------------
+#typeregion, nbloc1, valeur1
+1 1 6110.0
+#lonmin, latmin, lonmax, latmax
+130.0 -45.0 150.0 -42.0
+#
+# Great Australian Bight
+#-----------------------
+#typeregion, nbloc1, valeur1
+1 1 6120.0
+#lonmin, latmin, lonmax, latmax
+130.0 -42.0 150.0 -30.0
+#
+# Amsterdam-Naturaliste Ridge
+#----------------------------
+#typeregion, nbloc1, valeur1
+1 1 6130.0
+#lonmin, latmin, lonmax, latmax
+117.0 -40.0 130.0 -30.0
+#
+# East Indian Ridge
+#------------------
+#typeregion, nbloc1, valeur1
+1 1 6140.0
+#lonmin, latmin, lonmax, latmax
+105.0 -40.0 117.0 -30.0
+#
+# Sud Est de l'Australie 3
+#-------------------------
+#typeregion, nbloc1, valeur1
+1 1 6150.0
+#lonmin, latmin, lonmax, latmax
+117.0 -45.0 130.0 -40.0
+#
+# Sud Est de l'Australie 4
+#-------------------------
+#typeregion, nbloc1, valeur1
+1 1 6160.0
+#lonmin, latmin, lonmax, latmax
+105.0 -45.0 117.0 -40.0
+#
+# Courant des Aiguilles 1
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 6170.0
+#lonmin, latmin, lonmax, latmax
+20.0 -40.0 40.0 -30.0
+#
+# Ocean Indien Extratrop 5
+#-------------------------
+#typeregion, nbloc1, valeur1
+3 2 6180.0
+#nb point
+4
+#
+20.0 -40.0
+20.0 -45.0
+105.0 -45.0
+40.0 -40.0
+#
+#nb point
+4
+#
+40.0 -40.0
+105.0 -45.0
+105.0 -30.0
+40.0 -30.0
+#
+# Indien nord Eq 1
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 6190.0
+#lonmin, latmin, lonmax, latmax
+40.0 2.0 50.0 5.0
+#
+# Somalie 1
+#----------
+#typeregion, nbloc1, valeur1
+1 1 6200.0
+#lonmin, latmin, lonmax, latmax
+30.0 2.0 40.0 10.0
+#
+# Somalie 2
+#----------
+#typeregion, nbloc1, valeur1
+1 1 6210.0
+#lonmin, latmin, lonmax, latmax
+40.0 5.0 50.0 10.0
+#
+# Java Sea
+#---------
+#typeregion, nbloc1, valeur1
+3 2 6220.0
+#
+#nb point
+4
+#
+115.0 -8.4
+120.0 -5.0
+110.0 -5.0
+110.0 -7.2
+#
+#nb point
+3
+#
+115.0 -8.4
+120.0 -9.7
+120.0 -5.0
+#
+# Bali
+#-----
+#typeregion, nbloc1, valeur1
+3 2 6230.0
+#nb point
+3
+#
+110.0 -10.0
+110.0 -7.2
+115.0 -8.4
+#
+#nb point
+4
+#
+110.0 -10.0
+115.0 -8.4
+120.0 -9.7
+120.0 -10.0
+#
+# Belitung 1
+#-----------
+#typeregion, nbloc1, valeur1
+3 1 6240.0
+#nb point
+4
+#
+103.0 -2.0
+105.0 -5.0
+110.0 -5.0
+110.0 -2.0
+#
+# Belitung 2
+#-----------
+#typeregion, nbloc1, valeur1
+3 2 6250.0
+#nb point
+3
+#
+105.0 -5.0
+106.0 -6.0
+110.0 -5.0
+#
+#nb point
+3
+#
+106.0 -6.0
+110.0 -7.5
+110.0 -5.0
+#
+# West Borneo
+#------------
+#typeregion, nbloc1, valeur1
+3 1 6260.0
+#nb point
+4
+#
+102.0 0.0
+103.0 -2.0
+110.0 -2.0
+110.0 0.0
+#
+# Indien Sud Eq 2
+#----------------
+#typeregion, nbloc1, valeur1
+1 1 6270.0
+#lonmin, latmin, lonmax, latmax
+50.0 -10.0 70.0 -5.0
+#
+# Indien Nord Eq 2
+#-----------------
+#typeregion, nbloc1, valeur1
+3 1 6280.0
+#nb point
+4
+#
+90.0 5.0
+90.0 2.0
+100.0 2.0
+96.0 5.0
+#
+# Indien Nord Eq
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 6290.0
+#lonmin, latmin, lonmax, latmax
+70.0 2.0 90.0 5.0
+#
+# Courant des Aiguilles 2
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 6300.0
+#lonmin, latmin, lonmax, latmax
+30.0 -30.0 40.0 -25.0
+#
+# Courant des Aiguilles 3
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 6310.0
+#lonmin, latmin, lonmax, latmax
+40.0 -30.0 45.0 -25.0
+#
+# Courant des Aiguilles 4
+#------------------------
+#typeregion, nbloc1, valeur1
+1 1 6320.0
+#lonmin, latmin, lonmax, latmax
+30.0 -25.0 40.0 -10.0
+#
+# Courant des Aiguilles 5
+#------------------------
+#typeregion, nbloc1, valeur1
+3 2 6330.0
+#nb point
+4
+#
+40.0 -10.0
+40.0 -25.0
+45.0 -25.0
+48.0 -15.0
+#
+#nb point
+4
+#
+40.0 -10.0
+50.0 -10.0
+50.0 -15.0
+48.0 -15.0
+#
+# Indien Eq 1
+#------------
+#typeregion, nbloc1, valeur1
+1 1 6340.0
+#lonmin, latmin, lonmax, latmax
+70.0 -2.0 90.0 0.0
+#
+# Indien nord Eq 3
+#-----------------
+#typeregion, nbloc1, valeur1
+1 1 6350.0
+#lonmin, latmin, lonmax, latmax
+50.0 2.0 70.0 5.0
+#
+# Sumatra 1
+#----------
+#typeregion, nbloc1, valeur1
+1 1 6360.0
+#lonmin, latmin, lonmax, latmax
+90.0 -5.0 98.0 -2.0
+#
+# Sumatra 2
+#----------
+#typeregion, nbloc1, valeur1
+3 1 6370.0
+#
+#nb point
+4
+#
+98.0 -5.0
+98.0 -2.0
+103.0 -2.0
+105.0 -5.0
+#
+# Indien Eq 3
+#------------
+#typeregion, nbloc1, valeur1
+1 1 6380.0
+#lonmin, latmin, lonmax, latmax
+40.0 -5.0 50.0 -2.0
+#
+# Tanzania
+#---------
+#typeregion, nbloc1, valeur1
+1 1 6390.0
+#lonmin, latmin, lonmax, latmax
+30.0 -5.0 40.0 -2.0
+#
+# Indien Eq 4
+#------------
+#typeregion, nbloc1, valeur1
+1 1 6400.0
+#lonmin, latmin, lonmax, latmax
+110.0 -5.0 120.0 -2.0
+#
+# Indien Sud Eq 3
+#----------------
+#typeregion, nbloc1, valeur1
+1 1 6410.0
+#lonmin, latmin, lonmax, latmax
+70.0 -10.0 90.0 -5.0
+#
+# Indien Eq 5
+#------------
+#typeregion, nbloc1, valeur1
+1 1 6420.0
+#lonmin, latmin, lonmax, latmax
+50.0 0.0 70.0 2.0
+#
+# Indien Sud Subtrop 2
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 6430.0
+#lonmin, latmin, lonmax, latmax
+54.0 -30.0 80.0 -20.0
+#
+# Indien Sud Subtrop 
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 6440.0
+#lonmin, latmin, lonmax, latmax
+54.0 -20.0 80.0 -10.0
+#
+# Madagascar
+#-----------
+#typeregion, nbloc1, valeur1
+3 2 6450.0
+#nb point
+4
+#
+50.0 -10.0
+50.0 -15.0
+54.0 -15.0
+54.0 -10.0
+#
+#nb point
+6
+#
+50.0 -15.0 
+48.0 -15.0
+45.0 -25.0
+45.0 -30.0
+54.0 -30.0
+54.0 -15.0
+#
+# Indien Eq 6
+#------------
+#typeregion, nbloc1, valeur1
+1 1 6460.0
+#lonmin, latmin, lonmax, latmax
+50.0 -5.0 70.0 -2.0
+#
+# Cocos Basin 1
+#--------------
+#typeregion, nbloc1, valeur1
+3 2 6470.0
+#nb point
+4
+#
+100.0 -10.0
+100.0 -5.0
+105.0 -5.0
+106.0 -6.0
+#
+#nb point
+4
+#
+100.0 -10.0
+106.0 -6.0
+110.0 -7.5
+110.0 -10.0
+#
+# Indien Eq Est 1 
+#----------------
+#typeregion, nbloc1, valeur1
+1 1 6480.0
+#lonmin, latmin, lonmax, latmax
+90.0 -10.0 100.0 -5.0
+#
+# Indien Eq 7
+#------------
+#typeregion, nbloc1, valeur1
+1 1 6490.0
+#lonmin, latmin, lonmax, latmax
+40.0 -2.0 50.0 2.0
+#
+# Kenya
+#------
+#typeregion, nbloc1, valeur1
+1 1 6500.0
+#lonmin, latmin, lonmax, latmax
+30.0 -2.0 40.0 2.0
+#
+# North Cocos Basin 2
+#--------------------
+#typeregion, nbloc1, valeur1
+3 1 6510.0
+#
+#nb point
+4
+#
+96.0 -2.0
+96.0 0.0
+102.0 0.0
+103.0 -2.0
+#
+# Indien Eq Est 2
+#----------------
+#typeregion, nbloc1, valeur1
+1 1 6520.0
+#lonmin, latmin, lonmax, latmax
+90.0 -2.0 96.0 0.0
+#
+# Indien Nord Ouest Eq 1
+#-----------------------
+#typeregion, nbloc1, valeur1
+1 1 6530.0
+#lonmin, latmin, lonmax, latmax
+50.0 5.0 60.0 10.0
+#
+# Indien Nord Ouest Eq 2
+#-----------------------
+#typeregion, nbloc1, valeur1
+1 1 6540.0
+#lonmin, latmin, lonmax, latmax
+60.0 5.0 70.0 10.0
+#
+# Indien Eq 9
+#------------
+#typeregion, nbloc1, valeur1
+1 1 6550.0
+#lonmin, latmin, lonmax, latmax
+70.0 -5.0 90.0 -2.0
+#
+# Indien Sud Eq 5
+#----------------
+#typeregion, nbloc1, valeur1
+1 1 6560.0
+#lonmin, latmin, lonmax, latmax
+30.0 -10.0 50.0 -5.0
+#
+# Indien Sud Subtrop 3
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 6570.0
+#lonmin, latmin, lonmax, latmax
+80.0 -30.0 100.0 -20.0
+#
+# Indien Sud Subtrop 
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 6580.0
+#lonmin, latmin, lonmax, latmax
+100.0 -30.0 105.0 -20.0
+#
+# Indien Sud Subtrop 5
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 6590.0
+#lonmin, latmin, lonmax, latmax
+80.0 -20.0 100.0 -10.0
+#
+# Indien Sud Subtrop 
+#-------------------
+#typeregion, nbloc1, valeur1
+1 1 6600.0
+#lonmin, latmin, lonmax, latmax
+100.0 -20.0 105.0 -10.0
+#
+# Indien Sud Subtrop 4
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 6610.0
+#lonmin, latmin, lonmax, latmax
+105.0 -30.0 120.0 -20.0
+#
+# Indien Sud Subtrop 6
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 6620.0
+#lonmin, latmin, lonmax, latmax
+105.0 -20.0 120.0 -10.0
+#
+# Indien Eq 10
+#-------------
+#typeregion, nbloc1, valeur1
+1 1 6630.0
+#lonmin, latmin, lonmax, latmax
+50.0 -2.0 70.0 0.0
+#
+# Andaman Sea 1
+#--------------
+#typeregion, nbloc1, valeur1
+3 4 6640.0
+#nb point
+5
+#
+90.0 5.0
+96.0 5.0
+99.0 9.0
+99.0 10.0
+90.0 32.0
+#
+#nb point
+3
+#
+90.0 32.0
+100.0 18.0
+105.0 32.0
+#
+#nb point
+4
+#
+90.0 32.0
+99.0 10.0
+99.5 12.0
+100.0 18.0
+#
+#nb point
+3
+#
+96.0 5.0
+102.0 5.0
+99.0 9.0
+#
+# Andaman Sea 2
+#--------------
+#typeregion, nbloc1, valeur1
+3 1 6650.0
+#nb point
+4
+#
+96.0 5.0
+100.0 2.0 
+103.5 2.0
+102.0 5.0
+#
+# Mer d'Arabie 1
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 6660.0
+#lonmin,latmin,longmax,latmax
+44.0 10.0 64.0 32.0
+#
+# Mer d'Arabie 2
+#---------------
+#typeregion, nbloc1, valeur1
+3 2 6670.0
+#nb point
+4
+#
+70.0 10.0
+70.0 5.0
+81.0 5.0
+79.0 11.0
+#
+#nb point
+5
+#
+64.0 10.0
+70.0 10.0
+79.0 11.0
+79.0 32.0
+64.0 32.2
+#
+# Baie du Bengale 1
+#------------------
+#typeregion, nbloc1, valeur1
+3 1 6680.0
+#nb point
+5
+#
+79.0 32.0
+79.0 11.0
+81.0 5.0
+90.0 5.0
+90.0 32.0
+#
+# Indien Eq 11                        
+#-------------
+#typeregion, nbloc1, valeur1
+3 1 6690.0
+#nb point
+4
+#
+94.0 2.0
+94.0 0.0
+102.0 0.0
+100.0 2.0
+#
+# Indien Eq Est 3
+#----------------
+#typeregion, nbloc1, valeur1
+1 1 6700.0
+#lonmin,latmin,longmax,latmax
+70.0 0.0 94.0 2.0
+#
+# Sumatra / Borneo
+#-----------------
+#typeregion, nbloc1, valeur1
+3 1 6710.0
+#nb point
+4
+#
+100.0 2.0
+102.0 0.0
+110.0 0.0
+114.0 2.0
+#
+# Borneo
+#-------
+#typeregion, nbloc1, valeur1
+3 1 6720.0
+#nb point
+5
+#
+110.0 0.0
+110.0 -2.0
+120.0 -2.0
+120.0 2.0
+114.0 2.0
+#
+# Borneo
+#-------
+#typeregion, nbloc1, valeur1
+3 1 6730.0
+#nb point
+4
+#
+115.0 2.0
+120.0 2.0
+120.0 5.0
+117.0 5.0
+#
+# Malaisie
+#---------
+#typeregion, nbloc1, valeur1
+3 1 6740.0
+#nb point
+4
+#
+102.0 5.0
+103.5 2.0
+115.0 2.0
+117.0 5.0
+#
+# South China Sea
+#----------------
+#typeregion, nbloc1, valeur1
+3 2 6750.0
+#nb point
+4
+#
+102.0 5.0
+120.0 5.0
+120.0 10.0
+105.0 10.0
+#
+#nb point
+7
+#
+102.0 5.0
+99.0 9.0
+99.0 10.0
+99.5 12.0
+100.0 18.0
+105.0 32.0
+105.0 10.0
+#
+# Australie Nord
+#---------------
+#typeregion, nbloc1, valeur1
+1 1 6760.0
+#lonmin,latmin,longmax,latmax
+125.0 -30.0 143.0 -10.0
+#
+# Australie Nord Ouest
+#---------------------
+#typeregion, nbloc1, valeur1
+1 1 6770.0
+#lonmin,latmin,longmax,latmax
+120.0 -30.0 125.0 -10.0
+#
+#
+#-------------------------------------
+#                                    #
+#                                    #
+#       Region Arctic Ocean          #
+#                                    #
+#                                    #
+#-------------------------------------
+#
+#
+#-------------------------
+#nbregion,nblocmax,valeur0
+#21 4 998.0
+#-------------------------
+#
+#
+# North Pole 1 (Fosse Oceanique)
+#-------------------------------
+#typeregion, nbloc1, valeur1
+1 1 7000.0
+#lonmin, latmin, lonmax, latmax
+-180.0 87.5 180.0 90.0
+#
+# North Pole 2 (Fosse Oceanique)
+#-------------------------------
+#typeregion, nbloc1, valeur1
+1 1 7010.0
+#lonmin, latmin, lonmax, latmax
+-180.0 80.0 180.0 87.5
+#
+# Queen Elisabeth Islands 1 (Plateau Oceanique)
+#----------------------------------------------
+#typeregion, nbloc1, valeur1
+3 3 7020.0
+#nb point
+4
+#
+-100.0 70.0
+-100.0 66.0
+-93.0 66.0
+-90.0 67.0
+#
+#nb point
+4
+#
+-100.0 70.0
+-90.0 67.0
+-85.0 67.0
+-85.0 68.0
+#
+#nb point
+3
+#
+-100.0 70.0
+-85.0 68.0
+-84.0 70.0
+#
+# Queen Elisabeth Islands 2 (Plateau Oceanique)
+#----------------------------------------------
+#typeregion, nbloc1, valeur1
+1 1 7030.0
+#lonmin, latmin, lonmax, latmax
+-122.0 70.0 -84.0 80.0
+#
+# Queen Elisabeth Islands 3 (Plateau Oceanique)
+#----------------------------------------------
+#typeregion, nbloc1, valeur1
+1 1 7040.0
+#lonmin, latmin, lonmax, latmax
+-122.0 66.0 -100.0 70.0
+#
+# Baffin Bay 1 (Plateau Oceanique)
+#---------------------------------
+#typeregion, nbloc1, valeur1
+3 1 7050.0
+#nb point
+5
+#
+-84.0 80.0
+-84.0 70.0
+-75.0 70.0
+-45.0 70.0
+-45.0 80.0
+#
+# Baffin Bay 2 (Plateau Oceanique)
+#---------------------------------
+#typeregion, nbloc1, valeur1
+3 1 7060.0
+#nb point
+5
+#
+-75.0 70.0
+-67.5 67.0
+-60.0 66.0
+-45.0 66.0
+-45.0 70.0
+#
+# Greenland Basin (Plateau Oceanique)
+#------------------------------------
+#typeregion, nbloc1, valeur1
+3 2 7070.0
+#nb point
+4
+#
+-45.0 80.0
+-45.0 70.0
+18.0 77.0
+18.0 80.0
+#
+#nb point
+3
+#
+-45.0 70.0
+24.0 70.0
+18.0 77.0
+#
+# Barents Sea 1 (Plateau Oceanique)
+#----------------------------------
+#typeregion, nbloc1, valeur1
+3 1 7080.0
+#nb point
+5
+#
+30.0 63.0
+36.0 62.0
+63.0 65.0
+63.0 68.5
+24.0 70.0
+#
+# Barents Sea 2 (Plateau Oceanique)
+#----------------------------------
+#typeregion, nbloc1, valeur1
+3 3 7090.0
+#nb point
+3
+#
+24.0 70.0
+63.0 68.5
+55.0 72.0
+#
+#nb point
+5
+#
+24.0 70.0
+55.0 72.0
+55.0 73.0
+18.0 80.0
+18.0 77.0
+#
+#nb point
+4
+#
+18.0 80.0
+55.0 73.0
+60.0 75.0
+60.0 80.0
+#
+# Kara Sea 1 (Plateau Oceanique)
+#-------------------------------
+#typeregion, nbloc1, valeur1
+3 3 7100.0
+#nb point
+4
+#
+55.0 73.0
+55.0 72.0
+63.0 68.5
+60.0 75.0
+#
+#nb point
+4
+#
+60.0 75.0
+63.0 68.5
+96.0 80.0
+60.0 80.0
+#
+#nb point
+4
+#
+63.0 68.5
+102.0 68.5
+102.0 78.0
+96.0 80.0
+#
+# Kara Sea 2 (Plateau Oceanique)
+#-------------------------------
+#typeregion, nbloc1, valeur1
+1 1 7110.0
+#lonmin, latmin, lonmax, latmax
+63.0 65.0 102.0 68.5
+#
+# Laptev Sea (Plateau Oceanique)
+#-------------------------------
+#typeregion, nbloc1, valeur1
+3 2 7120.0
+#nb point
+4
+#
+102.0 78.0
+102.0 70.0
+142.0 70.0
+142.0 80.0
+#
+#nb point
+3
+#
+102.0 78.0
+142.0 80.0
+96.0 80.0
+#
+# East Siberian Sea 1 (Plateau Oceanique)
+#----------------------------------------
+#typeregion, nbloc1, valeur1
+1 1 7130.0
+#lonmin, latmin, lonmax, latmax
+142.0 70.0 180.0 80.0
+#
+# East Siberian Sea 2 (Plateau Oceanique)
+#----------------------------------------
+#typeregion, nbloc1, valeur1
+1 1 7140.0
+#lonmin, latmin, lonmax, latmax
+142.0 68.0 171.0 70.0
+#
+# East Siberian Sea 3 (Plateau Oceanique)
+#----------------------------------------
+#typeregion, nbloc1, valeur1
+1 1 7150.0
+#lonmin, latmin, lonmax, latmax
+171.0 68.0 180.0 70.0
+#
+# Beaufort Sea 1 (Plateau Oceanique)
+#-----------------------------------
+#typeregion, nbloc1, valeur1
+1 1 7160.0
+#lonmin, latmin, lonmax, latmax
+-157.0 70.0 -122.0 80.0
+#
+# Beaufort Sea 2 (Plateau Oceanique)
+#-----------------------------------
+#typeregion, nbloc1, valeur1
+1 1 7170.0
+#lonmin, latmin, lonmax, latmax
+-157.0 68.0 -127.5 70.0
+#
+# Beaufort Sea 3 (Plateau Oceanique)
+#-----------------------------------
+#typeregion, nbloc1, valeur1
+1 1 7180.0
+#lonmin, latmin, lonmax, latmax
+-127.5 68.0 -122.0 70.0
+#
+# Chukchi Sea 1 (Plateau Oceanique)
+#----------------------------------
+#typeregion, nbloc1, valeur1
+3 2 7190.0
+#nb point
+4
+#
+-180.0 70.0
+-180.0 67.0
+-177.0 67.0
+-157.0 70.0
+#
+#nb point
+4
+#
+-157.0 70.0
+-177.0 67.0
+-177.0 66.0
+-157.0 66.0
+#
+#Chukchi Sea 2 (Plateau Oceanique)
+#----------------------------------
+#typeregion, nbloc1, valeur1
+1 1 7200.0
+#lonmin, latmin, lonmax, latmax
+-180.0 70.0 -157.0 80.0
+#
+

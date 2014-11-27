@@ -1,0 +1,6 @@
+# C. REGNIER 7/06/2007	
+Cet ensemble de programme permet de lire des fichiers dit 'class4' :
+fichiers coriolis enrichis par les sorties Mercator
+- Le script lancer_class4.ksh permet de trier les fichiers ARGO en fonction du Jour et de la zone recherchée (pour l'instant car il est envisageable de lui donner une zone plus précise).
+- Ce sript crée une liste d'entrée pour l'executable fortran (dite communément namelist)
+- Lors de la lecture de chaque serie de fichiers argo (1 serie par jour) un fichier log est mis à jour permettant de voir rapidement l'existence ou non de certains paramètres

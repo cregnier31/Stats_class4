@@ -1,0 +1,30 @@
+;Chemin du repertoire data de la toolbox
+filename='/home/qualif/LIB/LIB_MIT/DATA/'
+OPER='YES'
+;; Choix du modele
+modele='PSY4V1R3'
+;day1='20110401'
+;day1='20110101'
+;day2='20110830'
+day1='20111001'
+daterun='20111005'
+day2='20111231'
+
+;; Choix de la période
+zone='T'
+;; Definition des path
+dir_mask='/home/qualif/CLASS4/Lecture_Class4_V2.0/static/'
+fic_dir='/home/qualif/CLASS4/Lecture_Class4_V2.0/Images/Class4_pics/'
+fic_out_card=fic_dir+modele+'/Cartes/'+day1+'_'+day2+'/'
+fic_out_skill=fic_out_card+'skill_scores/'
+fic_out=fic_dir+modele+'/suivi_rms/'+day1+'_'+day2+'/'
+;fic_out_serie_temp=fic_dir+modele+'/serie_temp/'+rear+'_'+trim+'/'
+;fic_out_comp='/home/qualif/CLASS4/Lecture_Class4_V2.0/Images/Class4_pics/Comparaison/PSY3/'+year+'_'+trim+'/'
+;dir_stats_MERC='/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'+modele+'/stats/'+day1+'_'+day2+'_method1/'
+dir_stats_MERC='/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'+modele+'/stats/'+day1+'_'+day2+'/'
+dir_stats_MERC2=dir_stats_MERC+'bins_2deg/'
+dir_stats_MERC3=dir_stats_MERC+'bins_4deg/'
+fichier=modele+'_rms_diff_R'+daterun+'.nc'
+fichier_mask='maskbox.nc'
+fichier_mask2='mask_bins2deg.nc'
+fichier_mask3='mask_bins4deg.nc'
