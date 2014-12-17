@@ -110,6 +110,7 @@ Le script charge un fichier d'environnement nommé config_XXXX.cfg dans lequel s
 
 Lancement du script ::
 --------------------
+Aller dans le répertoire script et lancer une version des commandes suivantes :
 # Version classique
 # Examples of launcher
 ## Launch for a period
