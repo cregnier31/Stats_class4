@@ -104,7 +104,8 @@ class InputLoader(Loader):
 	     datelen2=len(cl_end_date)
 	     if  datelen1 == datelen2 and datelen1 == 6 :  
 		log.info("Monthly values")
-	        nb_day1=monthrange(int(cl_start_date[0:4]),int(cl_start_date[5:6]))[1]
+		log.info("Values %s %s :" %(cl_start_date[0:4],cl_start_date[4:6]))
+	        nb_day1=monthrange(int(cl_start_date[0:4]),int(cl_start_date[4:6]))[1]
 		cl_start_date2=cl_start_date+"01"
 		cl_end_date2=cl_start_date+str(nb_day1)
 		log.info(cl_start_date2)

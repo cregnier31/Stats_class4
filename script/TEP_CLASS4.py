@@ -8,6 +8,13 @@
 #
 from __future__ import generators
 import os,sys,string,shutil,glob,re
+sys.path.append("/home/modules/versions/64/fc18/ipython/ipython-1.1/lib/python2.7/site-packages")
+sys.path.append("/home/modules/versions/64/fc18/netcdf4-python/netcdf4-python-1.0.7/lib64/python2.7/site-packages/")
+sys.path.append("/home/cregnier/python/module/")
+sys.path.append("/home/cregnier/python/module/geojson-1.0.7/")
+sys.path.append("/home/cregnier/python/module/lib/python2.6/site-packages/")
+sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/")
+sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/nco-0.0beta-py2.7.egg/")
 import logging
 import resource
 from QCcontrol import QCcontrol
@@ -91,6 +98,7 @@ gridsal=param_dict.get('GLOBAL','gridsal')
 dirclim1=param_dict.get('climato','DIRCLIM1')
 dirclim2=param_dict.get('climato','DIRCLIM2')
 dirclim3=param_dict.get('climato','DIRCLIM3')
+dirclim4=param_dict.get('climato','DIRCLIM4')
 extract=1
 
 if write_geojson  : 
@@ -137,10 +145,11 @@ if extract :
    log.info('Prefix  %s %s %s' %(dirwork,data_type,template))
    list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,data_type,template)
 else :
-   list_files=glob.glob(dirwork+'*.nc')
+   list_files=Extractor().factory(prefix_data).run_list(date1,date2,dirwork)
 
 
 log.info('List Files  %s ' % (list_files)) 
+
 # =============================================================================
 #  PART-3 - Area Selection and QC selection
 # =============================================================================
@@ -294,8 +303,8 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
          elif time == 'best_weekly' :
      	    lead_fin=['hdct','nwct']
          elif time == 'CLIM_WOA05' :
-            lead_fin=['clim1']
-            sort_rep=dirclim1
+            lead_fin=['clim4']
+            sort_rep=dirclim4
          elif time == 'CLIM_WOA09' :
             lead_fin=['clim1']
             sort_rep=dirclim1
@@ -345,7 +354,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             sys.exit(1)
 		## Design File
         Design().factory(data_origin).run(filename,dateval,contact,cl_config,model_type,inst,version,desc)
-
 ## Zipped files and move in output directory 
 for filename in list_files : 
   f_in=open(filename,'rb')
@@ -356,7 +364,7 @@ for filename in list_files :
   log.info('File ok %s' %(filename))
   shutil.move(filename+'.gz',diroutput)
   os.remove(filename)
-### Lancement du run d'après
+# Lancement du run d'après
 DAYMAX=param_dict.get('GLOBAL','DAY_MAX')
 if DAYMAX : 
    dayvalmax=SyDate(DAYMAX)

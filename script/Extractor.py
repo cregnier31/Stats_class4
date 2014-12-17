@@ -235,3 +235,17 @@ class Extract_cora4(Extractor) :
             ## Remove directory 
 	    shutil.rmtree(dirtmp+year)     
         return liste_tot
+
+     def run_list(self,date1,date2,dirdata):
+          liste_tot=[]
+	  valeurj=date1
+	  while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
+              dateval=SyDate.__str__(valeurj)
+              liste_file=glob.glob(dirdata+'/*'+dateval+'*.nc')
+              for file in liste_file :
+		try :
+                      liste_tot.append(file)
+		except IOError as e:
+		      print "I/O error({0}): {1}".format(e.errno, e.strerror)
+	      valeurj=valeurj.goforward(1)
+	  return liste_tot
