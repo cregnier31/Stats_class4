@@ -50,7 +50,7 @@ MAKE=gmake
 ## Clé cpp
 #CPP_KEYS=-Dkey_orca_r025
 CPP_KEYS= -Dkey_orca_r025 -Dkey_orca025_T321 #-Dkey_debug
-CPP_KEYS=-Dkey_orca_r025 -Dkey_inv_prof -Dkey_red_profil -Dkey_global #-Dkey_debug #-Dkey_debuggeomlib  #-Dkey_computePot # -Dkey_debug
+CPP_KEYS=-Dkey_orca_r025 -Dkey_inv_prof -Dkey_red_profil -Dkey_global #-Dkey_test #-Dkey_debug #-Dkey_debuggeomlib  #-Dkey_computePot # -Dkey_debug
 CONFIG=ORCA025
 #MODELE=PSY3QV3R3
 MODELE=PSY3V3R3
