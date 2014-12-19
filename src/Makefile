@@ -4,12 +4,7 @@
 # faire module load pgi/pgi-8.0
 #       module load netcdf/netcdf-4.0_pgi80_r4
 #       module load mft/mft-3.1
-#include ../../macro/make_intel_px.macro 
-#include ../macro/make_atl12.macro
-#include ../macro/make_ibi36.macro
-#include ../macro/make_orca12.macro
-#include ../macro/make_intel_presal.macro
-include ../macro/make_intel_orca025.macro
+include ../macro/make_intel.macro
 ## Rules
 .SUFFIXES:.F90 .F .f90 .mod
 .F90.o:
