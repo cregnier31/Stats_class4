@@ -100,7 +100,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
         self.ll_mssh=ll_mssh
         self.mssh_shift=mssh_shift
       def run(self,nml,modele,mean_type,type_data,outputVarname, \
-	      dirmodel,dircoloc,output,listdir,dateval,gridtemp,gridsal,schedule):
+	      dirmodel,dircoloc,output,listdir,dateval,gridtemp,gridsal,schedule,type_run):
         # =============== 
         # LOGGER
         # ===============
@@ -133,6 +133,9 @@ class NmlCreator_CORIOLIS(NmlCreator):
  	   print "monthly values"
            daterun=dateval[0:6]
 	   template=dirmodel+searchdir+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
+        elif type_run == 'free' :
+           print modele,daterun,gridtemp
+           template=dirmodel+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
 	else :
            template=dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
 
@@ -159,6 +162,11 @@ class NmlCreator_CORIOLIS(NmlCreator):
 	elif listdir == 'CLIM_WOA13' :
 	   output_varname_T='TMLEV13'
 	   output_varname_S='SMLEV13'
+	elif listdir == 'CLIM_MED' :
+	   output_varname_T='TMMED'
+	   output_varname_S='SMMED'
+           model_varname_T='votemper'
+           model_varname_S='vosaline'
 	## List model
         #for file in glob.glob(dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc') : 
         log.info('Template %s' %(template)) 

@@ -3,6 +3,7 @@
 # vim: set ts=4 sw=4 expandtab:
 # History  : Juillet 2014  : Creation C.REGNIER 
 #            Novembre 2014 :  Ajout différentes échéances pour l'interpolation + clims + gestion enchaînement des runs
+#            Decembre 2014 :  MAJ pour le cas particulier du zoom
 ## Description : 
 ## New CLASS4 launcher to compute CLASS4 with CLASS4 coming from GODAE, ARMOR, CORIOLIS
 #
@@ -38,7 +39,7 @@ import gzip
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
 
-sys.path.append("/home/cregnier/DEV/Python/NEW_CL4/")
+#sys.path.append("/home/cregnier/DEV/Python/NEW_CL4/")
 from Loader import *
 from sytoolkit.sydate_origin import SyDateOrigin
 from sytoolkit.sydate import SyDate
@@ -95,12 +96,17 @@ coloc_rep=param_dict.get('output_dir','DIRCOLOC')
 dir_log=param_dict.get('GLOBAL','DIRLOG')
 gridtemp=param_dict.get('GLOBAL','gridtemp')
 gridsal=param_dict.get('GLOBAL','gridsal')
-dirclim1=param_dict.get('climato','DIRCLIM1')
-dirclim2=param_dict.get('climato','DIRCLIM2')
-dirclim3=param_dict.get('climato','DIRCLIM3')
-dirclim4=param_dict.get('climato','DIRCLIM4')
+type_run=param_dict.get('GLOBAL','TYPE_RUN')
+
 extract=1
 
+## Create Output and tmp directory if doesn't exist
+if not os.path.exists(dirwork):
+     os.makedirs(dirwork)
+if not os.path.exists(diroutput):
+     os.makedirs(diroutput)
+if not os.path.exists(coloc_rep):
+     os.makedirs(coloc_rep)
 if write_geojson  : 
   log.info("Write Geojson file")
   ## Db file for extracted positions
@@ -130,8 +136,6 @@ if do_sort :
     sys.exit(1)
 else :
   sort_rep=dirmodel  
-
-
 
 # =============================================================================
 #  PART-2 -  DATE Selection and extraction
@@ -164,7 +168,7 @@ if zoom or do_qc :
   lat_max=int(param_dict.get('GLOBAL','LATMAX'))
   log.info("Inside zoom :  %s %s %s %s " %(lon_min,lon_max,lat_min,lat_max))
 list_filepos=[]
-ll_doc_interp=None
+ll_file_interp=None
 
 for fichier in list_files: 
     #ll_writepos=None
@@ -180,11 +184,11 @@ for fichier in list_files:
           file_new='ext-'+os.path.basename(fichier)
           os.remove(fichier)
           fichier=dirwork+file_new
-          ll_doc_interp=True
+          ll_file_interp=True
        else :
           os.remove(fichier)
           log.info('No position find in %s for the zoom ' % (fichier))
-          ll_doc_interp=False
+          ll_file_interp=False
           continue	
           #break	
     else :
@@ -193,54 +197,58 @@ for fichier in list_files:
        position=Loader.factory(data_format).read_pos(fichier)
        new_position=position
        selector=Selector(data_format,data_type).factory(data_origin)
-    # Write ASCII pos for Coloc
-    file_pos_tmp=os.path.basename(fichier)
-    print file_pos_tmp
-    file_pos_tmp=re.sub('.nc','.pos',file_pos_tmp)
-    print file_pos_tmp
-    file_pos=coloc_rep+file_pos_tmp
-    print file_pos
-    Writer().write_ASCII(file_pos,new_position)
-    list_filepos.append(file_pos)
-    # =============================================================================
-    # PART-4 - Colocations of positions
-    # =============================================================================
-    log.info('==========================================')
-    log.info('               Coloc Files                ') 
-    log.info('==========================================')
-    coordinates=param_dict.get('static','fic_coordinates')
-    maskvar=param_dict.get('static','maskname')
-    code_lancement=direxec+'CLASS4_create_colocfile_ASCII_'+cl_config+'.exe'+' '+'-g'+' '+coordinates+' '+'-r'+' '+file_pos+' ' \
-  				   +'-c'+' '+cl_config+' '+'-m'+' '+maskvar
-    log.info("File OK %s " %(fichier))   
-   # subprocess.call(code_lancement)
-    try:
-      #subprocess.check_output(code_lancement,stderr=subprocess.STDOUT,shell=True)
-        print code_lancement
-  #    subprocess.check_call(code_lancement)
-        os.system(code_lancement)
-    except IOError as e:
-        log.error("Probleme execution")
-        log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-        sys.exit(1)
-    if write_geojson  :
-       # Store input position and coloc position to plot the results in a GIS like qGis 
-       # Input
-       type_f=os.path.basename(fichier).split('_')[2]
-       length=new_position.size
-       if length > 1 :
-          log.info("Store geojson positions %s " %(type_f))
-          selector.store_pos(new_position,type_f,file_db)
-       else :
-          print "No position to store %s " %(type_f)
-       # Coloc
-       file_coloc=os.path.basename(fichier).split('.')[0]+'.dat'
-       #coloc_pos=Loader.factory('DAT').read_pos(dirwork+'coloc/'+file_coloc)
-       coloc_pos=Loader.factory('DAT').read_pos(coloc_rep+file_coloc)
-       length=coloc_pos.size
-       if length > 1 :
-         selector.store_pos_single(coloc_pos,'coloc',file_db2)
-
+       ll_file_interp=True
+    ## Case  : File in the area selection
+    if ll_file_interp : 
+       # Write ASCII pos for Coloc
+       file_pos_tmp=os.path.basename(fichier)
+       print file_pos_tmp
+       file_pos_tmp=re.sub('.nc','.pos',file_pos_tmp)
+       print file_pos_tmp
+       file_pos=coloc_rep+file_pos_tmp
+       print file_pos
+       Writer().write_ASCII(file_pos,new_position)
+       list_filepos.append(file_pos)
+       # =============================================================================
+       # PART-4 - Colocations of positions
+       # =============================================================================
+       log.info('==========================================')
+       log.info('               Coloc Files                ') 
+       log.info('==========================================')
+       coordinates=param_dict.get('static','fic_coordinates')
+       maskvar=param_dict.get('static','maskname')
+       code_lancement=direxec+'CLASS4_create_colocfile_ASCII_'+cl_config+'.exe'+' '+'-g'+' '+coordinates+' '+'-r'+' '+file_pos+' ' \
+     				   +'-c'+' '+cl_config+' '+'-m'+' '+maskvar
+       log.info("File OK %s " %(fichier))   
+      # subprocess.call(code_lancement)
+       try:
+         #subprocess.check_output(code_lancement,stderr=subprocess.STDOUT,shell=True)
+           print code_lancement
+     #    subprocess.check_call(code_lancement)
+           os.system(code_lancement)
+       except IOError as e:
+           log.error("Probleme execution")
+           log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
+           sys.exit(1)
+       if write_geojson  :
+          # Store input position and coloc position to plot the results in a GIS like qGis 
+          # Input
+          ## Store only ext files for extract area
+          type_f=os.path.basename(fichier).split('_')[2]
+          length=new_position.size
+          if length > 1 :
+             log.info("Store geojson positions %s " %(type_f))
+             selector.store_pos(new_position,type_f,file_db)
+          else :
+             print "No position to store %s " %(type_f)
+          # Coloc
+          file_coloc=os.path.basename(fichier).split('.')[0]+'.dat'
+          #coloc_pos=Loader.factory('DAT').read_pos(dirwork+'coloc/'+file_coloc)
+          coloc_pos=Loader.factory('DAT').read_pos(coloc_rep+file_coloc)
+          length=coloc_pos.size
+          if length > 1 :
+            selector.store_pos_single(coloc_pos,'coloc',file_db2)
+   
 ## Create Geojson file for coloc verification with Qgis
 if write_geojson  : 
    liste_type=['GLO','XB','CT','DC','BA','GL','ML','PF','TE','DB','FB','MO','TS']
@@ -303,17 +311,25 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
          elif time == 'best_weekly' :
      	    lead_fin=['hdct','nwct']
          elif time == 'CLIM_WOA05' :
+            dirclim4=param_dict.get('climato','DIRCLIM4')
             lead_fin=['clim4']
             sort_rep=dirclim4
          elif time == 'CLIM_WOA09' :
+            dirclim1=param_dict.get('climato','DIRCLIM1')           
             lead_fin=['clim1']
             sort_rep=dirclim1
          elif time == 'CLIM_ARV11' :
+            dirclim2=param_dict.get('climato','DIRCLIM2')           
             lead_fin=['clim2']
             sort_rep=dirclim2  
          elif time == 'CLIM_WOA13' :
+            dirclim3=param_dict.get('climato','DIRCLIM3')           
             lead_fin=['clim3']
             sort_rep=dirclim3  
+         elif time == 'CLIM_MED' :
+            dirclim=param_dict.get('climato','DIRCLIM')
+            lead_fin=['clim']
+            sort_rep=dirclim
          else : 
             log.error('Lead time %s not expected ' %(time))
          exe    = 'CLASS4_spatial_interpolation_'+data_origin+'.exe'    
@@ -321,7 +337,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
          if data_origin == 'CORIOLIS' :
             nml=os.path.join(nml_dir,'interpolate_3D_%s_%s_%s_%s.nml' %(data_type.upper(),cl_config,time,dateval))
             NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
-	                             						       time,sort_rep,coloc_rep,dirwork,time,dateval,gridtemp,gridsal,cl_schedule)  	
+	                             						       time,sort_rep,coloc_rep,dirwork,time,dateval,gridtemp,gridsal,cl_schedule,type_run)  	
             log.info('NmlCreator OK')
             if not os.path.exists(exe) :
                print 'Did not find executable %s' %exe
@@ -355,7 +371,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
 		## Design File
         Design().factory(data_origin).run(filename,dateval,contact,cl_config,model_type,inst,version,desc)
 ## Zipped files and move in output directory 
-for filename in list_files : 
+for filename in glob.glob(dirwork+"*.nc") :
   f_in=open(filename,'rb')
   f_out=gzip.open(filename+'.gz','wb')
   f_out.writelines(f_in)
@@ -368,15 +384,26 @@ for filename in list_files :
 DAYMAX=param_dict.get('GLOBAL','DAY_MAX')
 if DAYMAX : 
    dayvalmax=SyDate(DAYMAX)
-   date_next=date1.goforward(31)
-   print date_next
-   print dayvalmax
+   schedule=param_dict.get('GLOBAL','SCHEDULE')
+   if schedule == "MONTHLY" : 
+      date_next=date1.goforward(31)
+   elif schedule == "WEEKLY" :
+     date_next=SyDate(daterun).goforward(7)
+   else : 
+     log.error("Schedule not found %s" %(schedule))
    if  date_next < dayvalmax :
-      cl_date=SyDate.__str__(date_next)[0:6]
-      cl_date2=SyDate.__str__(dayvalmax)[0:6]
-      print 'Lancement du run %s ' %(cl_date)
-      code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --date1='+cl_date+ \
-       '  --date2='+cl_date2+' --src='+cl_src+'  --data='+data_type
+      if schedule == "MONTHLY" : 
+          cl_date=SyDate.__str__(date_next)[0:6]
+          cl_date2=SyDate.__str__(dayvalmax)[0:6]
+          code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --date1='+cl_date+ \
+               '  --date2='+cl_date2+' --src='+cl_src+'  --data='+data_type
+      elif schedule == "WEEKLY" :
+          cl_daterun=SyDate.__str__(date_next)
+          print 'Lancement du run %s ' %(cl_daterun)
+          code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --daterun='+cl_daterun+ \
+               '  --nbdate=7 --delta=7 --src='+cl_src+'  --data='+data_type
+      else : 
+          log.error("Schedule not found %s" %(schedule))
       print code_lancement
       try:
            os.system(code_lancement)
