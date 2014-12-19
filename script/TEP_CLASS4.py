@@ -249,137 +249,139 @@ for fichier in list_files:
           if length > 1 :
             selector.store_pos_single(coloc_pos,'coloc',file_db2)
    
-## Create Geojson file for coloc verification with Qgis
-if write_geojson  : 
-   liste_type=['GLO','XB','CT','DC','BA','GL','ML','PF','TE','DB','FB','MO','TS']
-   for type_var in liste_type : 
-     ## Write files with positions of dataset
-     file_out=dirtmp+'Positions_'+type_var+'_'+data_format+'_'+data_type+'_D'+SyDate.__str__(date1)+'_'+SyDate.__str__(date2)+'.geojson'
-     Writer().write_geojson_fromdb(type_var,file_out,file_db)
-   file_out2=dirtmp+'Positions_coloc_'+data_type+'_'+data_format+'_'+data_type+'_D'+SyDate.__str__(date1)+'_'+SyDate.__str__(date2)+'.geojson'
-   Writer().write_geojson_fromdb('coloc',file_out2,file_db2)
-
-# =============================================================================
-# PART-5 - Compute interpolation
-# =============================================================================
-log.info('=======================================================')
-log.info('               Compute interpolation                   ')
-log.info('=======================================================')
-## Create object interpolator depending on data type
-ll_mssh=None
-if data_type  == "SLA" : 
-   cl_msshFile =eval(param_dict.get('static','cl_msshFile'   ))      #  the mean ssh from SSH model 
-   rl_mssh_shift=float(param_dict.get('static','rp_mssh_shift' ))
-   ll_mssh='.true.'
-else : 
-    cl_msshFile =''
-    rl_mssh_shift=0.0
-    ll_mssh='.false.'
-contact=param_dict.get('GLOBAL','CONTACT')
-inst=param_dict.get('GLOBAL','INSTITUTION')
-version=param_dict.get('GLOBAL','VERSION')
-desc=param_dict.get('GLOBAL','DESCRIPTION')
-valeurj=date1
-log.info('Data origin %s ' %(data_origin))
-while valeurj.__ge__(date1) and valeurj.__le__(date2) :
-     log.info('Interp day  %s ' % (SyDate.__str__(valeurj))) 
-     dateval=SyDate.__str__(valeurj)
-     nml=os.path.join(nml_dir,'interpolate_3D_%s_%s_%s.nml' %(data_type.upper(),cl_config,dateval))
-     valeurj=valeurj.goforward(1)
-     for time in lead_time : 
-         log.info('Lead Time  %s ' % (time)) 
-         lead_fin=[]
-         lead_new=lead_int
-         sort_rep=dirmodel  
-         cl_config_use = cl_config
-         if  time == 'forecast' : 
-	     #cl_config_use = cl_config[0:4]+'Q'+cl_config[4:]
-     	    lead_new=[time[0]+time[4]+time[6:8]+element for element in lead_new ]
-     	    lead_fin=lead_new
-         elif time == 'persistence' :
-            if filter(lambda x: 'best_weekly' in x, lead_time)  :
-     	      lead_fin=['pers']
-     	    else :
-     	      lead_tmp=['nwct']
-     	      lead_new=[time[:4]+element for element in lead_new[1:] ]
-     	      lead_tmp.extend(lead_new)
-     	      lead_fin=lead_tmp
-         elif time == 'best_estimate' :
-            cl_config_use = re.sub('Q','',cl_config)
-     	    lead_fin=['hdct']
-            log.info('Lead fin %s ' % (lead_fin)) 
-         elif time == 'best_weekly' :
-     	    lead_fin=['hdct','nwct']
-         elif time == 'CLIM_WOA05' :
-            dirclim4=param_dict.get('climato','DIRCLIM4')
-            lead_fin=['clim4']
-            sort_rep=dirclim4
-         elif time == 'CLIM_WOA09' :
-            dirclim1=param_dict.get('climato','DIRCLIM1')           
-            lead_fin=['clim1']
-            sort_rep=dirclim1
-         elif time == 'CLIM_ARV11' :
-            dirclim2=param_dict.get('climato','DIRCLIM2')           
-            lead_fin=['clim2']
-            sort_rep=dirclim2  
-         elif time == 'CLIM_WOA13' :
-            dirclim3=param_dict.get('climato','DIRCLIM3')           
-            lead_fin=['clim3']
-            sort_rep=dirclim3  
-         elif time == 'CLIM_MED' :
-            dirclim=param_dict.get('climato','DIRCLIM')
-            lead_fin=['clim']
-            sort_rep=dirclim
-         else : 
-            log.error('Lead time %s not expected ' %(time))
-         exe    = 'CLASS4_spatial_interpolation_'+data_origin+'.exe'    
-         exe = os.path.join(direxec,exe)
-         if data_origin == 'CORIOLIS' :
-            nml=os.path.join(nml_dir,'interpolate_3D_%s_%s_%s_%s.nml' %(data_type.upper(),cl_config,time,dateval))
-            NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
-	                             						       time,sort_rep,coloc_rep,dirwork,time,dateval,gridtemp,gridsal,cl_schedule,type_run)  	
-            log.info('NmlCreator OK')
-            if not os.path.exists(exe) :
+if ll_file_interp :
+   ## Create Geojson file for coloc verification with Qgis
+   if write_geojson : 
+      liste_type=['GLO','XB','CT','DC','BA','GL','ML','PF','TE','DB','FB','MO','TS']
+      for type_var in liste_type : 
+        ## Write files with positions of dataset
+        file_out=dirtmp+'Positions_'+type_var+'_'+data_format+'_'+data_type+'_D'+SyDate.__str__(date1)+'_'+SyDate.__str__(date2)+'.geojson'
+        Writer().write_geojson_fromdb(type_var,file_out,file_db)
+      file_out2=dirtmp+'Positions_coloc_'+data_type+'_'+data_format+'_'+data_type+'_D'+SyDate.__str__(date1)+'_'+SyDate.__str__(date2)+'.geojson'
+      Writer().write_geojson_fromdb('coloc',file_out2,file_db2)
+   
+   # =============================================================================
+   # PART-5 - Compute interpolation
+   # =============================================================================
+   log.info('=======================================================')
+   log.info('               Compute interpolation                   ')
+   log.info('=======================================================')
+   ## Create object interpolator depending on data type
+   ll_mssh=None
+   if data_type  == "SLA" : 
+      cl_msshFile =eval(param_dict.get('static','cl_msshFile'   ))      #  the mean ssh from SSH model 
+      rl_mssh_shift=float(param_dict.get('static','rp_mssh_shift' ))
+      ll_mssh='.true.'
+   else : 
+       cl_msshFile =''
+       rl_mssh_shift=0.0
+       ll_mssh='.false.'
+   contact=param_dict.get('GLOBAL','CONTACT')
+   inst=param_dict.get('GLOBAL','INSTITUTION')
+   version=param_dict.get('GLOBAL','VERSION')
+   desc=param_dict.get('GLOBAL','DESCRIPTION')
+   valeurj=date1
+   log.info('Data origin %s ' %(data_origin))
+   while valeurj.__ge__(date1) and valeurj.__le__(date2) :
+        log.info('Interp day  %s ' % (SyDate.__str__(valeurj))) 
+        dateval=SyDate.__str__(valeurj)
+        nml=os.path.join(nml_dir,'interpolate_3D_%s_%s_%s.nml' %(data_type.upper(),cl_config,dateval))
+        valeurj=valeurj.goforward(1)
+        for time in lead_time : 
+            log.info('Lead Time  %s ' % (time)) 
+            lead_fin=[]
+            lead_new=lead_int
+            sort_rep=dirmodel  
+            cl_config_use = cl_config
+            if  time == 'forecast' : 
+   	     #cl_config_use = cl_config[0:4]+'Q'+cl_config[4:]
+        	    lead_new=[time[0]+time[4]+time[6:8]+element for element in lead_new ]
+        	    lead_fin=lead_new
+            elif time == 'persistence' :
+               if filter(lambda x: 'best_weekly' in x, lead_time)  :
+        	      lead_fin=['pers']
+               else :
+        	      lead_tmp=['nwct']
+        	      lead_new=[time[:4]+element for element in lead_new[1:] ]
+        	      lead_tmp.extend(lead_new)
+        	      lead_fin=lead_tmp
+            elif time == 'best_estimate' :
+               cl_config_use = re.sub('Q','',cl_config)
+               lead_fin=['hdct']
+               log.info('Lead fin %s ' % (lead_fin)) 
+            elif time == 'best_weekly' :
+               lead_fin=['hdct','nwct']
+            elif time == 'CLIM_WOA05' :
+               dirclim4=param_dict.get('climato','DIRCLIM4')
+               lead_fin=['clim4']
+               sort_rep=dirclim4
+            elif time == 'CLIM_WOA09' :
+               dirclim1=param_dict.get('climato','DIRCLIM1')           
+               lead_fin=['clim1']
+               sort_rep=dirclim1
+            elif time == 'CLIM_ARV11' :
+               dirclim2=param_dict.get('climato','DIRCLIM2')           
+               lead_fin=['clim2']
+               sort_rep=dirclim2  
+            elif time == 'CLIM_WOA13' :
+               dirclim3=param_dict.get('climato','DIRCLIM3')           
+               lead_fin=['clim3']
+               sort_rep=dirclim3  
+            elif time == 'CLIM_MED' :
+               dirclim=param_dict.get('climato','DIRCLIM')
+               lead_fin=['clim']
+               sort_rep=dirclim
+            else : 
+               log.error('Lead time %s not expected ' %(time))
+            exe    = 'CLASS4_spatial_interpolation_'+data_origin+'.exe'    
+            exe = os.path.join(direxec,exe)
+            if data_origin == 'CORIOLIS' :
+               nml=os.path.join(nml_dir,'interpolate_3D_%s_%s_%s_%s.nml' %(data_type.upper(),cl_config,time,dateval))
+               NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
+   	                             						       time,sort_rep,coloc_rep,dirwork,time,dateval,gridtemp,gridsal,cl_schedule,type_run)  	
+               log.info('NmlCreator OK')
+               if not os.path.exists(exe) :
+                  print 'Did not find executable %s' %exe
+                  sys.exit(1)
+               codexe = '%s -r %s -c %s -m %s -l %s' %(exe,dateval,nml,cl_config_use,dir_log)
+               args   = shlex.split(codexe)
+               print(args)
+               try :   subprocess.check_call(args)
+               except :
+                   print 'executable %s failed' %exe
+                   sys.exit(1)
+   		
+   	 ## Case GODAE
+        if data_origin == 'GODAE' : 
+           ##    Create namelist 
+           for filename in glob.glob(dirwork+"*"+dateval+"*"+data_type+"*.nc") :
+               log.info('Filename : %s ' % (filename))
+               log.info('Config used : %s ' % (cl_config_use))
+               NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
+                          time,dirmodel,coloc_rep,filename,lead_fin,dateval,gridtemp,gridsal)  	
+   		## Launch Interpolation  
+           if not os.path.exists(exe) : 
                print 'Did not find executable %s' %exe
                sys.exit(1)
-            codexe = '%s -r %s -c %s -m %s -l %s' %(exe,dateval,nml,cl_config_use,dir_log)
-            args   = shlex.split(codexe)
-            print(args)
-            try :   subprocess.check_call(args)
-            except :
-                print 'executable %s failed' %exe
-                sys.exit(1)
-		
-	 ## Case GODAE
-     if data_origin == 'GODAE' : 
-        ##    Create namelist 
-        for filename in glob.glob(dirwork+"*"+dateval+"*"+data_type+"*.nc") :
-            log.info('Filename : %s ' % (filename))
-            log.info('Config used : %s ' % (cl_config_use))
-            NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
-                       time,dirmodel,coloc_rep,filename,lead_fin,dateval,gridtemp,gridsal)  	
-		## Launch Interpolation  
-        if not os.path.exists(exe) : 
-            print 'Did not find executable %s' %exe
-            sys.exit(1)
-        codexe = '%s -r %s -c %s -m %s' %(exe,dateval,nml,cl_config_use) 
-        args   = shlex.split(codexe)
-        try :   subprocess.check_call(args)
-        except :
-            print 'executable %s failed' %exe
-            sys.exit(1)
-		## Design File
-        Design().factory(data_origin).run(filename,dateval,contact,cl_config,model_type,inst,version,desc)
-## Zipped files and move in output directory 
-for filename in glob.glob(dirwork+"*.nc") :
-  f_in=open(filename,'rb')
-  f_out=gzip.open(filename+'.gz','wb')
-  f_out.writelines(f_in)
-  f_out.close()
-  f_in.close()
-  log.info('File ok %s' %(filename))
-  shutil.move(filename+'.gz',diroutput)
-  os.remove(filename)
+           codexe = '%s -r %s -c %s -m %s' %(exe,dateval,nml,cl_config_use) 
+           args   = shlex.split(codexe)
+           try :   subprocess.check_call(args)
+           except :
+               print 'executable %s failed' %exe
+               sys.exit(1)
+   		## Design File
+           Design().factory(data_origin).run(filename,dateval,contact,cl_config,model_type,inst,version,desc)
+   ## Zipped files and move in output directory 
+   for filename in glob.glob(dirwork+"*.nc") :
+     f_in=open(filename,'rb')
+     f_out=gzip.open(filename+'.gz','wb')
+     f_out.writelines(f_in)
+     f_out.close()
+     f_in.close()
+     log.info('File ok %s' %(filename))
+     shutil.move(filename+'.gz',diroutput)
+     os.remove(filename)
+
 # Lancement du run d'après
 DAYMAX=param_dict.get('GLOBAL','DAY_MAX')
 if DAYMAX : 
