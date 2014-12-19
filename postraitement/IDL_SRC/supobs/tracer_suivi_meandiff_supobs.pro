@@ -46,7 +46,8 @@ x2=ncdf_lec(file3,iodir=dir_mask,var='latitude', /nostruct) & x2=transpose(x2)
 boite=ncdf_lec(file,iodir=dirin,var='box', /nostruct) & boite=transpose(boite)
 variable_name=ncdf_lec(file,iodir=dirin,var='param_stats', /nostruct) & variable_name=STRING(variable_name)
 tab_prof_model=ncdf_lec(file,iodir=dirin,var='deptht', /nostruct) & tab_prof_model=transpose(tab_prof_model)
-tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t_0', /nostruct) & tab_e3t=transpose(tab_e3t)
+;tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t_0', /nostruct) & tab_e3t=transpose(tab_e3t)
+tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t', /nostruct) & tab_e3t=transpose(tab_e3t)
 
 nb_prof_model=N_ELEMENTS(tab_prof_model)
 nb_variables=N_ELEMENTS(variable_name)
@@ -216,6 +217,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
       
       
       output='logo gif'
+      output='gif'
       prof=0L 
       ;IF ( OPER eq "NO" )  THEN BEGIN
       ;  tab_ASCII=fltarr(5,nfichiers)
@@ -297,6 +299,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
 	         	strtrim(variable_name(il_ind+2)) eq 'SMARV11' or strtrim(variable_name(il_ind+2)) eq 'TMARV11' or $
 			strtrim(variable_name(il_ind+2)) eq 'SMLEV05' or strtrim(variable_name(il_ind+2)) eq 'TMLEV05' or $
 			strtrim(variable_name(il_ind+2)) eq 'SMLEV13' or strtrim(variable_name(il_ind+2)) eq 'TMLEV13' or $
+			strtrim(variable_name(il_ind+2)) eq 'SMLEV05' or strtrim(variable_name(il_ind+2)) eq 'TMLEV05' or $
 		      	strtrim(variable_name(il_ind+2)) eq 'SMLEV09' or strtrim(variable_name(il_ind+2)) eq 'TMLEV09' ) THEN BEGIN
 		        print,'-------------------------------------------------'
 		        print,'Variable :: ',variable_name(il_ind+2)
@@ -309,13 +312,13 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
                         numx2=mean_val(prof,il_ind,*)
 		      endelse
                       IF  il_ind2 LT 1 THEN BEGIN
-			if ( lissage eq 'yes' ) then begin
-                         plot_serietemp_oper2,1.5,val4,PLOT_KIND=kind,NOTE2=variable_name(il_ind+2),RIGHT=nb_cumul_smooth;,OVERPLOT=8
-			endif else begin
-                         plot_serietemp_oper2,1.5,val4,PLOT_KIND=kind,NOTE2=variable_name(il_ind+2),RIGHT=nb_cumul;,OVERPLOT=8
+		        if ( lissage eq 'yes' ) then begin
+                           plot_serietemp_oper2,1.5,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1),RIGHT=nb_cumul_smooth;,OVERPLOT=8
+		        endif else begin
+                           plot_serietemp_oper2,1.5,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1),RIGHT=nb_cumul,OVERPLOT=8
 			endelse
                       ENDIF ELSE BEGIN
-                         plot_serietemp_oper,1.5,val4,PLOT_KIND=kind,NOTE2=variable_name(il_ind+2)
+                         plot_serietemp_oper2,1.5,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1)
                       ENDELSE
                       ;plot_serietemp_test,1.5,val4,PLOT_KIND=kind,NOTE2=variable_name(il_ind+2) ;,OVERPLOT=8
 	              il_ind2=il_ind2+1

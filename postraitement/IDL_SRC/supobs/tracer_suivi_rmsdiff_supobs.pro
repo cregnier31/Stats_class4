@@ -50,7 +50,8 @@ x2=ncdf_lec(file3,iodir=dir_mask,var='latitude', /nostruct) & x2=transpose(x2)
 boite=ncdf_lec(file,iodir=dirin,var='box', /nostruct) & boite=transpose(boite)
 variable_name=ncdf_lec(file,iodir=dirin,var='param_stats', /nostruct) & variable_name=STRING(variable_name)
 tab_prof_model=ncdf_lec(file,iodir=dirin,var='deptht', /nostruct) & tab_prof_model=transpose(tab_prof_model)
-tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t_0', /nostruct) & tab_e3t=transpose(tab_e3t)
+;tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t_0', /nostruct) & tab_e3t=transpose(tab_e3t)
+tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t', /nostruct) & tab_e3t=transpose(tab_e3t)
 
 nb_prof_model=N_ELEMENTS(tab_prof_model)
 nb_variables=N_ELEMENTS(variable_name)
@@ -218,6 +219,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
       
       
       output='logo gif'
+      output='gif'
    ;   output='screen'
       prof=0L 
       ;IF ( OPER eq "NO" )  THEN BEGIN

@@ -90,7 +90,7 @@ IF isfinite(tscolor) THEN tscolor=(tscolor MOD ncolors)
 dots=0
 IF STRPOS(plot_kind,'dots') 	   NE -1 THEN dots=1
 
-
+print,'Fonction plot serie temp oper2'
 ;;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Definition of parameters in the windows
 ;;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -411,6 +411,7 @@ IF STRPOS(output,'none') EQ -1 THEN BEGIN
                    ENDIF
                    
                    i=((noplot-1) MOD 2) & j=(noplot-1)/2 ; 2 columns, 3 raws
+		   print,'note : ',note2
        		   ;; TEST
           	   IF STRPOS(note2,'HDCST_TEMP' ) NE -1 THEN note2='HINDCAST'
           	   IF STRPOS(note2,'HDCST_PSAL' ) NE -1 THEN note2='HINDCAST'
@@ -426,20 +427,20 @@ IF STRPOS(output,'none') EQ -1 THEN BEGIN
           	   IF STRPOS(note2,'FRCST6D_TEMP' ) NE -1 THEN note2='FRCST-6DAY'
           	   IF STRPOS(note2,'PERS_PSAL' ) NE -1 THEN note2='PERS'
           	   IF STRPOS(note2,'PERS_TEMP' ) NE -1 THEN note2='PERS'
-		   IF (strtrim(note2) eq 'TMLEV' ) THEN note2='CLIM-LEV05'
-		   IF (strtrim(note2) eq 'SMLEV' ) THEN note2='CLIM-LEV05'
-		   IF (strtrim(note2) eq 'TMLEV05' ) THEN note2='CLIM-LEV05'
-		   IF (strtrim(note2) eq 'SMLEV05' ) THEN note2='CLIM-LEV05'
-		   IF (strtrim(note2) eq 'TMLEV09' ) THEN note2='CLIM-LEV09'
-		   IF (strtrim(note2) eq 'SMLEV09' ) THEN note2='CLIM-LEV09'
-		   IF (strtrim(note2) eq 'TMLEV13' ) THEN note2='CLIM-LEV13'
-		   IF (strtrim(note2) eq 'SMLEV13' ) THEN note2='CLIM-LEV13'
+		   IF STRPOS(strtrim(note2),'TMLEV' ) NE -1 THEN note2='CLIM-LEV05'
+		   IF STRPOS(strtrim(note2),'SMLEV' ) NE -1 THEN note2='CLIM-LEV05'
+		   IF STRPOS(strtrim(note2),'TMLEV05' ) NE -1 THEN note2='CLIM-LEV05'
+		   IF STRPOS(strtrim(note2),'SMLEV05' ) NE -1 THEN note2='CLIM-LEV05'
+		   IF STRPOS(strtrim(note2),'TMLEV09' ) NE -1 THEN note2='CLIM-LEV09'
+		   IF STRPOS(strtrim(note2),'SMLEV09' ) NE -1 THEN note2='CLIM-LEV09'
+		   IF STRPOS(strtrim(note2),'TMLEV13' ) NE -1 THEN note2='CLIM-LEV13'
+		   IF STRPOS(strtrim(note2),'SMLEV13' ) NE -1 THEN note2='CLIM-LEV13'
 		   ;IF STRPOS(strtrim(note2),'TMARV' ) NE -1 THEN note2='CLIM-ARIVO'
                    ;IF STRPOS(strtrim(note2),'SMARV' ) NE -1 THEN note2='CLIM-ARIVO'
 		   IF STRPOS(strtrim(note2),'TMARV11' ) NE -1 THEN note2='CLIM-ARIVO11'
                    IF STRPOS(strtrim(note2),'SMARV11' ) NE -1 THEN note2='CLIM-ARIVO11'
 		   ;; 
-		   print ,'Note  :: ',note2
+		   print ,'Note oper2  :: ',note2
                    note2='!17'+note2+'!17'
                    ;zx1=x0+dxw/4+i*dxw/2 & zy1=y0 -dyw/9 -j*dyw/28 ; legend below plot
                    zx1=x0+dxw/4+i*dxw/2 & zy1=y0 -dyw/7 -j*dyw/27 ; legend below plot

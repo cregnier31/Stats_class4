@@ -62,6 +62,7 @@ show_icon=1
 IF STRPOS(plot_kind,'no_icon') NE -1 THEN show_icon=0
 IF configuration EQ 'none' THEN show_icon=0
 IF NOT isfinite(domain) THEN show_icon=0
+print,'Fonction plot serie temp oper'
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; load colors
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -387,7 +388,7 @@ IF STRPOS(output,'none') EQ -1 THEN BEGIN
                 
 ;               legend: note describing the filename
                 IF STRPOS(plot_kind,'no_legend') EQ -1 THEN BEGIN
-                   
+		   
                    IF NOT isfinite(note2) THEN BEGIN
                                 ;name_output
                       print,'Font1', !P.FONT
@@ -414,18 +415,17 @@ IF STRPOS(output,'none') EQ -1 THEN BEGIN
           	   IF STRPOS(note2,'PERS_TEMP' ) NE -1 THEN note2='PERS'
 		   IF (note2 eq 'TMLEV' ) THEN note2='CLIM-LEV05'
 		   IF (note2 eq 'SMLEV' ) THEN note2='CLIM-LEV05'
-		   IF (note2 eq 'TMLEV05' ) THEN note2='CLIM-LEV05'
-		   IF (note2 eq 'SMLEV05' ) THEN note2='CLIM-LEV05'
-		   IF (note2 eq 'TMLEV09' ) THEN note2='CLIM-LEV09'
-		   IF (note2 eq 'SMLEV09' ) THEN note2='CLIM-LEV09'
-		   IF (note2 eq 'TMLEV13' ) THEN note2='CLIM-LEV09'
-		   IF (note2 eq 'SMLEV11' ) THEN note2='CLIM-LEV09'
-		   IF STRPOS(note2,'TMARV' ) NE -1 THEN note2='CLIM-ARIVO'
-                   IF STRPOS(note2,'SMARV' ) NE -1 THEN note2='CLIM-ARIVO'
-		   IF STRPOS(note2,'TMARV11' ) NE -1 THEN note2='CLIM-ARIVO11'
-                   IF STRPOS(note2,'SMARV11' ) NE -1 THEN note2='CLIM-ARIVO11'
+		   IF STRPOS(strtrim(note2) eq 'TMLEV05' ) NE -1 THEN note2='CLIM-LEV05'
+		   IF STRPOS(strtrim(note2) eq 'SMLEV05' ) NE -1 THEN note2='CLIM-LEV05'
+		   IF STRPOS(strtrim(note2) eq 'TMLEV09' ) NE -1 THEN note2='CLIM-LEV09'
+		   IF STRPOS(strtrim(note2) eq 'SMLEV09' ) NE -1 THEN note2='CLIM-LEV09'
+		   IF STRPOS(strtrim(note2) eq 'TMLEV13' ) NE -1 THEN note2='CLIM-LEV13'
+		   IF STRPOS(strtrim(note2) eq 'SMLEV13' ) NE -1 THEN note2='CLIM-LEV13'
+                   IF STRPOS(strtrim(note2),'TMARV11' ) NE -1 THEN note2='CLIM-ARIVO11'
+                   IF STRPOS(strtrim(note2),'SMARV11' ) NE -1 THEN note2='CLIM-ARIVO11'
+
 		   ;; 
-		   print ,'Note  :: ',note2
+		   print ,'Note oper :: ',note2
                    note2='!5'+note2+'!5'
 	           zx1=x0+dxw/10+noplot*dxw/7 & zy1=y0+dyw+0.01 ; legend left corner
                    print,'Font2',!P.FONT                          ; !P.FONT

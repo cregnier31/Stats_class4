@@ -50,7 +50,7 @@ x2=ncdf_lec(file2,iodir=dir_mask,var='latitude', /nostruct) & x2=transpose(x2)
 boite=ncdf_lec(file,iodir=dirin,var='box', /nostruct) & boite=transpose(boite)
 variable_name=ncdf_lec(file,iodir=dirin,var='param_stats', /nostruct) & variable_name=STRING(variable_name)
 tab_prof_model=ncdf_lec(file,iodir=dirin,var='deptht', /nostruct) & tab_prof_model=transpose(tab_prof_model)
-tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t_0', /nostruct) & tab_e3t=transpose(tab_e3t)
+tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t', /nostruct) & tab_e3t=transpose(tab_e3t)
 
 nb_prof_model=N_ELEMENTS(tab_prof_model)
 nb_variables=N_ELEMENTS(variable_name)
@@ -81,6 +81,7 @@ CASE zone OF
    ENDCASE
    'JAP': BEGIN
      dom='zoom BIG_JAPAN 1/4 mercator'
+      typezone='Japan'
    ENDCASE
    'GUI': BEGIN
       zone='N'
@@ -95,10 +96,10 @@ CASE zone OF
    'N':BEGIN
 	 dom='zoom AZORES 1/4 mercator'
    ENDCASE
-   'C': BEGIN
-        dom='zoom Chine_domain 1/4 mercator'
-        typezone='Chinese_domain'
-   ENDCASE
+;   'C': BEGIN
+;        dom='zoom Chine_domain 1/4 mercator'
+;        typezone='Chinese_domain'
+;   ENDCASE
    ELSE:
 ENDCASE
 
@@ -548,7 +549,7 @@ prof=0L
          le_sign='!9'+ STRING("308B)
          XYOUTS,0.05,0.02,le_sign, /norm, alignment=1.0, CHARSIZE=0.75, COLOR=black,FONT=1
 	ENDCASE 
-        'C': BEGIN   ;; JAP
+        'JAP': BEGIN   ;; C
 	 COLORBAR, bottom=2,NCOLORS=ncolors, color=black, Range=[cmin, cmax], Format='(F5.2)',CHARSIZE=1.8, Position=[0.30,0.05,0.90,0.07]
          XYOUTS,0.6,0.08,xxl, /norm, alignment=0.5, CHARSIZE=1.5, COLOR=black
          XYOUTS,0.22,0.08,'nb_data >='+string(p75, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
@@ -704,7 +705,7 @@ prof=0L
           le_sign='!9'+ STRING("308B)
           XYOUTS,0.05,0.02,le_sign, /norm, alignment=1.0, CHARSIZE=0.75, COLOR=black,FONT=1
         ENDCASE
-       'C':BEGIN    ;; JAP
+       'JAP':BEGIN    ;; C
 	  COLORBAR, bottom=2,NCOLORS=ncolors, color=black, Range=[cmin, cmax], Format='(F5.2)',CHARSIZE=1.8, Position=[0.30,0.05,0.90,0.07]
           XYOUTS,0.6,0.08,xxl, /norm, alignment=0.5, CHARSIZE=1.5, COLOR=black
           XYOUTS,0.22,0.08,'nb_data >='+string(p75, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0

@@ -147,13 +147,13 @@ CASE modele OF  & $
 ENDCASE & $
 ;;; Lancé du tracé de la rms diff et la mean diff sur les couches MYOcean 
 ;; 0-5, 5-100,100-300,300-800,800-2000
-;tracer_suivi_rmsdiff_supobs,modele,file_mask,$
-;kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,liste_region,tab_choix,OPER,tab_prof,lissage,NB_VALEURS,NB_VALEURS2
-;dirname_out=fic_out
-;dirin=dir_stats_MERC
-;tracer_suivi_meandiff_supobs,modele,file_mask,$
-;kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,liste_region,tab_choix,OPER,tab_prof,lissage,NB_VALEURS,NB_VALEURS2
-;exit,/NO_CONFIRM
+tracer_suivi_rmsdiff_supobs,modele,file_mask,$
+kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,liste_region,tab_choix,OPER,tab_prof,lissage,NB_VALEURS,NB_VALEURS2
+dirname_out=fic_out
+dirin=dir_stats_MERC
+tracer_suivi_meandiff_supobs,modele,file_mask,$
+kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,liste_region,tab_choix,OPER,tab_prof,lissage,NB_VALEURS,NB_VALEURS2
+exit,/NO_CONFIRM
 ;;STOP
 
 ;;;; Lancé du tracé de la rms diff et la mean diff sur les couches classiques
