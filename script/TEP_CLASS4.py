@@ -168,11 +168,11 @@ if zoom or do_qc :
   lat_max=int(param_dict.get('GLOBAL','LATMAX'))
   log.info("Inside zoom :  %s %s %s %s " %(lon_min,lon_max,lat_min,lat_max))
 list_filepos=[]
-ll_file_interp=None
-
+ll_file_ok=None
 for fichier in list_files: 
     #ll_writepos=None
     log.info('Fichier  %s ' % (fichier)) 
+    ll_file_interp=None
     # Read position of profiles
     if do_qc or zoom : 
        if zoom : log.info("REGIONAL MODE => AREA SELECTION ") 
@@ -184,6 +184,7 @@ for fichier in list_files:
           file_new='ext-'+os.path.basename(fichier)
           os.remove(fichier)
           fichier=dirwork+file_new
+          ll_file_ok=True
           ll_file_interp=True
        else :
           os.remove(fichier)
@@ -197,6 +198,7 @@ for fichier in list_files:
        position=Loader.factory(data_format).read_pos(fichier)
        new_position=position
        selector=Selector(data_format,data_type).factory(data_origin)
+       ll_file_ok=True
        ll_file_interp=True
     ## Case  : File in the area selection
     if ll_file_interp : 
@@ -247,9 +249,10 @@ for fichier in list_files:
           coloc_pos=Loader.factory('DAT').read_pos(coloc_rep+file_coloc)
           length=coloc_pos.size
           if length > 1 :
+            log.info("Store geojson positions db2 %i " %(length))
             selector.store_pos_single(coloc_pos,'coloc',file_db2)
    
-if ll_file_interp :
+if ll_file_ok :
    ## Create Geojson file for coloc verification with Qgis
    if write_geojson : 
       liste_type=['GLO','XB','CT','DC','BA','GL','ML','PF','TE','DB','FB','MO','TS']

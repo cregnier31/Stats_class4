@@ -162,29 +162,33 @@ class SelectCorio(Selector) :
             il_ind=il_ind+1
 
     def store_pos(self,tab_pos,type_f,file_db):
+	logging.basicConfig(format='%(asctime)s %(message)s')
+        log = logging.getLogger("store_pos")
+        ## Level of logging output
+        log.setLevel(logging.INFO)
 	# Open a shelve file if not exist
 	if not(os.path.isfile(file_db)) :
-	   #print "Create persistent file"
+           log.debug("Create persistent file")
 	   shelf = shelve.open(file_db, 'c')
         else: 
-	   #print "File exist %s " %(file_db) 
+           log.debug("File exist %s " %(file_db))
 	   shelf = shelve.open(file_db)
         # Add position values in the serialized dictionnary 
 	try : 
 	     ll_exist = shelf[type_f]
 	except : 
-	     #print "Create %s" %(type_f)
+	     log.debug("Create %s" %(type_f))
 	     shelf[type_f] = tab_pos
 	     ll_exist=[]
-	     #print "Existence "
 	if len(ll_exist) > 0 : 
 	   try :
-	        
+	       log.debug("Tab_fin")
 	       tab_fin=shelf[type_f]
+	       log.debug("concatenation")
                tab_fin=np.concatenate((tab_fin,tab_pos))
 	       shelf[type_f] = tab_fin
 	   except:
-	       print "Pb with concatenation"
+	       print "Pb with concatenation store_pos"
 	       sys.exit(1)
 	## Create global position
 	type_var='GLO'
@@ -198,18 +202,9 @@ class SelectCorio(Selector) :
 	  if value : 
 	    tab_pos_new[il_val,:]=tab_pos[il_ind,:]
 	    il_val=il_val+1
-#	print "Before"
-#        print tab_pos
-#        print "============================"  
-#        print "After"
-#        print tab_pos_new
-#        print "============================"  
 	try : 
              ll_GLO = shelf[type_var]
 	except :
-	     #print "Create %s" %(type_var)
-       #    il_val=il_val+1
-
 	     shelf[type_var] = tab_pos_new
 	     ll_GLO=[]
 	if len(ll_GLO) > 0 : 
@@ -229,11 +224,11 @@ class SelectCorio(Selector) :
 	logging.basicConfig(format='%(asctime)s %(message)s')
         log = logging.getLogger("store_pos_single")
         ## Level of logging output
-        log.setLevel(logging.DEBUG)
+        #log.setLevel(logging.DEBUG)
         log.setLevel(logging.INFO)
         # Open a shelve file if not exist
         if not(os.path.isfile(file_db)) :
-           #print "Create persistent file"
+           log.debug('Create persistent file')
            shelf = shelve.open(file_db, 'c')
         else: 
            log.debug("File exist %s " %(file_db))
@@ -249,23 +244,32 @@ class SelectCorio(Selector) :
                log.debug("Concatenation")
                tab_fin=shelf[type_f]
                log.debug("==== TAB FIN ==============")
-	       #log.debug(tab_fin)
-	       #print tab_size.size
+	       log.debug(tab_fin)
+	       log.debug(tab_fin.size)
                log.debug("===== TAB POS =============")
 	       log.debug(tab_pos)
 	       log.debug(tab_pos.size)
                log.debug("==================")
-	       #n_prof=((tab_pos.size)/2)+((tab_fin.size)/2)
-               #new_position=np.ndarray(shape=(n_prof,2),dtype=float, order='F')
-	       if tab_pos.size == 2 :
-                  #new_position=np.concatenate(([tab_fin],[tab_pos]))
-                  new_position=np.concatenate((tab_fin,[tab_pos]))
+
+               # Clean tab_pos to remove bad value
+	       if np.any( tab_pos  < 9999 ) : 
+                 if  tab_pos.size == 2 and tab_fin.size == 2 :
+	            log.debug('Cas 0 concatenate')
+	            new_position=np.concatenate(([tab_fin],[tab_pos]))
+	         elif tab_pos.size == 2 :
+	            log.debug('Cas 1 concatenate')
+	            new_position=np.concatenate((tab_fin,[tab_pos]))
+	            log.debug('Cas 1 OK')
+	         else :
+	            log.debug('Cas 2 concatenate')
+                    new_position=np.concatenate((tab_fin,tab_pos))
+	            log.debug('Cas 2 ok')
+                 log.debug("Concatenation ok")
+                 shelf[type_f] = new_position
 	       else :
-                  new_position=np.concatenate((tab_fin,tab_pos))
-               log.debug("Concatenation ok")
-               shelf[type_f] = new_position
+		 log.debug('Bad profiles')
            except:
-               print "Pb with concatenation"
+               print "Pb with concatenation single"
                sys.exit(1)
         shelf.close()
  	
