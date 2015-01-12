@@ -358,11 +358,21 @@ prof=0L
                      varname='temperature'
                      xxl='DegC'
                      type_obs='Clim_WOA13'
+		   ENDCASE
+		   'TMMED' : BEGIN
+                     varname='temperature'
+                     xxl='DegC'
+                     type_obs='Clim_MEDATLAS'
                    ENDCASE
                    'SMLEV13' : BEGIN
                      varname='salinity'
                      xxl='PSU'
                      type_obs='Clim_WOA13'
+                   ENDCASE
+                   'SMMED' : BEGIN
+                     varname='salinity'
+                     xxl='PSU'
+                     type_obs='Clim_MEDATLAS'
                    ENDCASE
  
 		   ELSE:
