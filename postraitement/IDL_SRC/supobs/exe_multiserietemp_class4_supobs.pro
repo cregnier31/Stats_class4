@@ -17,8 +17,8 @@
 ;@config_ORCA025
 @param_class4
 @config_PSY3V3R3
-@config_PSY2V4R4
-;@config_PSY4V2R2
+;@config_PSY2V4R4
+@config_PSY4V2R2
 ; Definition des paths
 dirname_out=fic_out_serie_temp
 dirin=dir_stats_MERC
@@ -43,7 +43,6 @@ COMMON param_CLASS4,variable_name,valeurs_cmax,$
 ; Compilation & Execution 
 print,"Tracer serie temp" 
 .compile tracer_multiserietemp_CLASS4_supobs
-.compile tracer_multiserietemp_CLASS4_supobs_new
 ;; choix du type de tracé 
 kind='grid solid_line no_bg grid ' 
 clear,titre,units 
@@ -61,7 +60,7 @@ CASE modele OF  & $
          ENDCASE & $
 
         'PSY4V2R2': BEGIN & $
-         liste_region=strarr(13) & $
+         liste_region=strarr(14) & $
          liste_region(*)=liste_zone(*) & $
          ENDCASE & $
 
@@ -93,16 +92,16 @@ CASE TRIM OF                 & $
 ENDCASE & $
 date_title=QUAT+year
 
-
+print,date_title
 
  ; tracer_multiserietemp_CLASS4_supobs,modele,fichier_mask,$        
  ;    tab_prof,kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,liste_region,tab_choix,OPER 
-
 ;; Display mode 
 ;; 0 : no_screen 
 ;; 1 :: screen
 display=0
-  tracer_multiserietemp_CLASS4_supobs_new,display,date_title,modele,fichier_mask,$        
-     tab_prof_2,kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,liste_region,tab_choix,OPER 
+transparency=0
+  tracer_multiserietemp_CLASS4_supobs,display,date_title,modele,fichier_mask,$        
+     tab_prof_3,kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,liste_region,tab_choix,OPER,transparency 
 
 exit, /NO_CONFIRM
