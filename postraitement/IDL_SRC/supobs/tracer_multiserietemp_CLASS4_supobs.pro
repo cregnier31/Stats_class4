@@ -1,5 +1,5 @@
-PRO tracer_multiserietemp_CLASS4_supobs_new,display,date_title,modele,fic_mask,tab_prof, $
-                                      kind,filelist,dir_stats_MERC,days,valeurs_cmax,valeurs_cmax_sal,liste_zone,tab_choix,OPER
+PRO tracer_multiserietemp_CLASS4_supobs,display,date_title,modele,fic_mask,tab_prof, $
+                                      kind,filelist,dir_stats_MERC,days,valeurs_cmax,valeurs_cmax_sal,liste_zone,tab_choix,OPER,trans
 
 ;==========================================================================
 ;##  Trace des statistiques pour les fichers class4
@@ -39,6 +39,7 @@ PRO tracer_multiserietemp_CLASS4_supobs_new,display,date_title,modele,fic_mask,t
   nb_variables=N_ELEMENTS(variable_name)
   range_values=fltarr(2,nb_prof-1)
   nb_prof=N_ELEMENTS(tab_prof)-1
+  print, nb_prof
   FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN 
      FOR ind2=0,N_ELEMENTS(liste_zone)-1 DO BEGIN 
         PRINT,'choix, ZONE :: ',tab_choix(ind),'   ',liste_zone(ind2) 
@@ -74,7 +75,7 @@ PRO tracer_multiserietemp_CLASS4_supobs_new,display,date_title,modele,fic_mask,t
 
         ; Rercherche des indice pour les boites
         indice2=0
-        FOR indice=1,nb_prof-1 DO BEGIN
+        FOR indice=1,nb_prof DO BEGIN
 	    print ,'indice nb_prof :: ',indice,nb_prof
             FIND2=WHERE(tab_prof_model GE tab_prof(indice-1) AND tab_prof_model LT tab_prof(indice), COUNT)
             indice_ini=FIND2(0)
@@ -84,7 +85,6 @@ PRO tracer_multiserietemp_CLASS4_supobs_new,display,date_title,modele,fic_mask,t
             print ,'intervalle :: ',tab_prof(indice-1),tab_prof(indice)
             print ,'Indices :: ',tab_indice_ini(indice2),tab_indice_fin(indice2)
             print,'Profondeur modele :',tab_prof_model(tab_indice_ini(indice2)),tab_prof_model(tab_indice_fin(indice2))
-            print,'indice :',tab_indice_ini(indice2),tab_indice_fin(indice2)
             print,'Pronfondeur : ',profondeur(indice2)
             print,'indice2 :',indice2
             indice2=indice2+1
@@ -147,12 +147,11 @@ PRO tracer_multiserietemp_CLASS4_supobs_new,display,date_title,modele,fic_mask,t
                            ;; Recherche des indices valides    
                              vect=WHERE(rms_difftot(tab_indice_ini(prof):tab_indice_fin(prof),il_ind2,il_indice,fichier) GT 0)
               	         IF (vect(0) NE -1) THEN BEGIN
-                               ;; Calcul de la mean et rms cumulée
+                            ;; Calcul de la mean et rms cumulée
               	            val_rms_tmp=val_rms_tmp+TOTAL(rms_difftot(vect+tab_indice_ini(prof),il_ind2,il_indice,fichier)*tab_e3t(vect+tab_indice_ini(prof)))
                             val_mean_tmp=val_mean_tmp+TOTAL(mean_difftot(vect+tab_indice_ini(prof),il_ind2,il_indice,fichier)*tab_e3t(vect+tab_indice_ini(prof)))
-
               	            ;; Calcul du volume cumulé
-                               val_tot_e3t=val_tot_e3t+TOTAL(tab_e3t(vect+tab_indice_ini(prof)))
+                             val_tot_e3t=val_tot_e3t+TOTAL(tab_e3t(vect+tab_indice_ini(prof)))
                              ;; Calcul du nombre total d'obs cumulé
                              val_nbval_tmp=val_nbval_tmp+TOTAL(indice_tot(vect+tab_indice_ini(prof),il_ind2,il_indice,fichier))
                          ENDIF
@@ -165,10 +164,10 @@ PRO tracer_multiserietemp_CLASS4_supobs_new,display,date_title,modele,fic_mask,t
                  rms(prof,il_ind2-2)=val_rms_new
 		 mean_tab(prof,il_ind2-2)=val_mean_new
                  nb_data(prof,il_ind2-2)=val_nbval
+		; print,'nb data, prof',nb_data(prof,il_ind2-2),prof,il_ind2
            ENDFOR
            prof=prof+1	
         ENDWHILE 
-                 
         prof=0L 
 	print,tab_prof
 	tab_prof_end=dblarr(nb_prof)
@@ -239,12 +238,14 @@ PRO tracer_multiserietemp_CLASS4_supobs_new,display,date_title,modele,fic_mask,t
 		    IF ( il_ind eq il_begin ) THEN BEGIN
 	             	  cmin=MIN(numx2)-10
                           cmax=MAX(numx2)+50
+			  print ,'RMS :: ',numx1
                  	  series= PLOT(numx1,numx2, /CURRENT,POSITION=[0.12, 0.10, 0.68, 0.90],XSTYLE=3, $
                                         YRANGE=[cmax ,cmin ],TITLE=date_title+' '+modele+' zone '+zone ,XTITLE='RMS and Mean misfit',YTITLE='Depth',$
                                        COLOR=FSC_COLOR(colors(il_ind2)),NAME=variable_name(il_ind+2))   
 
                            numx2=tab_prof_end(*)
                            numx1=mean_tab(*,il_ind)
+			   print ,'Mean :: ',numx1
 		           series_2= PLOT(numx1,numx2,/CURRENT,OVERPLOT=1,LINESTYLE='-:',POSITION=[0.12, 0.10, 0.68, 0.90],XSTYLE=3, $
                                        TITLE='' ,XTITLE='Mean and RMS misfit',YTITLE='Depth',$
                                        COLOR=FSC_COLOR(colors(il_ind2)),NAME=variable_name(il_ind+2))
@@ -502,14 +503,20 @@ PRO tracer_multiserietemp_CLASS4_supobs_new,display,date_title,modele,fic_mask,t
 ;;        Plot Barplot for nb data value
           numx2=tab_prof_end(*)
           numx3=nb_data(*,il_begin);
+	  print, 'nb_data : ',numx3
           il_ind2=0
 	  print,numx2
 	  print,numx3
           barplot= BARPLOT(numx2,alog10(numx3),/CURRENT,POSITION=[0.70, 0.10, 0.95, 0.90],YSHOWTEXT=0,XSTYLE=1, $
                            YRANGE=[cmax ,cmin],TITLE='Number values vs depth',FONT_COLOR='blue',XTITLE='Number values in log 10',YTITLE='',$
                            YCOLOR='blue',XCOLOR='blue',BOTTOM_COLOR='cyan',FILL_COLOR='blue',/HORIZONTAL)
-          name_out=dirname_out+'/MultiSerie_'+depthlayers+'_'+var+'_'+zone+'_'+modele+'.gif'
-          barplot.save,name_out
+          IF (trans eq 1) THEN BEGIN 
+             name_out=dirname_out+'/MultiSerie_'+depthlayers+'_'+var+'_'+zone+'_'+modele+'.png'
+             barplot.save,name_out,/TRANSPARENT
+	  ENDIF ELSE BEGIN
+             name_out=dirname_out+'/MultiSerie_'+depthlayers+'_'+var+'_'+zone+'_'+modele+'.gif'
+             barplot.save,name_out
+	  ENDELSE
           print,'Plot OK ::',name_out
      ENDFOR 
   ENDFOR
