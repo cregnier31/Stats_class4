@@ -7,7 +7,7 @@ from geojson import MultiPoint
 import json
 from nco import Nco
 from Loader import Loader
-from QCcontrol import QCcontrol
+from QCcontrol import QCcontroller
 import logging
 import shelve
 from Writer import Writer
@@ -70,9 +70,9 @@ class SelectCorio(Selector) :
           log.info('Run with QC') 
           log.info('Type of DATA %s ' %(self.data_type)) 
           # Compute QC flag
-          #QCflag=QCcontrol(self.data_type).factory(TYPEDATA).QCrun(fichier,qc_level)
-	#  QCobj=QCcontrol(self.data_type,TYPEDATA).factory()
-          QCflag=QCcontrol(self.data_type,TYPEDATA).factory().QCrun(fichier,qc_level)
+          #QCflag=QCcontroller(self.data_type).factory(TYPEDATA).QCrun(fichier,qc_level)
+	#  QCobj=QCcontroller(self.data_type,TYPEDATA).factory()
+          QCflag=QCcontroller(self.data_type,TYPEDATA).factory().QCrun(fichier,qc_level)
         #  QCflag=QCobj.QCrun(fichier,qc_level)
         else :
 	  QCflag=np.chararray(nb_profs, itemsize=1)
@@ -253,7 +253,10 @@ class SelectCorio(Selector) :
 
                # Clean tab_pos to remove bad value
 	       if np.any( tab_pos  < 9999 ) : 
-                 if  tab_pos.size == 2 and tab_fin.size == 2 :
+		 if  tab_pos.size > 2 and tab_fin.size == 2 :
+                   log.debug('Cas -1 concatenate')
+	           new_position=np.concatenate(([tab_fin],tab_pos))
+                 elif tab_pos.size == 2 and tab_fin.size == 2 :
 	            log.debug('Cas 0 concatenate')
 	            new_position=np.concatenate(([tab_fin],[tab_pos]))
 	         elif tab_pos.size == 2 :

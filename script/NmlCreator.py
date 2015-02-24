@@ -37,7 +37,7 @@ class NmlCreator_GODAE(NmlCreator):
         # ===============
         log=Logger("NmlCreator_GODAE").run(2)
         # ===============
-        if type_data != "SLA" and  type_data != "SST" and type_data != "profile" :
+        if type_data != "SLA" and  type_data != "SST" and type_data != "profile" and type_data != "aice":
 	    print "Data %s not known %s !!! "
             sys.exit(1)
 	if type_data == "profile" :
@@ -52,7 +52,7 @@ class NmlCreator_GODAE(NmlCreator):
 	  dirmodel=dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
     	else :
 	  dirmodel=dirmodel+"DAILY/"+modele[:5]+"/"+modele.lower()+"/"
-        log.info('Research %s' %(dirmodel)) 
+        #log.info('Research %s' %(dirmodel)) 
 	# Creation of list
 	list_file=[]
 	list_file_T=[]
@@ -70,6 +70,10 @@ class NmlCreator_GODAE(NmlCreator):
 	    for file in glob.glob(dirmodel+directory+"/"+modele+"_"+mean_type+"_"+dateval+"*_"+gridtemp+"*.nc") : 
 	       list_file_T.append(file)
 	       list_file_S.append(re.sub(gridtemp,gridsal,file))
+	  elif type_data == 'aice' :
+	    for file in glob.glob(dirmodel+directory+"/"+modele+"_"+mean_type+"_"+dateval+"*_icemod*.nc") :
+	       list_file.append(str(file))
+		
 	if type_data == 'profile'  :
 	   list_file=list_file_T
 	   list_file.extend(list_file_S)

@@ -18,7 +18,6 @@ sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/")
 sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/nco-0.0beta-py2.7.egg/")
 import logging
 import resource
-from QCcontrol import QCcontrol
 from Selector import Selector
 from Writer import Writer
 from Extractor import Extractor
@@ -97,8 +96,8 @@ dir_log=param_dict.get('GLOBAL','DIRLOG')
 gridtemp=param_dict.get('GLOBAL','gridtemp')
 gridsal=param_dict.get('GLOBAL','gridsal')
 type_run=param_dict.get('GLOBAL','TYPE_RUN')
+dirstatic=param_dict.get('static','dir_static')
 
-extract=1
 
 ## Create Output and tmp directory if doesn't exist
 if not os.path.exists(dirwork):
@@ -140,20 +139,19 @@ else :
 # =============================================================================
 #  PART-2 -  DATE Selection and extraction
 # =============================================================================
-if extract : 
+if zoom or data_origin == 'GODAE' : 
    log.info('========================================================')
    log.info('              DATE Selection and extraction             ') 
    log.info('========================================================')
    log.info('Prefix  %s ' %(prefix_data))
    log.info('Prefix  %s %s %s ' %(date1,date2,dirdata))
    log.info('Prefix  %s %s %s' %(dirwork,data_type,template))
-   list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,data_type,template)
+   list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,dirstatic,data_type,template)
 else :
    list_files=Extractor().factory(prefix_data).run_list(date1,date2,dirwork)
 
 
 log.info('List Files  %s ' % (list_files)) 
-
 # =============================================================================
 #  PART-3 - Area Selection and QC selection
 # =============================================================================
@@ -204,9 +202,7 @@ for fichier in list_files:
     if ll_file_interp : 
        # Write ASCII pos for Coloc
        file_pos_tmp=os.path.basename(fichier)
-       print file_pos_tmp
        file_pos_tmp=re.sub('.nc','.pos',file_pos_tmp)
-       print file_pos_tmp
        file_pos=coloc_rep+file_pos_tmp
        print file_pos
        Writer().write_ASCII(file_pos,new_position)
@@ -251,7 +247,7 @@ for fichier in list_files:
           if length > 1 :
             log.info("Store geojson positions db2 %i " %(length))
             selector.store_pos_single(coloc_pos,'coloc',file_db2)
-   
+ 
 if ll_file_ok :
    ## Create Geojson file for coloc verification with Qgis
    if write_geojson : 
@@ -354,26 +350,24 @@ if ll_file_ok :
                    print 'executable %s failed' %exe
                    sys.exit(1)
    		
-   	 ## Case GODAE
-        if data_origin == 'GODAE' : 
-           ##    Create namelist 
-           for filename in glob.glob(dirwork+"*"+dateval+"*"+data_type+"*.nc") :
-               log.info('Filename : %s ' % (filename))
-               log.info('Config used : %s ' % (cl_config_use))
-               NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
-                          time,dirmodel,coloc_rep,filename,lead_fin,dateval,gridtemp,gridsal)  	
-   		## Launch Interpolation  
-           if not os.path.exists(exe) : 
-               print 'Did not find executable %s' %exe
-               sys.exit(1)
-           codexe = '%s -r %s -c %s -m %s' %(exe,dateval,nml,cl_config_use) 
-           args   = shlex.split(codexe)
-           try :   subprocess.check_call(args)
-           except :
-               print 'executable %s failed' %exe
-               sys.exit(1)
-   		## Design File
-           Design().factory(data_origin).run(filename,dateval,contact,cl_config,model_type,inst,version,desc)
+   	        ## Case GODAE
+            if data_origin == 'GODAE' : 
+               ##    Create namelist 
+               for filename in glob.glob(dirwork+"*"+dateval+"*"+data_type+"*.nc") :
+                   NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
+                              time,dirmodel,coloc_rep,filename,lead_fin,dateval,gridtemp,gridsal)  	
+   		       ## Launch Interpolation  
+               if not os.path.exists(exe) : 
+                   print 'Did not find executable %s' %exe
+                   sys.exit(1)
+               codexe = '%s -r %s -c %s -m %s' %(exe,dateval,nml,cl_config_use) 
+               args   = shlex.split(codexe)
+               try :   subprocess.check_call(args)
+               except :
+                   print 'executable %s failed' %exe
+                   sys.exit(1)
+   		       ## Design File
+               Design().factory(data_origin).run(filename,dateval,contact,cl_config,model_type,inst,version,desc)
    ## Zipped files and move in output directory 
    for filename in glob.glob(dirwork+"*.nc") :
      f_in=open(filename,'rb')
@@ -384,9 +378,12 @@ if ll_file_ok :
      log.info('File ok %s' %(filename))
      shutil.move(filename+'.gz',diroutput)
      os.remove(filename)
-
 # Lancement du run d'après
 DAYMAX=param_dict.get('GLOBAL','DAY_MAX')
+## Clear stuck objects
+sys.exc_clear()
+sys.exc_traceback = sys.last_traceback = None
+##
 if DAYMAX : 
    dayvalmax=SyDate(DAYMAX)
    schedule=param_dict.get('GLOBAL','SCHEDULE')
@@ -418,5 +415,5 @@ if DAYMAX :
          sys.exit(1)
    
    else :
-     print 'Dépassement de JMAX : %s %s ' % (cl_date,cl_date2)
+     print 'Dépassement de JMAX : %s ' % (SyDate.__str__(date_next))
      sys.exit(1)

@@ -24,8 +24,8 @@ class Extractor(object) :
 
 
 class Extract_GODAE(Extractor):
-      def run(self,date1,date2,dirdata,dirtmp,typedata,template):
-        if typedata != "SLA" and  typedata != "SST" and typedata != "profile" :
+      def run(self,date1,date2,dirdata,dirtmp,dirstatic,typedata,template):
+        if typedata != "SLA" and  typedata != "SST" and typedata != "profile" and typedata !=  "aice" :
 	   print "Data %s not known !!! " %(typedata)
            sys.exit(1)
         # =============== 
@@ -34,6 +34,7 @@ class Extract_GODAE(Extractor):
         logging.basicConfig(format='%(asctime)s %(message)s')
         log = logging.getLogger("Extract GODAE")
         log.setLevel(logging.INFO)
+        log.info('Extract_GODAE') 
         ## Level of logging output
         valeurj=date1
         liste_tot=[]
@@ -49,7 +50,10 @@ class Extract_GODAE(Extractor):
            for new_file in liste_file :
                try :
                   filename=os.path.basename(new_file)
-		  filename=re.sub('FOAM_orca025_12.0',template,filename)
+                  if typedata ==  "aice" : 
+		     filename=re.sub('GIOPS_CONCEPTS_1.1',template,filename)
+		  else:
+		     filename=re.sub('FOAM_orca025_12.0',template,filename)
 		  ## Copy extracted value of GODAE file with nco module
                   #shutil.copy(new_file,dirtmp)
 	          options = []
@@ -58,6 +62,13 @@ class Extract_GODAE(Extractor):
 	          else : 
                      options.extend(['-h','-O','-xv','best_estimate,forecast,persistence'])
                   nco.ncks(input=new_file,output=dirtmp+filename, fortran=True ,options=options)
+		  if typedata == "aice" :
+		      ## add missing varname
+	              options = []
+	              options.extend(['-h','-v','varname'])
+                      filein='varname_ice.nc'
+                      nco.ncks(input=dirstatic+'/'+filein,output=dirtmp+filename,fortran=True,append=True,options=options)
+                  log.info('Fichier %s ' % (dirtmp+filename)) 
                   liste_tot.append(dirtmp+filename)
 		  ##  Design output File
 	          #Design_file('GODAE').run(dirtmp+filename)
@@ -199,6 +210,7 @@ class Extract_cora4(Extractor) :
             liste_year.append(presyear)
             liste_year.append(backyear)
         ## Extract and copy file
+	print liste_file
 	for file in liste_file : 
 	    file_path=dirdata+file
 	    if os.path.isfile(file_path)  : 

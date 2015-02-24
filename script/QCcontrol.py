@@ -9,7 +9,7 @@ from NetcdReader import *
 ## Class for applying QC control
 #######################################################################################
 
-class QCcontrol(object):
+class QCcontroller(object):
     """ Factory Class to run different objets depending on input type """
     def __init__(self,data_type,data_source,**kwargs):
          self.data_type = data_type
@@ -29,7 +29,7 @@ class QCcontrol(object):
         else :
 	  print "Type %s not known " %(type)
  
-class QCArgo(QCcontrol):
+class QCArgo(QCcontroller):
    """ Class to compute qc on Argo files"""
    def QCrun(self,filename):
       nc = netCDF4.Dataset(filename)
@@ -46,10 +46,10 @@ class QCArgo(QCcontrol):
       rla_lon=NetcdReader().read_2D(file,namevar)
       nc.close()
 
-class QC_GODAE(QCcontrol):
+class QC_GODAE(QCcontroller):
    """ Class to compute qc on GODAE CLASS4 files"""
    def __init__(self,data_type,data_source,**kwargs):                            
-         super(QCcontrol,self).__init__(**kwargs)
+         super(QCcontroller,self).__init__(**kwargs)
          self.data_type=data_type
          self.data_src = data_source
    def QCrun(self,filename,qc_level):
@@ -118,10 +118,10 @@ class QC_GODAE(QCcontrol):
 
 
 	
-class QCCorio(QCcontrol):
+class QCCorio(QCcontroller):
    """ Class to compute qc on Coriolis files"""
    def __init__(self,data_type,data_source,**kwargs):                            
-         super(QCcontrol,self).__init__(**kwargs)
+         super(QCcontroller,self).__init__(**kwargs)
          self.data_type=data_type
          self.data_src = data_source
    def QCrun(self,filename,qc_level):
