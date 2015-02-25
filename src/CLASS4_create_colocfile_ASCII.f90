@@ -48,7 +48,7 @@ PROGRAM COLOCALIZE
                                           il_jk,SWnode,il_tot,&
                                           il_fic,il_type,il_nbdim2,&
                                           il_error,il_varid,eof,eofbis,il_l,&
-                                          il_nb_files,il_len
+                                          il_nb_files,il_len,il_ficlog
   INTEGER, DIMENSION(1)               ::  il_loc
   INTEGER, DIMENSION(4)               :: ila_vertxindex,ila_vertyindex,&
                                          vertex,ila_nbdim4D
@@ -94,7 +94,7 @@ PROGRAM COLOCALIZE
                         cl_resFile,&
                         cl_tmp,&
                         cl_conf,cl_mask,&
-                        cl_var
+                        cl_var,cl_logfile
   CHARACTER(LEN=255), DIMENSION(:), POINTER :: clpa_dimname
  !optionnel
   LOGICAL :: ll_exist,ll_exist_grid,ll_lat,ll_lon,ll_mask
@@ -429,6 +429,7 @@ PROGRAM COLOCALIZE
   IF (ALLOCATED(ila_mask)) DEALLOCATE(ila_mask)
   il_len=len_trim(cl_resFile)
   cl_colocFile=TRIM(cl_resFile(1:il_len-3))//'dat'
+  cl_logfile=TRIM(cl_resFile(1:il_len-3))//'txt'
 #if defined key_debug
         WRITE (0,*) "Fichier de colloc :: ",cl_colocFile
 #endif
@@ -451,10 +452,12 @@ PROGRAM COLOCALIZE
     rla_findlat(:)=9999.
     rla_finddist(:)=0.
     rla_poids(4,:)=0.
-    !
-    !
+    CALL MIOL_getFreeLU(il_ficlog)
+    OPEN(unit=il_ficlog,file=cl_logfile,form='FORMATTED',STATUS='new')
+    
     !* Lecture des positions
     !
+    WRITE(0,*) 'Start coloc'
     DO il_jk=1,il_nb_files
 #if defined key_debug
           WRITE(0,*) ' nombre de profils : ', il_nb_files
@@ -565,8 +568,12 @@ PROGRAM COLOCALIZE
                ila_yindex(:,il_jk)=9999
                rla_poids(:,il_jk)=0.0       		
              ENDIF   ! rla_colonvalue(il_ji) .GE. rl_lonmin ...
+      WRITE(il_ficlog,FMT=600,advance="yes") "profile ok: ",il_jk,il_nb_files
+      !print *,  "profile ok: ",il_jk,il_nb_files
     ENDDO !il_nb_files
-  ! Ecriture Position la plus proche
+    CLOSE(il_ficlog)
+600 FORMAT(a,2x,i7,2x,i10,2x)
+    ! Ecriture Position la plus proche
     CALL MIOL_getFreeLU(il_fic)
     OPEN(il_fic, file=TRIM(cl_colocFile), &
               status='new', &

@@ -282,10 +282,12 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
   !
   
 
-#if defined key_debug
-  WRITE(0,*) 'read_observation_file ok ::',cd_inputFile
-  WRITE(0,*) 'Profondeur :: ',rla_depthvalue
-#endif
+  WRITE(0,*) 'Model Varname :: ',cla_modelVarname
+!#if defined key_debug
+!  WRITE(0,*) 'read_observation_file ok ::',cd_inputFile
+!  WRITE(0,*) 'Profondeur :: ',rla_depthvalue
+!  WRITE(0,*) 'Model Varname :: ',cla_modelVarname
+!#endif
   !
   !
   !
@@ -377,6 +379,9 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
   !
   il_jc = 1
   DO il_jf=1,id_nbfile
+#if defined key_debug
+     WRITE(0,*) 'Nb files  : ',id_nbfile
+#endif
      IF (il_jc .GT. id_ncast ) il_jc = 1
      cl_modelFile = cda_modelFile(il_jf)
      !
@@ -394,12 +399,15 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
           il_ndepth, &
           il_ntime,   &
           cl_depthvarname)
+#if defined key_debug
+     WRITE(0,*) 'ModelVarname : ',cl_modelVarname
+#endif
      !
      !
      !---------------------------------------------------------------------
      ! Lecture du fichier modele
      !
-     IF ( TRIM(cl_modelVarname) .EQ. 'sossheig' ) THEN
+     IF ( TRIM(cl_modelVarname) .EQ. 'sossheig' .OR. TRIM(cl_modelVarname) .EQ. 'ileadfra' ) THEN
         ll_isdepthdim = .FALSE.
         ALLOCATE(rla_modelvalue(il_nlon,il_nlat,1,il_ntime))
      ELSE
@@ -437,7 +445,7 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
      WRITE(0,*),'interp_model_field ',TRIM(cl_modelFile)
 #endif
         
-     IF ( TRIM(cl_modelVarname) .EQ. 'sossheig') THEN
+     IF ( TRIM(cl_modelVarname) .EQ. 'sossheig' .OR. TRIM(cl_modelVarname) .EQ. 'ileadfra') THEN
         ! 
         !---------------------------------------------------------------------
         ! Correction MSSH (MDT) si besoin 
@@ -683,9 +691,9 @@ SUBROUTINE write_interp_field(cd_outputFile, &
         WRITE(0,*) 'Variable existante  :: ',TRIM(cd_outputVarname)
 #endif
    ELSE
-#if defined key_debug
-        WRITE(0,*) 'Variable shape  ::',TRIM(cd_outputVarname),SHAPE(rda_modelEquivValue_4D)
-#endif
+!#if defined key_debug
+!        WRITE(0,*) 'Variable shape  ::',TRIM(cd_outputVarname),SHAPE(rda_modelEquivValue_4D)
+!#endif
       IF (id_ncast .GT. 1) THEN !case forecast, persistence
         CALL MIOL_write_field_NC (il_filid, &
              cd_outputVarname, &
@@ -1432,6 +1440,10 @@ SUBROUTINE interp_model_field_2d(rda_modelvalue, &
      IF ( rl_modelvalue_tmp.ge.9999) rl_modelvalue_tmp=rl_emptyvalue
 
      rda_modelvalue_inter(il_ji) = rl_modelvalue_tmp
+#if defined key_debug
+     WRITE(0,*),'Valeurs interpolées :: ',rda_modelvalue_inter(il_ji) 
+     WRITE(0,*),'-----------------------------------------------------'
+#endif
      !
   ENDDO !il_ji
 
@@ -1531,11 +1543,11 @@ SUBROUTINE interp_model_field_3d(rda_modelvalue, &
              il_indice_min=il_var
           ENDIF
         ENDDO
-#if defined key_debug
-       WRITE(0,*) 'Indice MIN : ',il_indice_min,rda_juldmod(il_indice_min)
-       WRITE(0,*) 'Juld  : ',rl_juld
-       WRITE(0,*) 'rda_juldmod ::',rda_juldmod
-#endif
+!#if defined key_debug
+!       WRITE(0,*) 'Indice MIN : ',il_indice_min,rda_juldmod(il_indice_min)
+!       WRITE(0,*) 'Juld  : ',rl_juld
+!       WRITE(0,*) 'rda_juldmod ::',rda_juldmod
+!#endif
      ENDIF
      !
      !------------------------------------------------------------------
@@ -1647,15 +1659,15 @@ SUBROUTINE interp_model_field_3d(rda_modelvalue, &
 
         !
         rla_modeldepth_inter2(1:il_n2)=rd_emptyvalue
-#if defined key_debug
-           WRITE(0,*),' Cas1 '
-           WRITE(0,*),'PROFONDEURS modele :: ',rla_modeldepth2(:)
-           WRITE(0,*),'-----------------------------------------------------'
-           WRITE(0,*),'Valeurs modele :: ',rla_modelvalue_tmp2
-           WRITE(0,*),'-----------------------------------------------------'
-           WRITE(0,*),'PROFONDEURS insitu :: ',rla_codepth_tmp2 
-           WRITE(0,*),'-----------------------------------------------------'
-#endif
+!#if defined key_debug
+!           WRITE(0,*),' Cas1 '
+!           WRITE(0,*),'PROFONDEURS modele :: ',rla_modeldepth2(:)
+!           WRITE(0,*),'-----------------------------------------------------'
+!           WRITE(0,*),'Valeurs modele :: ',rla_modelvalue_tmp2
+!           WRITE(0,*),'-----------------------------------------------------'
+!           WRITE(0,*),'PROFONDEURS insitu :: ',rla_codepth_tmp2 
+!           WRITE(0,*),'-----------------------------------------------------'
+!#endif
            CALL MCAL_interp1D_cubicspline_R4(rla_modelvalue_tmp2, &
                 rla_modeldepth2, &
                 il_n, &
@@ -1666,15 +1678,15 @@ SUBROUTINE interp_model_field_3d(rda_modelvalue, &
            rla_modeldepth_inter(1:il_n2)=rla_modeldepth_inter2(:)
 
         ELSE
-#if defined key_debug
-           WRITE(0,*),' Cas2 '
-           WRITE(0,*),'PROFONDEURS modele :: ',rda_modeldepth(:)
-           WRITE(0,*),'-----------------------------------------------------'
-           WRITE(0,*),'Valeurs modele :: ',rla_modelvalue_tmp
-           WRITE(0,*),'-----------------------------------------------------'
-           WRITE(0,*),'PROFONDEURS insitu :: ',rla_codepth_tmp 
-           WRITE(0,*),'-----------------------------------------------------'
-#endif
+!#if defined key_debug
+!           WRITE(0,*),' Cas2 '
+!           WRITE(0,*),'PROFONDEURS modele :: ',rda_modeldepth(:)
+!           WRITE(0,*),'-----------------------------------------------------'
+!           WRITE(0,*),'Valeurs modele :: ',rla_modelvalue_tmp
+!           WRITE(0,*),'-----------------------------------------------------'
+!           WRITE(0,*),'PROFONDEURS insitu :: ',rla_codepth_tmp 
+!           WRITE(0,*),'-----------------------------------------------------'
+!#endif
            CALL MCAL_interp1D_cubicspline_R4(rla_modelvalue_tmp, &
                 rda_modeldepth, &
                 id_ndepth, &
@@ -1896,54 +1908,57 @@ SUBROUTINE read_observation_file (cd_inputFile, &
   IMPLICIT NONE   
   !
   !
-  CHARACTER(LEN=255)                                   :: cd_inputFile
-  CHARACTER(LEN=255)                                   :: cd_inputVarname
-  INTEGER(KIND=4)                                      :: id_nprof,  &
-                                                          id_nlevels,&
-                                                          id_ncast,  &
-                                                          id_nvar
-  LOGICAL                                              :: ld_isdepth
-  REAL(KIND=4), DIMENSION(id_nlevels,id_nprof)         :: rda_depthvalue
+  CHARACTER(LEN=255)                              :: cd_inputFile
+  CHARACTER(LEN=255)                              :: cd_inputVarname
+  INTEGER(KIND=4)                                 :: id_nprof,  &
+                                                     id_nlevels,&
+                                                     id_ncast,  &
+                                                     id_nvar,   &
+                                                     il_good
+  LOGICAL                                         :: ld_isdepth
+  REAL(KIND=4), DIMENSION(id_nlevels,id_nprof)    :: rda_depthvalue
 
-  REAL(KIND=8), DIMENSION(id_nprof)                    :: rda_LON,  &
-                                                          rda_LAT,  &
-                                                          rda_juld
-  REAL(KIND=8), DIMENSION(id_ncast)                    :: rda_leadtimevalue
-  REAL(KIND=4), DIMENSION(id_nlevels,id_nprof)         :: rla_varqc
-  REAL(KIND=4),INTENT(OUT)                             :: rd_fillValue
+  REAL(KIND=8), DIMENSION(id_nprof)               :: rda_LON,  &
+                                                     rda_LAT,  &
+                                                     rda_juld
+  REAL(KIND=8), DIMENSION(id_ncast)               :: rda_leadtimevalue
+  REAL(KIND=4), DIMENSION(id_nlevels,id_nprof)    :: rla_varqc
+  REAL(KIND=4),INTENT(OUT)                        :: rd_fillValue
   !
-  CHARACTER(LEN=255)                                   :: cl_ficlog,  &
-                                                          cl_ficlog2, & 
-                                                          cl_varname, &
-                                                          cd_inputVarname_qc
-  CHARACTER(LEN=255) , DIMENSION(id_nvar)                 :: cda_modelVarname
-  INTEGER :: il_file_id, &
-       il_nbdim, &
-       il_nbvar, &
-       il_ji,    &
-       il_jj,    &
-       il_jk,    &
-       il_nbatt, &
-       il_pas,   &
-       il_max
-  LOGICAL :: ll_flag_nprof, &
-       ll_flag_nlevels,     &
-       ll_exist_ficlog,     &
-       ll_exist_ficlog2
-  REAL(KIND=4), DIMENSION(:,:), POINTER :: rlpa_tmp
-  CHARACTER(LEN=255), DIMENSION(:)    , POINTER :: clpa_dimname, &
-       clpa_varname,        &
-       clpa_modelattname,   &
-       clpa_modelattvalue
+  CHARACTER(LEN=255)                              :: cl_ficlog,  &
+                                                     cl_ficlog2, & 
+                                                     cl_varname, &
+                                                     cl_qc,cl_time
+  CHARACTER(LEN=255) , DIMENSION(id_nvar)         :: cda_modelVarname
+  INTEGER(KIND=4)                                 :: il_file_id, &
+                                                     il_nbdim, &
+                                                     il_nbvar, &
+                                                     il_ji,    &
+                                                     il_jj,    &
+                                                     il_jk,    &
+                                                     il_nbatt, &
+                                                     il_pas,   &
+                                                     il_max
+  LOGICAL                                         :: ll_flag_nprof, &
+                                                     ll_flag_nlevels,     &
+                                                     ll_exist_ficlog,     &
+                                                     ll_exist_ficlog2,    &
+                                                     ll_lon,ll_lat,ll_qc, &
+                                                     ll_varname,ll_ld,ll_juld
+  REAL(KIND=4), DIMENSION(:,:), POINTER           :: rlpa_tmp
+  CHARACTER(LEN=255), DIMENSION(:)    , POINTER   :: clpa_dimname, &
+                                                     clpa_varname,        &
+                                                     clpa_modelattname,   &
+                                                     clpa_modelattvalue
   CHARACTER(LEN=25) , DIMENSION(:,:)  , POINTER   :: clpa_2Dtmp
   INTEGER           , DIMENSION(:)    , POINTER   :: ilpa_dimlen, &
-       ilpa_nbdim
-  REAL(KIND=4)      , DIMENSION(:)    , POINTER  :: rlpa_modelattvalue
-  REAL(KIND=8)      , DIMENSION(:)    , POINTER  :: rlpa_1Dtmp,      &
-                                                    rlpa_1D_LON_tmp, &
-                                                    rlpa_1D_LAT_tmp
-  REAL(KIND=4)      , DIMENSION(:,:)  , POINTER  :: rlpa_2D_TEMPtmp
-  REAL(KIND=4)      , DIMENSION(:,:,:), POINTER  :: rlpa_3Dtmp
+                                                     ilpa_nbdim
+  REAL(KIND=4)      , DIMENSION(:)    , POINTER   :: rlpa_modelattvalue
+  REAL(KIND=8)      , DIMENSION(:)    , POINTER   :: rlpa_1Dtmp,      &
+                                                     rlpa_1D_LON_tmp, &
+                                                     rlpa_1D_LAT_tmp
+  REAL(KIND=4)      , DIMENSION(:,:)  , POINTER   :: rlpa_2D_TEMPtmp
+  REAL(KIND=4)      , DIMENSION(:,:,:), POINTER   :: rlpa_3Dtmp
   !
   !------------------------------------------------------------------------
   !
@@ -1972,7 +1987,41 @@ SUBROUTINE read_observation_file (cd_inputFile, &
   rla_varqc(1:id_nlevels,1:id_nprof) = 0.
   ll_exist_ficlog=.FALSE.
   ll_exist_ficlog2=.FALSE.
+  ll_lon=.FALSE.
+  ll_lat=.FALSE.
+  ll_qc=.FALSE.
+  ll_ld=.FALSE.
+  ll_juld=.FALSE.
+  ll_varname=.FALSE.
   !     
+  DO il_ji=1, il_nbvar
+      IF (TRIM(clpa_varname(il_ji)) .EQ. 'longitude') THEN
+         ll_lon=.TRUE.
+      ELSE IF (TRIM(clpa_varname(il_ji)) .EQ. 'latitude') THEN
+         ll_lat=.TRUE.
+      ELSE IF (TRIM(clpa_varname(il_ji)) .EQ. 'qc' .OR. TRIM(clpa_varname(il_ji)).EQ. 'QC02' ) THEN
+         cl_qc=TRIM(clpa_varname(il_ji))
+         ll_qc=.TRUE.
+      ELSE IF (TRIM(clpa_varname(il_ji)) .EQ.'leadtime' ) THEN
+         ll_ld=.TRUE.
+      ELSE IF (TRIM(clpa_varname(il_ji)) .EQ.'juld' .OR. TRIM(clpa_varname(il_ji)) .EQ. 'obs_time') THEN
+         ll_juld=.TRUE.
+         cl_time= TRIM(clpa_varname(il_ji))
+      ELSE IF (TRIM(clpa_varname(il_ji)) .EQ.'varname' ) THEN
+         ll_varname=.TRUE.
+      ENDIF
+   ENDDO
+  !
+  IF ( .NOT. ll_lon .OR. .NOT. ll_lat .OR. .NOT. ll_qc .OR. .NOT. ll_ld .OR. .NOT. ll_juld .OR. .NOT. ll_varname ) THEN 
+      WRITE (0,*) 'Problem Some variables are missing : '
+      WRITE (0,*) 'longitude : ',ll_lon
+      WRITE (0,*) 'latitude : ',ll_lat
+      WRITE (0,*) 'qc : ',ll_qc
+      WRITE (0,*) 'leadtime : ',ll_ld
+      WRITE (0,*) 'juld : ',ll_juld
+      WRITE (0,*) 'varname : ',ll_varname
+      STOP 
+  ENDIF
   !
   !Ajout C.REGNIER Lecture de la position du profil
   !* LONGITUDE 
@@ -1998,21 +2047,20 @@ SUBROUTINE read_observation_file (cd_inputFile, &
   rda_LAT(:)=rlpa_1D_LAT_tmp(:)
 
   !** Lecture du qc de la variable concernée
-  cd_inputVarname_qc='qc'
 #if defined key_debug
-  WRITE(0,*) 'READ variable QC:: ',TRIM(cd_inputVarname_qc)
+  WRITE(0,*) 'READ variable QC:: ',TRIM(cl_qc)
 #endif
   CALL MIOL_read_field_NC(il_file_id,&
-       TRIM(cd_inputVarname_qc),&
+       TRIM(cl_qc),&
        rlpa_3Dtmp)
 ! En supposant qu'il n'y ait qu'une
 !seule variable...a implementer
   rla_varqc(1:id_nlevels,1:id_nprof) = &                
        rlpa_3Dtmp(1:id_nlevels,1, 1:id_nprof)  
 
-#if defined key_debug
-  WRITE(0,*) 'Variable QC :: ',rla_varqc(:,:)       
-#endif
+!#if defined key_debug
+!  WRITE(0,*) 'Variable QC :: ',rla_varqc(:,:)       
+!#endif
   DEALLOCATE(rlpa_3Dtmp) 
   ! Lecture des profondeurs
   IF (ld_isdepth) THEN 
@@ -2034,9 +2082,8 @@ SUBROUTINE read_observation_file (cd_inputFile, &
   rda_leadtimevalue(:) = rlpa_1Dtmp(:)
   DEALLOCATE(rlpa_1Dtmp)
   !
-  cl_varname = 'juld'
   CALL MIOL_read_field_NC(il_file_id, &
-       cl_varname, &
+       cl_time, &
        rlpa_1Dtmp)
   rda_juld(:)=rlpa_1Dtmp(:)
   !
@@ -2051,43 +2098,30 @@ SUBROUTINE read_observation_file (cd_inputFile, &
   DEALLOCATE(clpa_2Dtmp)
 
   !** Test sur la valeur du QC de la variable
+  IF (TRIM(cda_modelVarname(il_ji)) .EQ. 'ileadfra') THEN 
+     il_good=1
+  ELSE 
+     il_good=0
+  ENDIF
 
   DO il_jj=1, id_nprof
      DO il_jk=1, id_nlevels
-        IF ( rla_varqc(il_jk, il_jj) .EQ. 9 .OR. rla_varqc(il_jk, il_jj) .EQ. 1 ) THEN
-#if defined key_debug
-            WRITE(0,*),'Valeur non correcte :: ',rla_varqc(il_jk, il_jj)
-            WRITE(0,*),'Profil n° :: ',il_jj
-            WRITE(0,*),'Niveau n ° :: ',il_jk
-#endif
-            rda_depthvalue(il_jk, il_jj) = 99999.0
-        ELSE
+        IF ( rla_varqc(il_jk, il_jj) .EQ. il_good) THEN
            !** Gestion des profils inversés  
            IF ( il_jk < id_nlevels ) THEN
               IF ( rda_depthvalue(il_jk+1, il_jj) /= 99999.0 .AND. rda_depthvalue(il_jk,il_jj) /= 99999.0 ) THEN
                  IF ( rda_depthvalue(il_jk+1, il_jj) < rda_depthvalue(il_jk,il_jj) )  THEN
-#if defined key_debug
-              WRITE(0,*) 'Cas profil inverse et cla_depthqc == 0 ou 1  '
-#endif 
-                    !cl_ficlog=TRIM(cg_ficlog)//'/logout_CORIO_invprof_'//TRIM(cg_modele)//'_R'//TRIM(cg_rundate)//'.txt'
-                    !INQUIRE(FILE=TRIM(cl_ficlog),EXIST=ll_exist_ficlog)
-                    !IF ( .NOT. ll_exist_ficlog ) THEN
-                    !   OPEN(unit=50,file=TRIM(cl_ficlog),form='FORMATTED',STATUS='new')
-                    !   CLOSE(50)
-                    !   ll_exist_ficlog=.TRUE.
-                    !ENDIF
-                    !OPEN(unit=50,file=TRIM(cl_ficlog),form='FORMATTED',&
-                    !     & POSITION='APPEND',STATUS='old')
-                    !WRITE(50,FMT=600,advance="yes") TRIM(cd_inputFile),il_jj,il_jk,&
-                    !     rda_depthvalue(il_jk,il_jj),rda_depthvalue(il_jk+1,il_jj)
-                    !CLOSE(50)
-
-                  !  rda_depthvalue(il_jk+1, il_jj) =99999.0
-                  !  rda_depthadjustvalue(il_jk+1, il_jj) = 99999.0
                     rda_depthvalue(il_jk, il_jj) =99999.0
                  ENDIF
               ENDIF
            ENDIF
+!           WRITE(0,*),'Valeur correcte :: ',rla_varqc(il_jk, il_jj)
+        ELSE  
+!#if defined key_debug
+!            WRITE(0,*),'Profil n° :: ',il_jj
+!            WRITE(0,*),'Niveau n ° :: ',il_jk
+!#endif
+            rda_depthvalue(il_jk, il_jj) = 99999.0
         ENDIF
      ENDDO
   ENDDO
