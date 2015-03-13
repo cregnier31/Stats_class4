@@ -4,8 +4,8 @@
 
 system="med12"
 system="orca12"
-system="orca025"
-system="MEDRYS1V1"
+#system="orca025"
+#system="MEDRYS1V1"
 
 
 make clean SYSTEM=${system} || exit 1

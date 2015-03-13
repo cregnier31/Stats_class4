@@ -36,7 +36,7 @@ class Loader(object):
 class InputLoader(Loader): 
     def load(self,options,level):
 ##      Loader for input options
-        keywords = ['date1=','date2=','delta=','nbdate=','daterun=','config=','data=','src=']
+        keywords = ['date1=','date2=','delta=','nbdate=','daterun=','config=','data=','src=','nbproc=']
         cla_opts = getopt.getopt(options,'',keywords)
         log=Logger("InputLoader").run(level)
         ll_delta=None
@@ -49,6 +49,7 @@ class InputLoader(Loader):
 	ll_src=None
 	cl_daterun=None
         list_var=[]
+        nb_proc=0
         for o,p in cla_opts[0] :
            if o in ['--delta'] :
              ll_delta=True
@@ -74,7 +75,10 @@ class InputLoader(Loader):
 	   elif o in  ['--src'] : 
              ll_src=True
              cl_src = p
-
+	   elif o in  ['--nbproc'] : 
+             ll_optim=True
+             cl_nbproc = p
+             nb_proc=int(cl_nbproc)
         list_var.append(ll_date1)
         list_var.append(ll_date2)
         list_var.append(ll_daterun)
@@ -132,7 +136,7 @@ class InputLoader(Loader):
 			    (for example 1 week before today -14 and today -7)")
 	     sys.exit(1)
 	confname='config_'+str(cl_config)+'_'+str(cl_src)+'.cfg'
-        return date1,date2,confname,cl_data,cl_daterun,cl_schedule,cl_src
+        return date1,date2,confname,cl_data,cl_daterun,cl_schedule,cl_src,nb_proc
 
 class NmlLoader(Loader): 
    def load(self,filename,level):

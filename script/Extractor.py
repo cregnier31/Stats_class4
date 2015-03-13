@@ -3,6 +3,7 @@ import os,sys,string,shutil,glob,re
 import numpy as np
 import logging
 import tarfile
+import netCDF4
 from sytoolkit.sydate import SyDate
 from nco import Nco
 
@@ -64,10 +65,17 @@ class Extract_GODAE(Extractor):
                   nco.ncks(input=new_file,output=dirtmp+filename, fortran=True ,options=options)
 		  if typedata == "aice" :
 		      ## add missing varname
-	              options = []
-	              options.extend(['-h','-v','varname'])
-                      filein='varname_ice.nc'
-                      nco.ncks(input=dirstatic+'/'+filein,output=dirtmp+filename,fortran=True,append=True,options=options)
+	              #options = []
+	              #options.extend(['-h','-v','varname'])
+                      #filein='varname_ice.nc'
+                      #nco.ncks(input=dirstatic+'/'+filein,output=dirtmp+filename,fortran=True,options=options)
+	              # Solution2 : add dimensions and variable varname
+		      cl_fileIn=dirtmp+filename
+		      nc   = netCDF4.Dataset(cl_fileIn,'a')
+		      nc.createDimension('string_length8',8)
+		      nc.createVariable('varname','c',('numvars','string_length8'))
+		      nc.variables['varname'][:]='ileadfra'
+		      nc.close
                   log.info('Fichier %s ' % (dirtmp+filename)) 
                   liste_tot.append(dirtmp+filename)
 		  ##  Design output File

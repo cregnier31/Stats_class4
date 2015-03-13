@@ -172,12 +172,12 @@ PROGRAM Lecture_class4
   rg_EcartSalMax = rl_EcartSalMax  
   !** Ouverture du fichier LOG
   CALL MIOL_getFreeLu(il_ficlog)
-  OPEN(unit=il_ficlog,file='/home/qualif/CLASS4/TEP_CLASS4/branches/V3/postraitement/src/../exe/'//TRIM(cd_LogFile),form='FORMATTED',&
+  OPEN(unit=il_ficlog,file='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../exe/'//TRIM(cd_LogFile),form='FORMATTED',&
        &ACCESS='SEQUENTIAL',STATUS='REPLACE')
   PRINT *,'Ouverture du fichier Log :: ',cd_LogFile
   !** Ouverture du fichier synthese
   CALL MIOL_getFreeLu(il_ficsynth)
-  OPEN(unit=il_ficsynth,file='/home/qualif/CLASS4/TEP_CLASS4/branches/V3/postraitement/src/../exe/'//TRIM(cd_SynthFile),form='FORMATTED',&
+  OPEN(unit=il_ficsynth,file='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../exe/'//TRIM(cd_SynthFile),form='FORMATTED',&
        &ACCESS='SEQUENTIAL',STATUS='REPLACE')
   PRINT *,'Ouverture du fichier synthese :: ',cd_SynthFile
   !** Boucle de lecture des fichiers CORIOLIS

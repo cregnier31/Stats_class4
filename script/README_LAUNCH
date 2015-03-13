@@ -14,4 +14,6 @@ python TEP_CLASS4_optim.py --config=PSY3V3R3 --daterun=20140730 --nbdate=7 --del
 ## Run optim  with GODAE DATASET
 python TEP_CLASS4_optim.py --config=PSY3QV3R3 --date1=20140701 --date2=20140701 --src=GODAE --data=SST
 python TEP_CLASS4_optim.py --config=PRESAL36QV1R1 --date1=20140705 --date2=20140705 --src=GODAE --data=SST
-
+# Multi process
+python TEP_CLASS4_multiprocess.py --config=PSY4QV2R2 --date1=20150106 --date2=20150106 --src=GODAE --data=aice
+python TEP_CLASS4_multiprocess.py --config=PSY4QV2R2 --daterun=20150201 --nbdate=1 --delta=0 --src=GODAE --data=aice
