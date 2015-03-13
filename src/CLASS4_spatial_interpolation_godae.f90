@@ -1950,7 +1950,7 @@ SUBROUTINE read_observation_file (cd_inputFile, &
                                                      clpa_varname,        &
                                                      clpa_modelattname,   &
                                                      clpa_modelattvalue
-  CHARACTER(LEN=25) , DIMENSION(:,:)  , POINTER   :: clpa_2Dtmp
+  CHARACTER(LEN=8) , DIMENSION(:,:)  , POINTER   :: clpa_2Dtmp
   INTEGER           , DIMENSION(:)    , POINTER   :: ilpa_dimlen, &
                                                      ilpa_nbdim
   REAL(KIND=4)      , DIMENSION(:)    , POINTER   :: rlpa_modelattvalue
@@ -2088,6 +2088,7 @@ SUBROUTINE read_observation_file (cd_inputFile, &
   rda_juld(:)=rlpa_1Dtmp(:)
   !
   cl_varname = 'varname'
+  WRITE(0,*) 'Read varname'
   CALL MIOL_read_field_NC(il_file_id, &
        cl_varname, &
        clpa_2Dtmp, &
@@ -2095,6 +2096,9 @@ SUBROUTINE read_observation_file (cd_inputFile, &
   DO il_ji=1,id_nvar  
      cda_modelVarname(il_ji) = TRIM(clpa_2Dtmp(il_ji,1)(1:8))
   ENDDO
+  WRITE(0,*) 'Read varname : ', cda_modelVarname(:)
+  cda_modelVarname(:)="ileadfra"
+  WRITE(0,*) 'Read varname OK : ',clpa_2Dtmp(:,:)
   DEALLOCATE(clpa_2Dtmp)
 
   !** Test sur la valeur du QC de la variable

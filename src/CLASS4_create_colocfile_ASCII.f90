@@ -100,7 +100,7 @@ PROGRAM COLOCALIZE
   LOGICAL :: ll_exist,ll_exist_grid,ll_lat,ll_lon,ll_mask
   LOGICAL,DIMENSION(4)                      :: lla_nbr_vertex
   CHARACTER(LEN=26)     ::   cl_fread                                                                                                                    
-  DATA  cl_fread    /'(f12.5,2x,f12.5,2x,f12.5)'/
+  DATA  cl_fread    /'(f12.5,4x,f12.5)'/
 
   !
   !------------------------------------------------------------------------
@@ -190,7 +190,7 @@ PROGRAM COLOCALIZE
    ALLOCATE(rla_latpos(il_nb_files))
    DO WHILE (eofbis == 0 )
        READ(il_fic,fmt=cl_fread,iostat=eofbis) &
-         rl_colonvalue,rl_colatvalue,rl_juld
+         rl_colonvalue,rl_colatvalue
        IF (eofbis==0 .AND. il_ji/=0 ) THEN
           rla_lonpos(il_ji)=rl_colonvalue
           rla_latpos(il_ji)=rl_colatvalue
@@ -219,7 +219,7 @@ PROGRAM COLOCALIZE
                                   clpa_dimname, &
                                   ilpa_dimlen)
   ELSE
-     WRITE(0,*) 'File doesn t exist'
+     WRITE(0,*) 'File doesn t exist :',cl_gridFile
      STOP
   ENDIF
 #if defined key_debug
@@ -452,9 +452,10 @@ PROGRAM COLOCALIZE
     rla_findlat(:)=9999.
     rla_finddist(:)=0.
     rla_poids(4,:)=0.
+#if defined key_log
     CALL MIOL_getFreeLU(il_ficlog)
     OPEN(unit=il_ficlog,file=cl_logfile,form='FORMATTED',STATUS='new')
-    
+#endif
     !* Lecture des positions
     !
     WRITE(0,*) 'Start coloc'
@@ -568,10 +569,14 @@ PROGRAM COLOCALIZE
                ila_yindex(:,il_jk)=9999
                rla_poids(:,il_jk)=0.0       		
              ENDIF   ! rla_colonvalue(il_ji) .GE. rl_lonmin ...
+#if defined key_log
       WRITE(il_ficlog,FMT=600,advance="yes") "profile ok: ",il_jk,il_nb_files
+#endif
       !print *,  "profile ok: ",il_jk,il_nb_files
     ENDDO !il_nb_files
+#if defined key_log
     CLOSE(il_ficlog)
+#endif
 600 FORMAT(a,2x,i7,2x,i10,2x)
     ! Ecriture Position la plus proche
     CALL MIOL_getFreeLU(il_fic)
