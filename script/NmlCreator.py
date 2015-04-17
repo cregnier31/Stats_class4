@@ -78,6 +78,11 @@ class NmlCreator_GODAE(NmlCreator):
 	   list_file=list_file_T
 	   list_file.extend(list_file_S)
 	nbfile=len(list_file)
+        if nbfile == 0 : 
+           print ' Found %i files corresponding to %s %s while expecting 1' %(nbfile,typedata,directory)
+           sys.exit(1)
+        ##
+	   
         ## Write namelist file
         obFichier=open(nml,'w')
         obFichier.write('&interpolate_3D\n')
@@ -174,6 +179,12 @@ class NmlCreator_CORIOLIS(NmlCreator):
 	## List model
         #for file in glob.glob(dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc') : 
         log.info('Template %s' %(template)) 
+	## Add test to see missing values
+	cl_file = glob.glob(template)
+        if len(cl_file) != 1 :
+           print ' Found %i files corresponding to %s while expecting 1' %(len(cl_file),listdir)
+           sys.exit(1)
+        ##
         for file in glob.glob(template) : 
           fic_temp=file
 	  if listdir[0:4] != 'CLIM' :
