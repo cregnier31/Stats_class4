@@ -22,7 +22,27 @@ class Extractor(object) :
         if type == "ENS": return ExtractEns()
         if type == "ARMOR_CO" or type == "ARMOR_AR" : return Extract_ARMOR()
         if type == "GODAE" : return Extract_GODAE()
+        if type == "ASCII" : return Extract_ASCII()
 
+
+class Extract_ASCII(Extractor): 
+     def __init__(self):
+        self.PREFIX='Ascii file extraction'
+     def run_list(self,date1,date2,dirdata):
+          liste_tot=[]
+          valeurj=date1
+          while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
+              dateval=SyDate.__str__(valeurj)
+              liste_file=glob.glob(dirdata+'/*'+dateval+'*.txt')
+	      print liste_file
+	      print dirdata+'/*'+dateval+'*.txt'
+              for file in liste_file :
+                try :
+                      liste_tot.append(file)
+                except IOError as e:
+                      print "I/O error({0}): {1}".format(e.errno, e.strerror)
+              valeurj=valeurj.goforward(1)
+          return liste_tot
 
 class Extract_GODAE(Extractor):
       def run(self,date1,date2,dirdata,dirtmp,dirstatic,typedata,template):
