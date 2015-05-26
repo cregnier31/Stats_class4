@@ -119,6 +119,7 @@ class NmlCreator_IAOOS(NmlCreator):
         if type_data  !=  'IAOOS' : 
 	   log.error("IAOOS files only !!!!")
 	   sys.exit(1)
+	daterun=dateval
         model_varname_T="votemper"
         model_varname_S="vosaline"
         input_varname_T="TEMP"
@@ -142,9 +143,10 @@ class NmlCreator_IAOOS(NmlCreator):
  	   print "monthly values"
            daterun=dateval[0:6]
 	   template=dirmodel+searchdir+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
-        elif type_run == 'free' or  type_run == 'OPER' :
-           print modele,daterun,gridtemp
+        elif type_run == 'free' :
            template=dirmodel+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
+	elif type_run =='OPER' :
+           template=dirmodel+'/'+modele+'_1dAV_'+daterun+'*'+gridtemp+'*.nc'
 	else :
            template=dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
 
