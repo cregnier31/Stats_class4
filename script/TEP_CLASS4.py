@@ -367,7 +367,7 @@ if ll_file_ok :
                    print 'executable %s failed' %exe
                    sys.exit(1)
    		       ## Design File
-               Design().factory(data_origin).run(filename,dateval,contact,cl_config,model_type,inst,version,desc)
+               Design().factory(data_origin).run(filename,dateval,contact,cl_config,model_type.lower(),inst,version,desc)
    ## Zipped files and move in output directory 
    for filename in glob.glob(dirwork+"*.nc") :
      f_in=open(filename,'rb')

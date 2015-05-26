@@ -79,7 +79,7 @@ class NmlCreator_GODAE(NmlCreator):
 	   list_file.extend(list_file_S)
 	nbfile=len(list_file)
         if nbfile == 0 : 
-           log.info('Found %i files corresponding to %s %s while expecting 1' %(nbfile,type_data,directory))
+           log.error('Found %i files corresponding to %s %s while expecting 1' %(nbfile,type_data,directory))
            sys.exit(1)
         ##
 	   
@@ -182,7 +182,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
 	## Add test to see missing values
 	cl_file = glob.glob(template)
         if len(cl_file) != 1 :
-           log.info('Found %i files corresponding to %s while expecting 1' %(len(cl_file),listdir))
+           log.error('Found %i files corresponding to %s while expecting 1' %(len(cl_file),listdir))
            sys.exit(1)
         ##
         for file in glob.glob(template) : 
