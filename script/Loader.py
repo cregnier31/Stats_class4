@@ -203,7 +203,8 @@ class LoaderNCgodae(Loader):
 class AsciiLoader(Loader):
     def read_pos(self,filename):
        #print 'read ASCII file : %s ' %(filename)
-       data=np.genfromtxt(filename,usecols = (2,3),skip_header=1)
+       #data=np.genfromtxt(filename,usecols = (2,3),skip_header=1)
+       data=np.genfromtxt(filename,usecols = (1,2),skip_header=1)
        position=np.array(data)
        return position
  

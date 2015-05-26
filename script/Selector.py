@@ -31,15 +31,16 @@ class Selector(object) :
     def factory(self,type):
         #return eval(type + "()")
         if type == "ARGO":
-	  return QCArgo()
-        elif type == "CORIOLIS" or "GODAE" : 
-              return SelectCorio(self.data_format,self.data_type,self.lonmin,\
-	                         self.lonmax,self.latmin,self.latmax)
+	     return QCArgo()
+        elif type == "CORIOLIS" or type == "GODAE" : 
+             return SelectCorio(self.data_format,self.data_type,self.lonmin,\
+	                        self.lonmax,self.latmin,self.latmax)
         elif type == "ENS": 
-	  return QCEns()
+	     return QCEns()
+        elif type == "IAOOS": 
+	     return QCEns()
 	else :
-	  print "Type not known %s " %(type)
-	  sys.exit(1)
+	     print "Type not known %s " %(type)
 
 class SelectCorio(Selector) :
     """ Class for Coriolis files """
