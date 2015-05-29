@@ -365,12 +365,10 @@ if ll_file_ok :
                codexe = '%s -r %s -c %s -m %s -l %s' %(exe,dateval,nml,cl_config_use,dir_log)
                args   = shlex.split(codexe)
                print(args)
-               sys.exit(1)
                try :   subprocess.check_call(args)
                except :
                    print 'executable %s failed' %exe
                    sys.exit(1)
-   		
    	        ## Case GODAE
             if data_origin == 'GODAE' : 
                ##    Create namelist 
@@ -388,7 +386,6 @@ if ll_file_ok :
                    print 'executable %s failed' %exe
                    sys.exit(1)
    		       ## Design File
-               sys.exit(1)
                config_d=re.sub("V","QV",cl_config) 
                Design().factory(data_origin).run(filename,dateval,contact,cl_config_d,model_type.lower(),inst,version,desc)
    ## Zipped files and move in output directory 
