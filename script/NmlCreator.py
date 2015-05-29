@@ -208,7 +208,7 @@ class NmlCreator_IAOOS(NmlCreator):
         obFichier.write('cl_modelVarname_S = '+"'"+model_varname_S+"'"+'\n')
         obFichier.write('cl_outputVarname_T = '+"'"+output_varname_T+"'"+'\n')
         obFichier.write('cl_outputVarname_S = '+"'"+output_varname_S+"'"+'\n')
-        obFichier.write('cl_imput_type = ASCII'+'\n')
+        obFichier.write('cl_input_type = ASCII'+'\n')
         obFichier.write('il_nbfile = '+str(nbfile)+'\n')
         obFichier.write('/'+'\n')
         for fichier2 in glob.glob(output+"*"+str(dateval)+"*.txt") :
@@ -320,6 +320,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
         obFichier.write('cl_outputVarname_T = '+"'"+output_varname_T+"'"+'\n')
         obFichier.write('cl_outputVarname_S = '+"'"+output_varname_S+"'"+'\n')
         obFichier.write('il_nbfile = '+str(nbfile)+'\n')
+        obFichier.write('cl_input_type = NETCDF'+'\n')
         obFichier.write('/'+'\n')
         for fichier2 in glob.glob(output+"*"+str(dateval)+"*.nc") :
              obFichier.write(fichier2+'\n')
