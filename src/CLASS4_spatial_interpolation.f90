@@ -49,7 +49,6 @@ PROGRAM SPATIAL_INTERPOLATION
        cl_colocFile, &
        cl_modelFileT, &
        cl_modelFileS, &
-       cl_outputVarname, &
        cl_outputVarname_T, &
        cl_outputVarname_S, &
        cl_colocRep, &
@@ -58,6 +57,7 @@ PROGRAM SPATIAL_INTERPOLATION
        cl_inputVarname_S, &
        cl_modelVarname_T, &
        cl_modelVarname_S, &
+       cl_input_type, &
        cl_modele,&
        cl_daterun,& 
        cl_log
@@ -73,6 +73,7 @@ PROGRAM SPATIAL_INTERPOLATION
        cl_modelVarname_S, &
        cl_outputVarname_T, &
        cl_outputVarname_S, &
+       cl_input_type, &
        il_nbfile
   !
 
@@ -149,6 +150,7 @@ PROGRAM SPATIAL_INTERPOLATION
        cl_modelVarname_S, &
        cl_outputVarname_T, &
        cl_outputVarname_S, &
+       cl_input_type, &
        il_nbfile
 #endif
      !
@@ -165,6 +167,7 @@ PROGRAM SPATIAL_INTERPOLATION
           cl_modelVarname_S, &
           cl_outputVarname_T, &
           cl_outputVarname_S, &
+          cl_input_type, &
           il_nbfile, &
           cla_inputFile)
      !      
@@ -194,6 +197,7 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                       cd_modelVarname_S, &
                                       cd_outputVarname_T, &
                                       cd_outputVarname_S, &
+                                      cd_input_type, &
                                       id_nbfile, &
                                       cda_inputFile)
   !==============================================================================================================
@@ -217,21 +221,24 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                                           cd_modelVarname_T, &
                                                           cd_modelVarname_S, &            
                                                           cd_outputVarname_S,&
-                                                          cd_outputVarname_T
+                                                          cd_outputVarname_T,&
+                                                          cd_input_type
   !
   INTEGER(KIND=4)                                       :: il_ji,il_nbdim,il_nlon,il_nlat, &
-                                                           il_ndepth,il_nprof,il_nlevels,il_t1,il_t2,il_ir
+                                                           il_fic,il_ndepth,il_nprof,il_nlevels,&
+                                                           il_t1,il_t2,il_ir,il_eof,il_status,il_nbrec
   INTEGER, DIMENSION(:,:), ALLOCATABLE                  :: ila_xindex,ila_yindex
   CHARACTER(LEN=255)                                    :: cl_depthvarname,cl_inputFile,&
-                                                           cl_tmp,cl_colocFile
+                                                           cl_tmp,cl_colocFile,cl_outputfile,cl_outputVarname
   CHARACTER(LEN=255), DIMENSION(2)                      :: cla_dimname
   CHARACTER(LEN=1), DIMENSION(:), ALLOCATABLE           :: cla_positionqc
   REAL(KIND=4),DIMENSION(:,:),ALLOCATABLE               :: rla_poids
   REAL(KIND=4), DIMENSION(:,:), ALLOCATABLE             :: rla_depthvalue_T,rla_depthvalue_S,&
-                                                           rla_depthadjustvalue,rla_interpValueT,rla_interpValueS
+                                                           rla_depthadjustvalue,rla_interpValueT,&
+                                                           rla_interpValueS,rla_temp,rla_psal
   REAL(KIND=4), DIMENSION(:,:,:), ALLOCATABLE           :: rla_modelvalue_T,rla_modelvalue_S
   REAL(KIND=4), DIMENSION(:), ALLOCATABLE               :: rla_modeldepth
-  REAL(KIND=4)                                          :: rl_fillvalue
+  REAL(KIND=4)                                          :: rl_fillvalue,rl_var,rl_date,rl_lon,rl_lat,rl_pres,rl_temp,rl_psal
   REAL(KIND=8), DIMENSION(:), ALLOCATABLE               :: rla_juldvalue
   REAL(KIND=8), DIMENSION(:), ALLOCATABLE               :: rla_LON,rla_LAT
 
@@ -239,7 +246,7 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                                            ll_isDepth,ll_isPres,&
                                                            ll_isDepth_corr,ll_isdepthadj,&
                                                            ll_ispresadj,ll_param,&
-                                                           ll_cparam,ll_lparam
+                                                           ll_cparam,ll_lparam,ll_exist
   !--------------------------------------------------------------------------
   ! Initialisation
 
@@ -248,6 +255,7 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
   ll_isdepthadj=.FALSE.
   ll_ispresadj=.FALSE.
   ll_isDepth_corr=.FALSE.
+  ll_exist=.FALSE.
   !
   !
   !---------------------------------------------------------------------
@@ -275,6 +283,14 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
      cl_inputFile = cda_inputFile(il_ji)
      cl_tmp = TRIM(cl_inputFile(INDEX(cl_inputFile,'/',back=.true.)+1:LEN(TRIM(cl_inputFile))))
      cl_colocFile = TRIM(cd_colocRep)//TRIM(cl_tmp(1:LEN(TRIM(cl_tmp))-3))//'.dat'
+     IF  (TRIM(cd_input_type) .EQ. "ASCII") THEN
+        cl_colocFile = TRIM(cd_colocRep)//TRIM(cl_tmp(1:LEN(TRIM(cl_tmp))-4))//'.dat'
+        cl_outputfile = TRIM(cd_colocRep(1:LEN(TRIM(cd_colocRep))-7))//TRIM(cl_tmp(1:LEN(TRIM(cl_tmp))-4))//'.nc'
+     ELSE IF (TRIM(cd_input_type) .EQ. "NETCDF") THEN   
+        cl_colocFile = TRIM(cd_colocRep)//TRIM(cl_tmp(1:LEN(TRIM(cl_tmp))-3))//'.dat'
+     ELSE 
+        WRITE(0,*) ' Type file not known '
+     ENDIF
 #if defined key_debug
      WRITE(0,*) ' fichier traite 3D : ',TRIM(cda_inputFile(il_ji))
      WRITE(0,*) ' fichier coloc : ',TRIM(cl_colocFile)
@@ -288,37 +304,64 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
      !
      !
      !---------------------------------------------------------------------
-     ! Recherche des dimensions du fichier Coriolis
+     ! Recherche des dimensions du fichier de données
+     IF  (TRIM(cd_input_type) .EQ. "ASCII") THEN
+        il_eof=0
+        INQUIRE(FILE=cl_inputFile,EXIST=ll_exist)
+        IF (ll_exist) THEN
+           CALL MIOL_getFreeLU(il_fic)
+           OPEN(il_fic, FILE=cl_inputFile,form='FORMATTED',STATUS='OLD',iostat=il_status)
+           il_nbrec=0
+           DO WHILE (il_eof == 0 )
+              READ(il_fic,*,iostat=il_eof) rl_var
+              IF (il_eof==0) then !* la lecture s'est bien passee
+              !* on incremente le compteur du nombre de lignes
+                 il_nbrec=il_nbrec+1
+              ENDIF
+           ENDDO              
+           CLOSE(il_fic)
+           il_nprof=1
+           il_nlevels=il_nbrec
+           ll_isInputVarPresent_T=.TRUE.
+           ll_isInputVarPresent_S=.TRUE.
+           ll_isPres=.TRUE.
+        ELSE 
+            WRITE(0,*) 'File doesn t exist: ',cl_inputFile
+            STOP
+        ENDIF
+     ELSE IF (TRIM(cd_input_type) .EQ. "NETCDF") THEN
 #if defined key_debug
-     WRITE(0,*) ' inquire_coriolis_file '
+        WRITE(0,*) ' inquire_coriolis_file '
 #endif
 
-     CALL inquire_coriolis_file(cl_inputFile, &
-                                cd_inputVarname_T, &
-                                cd_inputVarname_S, &
-                                il_nprof, &
-                                il_nlevels, &
-                                cla_dimname, &
-                                ll_isInputVarPresent_T, &
-                                ll_isInputVarPresent_S, &
-                                ll_isDepth,&
-                                ll_isPres,&
-                                ll_isdepthadj,&
-                                ll_ispresadj,&
-                                ll_isDepth_corr,&
-                                ll_param,&
-                                ll_cparam,&
-                                ll_lparam)
-     !
-     !------------------------------------------------------------------
-     ! Ecriture de la nouvelle variable PARAMETERINT
-     !
-     IF ( .NOT. ll_param) CALL write_parameterint(cl_inputFile,ll_cparam,ll_lparam,ll_param)
+         CALL inquire_coriolis_file(cl_inputFile, &
+                                    cd_inputVarname_T, &
+                                    cd_inputVarname_S, &
+                                    il_nprof, &
+                                    il_nlevels, &
+                                    cla_dimname, &
+                                    ll_isInputVarPresent_T, &
+                                    ll_isInputVarPresent_S, &
+                                    ll_isDepth,&
+                                    ll_isPres,&
+                                    ll_isdepthadj,&
+                                    ll_ispresadj,&
+                                    ll_isDepth_corr,&
+                                    ll_param,&
+                                    ll_cparam,&
+                                    ll_lparam)
+         !
+         !------------------------------------------------------------------
+         ! Ecriture de la nouvelle variable PARAMETERINT
+         !
+         IF ( .NOT. ll_param) CALL write_parameterint(cl_inputFile,ll_cparam,ll_lparam,ll_param)
 #if defined key_debug
      WRITE(0,*) ' write_parameterint OK '
 #endif
-
-
+     ELSE
+        WRITE(0,*) 'Input type not define ! '
+        STOP
+     ENDIF
      !
      !
      !---------------------------------------------------------------------
@@ -331,12 +374,19 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
         !------------------------------------------------------------------
         ! Lecture du fichier Coriolis
         !
+        IF (ALLOCATED(rla_depthvalue_T)) DEALLOCATE(rla_depthvalue_T)
         ALLOCATE(rla_depthvalue_T(il_nlevels, il_nprof))
+        IF (ALLOCATED(rla_depthvalue_S)) DEALLOCATE(rla_depthvalue_S)
         ALLOCATE(rla_depthvalue_S(il_nlevels, il_nprof))
+        IF (ALLOCATED(rla_depthadjustvalue)) DEALLOCATE(rla_depthadjustvalue)
         ALLOCATE(rla_depthadjustvalue(il_nlevels, il_nprof))
+        IF (ALLOCATED(cla_positionqc)) DEALLOCATE(cla_positionqc)
         ALLOCATE(cla_positionqc(il_nprof))
+        IF (ALLOCATED(rla_juldvalue)) DEALLOCATE(rla_juldvalue)
         ALLOCATE(rla_juldvalue(il_nprof))
+        IF (ALLOCATED(rla_LON)) DEALLOCATE(rla_LON)
         ALLOCATE(rla_LON(il_nprof))
+        IF (ALLOCATED(rla_LAT)) DEALLOCATE(rla_LAT)
         ALLOCATE(rla_LAT(il_nprof))
 #if defined key_debug
         WRITE(0,*) 'read_coriolis_file ::',cl_inputFile,cd_inputVarname_T,cd_inputVarname_S
@@ -346,31 +396,61 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
      il_t2=0
      CALL SYSTEM_CLOCK(count=il_t1)
 #endif
-        CALL read_coriolis_file(cl_inputFile, &
-                                cd_inputVarname_T, &
-                                cd_inputVarname_S, &
-                                il_nprof, &
-                                il_nlevels, &
-                                ll_isInputVarPresent_T,&
-                                ll_isInputVarPresent_S, &
-                                ll_isDepth, &
-                                ll_isDepth_corr,&
-                                ll_isdepthadj,&
-                                ll_isPres, &
-                                ll_ispresadj,&
-                                rla_depthvalue_T, &
-                                rla_depthvalue_S, &
-                                cla_positionqc, &
-                                rla_juldvalue, &
-                                rl_fillvalue,&
-                                rla_LON,&
-                                rla_LAT)
+        IF  (TRIM(cd_input_type) .EQ. "ASCII") THEN
+           IF (ALLOCATED(rla_temp)) DEALLOCATE(rla_temp)
+           ALLOCATE(rla_temp(il_nlevels, il_nprof))
+           IF (ALLOCATED(rla_psal)) DEALLOCATE(rla_psal)
+           ALLOCATE(rla_psal(il_nlevels, il_nprof))
+           il_eof=0
+           !* Read ASCII file time/lon/lat/pres/temp/sal
+           CALL MIOL_getFreeLU(il_fic)
+           OPEN(il_fic, FILE=cl_inputFile,form='FORMATTED',STATUS='OLD',iostat=il_status)
+           il_nbrec=0
+           DO WHILE (il_eof == 0 )
+              READ(il_fic,*,iostat=il_eof) rl_date,rl_lon,rl_lat,rl_pres,rl_temp,rl_psal
+              IF ( il_eof == 0 ) THEN 
+                 il_nbrec=il_nbrec+1
+                 rla_LON(1)=rl_lon
+                 rla_LAT(1)=rl_lat
+                 rla_depthvalue_T(il_nbrec,1)=rl_pres
+                 rla_depthvalue_S(il_nbrec,1)=rl_pres
+                 rla_temp(il_nbrec,1)=rl_temp
+                 rla_psal(il_nbrec,1)=rl_psal
+                 rla_juldvalue(1)=rl_date
+                 cla_positionqc(1)='1'
+              ENDIF
+           ENDDO              
+           CLOSE(il_fic)
+        ELSE IF (TRIM(cd_input_type) .EQ. "NETCDF") THEN
+           CALL read_coriolis_file(cl_inputFile, &
+                                   cd_inputVarname_T, &
+                                   cd_inputVarname_S, &
+                                   il_nprof, &
+                                   il_nlevels, &
+                                   ll_isInputVarPresent_T,&
+                                   ll_isInputVarPresent_S, &
+                                   ll_isDepth, &
+                                   ll_isDepth_corr,&
+                                   ll_isdepthadj,&
+                                   ll_isPres, &
+                                   ll_ispresadj,&
+                                   rla_depthvalue_T, &
+                                   rla_depthvalue_S, &
+                                   cla_positionqc, &
+                                   rla_juldvalue, &
+                                   rl_fillvalue,&
+                                   rla_LON,&
+                                   rla_LAT)
+        ELSE
+          WRITE(0,*) 'Input type not define ! '
+          STOP
+        ENDIF
 #if defined key_cputime                                                                                      
      CALL SYSTEM_CLOCK(count=il_t2, count_rate=il_ir)
-     WRITE(0,*) "Temps read_coriolis_file :",REAL(il_t2 - il_t1) / il_ir
+     WRITE(0,*) "Temps read_input file_file :",REAL(il_t2 - il_t1) / il_ir
 #endif
 #if defined key_debug
-        WRITE(0,*) 'read_coriolis_file ok ::',cl_inputFile,ll_isDepth,ll_isPres
+        WRITE(0,*) 'read_inputfile ok ::',cl_inputFile,ll_isDepth,ll_isPres
 !        WRITE(0,*) 'Prof T ::',rla_depthvalue_T(:,10)
 !        WRITE(0,*) 'Prof S ::',rla_depthvalue_S(:,10)
 #endif
@@ -503,12 +583,60 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
         WRITE(0,*),'write_interp_field ',TRIM(cd_outputVarname_T)
 #endif
 
-        IF (ll_isInputVarPresent_T) THEN 
+       IF (ll_isInputVarPresent_T) THEN 
 #if defined key_cputime                                                                                      
      il_t1=0
      il_t2=0
      CALL SYSTEM_CLOCK(count=il_t1)
 #endif
+        IF  (TRIM(cd_input_type) .EQ. "ASCII") THEN
+          CALL write_interp_field_ASCII(cl_outputfile, &
+                                        cd_outputVarname_T,&
+                                        il_nprof, &
+                                        il_nlevels, &
+                                        rla_interpValueT)
+          CALL write_interp_field_ASCII(cl_outputfile, &
+                                        cd_outputVarname_S,&
+                                        il_nprof, &
+                                        il_nlevels, &
+                                        rla_interpValueS)
+          cl_outputVarname='PRES'
+          CALL write_interp_field_ASCII(cl_outputfile, &
+                                        cl_outputVarname,&
+                                        il_nprof, &
+                                        il_nlevels, &
+                                        rla_depthvalue_T)
+          cl_outputVarname='LONGITUDE'
+          CALL write_interp_field_ASCII(cl_outputfile, &
+                                        cl_outputVarname,&
+                                        il_nprof, &
+                                        il_nlevels, &
+                                        rla_LON)
+          cl_outputVarname='LATITUDE'
+          CALL write_interp_field_ASCII(cl_outputfile, &
+                                        cl_outputVarname,&
+                                        il_nprof, &
+                                        il_nlevels, &
+                                        rla_LAT)
+          cl_outputVarname='TEMP'
+          CALL write_interp_field_ASCII(cl_outputfile, &
+                                        cl_outputVarname,&
+                                        il_nprof, &
+                                        il_nlevels, &
+                                        rla_temp)
+          cl_outputVarname='PSAL'
+          CALL write_interp_field_ASCII(cl_outputfile, &
+                                        cl_outputVarname,&
+                                        il_nprof, &
+                                        il_nlevels, &
+                                        rla_psal)
+          cl_outputVarname='JULD'
+          CALL write_interp_field_ASCII(cl_outputfile, &
+                                        cl_outputVarname,&
+                                        il_nprof, &
+                                        il_nlevels, &
+                                        rla_juldvalue)
+        ELSE IF (TRIM(cd_input_type) .EQ. "NETCDF") THEN 
           CALL write_interp_field(cl_inputFile, &
                                   cd_outputVarname_T, &
                                   il_nprof, &
@@ -519,23 +647,26 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                   ll_param,&
                                   ll_cparam,&
                                   ll_lparam)
+        ENDIF
 #if defined key_cputime                                                                                      
      CALL SYSTEM_CLOCK(count=il_t2, count_rate=il_ir)
      WRITE(0,*) "Temps write_interp_field :",REAL(il_t2 - il_t1) / il_ir
 #endif
-        ENDIF
-        IF (ll_isInputVarPresent_S) THEN 
-          CALL write_interp_field(cl_inputFile, &
-                                  cd_outputVarname_S, &
-                                  il_nprof, &
-                                  il_nlevels, &
-                                  rla_interpValueS, &
-                                  cla_dimname, &
-                                  rg_fillValue,&
-                                  ll_param,&
-                                  ll_cparam,&
-                                  ll_lparam)
+       ENDIF
+        IF (TRIM(cd_input_type) .EQ. "NETCDF") THEN 
+           IF (ll_isInputVarPresent_S) THEN 
+             CALL write_interp_field(cl_inputFile, &
+                                     cd_outputVarname_S, &
+                                     il_nprof, &
+                                     il_nlevels, &
+                                     rla_interpValueS, &
+                                     cla_dimname, &
+                                     rg_fillValue,&
+                                     ll_param,&
+                                     ll_cparam,&
+                                     ll_lparam)
 
+           ENDIF
         ENDIF
         !
         !
@@ -558,9 +689,9 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
         DEALLOCATE(rla_poids)
         IF (ALLOCATED (rla_modeldepth)) DEALLOCATE(rla_modeldepth)
      ELSE
-!#if defined key_debug
+#if defined key_debug
         WRITE(0,*) 'Pas de variable TEMP ou PSAL : ',cd_inputVarname_T,cd_inputVarname_S
-!#endif
+#endif
      ENDIF
      !
   ENDDO
@@ -568,6 +699,76 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
   !
   !
 ENDSUBROUTINE interpolate_3D_model_field
+!
+!******************************************************************************
+!******************************************************************************
+!******************************************************************************
+SUBROUTINE write_interp_field_ASCII(cd_outputFile, &
+                                    cd_outputVarname,&
+                                    id_nprof, &
+                                    id_nlevels, &
+                                    rda_interpValue)
+   USE netcdf
+   USE MCAL
+   USE MIOL
+   USE MFT_error
+   USE MIOL_param
+   USE table_CLASS4 
+   IMPLICIT NONE
+   !
+   CHARACTER(LEN=255)                            :: cd_outputFile, &
+                                                    cd_outputVarname
+   INTEGER                                       :: id_nprof, &
+                                                    id_nlevels
+   REAL(KIND=4), DIMENSION(id_nlevels, id_nprof) :: rda_interpValue
+   INTEGER                                       :: il_ji, &
+                                                    il_status, &
+                                                    il_nbdim, &
+                                                    il_file_id,&
+                                                    il_dimension
+   INTEGER(KIND=4),DIMENSION(:),ALLOCATABLE      :: ila_dimlen
+   CHARACTER(LEN=255),DIMENSION(:),ALLOCATABLE   :: cla_dimname
+   LOGICAL                                       :: ll_exist
+   !
+   ll_exist=.FALSE.
+#if defined key_debug
+  WRITE(0,*),' Write interp field'
+#endif
+   WRITE(0,*),' Write interp field ASCII'
+   INQUIRE(FILE=cd_outputFile,EXIST=ll_exist)
+   IF ( .NOT. ll_exist) THEN
+      il_nbdim=2
+      ALLOCATE(cla_dimname(il_nbdim))
+      ALLOCATE(ila_dimlen(il_nbdim))
+      ila_dimlen(1) = id_nlevels
+      ila_dimlen(2) = id_nprof
+      cla_dimname(1)= 'N_LEVELS'
+      cla_dimname(2)= 'N_PROF'
+      call MIOL_create_file_NC(TRIM(cd_outputFile),&
+                               il_nbdim,&
+                               cla_dimname,&
+                               ila_dimlen)
+   ENDIF
+   CALL MIOL_openw_file_NC(TRIM(cd_outputFile),il_file_id)  
+   IF ( size(shape(rda_interpValue)) == 2 ) THEN 
+      CALL MIOL_write_field_NC (il_file_id,&
+                                cd_outputVarname,&
+                                'ZP',&
+                                rda_interpValue)
+   ELSE IF ( size(shape(rda_interpValue)) == 1 ) THEN
+      CALL MIOL_write_field_NC (il_file_id,&
+                                cd_outputVarname,&
+                                'P',&
+                                rda_interpValue)
+   ELSE 
+      WRITE (0,*) 'Bad dimension ',il_dimension
+      STOP
+   ENDIF 
+   CALL MIOL_close_file_NC(il_file_id)
+   print *,'Write OK '
+!
+ENDSUBROUTINE write_interp_field_ASCII
+
 !
 !******************************************************************************
 !******************************************************************************
