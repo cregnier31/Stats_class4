@@ -33,9 +33,8 @@ class Extract_ASCII(Extractor):
           valeurj=date1
           while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
               dateval=SyDate.__str__(valeurj)
-              liste_file=glob.glob(dirdata+'/*'+dateval+'*.txt')
+              liste_file=glob.glob(dirdata+'/*_'+dateval+'*.txt')
 	      print liste_file
-	      print dirdata+'/*'+dateval+'*.txt'
               for file in liste_file :
                 try :
                       liste_tot.append(file)

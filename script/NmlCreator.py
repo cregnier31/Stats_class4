@@ -195,7 +195,7 @@ class NmlCreator_IAOOS(NmlCreator):
 	     fic_psal=fic_temp
         log.info('Fichier temp %s' %(fic_temp)) 
         log.info('Fichier psal %s' %(fic_psal)) 
-	nbfile=len(glob.glob(output+"*"+str(dateval)+"*.txt"))
+	nbfile=len(glob.glob(output+"*_"+str(dateval)+"*.txt"))
 	# Write Namelist
         obFichier=open(nml,'w')
         obFichier.write('&interpolate_3D\n')
@@ -211,7 +211,7 @@ class NmlCreator_IAOOS(NmlCreator):
         obFichier.write('cl_input_type = ASCII'+'\n')
         obFichier.write('il_nbfile = '+str(nbfile)+'\n')
         obFichier.write('/'+'\n')
-        for fichier2 in glob.glob(output+"*"+str(dateval)+"*.txt") :
+        for fichier2 in glob.glob(output+"*_"+str(dateval)+"*.txt") :
              obFichier.write(fichier2+'\n')
         obFichier.close()
 
