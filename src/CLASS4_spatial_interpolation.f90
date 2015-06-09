@@ -171,7 +171,7 @@ PROGRAM SPATIAL_INTERPOLATION
           il_nbfile, &
           cla_inputFile)
      !      
-     DEALLOCATE(cla_inputFile, stat=il_status)
+     IF (ALLOCATED(cla_inputFile)) DEALLOCATE(cla_inputFile, stat=il_status)
      IF ( il_status /= 0 ) THEN
         WRITE(0,*) ' interpolate_prof3D : memory deallocation error.'
         CALL flush(0)
@@ -224,21 +224,26 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                                           cd_outputVarname_T,&
                                                           cd_input_type
   !
-  INTEGER(KIND=4)                                       :: il_ji,il_nbdim,il_nlon,il_nlat, &
+  INTEGER(KIND=4)                                       :: il_ji,il_v,il_nbdim,il_nlon,il_nlat, &
                                                            il_fic,il_ndepth,il_nprof,il_nlevels,&
-                                                           il_t1,il_t2,il_ir,il_eof,il_status,il_nbrec
+                                                           il_nbvar,il_t1,il_t2,il_ir,il_eof,il_status,il_nbrec
   INTEGER, DIMENSION(:,:), ALLOCATABLE                  :: ila_xindex,ila_yindex
   CHARACTER(LEN=255)                                    :: cl_depthvarname,cl_inputFile,&
                                                            cl_tmp,cl_colocFile,cl_outputfile,cl_outputVarname
   CHARACTER(LEN=255), DIMENSION(2)                      :: cla_dimname
   CHARACTER(LEN=1), DIMENSION(:), ALLOCATABLE           :: cla_positionqc
   REAL(KIND=4),DIMENSION(:,:),ALLOCATABLE               :: rla_poids
+
+  CHARACTER(LEN=255), DIMENSION(:), POINTER             :: clpa_varname
+  INTEGER, DIMENSION(:), POINTER                        :: ilpa_dimlen,ilpa_nbdim
+
   REAL(KIND=4), DIMENSION(:,:), ALLOCATABLE             :: rla_depthvalue_T,rla_depthvalue_S,&
                                                            rla_depthadjustvalue,rla_interpValueT,&
                                                            rla_interpValueS,rla_temp,rla_psal
   REAL(KIND=4), DIMENSION(:,:,:), ALLOCATABLE           :: rla_modelvalue_T,rla_modelvalue_S
   REAL(KIND=4), DIMENSION(:), ALLOCATABLE               :: rla_modeldepth
-  REAL(KIND=4)                                          :: rl_fillvalue,rl_var,rl_date,rl_lon,rl_lat,rl_pres,rl_temp,rl_psal
+  REAL(KIND=4)                                          :: rl_fillvalue,rl_var,rl_date,rl_pres,rl_temp,rl_psal
+  REAL(KIND=8)                                          :: rl_date_R8,rl_lon,rl_lat
   REAL(KIND=8), DIMENSION(:), ALLOCATABLE               :: rla_juldvalue
   REAL(KIND=8), DIMENSION(:), ALLOCATABLE               :: rla_LON,rla_LAT
 
@@ -246,7 +251,8 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                                            ll_isDepth,ll_isPres,&
                                                            ll_isDepth_corr,ll_isdepthadj,&
                                                            ll_ispresadj,ll_param,&
-                                                           ll_cparam,ll_lparam,ll_exist
+                                                           ll_cparam,ll_lparam,ll_exist,ll_lon,ll_lat,&
+                                                           ll_pres,ll_date,ll_temp,ll_psal
   !--------------------------------------------------------------------------
   ! Initialisation
 
@@ -256,6 +262,12 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
   ll_ispresadj=.FALSE.
   ll_isDepth_corr=.FALSE.
   ll_exist=.FALSE.
+  ll_lon=.FALSE.
+  ll_lat=.FALSE.
+  ll_pres=.FALSE.
+  ll_date=.FALSE.
+  ll_temp=.FALSE.
+  ll_psal=.FALSE.
   !
   !
   !---------------------------------------------------------------------
@@ -590,52 +602,98 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
      CALL SYSTEM_CLOCK(count=il_t1)
 #endif
         IF  (TRIM(cd_input_type) .EQ. "ASCII") THEN
-          CALL write_interp_field_ASCII(cl_outputfile, &
-                                        cd_outputVarname_T,&
-                                        il_nprof, &
-                                        il_nlevels, &
-                                        rla_interpValueT)
-          CALL write_interp_field_ASCII(cl_outputfile, &
-                                        cd_outputVarname_S,&
-                                        il_nprof, &
-                                        il_nlevels, &
-                                        rla_interpValueS)
-          cl_outputVarname='PRES'
-          CALL write_interp_field_ASCII(cl_outputfile, &
-                                        cl_outputVarname,&
-                                        il_nprof, &
-                                        il_nlevels, &
-                                        rla_depthvalue_T)
-          cl_outputVarname='LONGITUDE'
-          CALL write_interp_field_ASCII(cl_outputfile, &
-                                        cl_outputVarname,&
-                                        il_nprof, &
-                                        il_nlevels, &
-                                        rla_LON)
-          cl_outputVarname='LATITUDE'
-          CALL write_interp_field_ASCII(cl_outputfile, &
-                                        cl_outputVarname,&
-                                        il_nprof, &
-                                        il_nlevels, &
-                                        rla_LAT)
-          cl_outputVarname='TEMP'
-          CALL write_interp_field_ASCII(cl_outputfile, &
-                                        cl_outputVarname,&
-                                        il_nprof, &
-                                        il_nlevels, &
-                                        rla_temp)
-          cl_outputVarname='PSAL'
-          CALL write_interp_field_ASCII(cl_outputfile, &
-                                        cl_outputVarname,&
-                                        il_nprof, &
-                                        il_nlevels, &
-                                        rla_psal)
-          cl_outputVarname='JULD'
-          CALL write_interp_field_ASCII(cl_outputfile, &
-                                        cl_outputVarname,&
-                                        il_nprof, &
-                                        il_nlevels, &
-                                        rla_juldvalue)
+           CALL write_interp_field_ASCII_2D(cl_outputfile, &
+                                         cd_outputVarname_T,&
+                                         il_nprof, &
+                                         il_nlevels, &
+                                         rla_interpValueT)
+           CALL write_interp_field_ASCII_2D(cl_outputfile, &
+                                         cd_outputVarname_S,&
+                                         il_nprof, &
+                                         il_nlevels, &
+                                         rla_interpValueS)
+
+           CALL MIOL_inquire_variables_NC(cl_outputfile, &
+                                          il_nbvar, &
+                                          clpa_varname, &
+                                          ilpa_nbdim)
+           DO il_v=1, il_nbvar
+              SELECT CASE (TRIM(clpa_varname(il_v)))
+              CASE ('LONGITUDE')
+                 ll_lon = .TRUE.
+              CASE ('LATITUDE')
+                 ll_lat=.TRUE.
+              CASE ('PRES')
+                 ll_pres= .TRUE.
+              CASE ('JULD')
+                 ll_date= .TRUE.
+              CASE ('TEMP')
+                 ll_temp= .TRUE.
+              CASE ('PSAL')
+                 ll_psal= .TRUE.
+              ENDSELECT
+           ENDDO
+           !** Test the existence before write
+           IF ( .NOT. ll_lon )  THEN 
+               cl_outputVarname='LONGITUDE'
+               rl_lon=rla_LON(1)
+               CALL write_interp_field_ASCII_1D(cl_outputfile, &
+                                             cl_outputVarname,&
+                                             il_nprof, &
+                                             rl_lon)
+           ENDIF
+           IF ( .NOT. ll_lat )  THEN 
+              cl_outputVarname='LATITUDE'
+              rl_lat=rla_LAT(1)
+              CALL write_interp_field_ASCII_1D(cl_outputfile, &
+                                            cl_outputVarname,&
+                                            il_nprof, &
+                                            rl_lat)
+           ENDIF
+           IF ( .NOT. ll_date )  THEN 
+              cl_outputVarname='JULD'
+              rl_date_R8=rla_juldvalue(1)
+              print *,'DATE :: ',rl_date_R8
+              CALL write_interp_field_ASCII_1D(cl_outputfile, &
+                                            cl_outputVarname,&
+                                            il_nprof, &
+                                            rl_date_R8)
+           ENDIF
+           IF ( .NOT. ll_pres )  THEN 
+              cl_outputVarname='PRES'
+              CALL write_interp_field_ASCII_2D(cl_outputfile, &
+                                            cl_outputVarname,&
+                                            il_nprof, &
+                                            il_nlevels, &
+                                            rla_depthvalue_T)
+#if defined key_debug
+          WRITE(0,*) 'Write varname OK : ',cl_outputVarname
+#endif
+           ENDIF
+           IF ( .NOT. ll_temp )  THEN 
+              cl_outputVarname='TEMP'
+              WHERE( isnan(rla_temp(:,:)) ) rla_temp(:,:)=rg_fillvalue
+              CALL write_interp_field_ASCII_2D(cl_outputfile, &
+                                            cl_outputVarname,&
+                                            il_nprof, &
+                                            il_nlevels, &
+                                            rla_temp)
+#if defined key_debug
+          WRITE(0,*) 'Write varname OK : ',cl_outputVarname
+#endif
+           ENDIF
+           IF ( .NOT. ll_psal )  THEN 
+              cl_outputVarname='PSAL'
+              WHERE( isnan(rla_psal(:,:)) ) rla_psal(:,:)=rg_fillvalue
+              CALL write_interp_field_ASCII_2D(cl_outputfile, &
+                                            cl_outputVarname,&
+                                            il_nprof, &
+                                            il_nlevels, &
+                                            rla_psal)
+#if defined key_debug
+          WRITE(0,*) 'Write varname OK : ',cl_outputVarname
+#endif
+           ENDIF
         ELSE IF (TRIM(cd_input_type) .EQ. "NETCDF") THEN 
           CALL write_interp_field(cl_inputFile, &
                                   cd_outputVarname_T, &
@@ -673,20 +731,20 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
         !------------------------------------------------------------------
         ! Deallocation memoire
         !
-        DEALLOCATE(ila_xindex)
-        DEALLOCATE(ila_yindex)
-        DEALLOCATE(rla_depthvalue_T)
-        DEALLOCATE(rla_depthvalue_S)
-        DEALLOCATE(rla_depthadjustvalue)
-        DEALLOCATE(rla_interpValueT)
-        DEALLOCATE(rla_modelvalue_T)
-        DEALLOCATE(rla_modelvalue_S)
-        DEALLOCATE(rla_interpValueS)
-        DEALLOCATE(cla_positionqc)
-        DEALLOCATE(rla_juldvalue)
-        DEALLOCATE(rla_LON)
-        DEALLOCATE(rla_LAT)
-        DEALLOCATE(rla_poids)
+        IF (ALLOCATED(ila_xindex)) DEALLOCATE(ila_xindex)
+        IF (ALLOCATED(ila_yindex)) DEALLOCATE(ila_yindex)
+        IF (ALLOCATED(rla_depthvalue_T)) DEALLOCATE(rla_depthvalue_T)
+        IF (ALLOCATED(rla_depthvalue_S)) DEALLOCATE(rla_depthvalue_S)
+        IF (ALLOCATED(rla_depthadjustvalue)) DEALLOCATE(rla_depthadjustvalue)
+        IF (ALLOCATED(rla_interpValueT)) DEALLOCATE(rla_interpValueT)
+        IF (ALLOCATED(rla_modelvalue_T)) DEALLOCATE(rla_modelvalue_T)
+        IF (ALLOCATED(rla_modelvalue_S)) DEALLOCATE(rla_modelvalue_S)
+        IF (ALLOCATED(rla_interpValueS)) DEALLOCATE(rla_interpValueS)
+        IF (ALLOCATED(cla_positionqc)) DEALLOCATE(cla_positionqc)
+        IF (ALLOCATED(rla_juldvalue)) DEALLOCATE(rla_juldvalue)
+        IF (ALLOCATED(rla_LON)) DEALLOCATE(rla_LON)
+        IF (ALLOCATED(rla_LAT)) DEALLOCATE(rla_LAT)
+        IF (ALLOCATED(rla_poids)) DEALLOCATE(rla_poids)
         IF (ALLOCATED (rla_modeldepth)) DEALLOCATE(rla_modeldepth)
      ELSE
 #if defined key_debug
@@ -703,7 +761,7 @@ ENDSUBROUTINE interpolate_3D_model_field
 !******************************************************************************
 !******************************************************************************
 !******************************************************************************
-SUBROUTINE write_interp_field_ASCII(cd_outputFile, &
+SUBROUTINE write_interp_field_ASCII_2D(cd_outputFile, &
                                     cd_outputVarname,&
                                     id_nprof, &
                                     id_nlevels, &
@@ -734,7 +792,6 @@ SUBROUTINE write_interp_field_ASCII(cd_outputFile, &
 #if defined key_debug
   WRITE(0,*),' Write interp field'
 #endif
-   WRITE(0,*),' Write interp field ASCII'
    INQUIRE(FILE=cd_outputFile,EXIST=ll_exist)
    IF ( .NOT. ll_exist) THEN
       il_nbdim=2
@@ -750,24 +807,59 @@ SUBROUTINE write_interp_field_ASCII(cd_outputFile, &
                                ila_dimlen)
    ENDIF
    CALL MIOL_openw_file_NC(TRIM(cd_outputFile),il_file_id)  
-   IF ( size(shape(rda_interpValue)) == 2 ) THEN 
-      CALL MIOL_write_field_NC (il_file_id,&
-                                cd_outputVarname,&
-                                'ZP',&
-                                rda_interpValue)
-   ELSE IF ( size(shape(rda_interpValue)) == 1 ) THEN
-      CALL MIOL_write_field_NC (il_file_id,&
-                                cd_outputVarname,&
-                                'P',&
-                                rda_interpValue)
-   ELSE 
-      WRITE (0,*) 'Bad dimension ',il_dimension
-      STOP
-   ENDIF 
+   CALL MIOL_write_field_NC (il_file_id,&
+                             cd_outputVarname,&
+                             'ZP',&
+                             rda_interpValue)
    CALL MIOL_close_file_NC(il_file_id)
-   print *,'Write OK '
 !
-ENDSUBROUTINE write_interp_field_ASCII
+ENDSUBROUTINE write_interp_field_ASCII_2D
+
+!******************************************************************************
+!******************************************************************************
+!******************************************************************************
+SUBROUTINE write_interp_field_ASCII_1D(cd_outputFile, &
+                                    cd_outputVarname,&
+                                    id_nprof, &
+                                    rd_interpValue)
+   USE netcdf
+   USE MCAL
+   USE MIOL
+   USE MFT_error
+   USE MIOL_param
+   USE table_CLASS4 
+   IMPLICIT NONE
+   !
+   CHARACTER(LEN=255)                            :: cd_outputFile, &
+                                                    cd_outputVarname
+   INTEGER                                       :: id_nprof
+   REAL(KIND=8)                                  :: rd_interpValue
+   INTEGER                                       :: il_ji, &
+                                                    il_status, &
+                                                    il_nbdim, &
+                                                    il_file_id,&
+                                                    il_dimension
+   INTEGER(KIND=4),DIMENSION(:),ALLOCATABLE      :: ila_dimlen
+   CHARACTER(LEN=255),DIMENSION(:),ALLOCATABLE   :: cla_dimname
+   LOGICAL                                       :: ll_exist
+   !
+   ll_exist=.FALSE.
+#if defined key_debug
+  WRITE(0,*),' Write interp field'
+#endif
+   INQUIRE(FILE=cd_outputFile,EXIST=ll_exist)
+   IF ( .NOT. ll_exist) THEN
+      WRITE(0,*) 'File doesn t exist create first with 2D write'
+      STOP
+   ENDIF
+   CALL MIOL_openw_file_NC(TRIM(cd_outputFile),il_file_id)  
+   CALL MIOL_write_field_NC (il_file_id,&
+                             cd_outputVarname,&
+                             'P',&
+                             rd_interpValue)
+   CALL MIOL_close_file_NC(il_file_id)
+!
+ENDSUBROUTINE write_interp_field_ASCII_1D
 
 !
 !******************************************************************************

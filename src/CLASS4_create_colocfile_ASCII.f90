@@ -560,10 +560,16 @@ PROGRAM COLOCALIZE
                    WRITE (0,*) 'Poids le plus proche ::',rla_poids_vertex(il_loc(1))
                    WRITE (0,*) 'Distance la plus proche ::',rla_dist_vertex(il_loc(1))
 #endif
+  		   IF ( rla_dist_vertex(il_loc(1)) > 15. ) THEN
+                        WRITE (0,*) 'Erreur sur le point il_jk ::',il_jk,rla_dist_vertex(il_loc(1)),ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1))
+                        !STOP
+                   ENDIF
              ELSE	
                 !** When the file is not into the grid
 #if defined key_debug
                WRITE(0,*) 'Not in the grid'
+               WRITE(0,*) 'Position point lon lat : ',rla_lonpos(il_jk),rla_latpos(il_jk) 
+               WRITE(0,*) 'Min Max longitude : ',rl_lonmin,rl_lonmax,rl_latmin,rl_latmax
 #endif
                ila_xindex(:,il_jk)=9999
                ila_yindex(:,il_jk)=9999
