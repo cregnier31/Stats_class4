@@ -127,7 +127,7 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
   !LOGICAL :: insideCell0, insidecellstrict, around, ll_onvertice,ll_return
   LOGICAL :: around, ll_onvertice,ll_return
  
-  REAL(KIND=4) :: dx,dy
+  REAL(KIND=4) :: dx,dy, x_work, y_work, x_west, y_north
   REAL(KIND=4), DIMENSION(8) :: dist
   REAL(KIND=8)       :: rl_dist
   REAL(KIND=4), DIMENSION(4) :: xv,yv
@@ -273,7 +273,7 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
   ENDIF
 #endif
 !
-#if defined key_neatl12
+#if defined key_neatl12 || defined key_ibi12 || defined key_ibi36
 ! On verifie si l'observation est dans le domaine considere
   IF (x > xcanmax .OR. x < xcanmin .OR. y > ycanmax .OR. y < ycanmin) THEN
      SWnode=0
@@ -309,7 +309,7 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
   ENDIF
 #endif
 !
-#if defined key_med12 || key_presal
+#if defined key_med12 || defined key_presal
 ! On verifie si l'observation est dans le domaine considere
   IF (x > xcanmax .OR. x < xcanmin .OR. y > ycanmax .OR. y < ycanmin) THEN
 #if defined key_debuggeomlib
@@ -2256,14 +2256,14 @@ SUBROUTINE getSWnodeWeights( x, y, xcan,ycan,vertex, c )
   REAL(KIND=4) :: rl_sum
   REAL(KIND=4), DIMENSION(:,:), INTENT(IN) :: xcan,ycan
 
-#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_atl12 || defined key_atl12_zNEATL36 || defined key_orca_r1 || defined key_med12 || defined key_ibi36
+#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_atl12 || defined key_atl12_zNEATL36 || defined key_orca_r1 || defined key_med12 || defined key_ibi12 || defined key_ibi36
 #ifdef key_weights_method_OASIS
   REAL(KIND=4) :: xvmin,yvmin,xvmax,yvmax
   INTEGER :: iamb1, iamb2
 #endif
 #endif
 
-#if defined key_minipog || defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_atl12 || defined key_atl12_zNEATL36 || defined key_orca_r1 || defined key_med12 || defined key_ibi36
+#if defined key_minipog || defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_atl12 || defined key_atl12_zNEATL36 || defined key_orca_r1 || defined key_med12 || defined key_ibi12 || defined key_ibi36
   REAL(KIND=4) :: DiffLon
   EXTERNAL DiffLon
 #endif
@@ -2293,7 +2293,7 @@ SUBROUTINE getSWnodeWeights( x, y, xcan,ycan,vertex, c )
 #if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1
     xv(iv) = DiffLon( xcan(igrd(vertex(iv)),jgrd(vertex(iv))) , xx )
 #endif
-#if defined key_atl12 || defined key_atl4 || defined key_atl12_zNEATL36 || defined key_med12 || defined key_ibi36
+#if defined key_atl12 || defined key_atl4 || defined key_atl12_zNEATL36 || defined key_med12 || defined key_ibi12 || defined key_ibi36
     xv(iv) = xcan(igrd(vertex(iv)),jgrd(vertex(iv))) - xx
 #endif
 #endif
