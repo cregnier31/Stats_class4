@@ -90,6 +90,23 @@ MODULE PARAM_MOD
                              jpnisl  = 800
 #endif
 
+#if defined key_ibi12
+!! NEATL36
+  CHARACTER (len=16), PARAMETER ::  cp_cfg = "ibi12"        !: name of the configuration 
+  INTEGER, PARAMETER ::  jp_cfg = 36  !: resolution of the configuration (degrees)
+  INTEGER, PARAMETER :: ip_maxgrd =  134074 ! 1183265 ! 1183079!1183079 ! maximum number of grid points
+  INTEGER, PARAMETER :: ip_jpiglo = 367 ! 1093 ! number of grid points x
+  INTEGER, PARAMETER :: ip_jpjglo = 634 !1894 ! number of grid points y
+  INTEGER, PARAMETER :: jpkdta  = 75  !: number of levels      ( >= jpk    )
+  INTEGER, PARAMETER ::      jpiglo  = ip_jpiglo,      &  !: 1st dimension of global domain --> i
+                             jpjglo  = ip_jpjglo,      &  !: 2nd    " "    --> j
+                             jpk     = jpkdta,         &  !: number of vertical levels
+                             ! Domain characteristics
+                             jperio  =   0   ,      &  !: lateral cond. type (between 0 and 6)
+                             jpisl   =  18   ,      &  !: number of islands
+                             jpnisl  = 800 
+#endif
+
 #if defined key_ibi36
 !! NEATL36
   CHARACTER (len=16), PARAMETER ::  cp_cfg = "ibi36"        !: name of the configuration 
