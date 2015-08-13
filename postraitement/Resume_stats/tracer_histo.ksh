@@ -57,10 +57,10 @@ case $TRIM in
 esac
 case ${CONFIG} in
      PSY2V4R2 | PSY2V4R4 )
-      liste_region="ATL12 FACADE MED NAT NORDSEA TAT"
+      liste_region="ATL12 FACADE MED NAT NORDSEA TAT BALTIC"
       ;;
      PSY3V3R1 | PSY3V3R3 | PSY4V1R3 | PSY4V2R2 )
-      liste_region="ACC ARC GLO IND MED NAT NPA SAT SPA TAT TPA FACADE NORDSEA"
+      liste_region="ACC ARC GLO IND MED NAT NPA SAT SPA TAT TPA FACADE NORDSEA BALTIC"
       ;;
      *)
       echo "Modele non reconnu "
@@ -69,14 +69,18 @@ case ${CONFIG} in
 esac        	
 day1=${DATE1}
 day2=${DATE2}
+DIR_IN="/sortref/calval/DATA_COLOCATIONS/T_S_data_new/${CONFIG}/stats/ARMOR/${YEAR}_${TRIM}/stats_ascii/"
+DIR_OUT="/sortref/calval/DATA_COLOCATIONS/T_S_data_new/${CONFIG}/Class4_pics/histo/${YEAR}_${TRIM}/"
+[[ ! -d ${DIR_OUT} ]] && mkdir -p ${DIR_OUT}
+
 for stats in mean rms ; do
  for var in SAL TEMP; do
    for region in $liste_region ; do
    #for region in IND ; do
  
-     file="${YEAR}_${TRIM}/${day1}_${day2}_stats_${CONFIG}_${stats}_${var}.txt"
+     file="${DIR_IN}${day1}_${day2}_stats_${CONFIG}_${stats}_${var}.txt"
      echo "Fichier $file"
-     file_out="${YEAR}_${TRIM}/${var}_${stats}_${region}_${CONFIG}.gif"
+     file_out="${DIR_OUT}${var}_${stats}_${region}_${CONFIG}.gif"
      case ${CONFIG} in
        PSY2V4R4 | PSY3V3R3 )
           cat $file | grep $region |  awk '{print $3,$5,$7,$9,$11,$13,$17}' > test.txt
@@ -91,7 +95,7 @@ for stats in mean rms ; do
           echo "set boxwidth 1">> file_gnu 
 	  echo "set xtics rotate by 90 right font ',8'" >> file_gnu
 	  echo "set ytics rotate by 90 center">> file_gnu
-          echo "set ylabel '${stats} difference (Obs - Mod ) ${var} ${region} ${CONFIG} ' offset 2.5 ">> file_gnu
+          echo "set ylabel '${stats} difference (Obs - Mod ) ${var} ${region} ${CONFIG} ${QUART}${YEAR}' offset 2.5 ">> file_gnu
           echo "set xlabel ' '">> file_gnu
           echo "set label 6 'HIND' at graph 1.08, 0.22 left rotate by 90" >> file_gnu
           echo "set label 5 'NOW' at graph 1.08, 0.35 left rotate by 90" >> file_gnu
@@ -113,7 +117,7 @@ for stats in mean rms ; do
           echo "set boxwidth 1">> file_gnu
 	  echo "set xtics rotate by 90 right font ',8'" >> file_gnu
 	  echo "set ytics rotate by 90 center">> file_gnu
-          echo "set ylabel '${stats} difference (Obs - Mod ) ${var} ${region} ${CONFIG} ' offset 2.5">> file_gnu
+          echo "set ylabel '${stats} difference (Obs - Mod ) ${var} ${region} ${CONFIG} ${QUART}${YEAR}' offset 2.5">> file_gnu
           echo "set xlabel ' '">> file_gnu
           echo "set label 4 'HIND' at graph 1.08, 0.34 left rotate by 90" >> file_gnu
           echo "set label 3 'NOW' at graph 1.08, 0.47 left rotate by 90" >> file_gnu
