@@ -16,13 +16,13 @@ MODULE table_class4
   ! Date de run
   CHARACTER(len=30)  :: cg_rundate
   ! Fichier boite par defaut
-  CHARACTER(LEN=255),PARAMETER :: FP_BoxDefFile='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../utils/File_boxes.txt'
+  CHARACTER(LEN=255),PARAMETER :: FP_BoxDefFile='File_boxes.txt'
 
   ! Fichier par defaut des classes de profondeur
-  CHARACTER(LEN=255),PARAMETER  :: FP_DepthDefFile ='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../utils/fic_tri_prof.in'
-  CHARACTER(LEN=255),PARAMETER  :: FP_Deptht ='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../utils/deptht.in'
-  CHARACTER(LEN=255),PARAMETER  :: FP_E3t ='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../utils/e3t_0.in'
-  CHARACTER(LEN=255),PARAMETER  :: FP_ParamNameFile ='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../utils/param_names.in'
+  CHARACTER(LEN=255),PARAMETER  :: FP_DepthDefFile ='fic_tri_prof.in'
+  CHARACTER(LEN=255),PARAMETER  :: FP_Deptht ='deptht.in'
+  CHARACTER(LEN=255),PARAMETER  :: FP_E3t ='e3t_0.in'
+  CHARACTER(LEN=255),PARAMETER  :: FP_ParamNameFile ='param_names.in'
   ! Existence du fichier classe de profondeur
   LOGICAL  :: lg_DepthDefFile,lg_ParamFile
 
@@ -39,18 +39,17 @@ MODULE table_class4
   INTEGER, DIMENSION(:), ALLOCATABLE :: iga_NbProfRejetBathyBoite
 
   ! Nom par defaut du fichier log des profils rejet bathy
-  CHARACTER(len=255) :: cg_FicRejetBathy ='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../exe/RejetProfilBathy.txt'
+  CHARACTER(len=255) :: cg_FicRejetBathy ='RejetProfilBathy.txt'
   ! Nom par defaut du fichier ASCII de sortie des stats par boite
-  CHARACTER(len=255) :: cg_FicStatBoite ='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../exe/ResultStatBoite.txt'
+  CHARACTER(len=255) :: cg_FicStatBoite ='ResultStatBoite.txt'
   ! Nom par defaut du fichier ASCII de sortie des differences d ecart T
   ! superieure au seuil
-  CHARACTER(len=255) :: cg_FicDiffTEMP ='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../exe/ResultAnoTEMP.txt'
-  CHARACTER(len=255) :: cg_FicDiffTEMP_2 ='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../exe/Bad_points_TEMP_CORIO.txt'
+  CHARACTER(len=255) :: cg_FicDiffTEMP ='ResultAnoTEMP.txt'
+  CHARACTER(len=255) :: cg_FicDiffTEMP_2 ='Bad_points_TEMP_CORIO.txt'
   ! Nom par defaut du fichier ASCII de sortie des differences d ecart S
   ! superieure au seuil
-  CHARACTER(len=255) :: cg_FicDiffPSAL ='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../exe/ResultAnoPSAL.txt'
-  CHARACTER(len=255) :: cg_FicDiffPSAL_2 ='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../exe/Bad_points_PSAL_CORIO.txt'
-  CHARACTER(len=255) :: cg_file,cg_log='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../exe/pb_profils.txt'
+  CHARACTER(len=255) :: cg_FicDiffPSAL ='ResultAnoPSAL.txt'
+  CHARACTER(len=255) :: cg_FicDiffPSAL_2 ='Bad_points_PSAL_CORIO.txt'
   ! Ecart max pour les anomalies calculees en Temp et Sal:
   REAL(KIND=4) :: rg_EcartTempMax,rg_EcartSalMax
 

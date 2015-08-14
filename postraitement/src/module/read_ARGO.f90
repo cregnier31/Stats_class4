@@ -1807,8 +1807,8 @@ CONTAINS
             & cgpa_POSITION_QC(ib_p).EQ.'8'  ) &
             .OR. dgpa_LONGITUDE(ib_p) > rgp_missvalue &
             .OR. dgpa_LATITUDE(ib_p) > rgp_missvalue &
-            .OR. dgpa_LONGITUDE(ib_p) < -9999 &
-            .OR. dgpa_LATITUDE(ib_p) < -9999  &
+            .OR. dgpa_LONGITUDE(ib_p) <= -999 &
+            .OR. dgpa_LATITUDE(ib_p) <= -999  &
                 )  THEN
           il_position_qc_NOK = il_position_qc_NOK + 1
          ! WRITE(id_ficlog,'(a,1x,a)')'Position non valide',TRIM(cgpa_POSITION_QC(ib_p))
@@ -2076,8 +2076,11 @@ CONTAINS
                                      cgpa_PSAL_QC(:,ib_p) .EQ. '1' .OR.&
                                      cgpa_PSAL_QC(:,ib_p) .EQ. '2' .OR.&
                                      cgpa_PSAL_QC(:,ib_p) .EQ. '3')
-
-                rl_div=rl_nbvaleur_1/(rl_nbvaleur_1+rl_nbvaleur_2)
+                IF ( rl_nbvaleur_1+rl_nbvaleur_2 > 0 ) THEN  
+                  rl_div=rl_nbvaleur_1/(rl_nbvaleur_1+rl_nbvaleur_2)
+                ELSE 
+                  rl_div=0
+                ENDIF
                 IF ( rl_div > 0.2 ) THEN
 #if defined key_debug
                     PRINT *,'CAS pourri PSAL !!!!!!',rl_div,ib_p

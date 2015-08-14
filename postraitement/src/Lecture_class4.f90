@@ -75,7 +75,8 @@ PROGRAM Lecture_class4
   ! Gestion des fichiers de stat en sortie
   CHARACTER(255)                                :: cl_RmsDiffFicOut,cl_MeanDiffFicOut
   CHARACTER(LEN=255)                            :: cl_input2,cl_input3,cl_input4,cl_input5,&
-                                                   cl_input6,cl_input7
+                                                   cl_input6,cl_input7,cl_input8,cl_utils,&
+                                                   cl_logdir,cl_input9
   REAL(KIND=8)                                  :: rl_pour
   LOGICAL(KIND=4)                               :: ll_deptht,ll_e3t
   CHARACTER(LEN=25),DIMENSION(:),ALLOCATABLE    :: cla_var1D
@@ -84,8 +85,8 @@ PROGRAM Lecture_class4
   !
   !** LECTURE DES ARGUMENTS
   il_narg=iargc()
-  IF (il_narg.lt.7) THEN
-     PRINT *,'Pb with arguments :: ',il_narg, '/= 7 '
+  IF (il_narg.lt.8) THEN
+     PRINT *,'Pb with arguments :: ',il_narg, '/= 8 '
      PRINT *,'USAGE :: cd_commandFile modele rep_in date_run il_typegrid fic_log type_run'
      STOP 
   ENDIF
@@ -114,6 +115,10 @@ PROGRAM Lecture_class4
     PRINT *,'type data non valid'
     STOP
   ENDIF
+  CALL getarg(8,cl_input8)
+  cl_utils=TRIM(cl_input8)
+  CALL getarg(9,cl_input9)
+  cl_logdir=TRIM(cl_input9)
   !** Initialisation des tableaux de lecture ARGO
   CALL affect_table_ARGO
   ! Definition de la structure de l entete
@@ -148,18 +153,18 @@ PROGRAM Lecture_class4
   !** Ouverture et lecture du fichier BOITE et mise en memoire des zones
   SELECT CASE (ig_typegrid)
    CASE(1) 
-     CALL LireDefBoite (FP_BoxDefFile,il_status)
+     CALL LireDefBoite (TRIM(cl_utils)//TRIM(FP_BoxDefFile),il_status)
    CASE(2)
 #if defined key_debug
      PRINT *,'Lire def boite bins'
 #endif
-     CALL LireDefBoitebins(FP_BoxDefFile,il_status)
+     CALL LireDefBoitebins(TRIM(cl_utils)//TRIM(FP_BoxDefFile),il_status)
    ENDSELECT
 #if defined key_debug
   PRINT *,'Lire def boite OK'
 #endif
   IF ( il_status /= 0 ) THEN
-     WRITE(0,*) 'Box Def file reading error ',FP_BoxDefFile
+     WRITE(0,*) 'Box Def file reading error',TRIM(cl_utils)//TRIM(FP_BoxDefFile)
      CALL flush(0)
      STOP
   ENDIF
@@ -172,12 +177,12 @@ PROGRAM Lecture_class4
   rg_EcartSalMax = rl_EcartSalMax  
   !** Ouverture du fichier LOG
   CALL MIOL_getFreeLu(il_ficlog)
-  OPEN(unit=il_ficlog,file='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../exe/'//TRIM(cd_LogFile),form='FORMATTED',&
+  OPEN(unit=il_ficlog,file=TRIM(cd_LogFile),form='FORMATTED',&
        &ACCESS='SEQUENTIAL',STATUS='REPLACE')
   PRINT *,'Ouverture du fichier Log :: ',cd_LogFile
   !** Ouverture du fichier synthese
   CALL MIOL_getFreeLu(il_ficsynth)
-  OPEN(unit=il_ficsynth,file='/home/cregnier/SVN/mo/TEP_CLASS4_V3/postraitement/src/../exe/'//TRIM(cd_SynthFile),form='FORMATTED',&
+  OPEN(unit=il_ficsynth,file=TRIM(cd_SynthFile),form='FORMATTED',&
        &ACCESS='SEQUENTIAL',STATUS='REPLACE')
   PRINT *,'Ouverture du fichier synthese :: ',cd_SynthFile
   !** Boucle de lecture des fichiers CORIOLIS
@@ -190,7 +195,7 @@ PROGRAM Lecture_class4
   WRITE(il_ficlog,'(a)')' '
 
   !** Traitement des classes de profondeur
-  CALL definir_classe_profondeur(il_status)
+  CALL definir_classe_profondeur(il_status,cl_utils)
   IF ( il_status /= 0 ) THEN
      WRITE(0,'(a)')'Error in definir_classe_profondeur'
      CALL flush(0)
@@ -242,7 +247,7 @@ PROGRAM Lecture_class4
   WRITE(il_ficlog,'(a)')' '
   WRITE(il_ficlog,'(a)')'----------------------------------------------------'
   !** Definition des parametres traites
-  CALL affect_table_class4(il_status)
+  CALL affect_table_class4(il_status,cl_utils)
   IF ( il_status /= 0 ) THEN
      WRITE(0,*) 'Error in affect_table_class4'
      CALL flush(0)
@@ -313,7 +318,7 @@ PROGRAM Lecture_class4
 #if defined key_debug
          PRINT *,"stat_boite_class4"
 #endif
-        CALL stat_boite_class4(il_stat)
+        CALL stat_boite_class4(il_stat,cl_logdir)
 #if defined key_debug
          PRINT *,"stat_boite_class4 ok"
 #endif
@@ -403,14 +408,14 @@ PROGRAM Lecture_class4
 
   !! Ouverture namelist e3t et deptht
   ll_deptht = .FALSE.
-  INQUIRE(FILE=FP_Deptht,EXIST=ll_deptht)
+  INQUIRE(FILE=TRIM(cl_utils)//TRIM(FP_Deptht),EXIST=ll_deptht)
   IF ( ll_deptht ) THEN
      !** Ouverture du fichier de classes de profondeurs
      CALL MIOL_getFreeLu(il_deptht)
-     OPEN(unit=il_deptht,file=FP_Deptht,status='old',form='formatted',&
+     OPEN(unit=il_deptht,file=TRIM(cl_utils)//TRIM(FP_Deptht),status='old',form='formatted',&
           & iostat=il_status,action='read')
      IF ( il_status /= 0 ) THEN
-        WRITE(0,'(a,a)')'Cannot open Depth file ',TRIM(FP_Deptht)
+        WRITE(0,'(a,a)')'Cannot open Depth file ',TRIM(cl_utils)//TRIM(FP_Deptht)
         CLOSE(il_deptht)
         CALL flush(0)
         STOP
@@ -432,14 +437,14 @@ PROGRAM Lecture_class4
   ENDIF   
 
   ll_e3t = .FALSE.
-  INQUIRE(FILE=FP_E3t,EXIST=ll_e3t)
+  INQUIRE(FILE=TRIM(cl_utils)//TRIM(FP_E3t),EXIST=ll_e3t)
   IF ( ll_e3t ) THEN
      !** Ouverture du fichier de classes de profondeurs
      CALL MIOL_getFreeLu(il_e3t)
-     OPEN(unit=il_deptht,file=FP_E3t,status='old',form='formatted',&
+     OPEN(unit=il_deptht,file=TRIM(cl_utils)//TRIM(FP_E3t),status='old',form='formatted',&
           & iostat=il_status,action='read')
      IF ( il_status /= 0 ) THEN
-        WRITE(0,'(a,a)')'Cannot open Depth file ',TRIM(FP_E3t)
+        WRITE(0,'(a,a)')'Cannot open Depth file ',TRIM(cl_utils)//TRIM(FP_E3t)
         CLOSE(il_e3t)
         CALL flush(0)
         STOP
@@ -563,7 +568,7 @@ PROGRAM Lecture_class4
   !** ecriture en ASCII des resultats
   !   ------------------------------
   CALL MIOL_getFreeLu(il_ficStatBoite)
-  OPEN(il_ficStatBoite, file=TRIM(cg_FicStatBoite), &
+  OPEN(il_ficStatBoite, file=TRIM(cl_logdir)//TRIM(cg_FicStatBoite), &
        status='old', &
        form='formatted', &
        iostat=il_status)

@@ -17,7 +17,7 @@ CONTAINS
   !
   !===============================================================
   !
-  SUBROUTINE affect_table_class4(id_stat)
+  SUBROUTINE affect_table_class4(id_stat,cd_utils)
     !
     !**** affect_table_class4
     !
@@ -72,22 +72,23 @@ CONTAINS
     INTEGER(KIND=4) ,INTENT(OUT)                       :: id_stat
     INTEGER(KIND=4)                                    :: id_ParamFile,il_nbparams,&
                                                           il_status,il_ji,il_ind,il_i
+    CHARACTER(LEN=255),INTENT(IN)                      :: cd_utils
     CHARACTER(LEN=255),DIMENSION(:),ALLOCATABLE        :: cda_ParamFile
     CHARACTER(LEN=255)                                 :: cl_tmp
     !
     !*--------------------------------------------------------------------------
     !
     !**  Lecture de la namelist
-    INQUIRE(FILE=TRIM(FP_ParamNameFile),EXIST=lg_ParamFile)
+    INQUIRE(FILE=TRIM(cd_utils)//TRIM(FP_ParamNameFile),EXIST=lg_ParamFile)
     IF ( lg_ParamFile ) THEN
        NAMELIST / liste_param  / il_nbparams 
        !** Ouverture du fichier avec le nom des paramètres LUS 
        CALL MIOL_getFreeLu(id_paramFile)
-       OPEN (unit=id_ParamFile,file=TRIM(FP_ParamNameFile),&
+       OPEN (unit=id_ParamFile,file=TRIM(cd_utils)//TRIM(FP_ParamNameFile),&
              status='old',form='formatted',&
             & iostat=il_status)
        IF ( il_status /= 0 ) THEN
-          WRITE(0,'(a,a)')'Cannot open param file ',TRIM(FP_ParamNameFile)
+          WRITE(0,'(a,a)')'Cannot open param file ',TRIM(cd_utils)//TRIM(FP_ParamNameFile)
           CLOSE(id_ParamFile)
           CALL EXIT(2)
        ENDIF
@@ -242,7 +243,7 @@ CONTAINS
   !===============================================================
   !
 
-  SUBROUTINE definir_classe_profondeur(id_stat)
+  SUBROUTINE definir_classe_profondeur(id_stat,cd_utils)
     !
     !**** definir_classe_profondeur
     !
@@ -293,6 +294,7 @@ CONTAINS
     !**   0.3 Dummy variables
     !
     INTEGER(KIND=4) ,INTENT(OUT)                       :: id_stat
+    CHARACTER(LEN=255),INTENT(IN)                      :: cd_utils
     !
     !*--------------------------------------------------------------------------
     !
@@ -302,15 +304,15 @@ CONTAINS
     !** Classes de profondeurs attribuees en fonction de existence
     !** fichier classe de profondeur
     lg_DepthDefFile = .FALSE.
-    INQUIRE(FILE=TRIM(FP_DepthDefFile),EXIST=lg_DepthDefFile)
+    INQUIRE(FILE=TRIM(cd_utils)//TRIM(FP_DepthDefFile),EXIST=lg_DepthDefFile)
     IF ( lg_DepthDefFile ) THEN
 
        !** Ouverture du fichier de classes de profondeurs
        CALL MIOL_getFreeLu(il_DepthDefFile)
-       OPEN (unit=il_DepthDefFile,file=FP_DepthDefFile,status='old',form='formatted',&
+       OPEN (unit=il_DepthDefFile,file=TRIM(cd_utils)//TRIM(FP_DepthDefFile),status='old',form='formatted',&
             & iostat=il_status,action='read')  
        IF ( il_status /= 0 ) THEN
-          WRITE(0,'(a,a)')'Cannot open Depth file ',TRIM(FP_DepthDefFile)
+          WRITE(0,'(a,a)')'Cannot open Depth file ',TRIM(cd_utils)//TRIM(FP_DepthDefFile)
           CLOSE(il_DepthDefFile)
           CALL EXIT(2)  
        ENDIF
@@ -424,7 +426,7 @@ END SUBROUTINE definir_classe_profondeur
   !
   !===============================================================
   !
-  SUBROUTINE stat_boite_class4(id_stat)
+  SUBROUTINE stat_boite_class4(id_stat,cd_logdir)
     !
     !**** stat_boite_class4
     !
@@ -477,7 +479,7 @@ END SUBROUTINE definir_classe_profondeur
     INTEGER(KIND=4)                                    :: ib_p,il_k,il_s,il_status,il_i,il_ii,il_IndReg
     INTEGER(KIND=4)                                    :: il_juld_qc_NOK,il_position_qc_NOK,il_j
     INTEGER(kind=4)                                    :: il_dsi_NOK,il_NO_PRES_DEPH,il_PRES_ET_DEPH
-
+    
     !
     REAL(kind=8):: rl_lon,rl_lat,rl_IDboite
     !
@@ -486,6 +488,7 @@ END SUBROUTINE definir_classe_profondeur
     !
 
     INTEGER(KIND=4) ,INTENT(OUT)                       :: id_stat
+    CHARACTER(LEN=255),INTENT(IN)                      :: cd_logdir
     !
     !*--------------------------------------------------------------------------
     !
@@ -530,7 +533,6 @@ END SUBROUTINE definir_classe_profondeur
              WRITE(*,*) 'Pb d Identification boite',rl_lon,rl_lat
              STOP
           ENDIF
-!#if defined key_debug
 #if defined key_debug
     WRITE(0,*) 'Call IdentifierBoite ok ::',rl_lon,rl_lat,rl_IDboite
 #endif          
@@ -575,7 +577,7 @@ END SUBROUTINE definir_classe_profondeur
                                  & ib_p,il_IndReg,il_s,il_i,&
                                  & iga_NbValProf(ib_p,il_s,il_i),rga_StatProf(ib_p,il_s,il_i,1),&
                                  & rga_StatProf(ib_p,il_s,il_i,2),rga_StatProf(ib_p,il_s,il_i,3),&
-                                 & rga_StatProf(ib_p,il_s,il_i,4),1)
+                                 & rga_StatProf(ib_p,il_s,il_i,4),1,cd_logdir)
                          !** Mise a jour des tableaux de resultats de statistiques par boite
                          iga_NbVal(il_IndReg,il_s,il_i)=iga_NbVal(il_IndReg,il_s,il_i)+&
                               & iga_NbValProf(ib_p,il_s,il_i)    
@@ -606,13 +608,6 @@ END SUBROUTINE definir_classe_profondeur
                       ENDDO
                    ENDIF
                 ENDDO  ! il_s=1,ig_ParamStat,2
-             ELSE
-#if defined key_test
-    WRITE(0,*) 'Pas de données valides dans profile ou region non trouvee'
-    WRITE(0,*) 'Coordonnées du point :  ',rl_lon,rl_lat
-    WRITE(0,*) 'Valeur de la region :  ',il_IndReg
-    WRITE(0,*) 'iga_MesTempVal(ib_p) :  ',iga_MesTempVal(ib_p)
-#endif
              ENDIF
              !** STATISTIQUES sur la SALINITE
 
@@ -633,7 +628,7 @@ END SUBROUTINE definir_classe_profondeur
                                  & ib_p,il_IndReg,il_s,il_i,&
                                  & iga_NbValProf(ib_p,il_s,il_i),rga_StatProf(ib_p,il_s,il_i,1),&
                                  & rga_StatProf(ib_p,il_s,il_i,2),rga_StatProf(ib_p,il_s,il_i,3),&
-                                 & rga_StatProf(ib_p,il_s,il_i,4),2)
+                                 & rga_StatProf(ib_p,il_s,il_i,4),2,cd_logdir)
                          !** Mise a jour des tableaux de resultats de statistiques par boite
                          iga_NbVal(il_IndReg,il_s,il_i)=iga_NbVal(il_IndReg,il_s,il_i)+&
                               & iga_NbValProf(ib_p,il_s,il_i)    
@@ -677,7 +672,7 @@ END SUBROUTINE definir_classe_profondeur
           ELSE
           ! iga_NbProfRejetBathyBoite(il_IndReg) = iga_NbProfRejetBathyBoite(il_IndReg) + 1
              ! Ecriture dans le fichier de rejet de profil
-             OPEN(unit=50,file=cg_FicRejetBathy,form='FORMATTED',POSITION='APPEND',STATUS='old')
+             OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicRejetBathy),form='FORMATTED',POSITION='APPEND',STATUS='old')
              WRITE(50,'(I8,2x,f9.4,2x,f9.4,2x,i8,2x,a,2x,a)',advance="yes") INT(rga_IDboite(ib_p)),&
                   & dgpa_LONGITUDE(ib_p),dgpa_LATITUDE(ib_p),&
                   iga_BathyProfil(ib_p),&
@@ -696,7 +691,7 @@ END SUBROUTINE definir_classe_profondeur
   !===============================================================
   !
   SUBROUTINE remplir_tableau(rd_DepthMin,rd_DepthMax,id_IndProf,id_IndReg,id_param,id_IndDepth,&
-       &id_nval,dd_moy,dd_rms,dd_moy_diff,dd_rms_diff,id_var)
+       &id_nval,dd_moy,dd_rms,dd_moy_diff,dd_rms_diff,id_var,cd_logdir)
     !
     !**** remplir_tableau
     !
@@ -742,6 +737,7 @@ END SUBROUTINE definir_classe_profondeur
     INTEGER(KIND=4),INTENT(IN)  :: id_IndProf,id_var
     INTEGER(KIND=4),INTENT(IN)  :: id_IndReg,id_param,id_IndDepth
     REAL(KIND=4),INTENT(IN)     :: rd_DepthMin,rd_DepthMax
+    CHARACTER(LEN=255),INTENT(IN) :: cd_logdir
     REAL(KIND=8),INTENT(OUT)    :: dd_moy,dd_rms,dd_moy_diff,dd_rms_diff
     INTEGER(KIND=4),INTENT(OUT) :: id_nval
 
@@ -870,7 +866,7 @@ END SUBROUTINE definir_classe_profondeur
                        ! (inutile car deja
                        ! dans un segment de profondeur)
                        IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
-                          OPEN(unit=50,file=cg_FicDiffTEMP,form='FORMATTED',&
+                          OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffTEMP),form='FORMATTED',&
                                & POSITION='APPEND',STATUS='old')
                           WRITE(50,FMT=700,advance="yes") &
                                & TRIM(cg_filename),&
@@ -970,7 +966,7 @@ END SUBROUTINE definir_classe_profondeur
     WRITE(0,*) 'Diff TEMP NOK 1 clim::',rl_diff,rl_diff2
 #endif
                          IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
-                            OPEN(unit=50,file=cg_FicDiffTEMP,form='FORMATTED',&
+                            OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffTEMP),form='FORMATTED',&
                                  & POSITION='APPEND',STATUS='old')
                             WRITE(50,FMT=700,advance="yes") &
                                  & TRIM(cg_filename),&
@@ -997,7 +993,7 @@ END SUBROUTINE definir_classe_profondeur
                      IF ( ABS(rl_diff).GE.rg_EcartTempMax) THEN
                           ig_StatNOK(id_IndDepth,id_param) =ig_StatNOK(id_IndDepth,id_param) + 1
                           IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
-                            OPEN(unit=50,file=cg_FicDiffTEMP,form='FORMATTED',&
+                            OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffTEMP),form='FORMATTED',&
                                  & POSITION='APPEND',STATUS='old')
                              WRITE(50,FMT=700,advance="yes") &
                                   & TRIM(cg_filename),&
@@ -1077,7 +1073,7 @@ END SUBROUTINE definir_classe_profondeur
                        ! note: on n ecrit pas les valeurs pour la colonne totale (inutile car deja
                        ! dans un segment de profondeur)
                        IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
-                          OPEN(unit=50,file=cg_FicDiffPSAL,form='FORMATTED',&
+                          OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffPSAL),form='FORMATTED',&
                                & POSITION='APPEND',STATUS='old')
                           WRITE(50,FMT=700,advance="yes") &
                                & TRIM(cg_filename),&
@@ -1106,14 +1102,14 @@ END SUBROUTINE definir_classe_profondeur
                              WRITE(0,*) 'Diff Valeur Clim ::',rl_diff3,rl_diff2,rl_diff
                              !IF ( iga_IndParamStat(id_param)== ip_HDCST_PSAL )  THEN
                              !    !* Test sur l'existence du fichier
-                             !    INQUIRE(FILE=cg_FicDiffPSAL_2,EXIST=ll_exist_PSAL)
+                             !    INQUIRE(FILE=TRIM(cd_logdir)//TRIM(cg_FicDiffPSAL_2),EXIST=ll_exist_PSAL)
                              !    IF ( .NOT. ll_exist_PSAL) THEN
                              !       !* Create file      
-                             !       OPEN(unit=50,file=cg_FicDiffPSAL_2,form='FORMATTED',STATUS='new')
+                             !       OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffPSAL_2),form='FORMATTED',STATUS='new')
                              !       CLOSE(50)
                              !       ll_exist_PSAL=.TRUE.
                              !    ENDIF
-                             !    OPEN(unit=50,file=cg_FicDiffPSAL_2,form='FORMATTED',&
+                             !    OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffPSAL_2),form='FORMATTED',&
                              !        & POSITION='APPEND',STATUS='old') 
                              !        WRITE(50,FMT=750,advance="yes") &
                              !         & TRIM(cg_filename),&
@@ -1170,7 +1166,7 @@ END SUBROUTINE definir_classe_profondeur
     WRITE(0,*) 'Diff PSAL NOK 1 clim::',rl_diff,rl_diff2
 #endif
                          IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
-                            OPEN(unit=50,file=cg_FicDiffTEMP,form='FORMATTED',&
+                            OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffTEMP),form='FORMATTED',&
                                  & POSITION='APPEND',STATUS='old')
                             WRITE(50,FMT=700,advance="yes") &
                                  & TRIM(cg_filename),&
@@ -1198,7 +1194,7 @@ END SUBROUTINE definir_classe_profondeur
                      IF ( ABS(rl_diff).GE.rg_EcartSalMax) THEN
                           ig_StatNOK(id_IndDepth,id_param) =ig_StatNOK(id_IndDepth,id_param) + 1
                           IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
-                           OPEN(unit=50,file=cg_FicDiffPSAL,form='FORMATTED',POSITION='APPEND',STATUS='old')
+                           OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffPSAL),form='FORMATTED',POSITION='APPEND',STATUS='old')
                            WRITE(50,FMT=700,advance="yes") TRIM(cg_filename),&
                                                           & TRIM(cga_param(iga_IndParamStat(id_param))),&
                                                           & rl_diff,rga_DepthVal(il_i,id_IndProf),id_IndDepth,id_IndReg,&

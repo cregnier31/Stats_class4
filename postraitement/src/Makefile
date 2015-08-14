@@ -43,7 +43,7 @@ OBJ3 = $(SRCDIR3)/hydro_potentiel.o \
       $(SRCDIR)/diag_class4_EN3.o \
       $(SRCDIR)/read_EN3.o
 
-all: change_path $(EXEDIR)/Lecture_class4.exe
+all: $(EXEDIR)/Lecture_class4.exe
 
 change_path:
 	@echo ""
