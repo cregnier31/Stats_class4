@@ -6,13 +6,9 @@ from matplotlib.path import Path
 pathmod = os.path.join(os.path.split(os.getcwd())[0],'CL4_GODAE_LIB')
 sys.path.append(pathmod)
 import pylab as P
+from utils import *
 
 ## C.REGNIER 2014 : plot histograms 
-def mkdir(path):
-     "Create a directory, and parents if needed"
-     if not os.path.exists(path):
-         os.makedirs(path)
-
 
 if len(sys.argv) != 3: 
   print 'Usage: ./create_histogram_GODAE_accuracy.py <YEAR> <QUART>' 
@@ -21,6 +17,9 @@ else :
   YEAR=sys.argv[1]
   QUART=sys.argv[2]
 
+year=str(YEAR)
+trim=str(QUART)
+datetrim=year+'_'+trim
 modele = ['PSY4V2R2','PSY3V3R3']
 liste_var=['TEMP','PSAL']
 prof0='0-5m'
@@ -31,31 +30,8 @@ prof4='800-2000m'
 prof5='2000-5000m'
 prof6='0-5000m'
 reg=['GLO','TAT','TPA','MED','NAT','SAT','SPA','NPA','ARC','ACC','IND']
-year=str(YEAR)
-trim=str(QUART)
-if int(QUART) == 1 :
-   date1=year+"0101"
-   date2=year+"0331"
-   QM="JFM"
-   print "First quarter"
-elif int(QUART) == 2 :
-   date1=year+"0401"
-   date2=year+"0630"
-   QM="AMJ"
-   print "Second quarter"
-elif int(QUART) == 3 :
-   date1=year+"0701"
-   date2=year+"0930"
-   QM="JAS"
-   print "Third quarter"
-elif int(QUART) == 4 :
-   date1=year+"1001"
-   date2=year+"1231"
-   QM="OND"
-   print "Fourth quarter"
-else  :
-  print "Bad choice "
-  sys.exit(1)
+
+date1,date2,QM=create_path(YEAR,QUART)
 
 datetrim=year+'_'+trim
 datetrim2=QM+" "+year
