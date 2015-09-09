@@ -20,7 +20,7 @@ tab_choix(0)='SAL'
 tab_choix(1)='TEMP'
 ;; Definition des variables
 ;.compile Def_param_bulletin
-;; Chargmement des paramètres globaux
+;; Chargement des paramètres globaux
 Def_param_bulletin
 COMMON param_CLASS4,variable_name,valeurs_cmax,$
         valeurs_cmax_sal,valeurs_cmax2,valeurs_cmax2_sal, $

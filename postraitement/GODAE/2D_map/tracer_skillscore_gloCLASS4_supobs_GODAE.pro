@@ -20,10 +20,10 @@ PRO tracer_skillscore_gloCLASS4_supobs_GODAE,modele,fichier,fic_mask,filelist,$
 @param
 @param_class4
 
-
+clear,file2
 file2=fic_mask
 file=fichier
-nb_prof=N_ELEMENTS(profondeur)
+nb_prof=N_ELEMENTS(tab_prof)
 nb_prof_model=N_ELEMENTS(tab_prof_model)
 nb_variables=N_ELEMENTS(variable)
 print,zone
@@ -76,7 +76,8 @@ ENDCASE
         lon=ncdf_lec(file2,iodir=dir_mask,var='longitude', /nostruct) & lon=transpose(lon)
         lat=ncdf_lec(file2,iodir=dir_mask,var='latitude', /nostruct) & lat=transpose(lat)
         field1=ncdf_lec(file2,iodir=dir_mask,var='mask', /nostruct)& field1=transpose(field1)
-	print,'file :: ',dir_stats,file
+	print,'file :: ',file
+        print,'Dir_stats :: ',dir_stats
         boite=ncdf_lec(file,iodir=dir_stats,var='box', /nostruct) & boite=transpose(boite)
         il_nlon=N_ELEMENTS(lon(1,*))
         il_nlat=N_ELEMENTS(lat(*,1))
@@ -112,7 +113,6 @@ ENDCASE
       tab_indice_ini(indice2)=0
       tab_indice_fin(indice2)=tab_indice_fin(indice2-1)
       print,'indice :',tab_indice_ini(indice2),tab_indice_fin(indice2)
-      print,'Pronfondeur : ',profondeur(indice2)
 
 ;; Lecture des rms 
         i=0L
@@ -137,7 +137,7 @@ ENDCASE
 ;;------------------------------------------------------------------------------------------
         prof=0
 ;; Boucle sur les niveaux
-        WHILE prof le nb_prof -1  DO BEGIN
+        WHILE prof le nb_prof -2  DO BEGIN
            FOR var=var1,var2  DO BEGIN
 ;; Test si la variable est la temperature ou la salinité
 ;; Paire :: temperature, impaire : salinité
@@ -380,6 +380,7 @@ ENDCASE
            output=output1
            domain=dom
            clear,titre,units
+           print,"Profondeur :",prof, profondeur
            titre='Class4 SSP 1 Day Forecast '+varname+' for '+modele+' in '+ profondeur(prof)+' '+date_title
            units='SSP'
 	   x1=fltarr(il_nlat,il_nlon)

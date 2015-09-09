@@ -68,6 +68,7 @@ echo "@compile" >> ${plotIDLFile}
 echo "cd, '${PROGDIR}'"  >> ${plotIDLFile}
 echo ".compile compute_skill_class4_geo_supobs_GODAE_QUART" >> ${plotIDLFile}
 echo ".compile tracer_skillscore_gloCLASS4_supobs_GODAE" >> ${plotIDLFile}
+echo ".compile tracer_skillscore_gloCLASS4_supobs_GODAE_CLIM" >> ${plotIDLFile}
 echo ".compile tracer_skillscore_gloCLASS4_supobs_GODAE_2D"  >> ${plotIDLFile}
 echo ".compile Def_param_bulletin" >> ${plotIDLFile}
 echo "@param_class4" >> ${plotIDLFile}

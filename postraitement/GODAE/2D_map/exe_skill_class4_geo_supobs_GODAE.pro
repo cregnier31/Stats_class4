@@ -127,7 +127,7 @@ CASE variable OF              & $
         END       & $
   'SLA' : BEGIN     & $
          print,variable         & $
-          dirname_out=fic_out_skill+datetrim+"/SLA/" & $
+         dirname_out=fic_out_skill+datetrim+"/SLA/" & $
          tracer_skillscore_gloCLASS4_supobs_GODAE_2D,modele,fichier,fichier_mask2,filelist, $
                                                        var1,var2,variable_name,               $
                                                        zone,kind,dir_stats_MERC3,date_title   & $

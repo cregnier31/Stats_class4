@@ -20,7 +20,7 @@ tab_choix(0)='SAL'
 tab_choix(1)='TEMP'
 ;; Definition des variables
 ;.compile Def_param_bulletin
-;; Chargmement des paramètres globaux
+;; Chargement des paramètres globaux
 Def_param_bulletin
 COMMON param_CLASS4,variable_name,valeurs_cmax,$
         valeurs_cmax_sal,valeurs_cmax2,valeurs_cmax2_sal, $
@@ -53,7 +53,6 @@ print ,'Calcul des stats boites 4deg pour les variables
 print ,'-----------------------------------'
 
 FOR ind=0,N_ELEMENTS(variables)-1 DO BEGIN   
-   dir_mask='/home/qualif/CLASS4/TEP_CLASS4/branches/V3/postraitement/static/'
    tab_prof=fltarr(2)
    tab_prof(0)=0
    tab_prof(1)=500
@@ -98,6 +97,7 @@ FOR ind=0,N_ELEMENTS(variables)-1 DO BEGIN
    datetrim=year+"_"+quart
    date_title=datetrim
    fichier_mask4='mask_bins4deg.nc'  
+   dir_mask='/home/qualif/CLASS4/TEP_CLASS4/branches/V3/postraitement/static/'
    CASE variable OF              & $
      'TEMP' : BEGIN                & $
              print,variable        & $
@@ -106,7 +106,15 @@ FOR ind=0,N_ELEMENTS(variables)-1 DO BEGIN
              dirname_out=fic_out_card+"T_S/"+datetrim+"/skill/" & $
              tracer_skillscore_gloCLASS4_supobs_GODAE,modele,fichier,fichier_mask4,filelist,var1,var2, $   
                                                         profondeur,variable_name_type,zone,kind,dirin,date_title, $
-                                  			     tab_prof,tab_model,tab_e3t& $
+                                   			     tab_prof,tab_model,tab_e3t& $
+             fichier_mask4='mask_bins4deg.nc'  & $
+             fichier=filelist(0)  & $
+             print, fichier & $
+             dirin=dir_input & $
+             dir_mask='/home/qualif/CLASS4/TEP_CLASS4/branches/V3/postraitement/static/' & $
+             tracer_skillscore_gloCLASS4_supobs_GODAE_CLIM,modele,fichier,fichier_mask4,filelist,var1,var2, $
+                                                        profondeur,variable_name_type,zone,kind,dirin,date_title, $
+                                                        tab_prof,tab_model,tab_e3t                                          & $
            END                   & $
      'PSAL' : BEGIN                  & $
              print,'PSAL'         & $
@@ -116,6 +124,13 @@ FOR ind=0,N_ELEMENTS(variables)-1 DO BEGIN
              tracer_skillscore_gloCLASS4_supobs_GODAE,modele,fichier,fichier_mask4,filelist,var1,var2, $   
                                                         profondeur,variable_name_type,zone,kind,dirin,date_title, $
                                   			     tab_prof,tab_model,tab_e3t  & $
+             fichier_mask4='mask_bins4deg.nc'  & $
+             fichier=filelist(0)  & $
+             dirin=dir_input & $
+             dir_mask='/home/qualif/CLASS4/TEP_CLASS4/branches/V3/postraitement/static/' & $
+             tracer_skillscore_gloCLASS4_supobs_GODAE_CLIM,modele,fichier,fichier_mask4,filelist,var1,var2, $
+                                                     profondeur,variable_name_type,zone,kind,dirin,date_title, $
+                                                     tab_prof,tab_model,tab_e3t                                          & $
            END       & $
      'SLA' : BEGIN     & $
              profondeur(0)='' & $
