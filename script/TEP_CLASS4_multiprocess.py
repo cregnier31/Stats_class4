@@ -9,13 +9,10 @@
 #
 from __future__ import generators
 import os,sys,string,shutil,glob,re
-#sys.path.append("/home/modules/versions/64/fc18/ipython/ipython-1.1/lib/python2.7/site-packages")
-#sys.path.append("/home/modules/versions/64/fc18/netcdf4-python/netcdf4-python-1.0.7/lib64/python2.7/site-packages/")
-#sys.path.append("/home/cregnier/python/module/")
-#sys.path.append("/home/cregnier/python/module/geojson-1.0.7/")
-#sys.path.append("/home/cregnier/python/module/lib/python2.6/site-packages/")
-#sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/")
-#sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/nco-0.0beta-py2.7.egg/")
+sys.path.append("/home/cregnier/python/module/")
+sys.path.append("/home/cregnier/python/module/lib/python2.6/site-packages/")
+sys.path.append("/home/cregnier/python/module/lib/python2.6/site-packages/nco-0.0beta-py2.6.egg/")
+sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/geojson-1.0.7-py2.7.egg/")
 import logging
 import resource
 from Selector import Selector
@@ -100,12 +97,13 @@ log.info('========================================================')
 # ===========================================
 # Load options and compute date interval
 # ===========================================
-[date1,date2,confname,data_type,daterun,cl_schedule,cl_src]=Loader().factory('INPUT').load(sys.argv[1:],level)
+[date1,date2,confname,data_type,daterun,cl_schedule,cl_src,nb_proc]=Loader().factory('INPUT').load(sys.argv[1:],level)
+log.error("Nombre de proc %i" %(nb_proc))
 # ==================================
 #   Load db configuration file
 # ==================================
 CONF_PATH=os.getcwd()
-CONF_PATH="/home/qualif/CLASS4/TEP_CLASS4/branches/V3/script"
+CONF_PATH="/home/cregnier/SVN/mo/TEP_CLASS4_V3/script"
 filename = [CONF_PATH+'/'+confname]
 param_dict=Loader.factory('NML').load(filename,level)
 nb_level=int(param_dict.get('GLOBAL','LEVELS'))
@@ -128,7 +126,9 @@ daily_pref=param_dict.get('GLOBAL','DAILY_PREF')
 direxec=param_dict.get('GLOBAL','EXEDIR')
 data_origin=param_dict.get('input_dir','DATA_ORIGIN')
 cl_config=param_dict.get('GLOBAL','CONFIGURATION')
-template=cl_config+'_'+model_type
+#template=cl_config+'_'+model_type
+cl_config_h=re.sub("QV","V",cl_config) 
+template=cl_config_h+'_'+model_type.lower()
 lead_time=param_dict.get('input_dir','LEAD_TIME').split()
 lead_int=param_dict.get('input_dir','LEAD_INT').split()
 coloc_rep=param_dict.get('output_dir','DIRCOLOC')
@@ -136,10 +136,11 @@ dir_log=param_dict.get('GLOBAL','DIRLOG')
 gridtemp=param_dict.get('GLOBAL','gridtemp')
 gridsal=param_dict.get('GLOBAL','gridsal')
 type_run=param_dict.get('GLOBAL','TYPE_RUN')
-
+dirstatic=param_dict.get('static','dir_static')
 
 ## Create Output and tmp directory if doesn't exist
 if not os.path.exists(dirwork):
+     log.info("Workdir %s" %(dirwork))
      os.makedirs(dirwork)
 if not os.path.exists(diroutput):
      os.makedirs(diroutput)
@@ -237,6 +238,7 @@ for fichier in list_files:
        selector=Selector(data_format,data_type).factory(data_origin)
        ll_file_ok=True
        ll_file_interp=True
+
     ## Case  : File in the area selection
     if ll_file_interp : 
        # Write ASCII pos for Coloc
@@ -252,7 +254,7 @@ for fichier in list_files:
        input=open(file_in,'r').read().split('\n')
        cpt=1
        nb_pts=len(input)
-       nb_process=100
+       nb_process=nb_proc
        splitLen=int(ceil(nb_pts/nb_process))+1
        print splitLen
        for lines in range(0,len(input),splitLen):
@@ -269,50 +271,32 @@ for fichier in list_files:
        #===========================================================================================
        # Colocation in multiprocessing
        #===========================================================================================
-       ind=1
-       nb_proc=5
-       for i in range(1,21):
-           list_tot=[]
-           for j in range(1,6):
-              list_files=glob.glob(outputBase+"*split"+str(ind)+'.pos')
-              list_tot.append(list_files)
-              ind=ind+1
-           print list_tot 
-           mp_pool = Pool(nb_proc)
-           mp_pool.map(run_coloc, [ x for x in list_tot ])
-           log.info("Index loop %i " %(i))
-           toc = time.time()
-           log.info("elapsed time %s " %(toc-tic))
+       log.info("Multiprocessing ")
        ### 2eme solution
-       #list_files=glob.glob(outputBase+"*split*")
-       #print list_files
-       #mp_pool = Pool(nb_process)
-       #mp_pool.map(run_coloc, [ [x] for x in list_files ])
+       log.info("List file %s "  %(outputBase))
+       list_files=glob.glob(outputBase+"*split*.pos")
+       log.info(list_files)
+       mp_pool = Pool(nb_process)
+       mp_pool.map(run_coloc, [ [x] for x in list_files ])
        ## TODO
        ## Recombinaisons of .dat
        log.info("Coloc ok start recombination ")
+       toc = time.time()
        print '%s elapsed time' %(toc-tic)
        ind=1
        ind_tot=1
        fileout=outputBase+'.dat'
-       #with open(fileout, 'w') as outFile:
-       #   for i in range(1,21):
-       #         for j in range(1,6):
-       #            filename=outputBase +'_split'+ str(ind) + '.dat'
-       #            for l in file(filename) :
-       #                 val=str(ind_tot)+'     '+'    '.join(l.split()[1:])
-       #                 outFile.write(val+'\n')
-       #                 ind_tot=ind_tot+1
-       #            ind=ind+1
        with open(fileout, 'w') as outFile:
-          for i in range(1,21):
-                for j in range(1,6):
-                   filename=outputBase +'_split'+ str(ind) + '.dat'
-                   input=open(filename,'r').read()
-                   outFile.write(input)     
-                   ind=ind+1
-    #   sys.exit(1)
+          for i in range(1,nb_process+1):
+               filename=outputBase +'_split'+ str(ind) + '.dat'
+               input=open(filename,'r').read()
+               outFile.write(input)     
+               ind=ind+1
        log.info("Recombination OK")
+      # Cleanup
+       for filename in glob.glob(outputBase+"*split*"): 
+           os.remove(filename)
+
        if write_geojson  :
               # Store input position and coloc position to plot the results in a GIS like qGis 
           # Input
@@ -452,17 +436,20 @@ if ll_file_ok :
                    print 'executable %s failed' %exe
                    sys.exit(1)
    		       ## Design File
-               Design().factory(data_origin).run(filename,dateval,contact,cl_config,model_type,inst,version,desc)
-   ## Zipped files and move in output directory 
-   for filename in glob.glob(dirwork+"*.nc") :
-     f_in=open(filename,'rb')
-     f_out=gzip.open(filename+'.gz','wb')
-     f_out.writelines(f_in)
-     f_out.close()
-     f_in.close()
-     log.info('File ok %s' %(filename))
-     shutil.move(filename+'.gz',diroutput)
-     os.remove(filename)
+               config_d=re.sub("V","QV",cl_config) 
+               Design().factory(data_origin).run(filename,dateval,contact,config_d,model_type.lower(),inst,version,desc)
+        ## Zipped files and move in output directory 
+        for filename in glob.glob(dirwork+"class4_"+dateval+"*.nc") :
+          ## Copy in other repertory
+          shutil.copy(filename,diroutput+os.sep+'dezip')
+          f_in=open(filename,'rb')
+          f_out=gzip.open(filename+'.gz','wb')
+          f_out.writelines(f_in)
+          f_out.close()
+          f_in.close()
+          log.info('File ok %s' %(filename))
+          shutil.move(filename+'.gz',diroutput)
+          os.remove(filename)
 # Lancement du run d'après
 DAYMAX=param_dict.get('GLOBAL','DAY_MAX')
 ## Clear stuck objects
@@ -476,6 +463,8 @@ if DAYMAX :
       date_next=date1.goforward(31)
    elif schedule == "WEEKLY" :
      date_next=SyDate(daterun).goforward(7)
+   elif schedule == "DAILY" :
+     date_next=SyDate(daterun).goforward(1)
    else : 
      log.error("Schedule not found %s" %(schedule))
    if  date_next < dayvalmax :
@@ -489,6 +478,10 @@ if DAYMAX :
           print 'Lancement du run %s ' %(cl_daterun)
           code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --daterun='+cl_daterun+ \
                '  --nbdate=7 --delta=7 --src='+cl_src+'  --data='+data_type
+      elif schedule == "DAILY" :
+          cl_daterun=SyDate.__str__(date_next)
+          print 'Lancement du run %s ' %(cl_daterun)
+          code_lancement=homedir+'script/Launcher_NAVITI_cycle.ksh '+cl_config+'  '+cl_daterun+' '+str(nb_proc)
       else : 
           log.error("Schedule not found %s" %(schedule))
       print code_lancement
@@ -498,7 +491,7 @@ if DAYMAX :
       except:
          print 'Probleme execution'
          sys.exit(1)
-   
+ 
    else :
      print 'Dépassement de JMAX : %s ' % (SyDate.__str__(date_next))
      sys.exit(1)
