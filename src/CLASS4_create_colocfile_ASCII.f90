@@ -428,7 +428,7 @@ PROGRAM COLOCALIZE
 #endif
   IF (ALLOCATED(ila_mask)) DEALLOCATE(ila_mask)
   il_len=len_trim(cl_resFile)
-  cl_colocFile=TRIM(cl_resFile(1:il_len-3))//'dat'
+  cl_colocFile=TRIM(cl_resFile(1:il_len-3))//'.dat'
   cl_logfile=TRIM(cl_resFile(1:il_len-3))//'txt'
 #if defined key_debug
         WRITE (0,*) "Fichier de colloc :: ",cl_colocFile
