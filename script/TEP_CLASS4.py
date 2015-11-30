@@ -46,7 +46,7 @@ from sytoolkit.sydate import SyDate
 # LOGGER
 # ===============
 # Set level of logger
-level=2
+level=1
 log=Logger("TEP_CLASS4").run(level)
 
 # =============================================================================
@@ -74,6 +74,7 @@ write_geojson=int(param_dict.get('GLOBAL','write_geojson'))
 qc_level=int(param_dict.get('GLOBAL','qc_level'))
 do_qc=int(param_dict.get('GLOBAL','do_qc'))
 do_sort=int(param_dict.get('GLOBAL','do_sort'))
+do_decomp=int(param_dict.get('GLOBAL','do_decomp'))
 model_type=param_dict.get('GLOBAL','MODELTYPE')
 dirdata=param_dict.get('input_dir', 'INPUTDATA')
 dirmodel=param_dict.get('input_dir', 'DATA_IN')
@@ -98,7 +99,6 @@ dir_log=param_dict.get('GLOBAL','DIRLOG')
 gridtemp=param_dict.get('GLOBAL','gridtemp')
 gridsal=param_dict.get('GLOBAL','gridsal')
 type_run=param_dict.get('GLOBAL','TYPE_RUN')
-dirstatic=param_dict.get('static','dir_static')
 
 ## Create Output and tmp directory if doesn't exist
 if not os.path.exists(dirwork):
@@ -148,10 +148,16 @@ if zoom or data_origin == 'GODAE' :
    log.info('Prefix  %s ' %(prefix_data))
    log.info('Prefix  %s %s %s ' %(date1,date2,dirdata))
    log.info('Prefix  %s %s %s' %(dirwork,data_type,template))
+   dirstatic=param_dict.get('static','dir_static')
    list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,dirstatic,data_type,template)
+elif do_decomp : 
+   print 'do decomp'
+   list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,data_type,template)
 else :
+   log.info('========================================================')
+   log.info('              DATE Selection and extraction  %s         ' %(prefix_data)) 
+   log.info('========================================================')
    list_files=Extractor().factory(prefix_data).run_list(date1,date2,dirwork)
-
 
 log.info('List Files  %s ' % (list_files)) 
 # =============================================================================
