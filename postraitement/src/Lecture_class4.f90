@@ -87,7 +87,7 @@ PROGRAM Lecture_class4
   il_narg=iargc()
   IF (il_narg.lt.8) THEN
      PRINT *,'Pb with arguments :: ',il_narg, '/= 8 '
-     PRINT *,'USAGE :: cd_commandFile modele rep_in date_run il_typegrid fic_log type_run'
+     PRINT *,'USAGE :: cd_commandFile modele rep_in date_run il_typegrid fic_log type_run dir_utils'
      STOP 
   ENDIF
   ! recup nom de la nameliste
@@ -117,8 +117,7 @@ PROGRAM Lecture_class4
   ENDIF
   CALL getarg(8,cl_input8)
   cl_utils=TRIM(cl_input8)
-  CALL getarg(9,cl_input9)
-  cl_logdir=TRIM(cl_input9)
+  cl_logdir=cg_ficlog
   !** Initialisation des tableaux de lecture ARGO
   CALL affect_table_ARGO
   ! Definition de la structure de l entete
