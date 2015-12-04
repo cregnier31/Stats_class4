@@ -356,7 +356,9 @@ obFichier.close()
 log.info("---------------------------------")
 log.info("    Calcul des stats class4      ")
 log.info("---------------------------------")
-code_lancement=DIR_BIN+'Lecture_class4.exe '+fic_namelist+' '+modele+' '+dir_out+' '+DATERUN+' '+GRIDTYPE+' '+DIR_LOG+' '+TYPEDATA
+code_lancement=DIR_BIN+'Lecture_class4.exe '+fic_namelist+' '+modele+' ' \
+		+dir_out+' '+DATERUN+' '+GRIDTYPE+' '+DIR_LOG+' '+TYPEDATA \
+		+' '+DIR_utils
 try:
       args = shlex.split(code_lancement)
       log.info("%s" %args)
