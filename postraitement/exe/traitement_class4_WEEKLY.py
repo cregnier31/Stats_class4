@@ -8,10 +8,13 @@
 
 import os,errno,sys,string,shutil,glob,re
 ## Beaufix path
-sys.path.append("/home/ext/mr/smer/regnierc/python/module")
+#sys.path.append("/home/ext/mr/smer/regnierc/python/module")
 ## Local path
-#sys.path.append("/home/qualif/CLASS4/python_mod")
-#sys.path.append("/home/cregnier/python/module/lib/python2.6/site-packages")
+sys.path.append("/home/cregnier/python/module/")
+sys.path.append("/home/qualif/CLASS4/python_mod")
+sys.path.append("/home/cregnier/python/module/lib/python2.6/site-packages")
+sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/")
+sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/nco-0.0beta-py2.7.egg/")
 
 from datetime import timedelta,datetime,date
 from ModuleTime import Time
@@ -39,8 +42,8 @@ else:
 # CONFIGURATION
 # =============
 
-_DBFILE_ = ['/home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_trunk/postraitement/exe/config_'+MODELE_TYPE+'.cfg']
-
+#_DBFILE_ = ['/home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_trunk/postraitement/exe/config_'+MODELE_TYPE+'.cfg']
+_DBFILE_ = ['/sortref/reanalyse/glorys/phy/MATHIEU_HAMON/CLASS4/V3/postraitement/exe/config_'+MODELE_TYPE+'.cfg']
 # =========
 # FUNCTIONS
 # =========
@@ -107,18 +110,18 @@ if os.path.isfile(File_BOXES) :
 #os.remove("Stats_coriolis"+"*")
 if os.path.isfile("Test_coriolis.txt") : 
   os.remove("Test_coriolis.txt")
-if os.path.isfile(EXEDIR+'RejetProfilBathy.txt') :
-  os.remove(EXEDIR+'RejetProfilBathy.txt')
-if os.path.isfile(EXEDIR+'ResultStatBoite.txt') :
-  os.remove(EXEDIR+'ResultStatBoite.txt')  
-if os.path.isfile(EXEDIR+'ResultAnoTEMP.txt') :
-  os.remove(EXEDIR+'ResultAnoTEMP.txt')
-if os.path.isfile(EXEDIR+'ResultAnoPSAL.txt') :
-  os.remove(EXEDIR+'ResultAnoPSAL.txt')
-#if os.path.isfile(EXEDIR+ficlog) :
-#  os.remove(EXEDIR+ficlog)
-if os.path.isfile(EXEDIR+ficsynth) :
-  os.remove(EXEDIR+ficsynth)
+if os.path.isfile(DIR_LOG+'RejetProfilBathy.txt') :
+  os.remove(DIR_LOG+'RejetProfilBathy.txt')
+if os.path.isfile(DIR_LOG+'ResultStatBoite.txt') :
+  os.remove(DIR_LOG+'ResultStatBoite.txt')  
+if os.path.isfile(DIR_LOG+'ResultAnoTEMP.txt') :
+  os.remove(DIR_LOG+'ResultAnoTEMP.txt')
+if os.path.isfile(DIR_LOG+'ResultAnoPSAL.txt') :
+  os.remove(DIR_LOG+'ResultAnoPSAL.txt')
+#if os.path.isfile(DIR_LOG+ficlog) :
+#  os.remove(DIR_LOG+ficlog)
+if os.path.isfile(DIR_LOG+ficsynth) :
+  os.remove(DIR_LOG+ficsynth)
 
 # ==========================================
 # En fonction du type de grille 
@@ -171,7 +174,7 @@ else:
 
 if TYPEDATANAME ==  "CORA" :       
   TYPEDATA="1"
-  PREFIX="CO" 
+  PREFIX="ext-CO" 
 elif TYPEDATANAME ==  "CORIOLIS" :
   TYPEDATA="1"
   PREFIX="CO" 
@@ -387,13 +390,13 @@ except:
 # =========================================
 #  Create files
 # =========================================
-obFichier=open(EXEDIR+'RejetProfilBathy.txt','w')
+obFichier=open(DIR_LOG+'RejetProfilBathy.txt','w')
 obFichier.close()
-obFichier=open(EXEDIR+'ResultStatBoite.txt','w')
+obFichier=open(DIR_LOG+'ResultStatBoite.txt','w')
 obFichier.close()
-obFichier=open(EXEDIR+'ResultAnoTEMP.txt','w')
+obFichier=open(DIR_LOG+'ResultAnoTEMP.txt','w')
 obFichier.close()
-obFichier=open(EXEDIR+'ResultAnoPSAL.txt','w')
+obFichier=open(DIR_LOG+'ResultAnoPSAL.txt','w')
 obFichier.close()
 
 # ==========================================
@@ -403,8 +406,8 @@ log.info("---------------------------------")
 log.info("    Calcul des stats class4      ")
 log.info("---------------------------------")
 code_lancement=DIR_BIN+'Lecture_class4.exe '+fic_namelist+' '+modele+' ' \
-		+dir_out+' '+DATERUN+' '+GRIDTYPE+' '+DIR_LOG+' '+TYPEDATA \
-		+' '+DIR_utils
+                +dir_out+' '+DATERUN+' '+GRIDTYPE+' '+DIR_LOG+' '+TYPEDATA \
+                +' '+DIR_utils+'/'
 try:
       args = shlex.split(code_lancement)
       log.info("%s" %args)
@@ -423,35 +426,35 @@ log.info("---------------------------------")
 log.info("    Renommage fichier de sortie  ")
 log.info("---------------------------------")
 
-if os.path.isfile(EXEDIR+'ListeTEMPbadprof.txt') :
-  shutil.move(EXEDIR+'ListeTEMPbadprof.txt',DIR_CPT+'ListeTEMPbadprof_'+PeriodeName+'_'+modele+'_'+zone+'_gridtype'+GRID+'.txt')
+if os.path.isfile(DIR_LOG+'ListeTEMPbadprof.txt') :
+  shutil.move(DIR_LOG+'ListeTEMPbadprof.txt',DIR_CPT+'ListeTEMPbadprof_'+PeriodeName+'_'+modele+'_'+zone+'_gridtype'+GRID+'.txt')
 
-if os.path.isfile(EXEDIR+'ListePSALbadprof.txt') :
-  shutil.move(EXEDIR+'ListePSALbadprof.txt',DIR_CPT+'ListePSALbadprof_'+PeriodeName+'_'+modele+'_'+zone+'_gridtype'+GRID+'.txt')
+if os.path.isfile(DIR_LOG+'ListePSALbadprof.txt') :
+  shutil.move(DIR_LOG+'ListePSALbadprof.txt',DIR_CPT+'ListePSALbadprof_'+PeriodeName+'_'+modele+'_'+zone+'_gridtype'+GRID+'.txt')
 
-if os.path.isfile(EXEDIR+ficlog) :
-   shutil.move(EXEDIR+ficlog,DIR_CPT+'Lecture_class4_'+PeriodeName+'_'+modele+'_'+zone+'_gridtype'+GRID+'.log')
+if os.path.isfile(DIR_LOG+ficlog) :
+   shutil.move(DIR_LOG+ficlog,DIR_CPT+'Lecture_class4_'+PeriodeName+'_'+modele+'_'+zone+'_gridtype'+GRID+'.log')
 
-if os.path.isfile(EXEDIR+ficsynth) :
-   shutil.move(EXEDIR+ficsynth,DIR_CPT+'Lecture_class4_'+PeriodeName+'_'+modele+'_'+zone+'_gridtype'+GRID+'.synth')
+if os.path.isfile(DIR_LOG+ficsynth) :
+   shutil.move(DIR_LOG+ficsynth,DIR_CPT+'Lecture_class4_'+PeriodeName+'_'+modele+'_'+zone+'_gridtype'+GRID+'.synth')
 
-if os.path.isfile(EXEDIR+'Bad_points_PSAL_CORIO.txt') :
-   shutil.move(EXEDIR+'Bad_points_PSAL_CORIO.txt',DIR_CPT+modele+'_R'+DATERUN+'_Bad_points_PSAL_CORIO.txt')
+if os.path.isfile(DIR_LOG+'Bad_points_PSAL_CORIO.txt') :
+   shutil.move(DIR_LOG+'Bad_points_PSAL_CORIO.txt',DIR_CPT+modele+'_R'+DATERUN+'_Bad_points_PSAL_CORIO.txt')
 
-if os.path.isfile(EXEDIR+'Bad_points_TEMP_CORIO.txt') :
-   shutil.move(EXEDIR+'Bad_points_TEMP_CORIO.txt',DIR_CPT+modele+'_R'+DATERUN+'_Bad_points_TEMP_CORIO.txt')
+if os.path.isfile(DIR_LOG+'Bad_points_TEMP_CORIO.txt') :
+   shutil.move(DIR_LOG+'Bad_points_TEMP_CORIO.txt',DIR_CPT+modele+'_R'+DATERUN+'_Bad_points_TEMP_CORIO.txt')
 
-if os.path.isfile(EXEDIR+'ResultStatBoite.txt') :
-   shutil.move(EXEDIR+'ResultStatBoite.txt',dir_out+'ResultStatBoite'+modele+'_'+zone+'_'+PeriodeName+'.txt')
+if os.path.isfile(DIR_LOG+'ResultStatBoite.txt') :
+   shutil.move(DIR_LOG+'ResultStatBoite.txt',dir_out+'ResultStatBoite'+modele+'_'+zone+'_'+PeriodeName+'.txt')
 
-if os.path.isfile(EXEDIR+'RejetProfilBathy.txt') :
-   shutil.move(EXEDIR+'RejetProfilBathy.txt',dir_out+'RejProfBathy'+modele+'_'+zone+'_'+PeriodeName+'.txt')
+if os.path.isfile(DIR_LOG+'RejetProfilBathy.txt') :
+   shutil.move(DIR_LOG+'RejetProfilBathy.txt',dir_out+'RejProfBathy'+modele+'_'+zone+'_'+PeriodeName+'.txt')
 
-if os.path.isfile(EXEDIR+'ResultAnoTEMP.txt') :
-   shutil.move(EXEDIR+'ResultAnoTEMP.txt',dir_out+'AnoTEMP'+modele+'_'+zone+'_'+PeriodeName+'.txt')
+if os.path.isfile(DIR_LOG+'ResultAnoTEMP.txt') :
+   shutil.move(DIR_LOG+'ResultAnoTEMP.txt',dir_out+'AnoTEMP'+modele+'_'+zone+'_'+PeriodeName+'.txt')
 
-if os.path.isfile(EXEDIR+'ResultAnoPSAL.txt') :
-   shutil.move(EXEDIR+'ResultAnoPSAL.txt',dir_out+'AnoPSAL'+modele+'_'+zone+'_'+PeriodeName+'.txt')
+if os.path.isfile(DIR_LOG+'ResultAnoPSAL.txt') :
+   shutil.move(DIR_LOG+'ResultAnoPSAL.txt',dir_out+'AnoPSAL'+modele+'_'+zone+'_'+PeriodeName+'.txt')
 
 log.info("-------  Renommage ok  ------------------")
 ## Lancement du run d'après
@@ -464,7 +467,8 @@ print 'nextrun %s ' %(jrunext)
 if  jrunext <= jmax :
    JRUN=Obj.j2d(jrunext)
    print 'Lancement du run %s ' %(JRUN)
-   code_lancement=HOMEDIR+'exe/Launch_Stat_CLASS4.ksh '+JRUN+' '+MODELE_TYPE+' '+GRID
+   #code_lancement=HOMEDIR+'exe/Launch_Stat_CLASS4.ksh '+JRUN+' '+MODELE_TYPE+' '+GRID
+   code_lancement='python '+HOMEDIR+'exe/traitement_class4_WEEKLY.py '+JRUN+' '+MODELE_TYPE+' '+GRID
    print code_lancement
    try:
         os.system(code_lancement)
