@@ -210,7 +210,7 @@ for fichier in list_files:
        if len(unique) == 2 : 
           new_position=position[0:1]
           ll_uniq=True
-#       selector=Selector(data_format,data_type).factory(data_origin)
+       selector=Selector(data_format,data_type).factory(data_origin)
        ll_file_ok=True
        ll_file_interp=True
 
