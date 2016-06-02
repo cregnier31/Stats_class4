@@ -134,6 +134,7 @@ class SelectCorio(Selector) :
         ## Nco constructor
         nco = Nco()
         il_ind=0
+        print fichier
         file_out=os.path.basename(fichier)
         for il_it in list_index:
             file_out2=os.path.basename(fichier).split('.')[0]+'_pf_'+str(il_it)+'.nc'
@@ -153,13 +154,20 @@ class SelectCorio(Selector) :
 	    else :
 	      options = []
               options.extend(['-h'])
+              log.info("Do ncks")
               nco.ncks(input=fichier,output=output_dir+file_out2, fortran=True ,append=True,dimension=self.dimprof+','+str(il_it+1),options=options)
+              log.info("Do ncks ok")
 	      infiles = [output_dir+file_out,output_dir+file_out2]
+              log.info("Inputfiles :  %s " %(infiles) )
 	      ## Concatenation of valid profiles
+              log.info("Do ncrcat")
   	      nco.ncrcat(input=infiles, output=output_dir+'test.nc',fortran=True,options=options) 
+              log.info("Do ncrcat OK")
 	      ## remove profile
 	      os.remove(output_dir+file_out2) 
+              log.info("Do remove OK")
 	      os.rename(output_dir+'test.nc',output_dir+file_out)
+              log.info("Do rename OK")
             il_ind=il_ind+1
 
     def store_pos(self,tab_pos,type_f,file_db):
