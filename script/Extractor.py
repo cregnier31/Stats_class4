@@ -18,12 +18,43 @@ class Extractor(object) :
         #return eval(type + "()")
         if type == "CORA3": return Extract_cora3()
         if type == "cora4.0_merc": return Extract_cora4()
+        if type == "cora4.1_raw": return Extract_cora4_1()
         if type == "CORIOLIS": return ExtractCorio()
         if type == "ENS": return ExtractEns()
         if type == "ARMOR_CO" or type == "ARMOR_AR" : return Extract_ARMOR()
         if type == "GODAE" : return Extract_GODAE()
         if type == "ASCII" : return Extract_ASCII()
 
+class Extract_cora4_1(Extractor):
+      def run(self,date1,date2,dirdata,dirtmp,typedata,template):
+        # ===============
+        # LOGGER
+        # ===============
+        logging.basicConfig(format='%(asctime)s %(message)s')
+        log = logging.getLogger("Extract_ARMOR")
+        log.setLevel(logging.INFO)
+        ## Level of logging output
+        valeurj=date1
+        liste_tot=[]
+        while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
+           dateval=SyDate.__str__(valeurj)
+           log.info('Day %s ' % (dateval))
+	   month=dateval[0:6] 
+           frame=dirdata+month+'/*'+dateval.strip()+'*.nc'
+           print frame
+           liste_file=glob.glob(frame)
+           log.info('Liste file %s ' % (liste_file)) 
+           print 'OK'
+           for new_file in liste_file :
+               try :
+                  filename=os.path.basename(new_file)
+                  shutil.copy(new_file,dirtmp)
+                  liste_tot.append(dirtmp+filename)
+               except IOError as e:
+                  print "I/O error({0}): {1}".format(e.errno, e.strerror)
+           valeurj=valeurj.goforward(1)
+
+        return liste_tot
 
 class Extract_ASCII(Extractor): 
      def __init__(self):
@@ -44,7 +75,7 @@ class Extract_ASCII(Extractor):
           return liste_tot
 
 class Extract_GODAE(Extractor):
-      def run(self,date1,date2,dirdata,dirtmp,dirstatic,typedata,template):
+      def run(self,date1,date2,dirdata,dirtmp,typedata,template):
         if typedata != "SLA" and  typedata != "SST" and typedata != "profile" and typedata !=  "aice" :
 	   print "Data %s not known !!! " %(typedata)
            sys.exit(1)
