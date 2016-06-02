@@ -9,48 +9,51 @@ from netCDF4 import Dataset, stringtochar, chartostring
 ##------------------------------------------------------
 
 class NetcdReader():
+
+    """Class to read netcdf dataset"""
+
     def read_1D(self,filename,namevar):
-       #print 'read netcdf file 1D : %s ' %(filename)
-       nc = Dataset(filename,'r')        
-       variable = namevar
-       v = nc.variables[variable]
-       type_var=v.dtype
-       #print trim(type_var)
-       if str(type_var) == "|S1":
-         ## Bug correction for Char
-         v.set_auto_maskandscale(False)
-         #rla_var_1D = chartostring(nc.variables[variable][:])
-       rla_var_1D = nc.variables[variable][:]
-       return rla_var_1D
+        #print 'read netcdf file 1D : %s ' %(filename)
+        nc = Dataset(filename,'r')        
+        variable = namevar
+        v = nc.variables[variable]
+        type_var=v.dtype
+        #print trim(type_var)
+        if str(type_var) == "|S1":
+            ## Bug correction for Char
+            v.set_auto_maskandscale(False)
+            #rla_var_1D = chartostring(nc.variables[variable][:])
+        rla_var_1D = nc.variables[variable][:]
+        return rla_var_1D
     def read_2D(self,filename,namevar):
-       nc = netCDF4.Dataset(filename,'r')        
-       variable = namevar
-       v = nc.variables[variable]
-       type_var=v.dtype
-       if str(type_var) == "|S1":
-         ## Bug correction for Char
-         v.set_auto_maskandscale(False)
-       rla_var_2D = nc.variables[variable][:,:]
-       return rla_var_2D
+        nc = netCDF4.Dataset(filename,'r')        
+        variable = namevar
+        v = nc.variables[variable]
+        type_var=v.dtype
+        if str(type_var) == "|S1":
+            ## Bug correction for Char
+            v.set_auto_maskandscale(False)
+        rla_var_2D = nc.variables[variable][:,:]
+        return rla_var_2D
     def read_3D(self,filename,namevar):
-       nc = netCDF4.Dataset(filename,'r')        
-       variable = namevar
-       v = nc.variables[variable]
-       type_var=v.dtype
-       if str(type_var) == "|S1":
-         ## Bug correction for Char
-         v.set_auto_maskandscale(False)
-       rla_var_3D = nc.variables[variable][:,:,:]
-       return rla_var_3D
+        nc = netCDF4.Dataset(filename,'r')        
+        variable = namevar
+        v = nc.variables[variable]
+        type_var=v.dtype
+        if str(type_var) == "|S1":
+            ## Bug correction for Char
+            v.set_auto_maskandscale(False)
+        rla_var_3D = nc.variables[variable][:,:,:]
+        return rla_var_3D
     def read_4D(self,filename,namevar):
-       nc = netCDF4.Dataset(filename,'r')        
-       variable = namevar
-       v = nc.variables[variable]
-       type_var=v.dtype
-       if str(type_var) == "|S1":
-         ## Bug correction for Char
-         v.set_auto_maskandscale(False)
-       rla_var_4D = chartostring(nc.variables[variable][:,:,:,:])
-       return rla_var_4D
-## 
+        nc = netCDF4.Dataset(filename,'r')        
+        variable = namevar
+        v = nc.variables[variable]
+        type_var=v.dtype
+        if str(type_var) == "|S1":
+            ## Bug correction for Char
+            v.set_auto_maskandscale(False)
+        rla_var_4D = chartostring(nc.variables[variable][:,:,:,:])
+        return rla_var_4D
+##
 
