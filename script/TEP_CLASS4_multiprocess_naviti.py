@@ -190,7 +190,7 @@ if zoom or data_origin == 'GODAE' :
    log.info('Prefix  %s ' %(prefix_data))
    log.info('Prefix  %s %s %s ' %(date1,date2,dirdata))
    log.info('Prefix  %s %s %s' %(dirwork,data_type,template))
-   list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,dirstatic,data_type,template)
+   list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,data_type,template)
 else :
    list_files=Extractor().factory(prefix_data).run_list(date1,date2,dirwork)
 
@@ -297,7 +297,7 @@ for fichier in list_files:
                outFile.write(input)     
                ind=ind+1
        log.info("Recombination OK")
-       # Cleanup
+      # Cleanup
        for filename in glob.glob(outputBase+"*split*"): 
            os.remove(filename)
 
@@ -444,6 +444,8 @@ if ll_file_ok :
                Design().factory(data_origin).run(filename,dateval,contact,config_d,model_type.lower(),inst,version,desc)
         ## Zipped files and move in output directory 
         for filename in glob.glob(dirwork+"class4_"+dateval+"*.nc") :
+          ## Copy in other repertory
+          shutil.copy(filename,diroutput+os.sep+'dezip')
           f_in=open(filename,'rb')
           f_out=gzip.open(filename+'.gz','wb')
           f_out.writelines(f_in)
