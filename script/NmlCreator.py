@@ -1,5 +1,5 @@
 from __future__ import generators
-import os,sys,string,shutil,glob,re
+import os,fnmatch,sys,string,shutil,glob,re
 import numpy as np
 import logging
 import tarfile
@@ -173,6 +173,8 @@ class NmlCreator_IAOOS(NmlCreator):
 	elif listdir == 'CLIM_WOA13' :
 	   output_varname_T='TMLEV13'
 	   output_varname_S='SMLEV13'
+	   template_temp=searchdir+'*M'+monthval+'*temp*.nc'
+	   template_sal=searchdir+'*M'+monthval+'*sal*.nc'
 	elif listdir == 'CLIM_MED' :
 	   output_varname_T='TMMED'
 	   output_varname_S='SMMED'
@@ -181,18 +183,29 @@ class NmlCreator_IAOOS(NmlCreator):
 	## List model
         #for file in glob.glob(dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc') : 
         log.info('Template %s' %(template)) 
+        for filename in glob.glob(template) : 
+	  print filename
+	  if listdir[0:4] != 'CLIM' :
+             fic_temp=filename
+	     template_temp=template
+             fic_psal=re.sub(gridtemp,gridsal,fic_temp)
+	  else :
+	     if ( len( glob.glob(template)) == 2 ) : 
+               #log.info('Cas climato ') 
+               if fnmatch.fnmatch(filename,"*temp*"):
+	          fic_temp=filename
+	       if fnmatch.fnmatch(filename,"*sal*"):
+	          fic_psal=filename
+	     else : 
+	       template_temp=template
+               fic_temp=filename
+               fic_psal=filename
 	## Add test to see missing values
-	cl_file = glob.glob(template)
+	cl_file = glob.glob(template_temp)
         if len(cl_file) != 1 :
            log.error('Found %i files corresponding to %s while expecting 1' %(len(cl_file),listdir))
            sys.exit(1)
         ##
-        for file in glob.glob(template) : 
-          fic_temp=file
-	  if listdir[0:4] != 'CLIM' :
-             fic_psal=re.sub(gridtemp,gridsal,fic_temp)
-	  else :
-	     fic_psal=fic_temp
         log.info('Fichier temp %s' %(fic_temp)) 
         log.info('Fichier psal %s' %(fic_psal)) 
 	nbfile=len(glob.glob(output+"*_"+str(dateval)+"*.txt"))
@@ -292,12 +305,6 @@ class NmlCreator_CORIOLIS(NmlCreator):
 	## List model
         #for file in glob.glob(dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc') : 
         log.info('Template %s' %(template)) 
-	## Add test to see missing values
-	cl_file = glob.glob(template)
-        if len(cl_file) != 1 :
-           log.error('Found %i files corresponding to %s while expecting 1' %(len(cl_file),listdir))
-           sys.exit(1)
-        ##
         for file in glob.glob(template) : 
           fic_temp=file
 	  if listdir[0:4] != 'CLIM' :
@@ -306,6 +313,12 @@ class NmlCreator_CORIOLIS(NmlCreator):
 	     fic_psal=fic_temp
         log.info('Fichier temp %s' %(fic_temp)) 
         log.info('Fichier psal %s' %(fic_psal)) 
+	## Add test to see missing values
+	cl_file = glob.glob(template)
+        if len(cl_file) != 1 :
+           log.error('Found %i files corresponding to %s while expecting 1' %(len(cl_file),listdir))
+           sys.exit(1)
+        ##
 	nbfile=len(glob.glob(output+"*"+str(dateval)+"*.nc"))
 	# Write Namelist
         obFichier=open(nml,'w')
