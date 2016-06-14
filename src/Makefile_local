@@ -1,0 +1,54 @@
+# Makefile for Fortran program Test_MIOL.F90
+# Makefile pour n'importe quel px
+# C.REGNIER 2010
+# faire module load pgi/pgi-8.0
+#       module load netcdf/netcdf-4.0_pgi80_r4
+#       module load mft/mft-3.1
+include ../macro/make_intel_local.macro
+## Rules
+.SUFFIXES:.F90 .F .f90 .mod
+.F90.o:
+	$(F90PT) -c $(FFLAGS) ${INCLUDE} $< -o $@ $(CPP_KEYS)
+
+.f90.o:
+	$(F90PT) -c $(FFLAGS) ${INCLUDE} $< -o $@ $(CPP_KEYS)
+
+EXEDIR= ../bin_local
+SRCDIR= .
+SRCDIR2=module
+
+########################################################
+########################################################
+########################################################
+OBJECTS= ${SRCDIR2}/Inf_NaN_detection.o \
+         ${SRCDIR2}/param_mod.o         \
+         ${SRCDIR2}/geomlibcha.o        \
+         ${SRCDIR2}/Canvas.o
+
+OBJECTS2= $(SRCDIR2)/GSW_TEOS10.o \
+          ${SRCDIR2}/table_CLASS4.o
+
+#all: $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE).exe \
+#	$(EXEDIR)/CLASS4_spatial_interpolation.exe \
+#	$(EXEDIR)/CLASS4_spatial_interpolation_GODAE_$(MODELE).exe
+all:  $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS_local.exe \
+      $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE)_local.exe \
+      $(EXEDIR)/CLASS4_spatial_interpolation_GODAE_local.exe 
+
+$(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE)_local.exe: $(OBJECTS) CLASS4_create_colocfile_ASCII.o
+	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
+
+$(EXEDIR)/CLASS4_spatial_interpolation_GODAE_local.exe: $(OBJECTS2) CLASS4_spatial_interpolation_godae.o
+	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
+
+$(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS_local.exe: $(OBJECTS2) CLASS4_spatial_interpolation.o
+	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
+
+
+## Utilities
+cleanexe : 
+	rm -f ../bin_local/CLASS4_create_ASCII_$(MODELE)_local.exe ../bin_local/CLASS4_spatial_interpolation_local.exe
+	rm -f ../bin_local/CLASS4_spatial_interpolation_GODAE_$(MODELE)_local.exe
+clean: 
+	rm -rf $(SRCDIR2)/*.o $(SRCDIR2)/*.mod
+	rm -rf $(SRCDIR)/*.o $(SRCDIR)/*.mod 
