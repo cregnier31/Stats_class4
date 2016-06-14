@@ -65,8 +65,10 @@ log.error("Nombre de proc %i" %(nb_proc))
 #   Load db configuration file
 # ==================================
 CONF_PATH=os.getcwd()
-CONF_PATH="/home/cregnier/SVN/mo/TEP_CLASS4_V3/script"
+#CONF_PATH="/home/cregnier/SVN/mo/TEP_CLASS4_V3/script"
 filename = [CONF_PATH+'/'+confname]
+print filename
+sys.exit(1)
 param_dict=Loader.factory('NML').load(filename,level)
 nb_level=int(param_dict.get('GLOBAL','LEVELS'))
 zoom=int(param_dict.get('GLOBAL','zoom'))
@@ -185,7 +187,7 @@ for fichier in list_files:
         if zoom : log.info("REGIONAL MODE => AREA SELECTION ") 
         log.info('Do qc and zoom %i %i ' % (do_qc,zoom)) 
         selector=Selector(data_format,data_type,lon_min,lon_max,lat_min,lat_max).factory(data_origin)
-        new_position,list_index]=selector.run(fichier,zoom,do_qc,data_origin,qc_level)
+        [new_position,list_index]=selector.run(fichier,zoom,do_qc,data_origin,qc_level)
         if list_index : 
             selector.write(fichier,list_index,dirtmp)
             file_new='ext-'+os.path.basename(fichier)

@@ -303,7 +303,7 @@ class Extract_cora4(Extractor) :
                     #print 'Problem with copy or extraction'
             else :
                 print 'file not known %s ' %(file_path) 	
-               sys.exit(1)
+                sys.exit(1)
         ## Remove file
         liste_tot=[]
         for year in liste_year : 

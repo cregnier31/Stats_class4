@@ -131,7 +131,7 @@ class QCCorio(QCcontroller):
         super(QCcontroller,self).__init__(**kwargs)
         self.data_type=data_type
         self.data_src = data_source
-   def QCrun(self,filename,qc_level):
+    def QCrun(self,filename,qc_level):
         print "Class to compute au qc on Coriolis files"
         nc = netCDF4.Dataset(filename)
         ll_pres=0

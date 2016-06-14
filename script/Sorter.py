@@ -86,17 +86,17 @@ class Sorter():
                             except OSError as e:
                                 print "Link Error : %s" %(e.strerror)
                         elif rep == 'nwct' and Time().isNowcast(fic_bis) :
-                        fic_temp_nowcast=fic
-                        fic_psal_nowcast=re.sub(gridtemp,gridsal,fic)
-                        log.info("fichier nowcast T %s" %(fic_temp_nowcast))
-                        log.info("fichier nowcast S %s" %(fic_psal_nowcast))
-                        file_out_temp=cl_rep+'/'+fic_bis
-                        file_out_psal=re.sub(gridtemp,gridsal,file_out_temp)
-                        try :
-                            self.symlink(fic_temp_nowcast,file_out_temp)
-                            self.symlink(fic_psal_nowcast,file_out_psal)
-                        except OSError as e:
-                            print "Link Error : %s" %(e.strerror)
+                            fic_temp_nowcast=fic
+                            fic_psal_nowcast=re.sub(gridtemp,gridsal,fic)
+                            log.info("fichier nowcast T %s" %(fic_temp_nowcast))
+                            log.info("fichier nowcast S %s" %(fic_psal_nowcast))
+                            file_out_temp=cl_rep+'/'+fic_bis
+                            file_out_psal=re.sub(gridtemp,gridsal,file_out_temp)
+                            try :
+                                self.symlink(fic_temp_nowcast,file_out_temp)
+                                self.symlink(fic_psal_nowcast,file_out_psal)
+                            except OSError as e:
+                                print "Link Error : %s" %(e.strerror)
                     # Find Forecast
                     JBUDATET0=valeurj.goforward(1)
                     BUDATET0=sy.__str__(JBUDATET0)
