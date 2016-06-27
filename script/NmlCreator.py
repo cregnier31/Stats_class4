@@ -1,3 +1,4 @@
+# coding: utf8
 from __future__ import generators
 import os,fnmatch,sys,string,shutil,glob,re
 import numpy as np
@@ -246,8 +247,10 @@ class NmlCreator_CORIOLIS(NmlCreator):
         self.mssh_file=mssh_file
         self.ll_mssh=ll_mssh
         self.mssh_shift=mssh_shift
+   # def search_lighout(self,date,dirin,type_run,listdir):
+
     def run(self,nml,modele,mean_type,type_data,outputVarname, \
-        dirmodel,dircoloc,output,listdir,dateval,gridtemp,gridsal,schedule,type_run):
+        dirmodel,dircoloc,output,listdir,dateval,gridtemp,gridsal,schedule,type_run,mesh_file,type_file=None):
         # =============== 
         # LOGGER
         # ===============
@@ -263,6 +266,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
         daterun=dateval
         yearval=dateval[0:4]
         searchdir=listdir
+        ll_lightout=False
         if listdir == 'hdct' or listdir == 'best_estimate' :
             prefix_var='HDCST'
         elif listdir == 'nwct' :
@@ -284,7 +288,31 @@ class NmlCreator_CORIOLIS(NmlCreator):
             print modele,daterun,gridtemp
             template=dirmodel+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
         else :
-            template=dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
+            print "schedule daily"
+            print type_file
+            if type_file == 'ALLEGE' :
+                type_out='END'
+                print "lightout type"
+                ## Find next daterun
+                print dateval
+                jdatemin=SyDate(dateval)
+                daytogo=2-jdatemin.weekday()
+                if daytogo > 0 : 
+                    first_date=jdatemin.goforward(daytogo)
+                else : 
+                    print "jours negatif"
+                    first_date=jdatemin.gobackward(-daytogo)
+                print first_date
+                daterun=first_date
+                if type_run == 'RTR' :
+                    date1=daterun.gobackward(7)
+                    date2=daterun
+                print date1,date2,dateval
+                template=dirmodel+'ALLEGES_'+type_run.lower()+'_'+str(date1)+'_'+str(date2)+'_R'+str(daterun)+'/'+type_out+'/'+gridtemp+'N.B.d*.50.0'
+                print template
+                ll_lightout=True
+            else : 
+                template=dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
 
         output_varname_T=prefix_var+'_'+input_varname_T
         output_varname_S=prefix_var+'_'+input_varname_S
@@ -307,6 +335,8 @@ class NmlCreator_CORIOLIS(NmlCreator):
             output_varname_T='TMARV11'
             output_varname_S='SMARV11'
         elif listdir == 'CLIM_WOA13' :
+            ll_lightout=False
+            template=searchdir+'*M'+monthval+'*_TEMP.nc'
             output_varname_T='TMLEV13'
             output_varname_S='SMLEV13'
         elif listdir == 'CLIM_MED' :
@@ -320,9 +350,19 @@ class NmlCreator_CORIOLIS(NmlCreator):
         for file in glob.glob(template) : 
             fic_temp=file
             if listdir[0:4] != 'CLIM' :
-                fic_psal=re.sub(gridtemp,gridsal,fic_temp)
+                if type_file == 'ALLEGE' :
+                    fic_psal=re.sub(gridtemp+"N.B",gridsal+"N.B",fic_temp)
+                else :
+                    fic_psal=re.sub(gridtemp,gridsal,fic_temp)
             else :
-                fic_psal=fic_temp
+                if listdir == 'CLIM_WOA13' :
+                    fic_psal=re.sub('TEMP','PSAL',fic_temp)
+                else :
+                    fic_psal=fic_temp
+        if not fic_temp or not fic_psal : 
+            print "Files doesn't exist "
+            print template
+            sys.exit(1)
         log.info('Fichier temp %s' %(fic_temp)) 
         log.info('Fichier psal %s' %(fic_psal)) 
         ## Add test to see missing values
@@ -345,7 +385,13 @@ class NmlCreator_CORIOLIS(NmlCreator):
         obFichier.write('cl_outputVarname_T = '+"'"+output_varname_T+"'"+'\n')
         obFichier.write('cl_outputVarname_S = '+"'"+output_varname_S+"'"+'\n')
         obFichier.write('il_nbfile = '+str(nbfile)+'\n')
-        obFichier.write('cl_input_type = NETCDF'+'\n')
+        obFichier.write("cl_input_type = 'NETCDF'"+'\n')
+        if  ll_lightout : 
+            obFichier.write('cl_input_typemod = '+"'"+type_file+"'"+'\n')
+        else :
+            type_file='NETCDF'
+            obFichier.write('cl_input_typemod = '+"'"+type_file+"'"+'\n')
+        obFichier.write('cl_meshfile = '+"'"+mesh_file+"'"+'\n')
         obFichier.write('/'+'\n')
         for fichier2 in glob.glob(output+"*"+str(dateval)+"*.nc") :
             obFichier.write(fichier2+'\n')

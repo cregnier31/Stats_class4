@@ -17,15 +17,16 @@ class Extractor(object) :
     """ Factory extract file depending on type """
 
     def factory(self,type):
-        #return eval(type + "()")
         if type == "CORA3": return Extract_cora3()
         if type == "cora4.0_merc": return Extract_cora4()
         if type == "cora4.1_raw": return Extract_cora4_1()
+        if type == "CORA4.1_MERC": return Extract_cora4()
         if type == "CORIOLIS": return ExtractCorio()
         if type == "ENS": return ExtractEns()
         if type == "ARMOR_CO" or type == "ARMOR_AR" : return Extract_ARMOR()
         if type == "GODAE" : return Extract_GODAE()
         if type == "ASCII" : return Extract_ASCII()
+
 
 class Extract_cora4_1(Extractor):
 
@@ -254,6 +255,8 @@ class Extract_cora3(Extractor) :
                 valeurj=valeurj.goforward(1)
             ## Remove directory 
             shutil.rmtree(dirtmp+year)
+        ## Write log
+
         return liste_tot
 
 
@@ -262,8 +265,9 @@ class Extract_cora4(Extractor) :
     """ Extract Cora4 file """
 
     def __init__(self):
+        print "Constructor ------"
         self.PREFIX='cora4.0_merc'
-    def run(self,date1,date2,dirdata,dirtmp,typedata,template):
+    def run(self,date1,date2,dirdata,dirtmp,typedata,templat,prefix):
         # ===============
         # LOGGER
         # ===============
@@ -271,18 +275,21 @@ class Extract_cora4(Extractor) :
         log = logging.getLogger("Extract_cora4")
         ## Level of logging output
         log.setLevel(logging.INFO)
+        print type(date2),date1
+        print "------------"
         presyear=SyDate.__str__(date2)[:4]
         backyear=SyDate.__str__(date1)[:4]
         liste_file=[]
         liste_year=[]
+        print presyear,backyear
         if presyear == backyear : 
-            file=self.PREFIX+"_"+presyear+".tgz"
+            file=prefix+"_"+presyear+".tgz"
             liste_file.append(file)
             liste_year.append(presyear)
         else :
-            file1=self.PREFIX+"_"+presyear+".tgz"
+            file1=prefix+"_"+presyear+".tgz"
             liste_file.append(file1)
-            file2=self.PREFIX+"_"+backyear+".tgz"
+            file2=prefix+"_"+backyear+".tgz"
             liste_file.append(file2)
             liste_year.append(presyear)
             liste_year.append(backyear)
@@ -290,6 +297,7 @@ class Extract_cora4(Extractor) :
         print liste_file
         for file in liste_file :
             file_path=dirdata+file
+            print file_path
             if os.path.isfile(file_path)  :
                 try :
                     shutil.copy(file_path,dirtmp)
@@ -322,7 +330,9 @@ class Extract_cora4(Extractor) :
                         print "I/O error({0}): {1}".format(e.errno, e.strerror)
                 valeurj=valeurj.goforward(1)
             ## Remove directory 
-            shutil.rmtree(dirtmp+year)     
+            shutil.rmtree(dirtmp+year)
+        ## Write log
+        ok_file=dirtmp+"Extract_cora4_"+str(presyear)+"_"+str(backyear)+"_OK"
         return liste_tot
 
     def run_list(self,date1,date2,dirdata):

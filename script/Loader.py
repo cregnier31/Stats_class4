@@ -38,7 +38,7 @@ class Loader(object):
 class InputLoader(Loader): 
     def load(self,options,level):
         """Loader for input options"""
-        keywords = ['date1=','date2=','delta=','nbdate=','daterun=','config=','data=','src=','nbproc=']
+        keywords = ['date1=','date2=','delta=','nbdate=','daterun=','config=','data=','src=','nbproc=','typemod=']
         cla_opts = getopt.getopt(options,'',keywords)
         log=Logger("InputLoader").run(level)
         ll_delta=None
@@ -62,6 +62,11 @@ class InputLoader(Loader):
             elif o in  ['--date2'] : 
                 ll_date2=True
                 cl_end_date = p
+            elif o in ['--typemod']:
+                cl_typemod= p
+                if cl_typemod not in ['pgs','pgn','allege']:
+                    print "input data type not known : must be pgn pgs or allege"
+                    sys.exit(1)
             elif o in  ['--daterun'] : 
                 ll_daterun=True
                 cl_daterun = p
@@ -123,13 +128,31 @@ class InputLoader(Loader):
                 log.info("Daily values")
                 date1=SyDate(cl_start_date)
                 date2=SyDate(cl_end_date)
+                cl_schedule='d'
+            elif  datelen1 == datelen2 and datelen1 == 4 :  
+                log.info("Year values")
+                date1=SyDate(cl_start_date+"0101")
+                date2=SyDate(cl_end_date+"1231")
+                cl_schedule='y'
             else :
-                log.error("Input date must be in month or day")
+                log.error("Input date must be in year month or day")
         elif ll_daterun and ll_nbdate and ll_delta :
             log.info("Case 3 Backward run")
             jrun=SyDate(cl_daterun)
             date1=jrun.gobackward(int(cl_delta))
             date2=jrun.gobackward(int(cl_delta)-int(cl_nbdate)+1)
+        elif ll_date1 :
+            log.info("Only one date")
+            print cl_start_date
+            if len(str(cl_start_date))==4 :
+                date1=SyDate(cl_start_date+"0101")
+                date2=SyDate(cl_start_date+"1231")
+                log.info("Year values")
+                cl_schedule='y'
+            else : 
+                log.info("Date must be a year")
+                sys.exit(1)
+
         else :
             log.error("Case not valid")
             log.error("Type TEP_CLASS4.py --data=XXX --src=XXX --config=XXX --date1=XXXX --date2=XXXX or ")
@@ -138,7 +161,7 @@ class InputLoader(Loader):
                             (for example 1 week before today -14 and today -7)")
             sys.exit(1)
         confname='config_'+str(cl_config)+'_'+str(cl_src)+'.cfg'
-        return date1,date2,confname,cl_data,cl_daterun,cl_schedule,cl_src,nb_proc
+        return date1,date2,confname,cl_data,cl_daterun,cl_schedule,cl_src,nb_proc,cl_typemod
 
 class NmlLoader(Loader): 
     """Loader for namelists"""

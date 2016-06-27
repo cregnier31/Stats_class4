@@ -59,8 +59,12 @@ log.info('========================================================')
 # ===========================================
 # Load options and compute date interval
 # ===========================================
-[date1,date2,confname,data_type,daterun,cl_schedule,cl_src,nb_proc]=Loader().factory('INPUT').load(sys.argv[1:],level)
+[date1,date2,confname,data_type,daterun,cl_schedule,cl_src,nb_proc,cl_typemod]=Loader().factory('INPUT').load(sys.argv[1:],level)
 log.error("Nombre de proc %i" %(nb_proc))
+log.info("Type des fichiers d'entree %s " %(cl_typemod))
+log.info("Schedule %s " %(cl_schedule))
+log.info("Dates %s %s " %(date1,date2))
+log.info("Daterun %s " %(daterun))
 # ==================================
 #   Load db configuration file
 # ==================================
@@ -68,7 +72,6 @@ CONF_PATH=os.getcwd()
 #CONF_PATH="/home/cregnier/SVN/mo/TEP_CLASS4_V3/script"
 filename = [CONF_PATH+'/'+confname]
 print filename
-sys.exit(1)
 param_dict=Loader.factory('NML').load(filename,level)
 nb_level=int(param_dict.get('GLOBAL','LEVELS'))
 zoom=int(param_dict.get('GLOBAL','zoom'))
@@ -101,6 +104,7 @@ dir_log=param_dict.get('GLOBAL','DIRLOG')
 gridtemp=param_dict.get('GLOBAL','gridtemp')
 gridsal=param_dict.get('GLOBAL','gridsal')
 type_run=param_dict.get('GLOBAL','TYPE_RUN')
+type_file=param_dict.get('GLOBAL','TYPE_FILE')
 
 ## Create Output and tmp directory if doesn't exist
 if not os.path.exists(dirwork):
@@ -121,7 +125,6 @@ if write_geojson  :
     ## Clean old db
     if (os.path.isfile(file_db2)) :
         os.remove(file_db2)
-
 # =============================================================================
 # PART 1-bis : DO SORT if not available
 # =============================================================================
@@ -154,14 +157,16 @@ if zoom or data_origin == 'GODAE' :
     list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,dirstatic,data_type,template)
 elif do_decomp : 
     print 'do decomp'
-    list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,data_type,template)
+    print prefix_data
+    print date1,date2,dirdata,dirwork,data_type,template,prefix_data
+    list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,data_type,template,prefix_data)
 else :
     log.info('========================================================')
     log.info('              DATE Selection and extraction  %s         ' %(prefix_data)) 
     log.info('========================================================')
     list_files=Extractor().factory(prefix_data).run_list(date1,date2,dirwork)
 
-log.info('List Files  %s ' % (list_files)) 
+log.info('List Files  %s ' % (list_files))
 # =============================================================================
 #  PART-3 - Area Selection and QC selection
 # =============================================================================
@@ -220,7 +225,7 @@ for fichier in list_files:
     if ll_file_interp : 
         # Write ASCII pos for Coloc
         file_pos_tmp=os.path.basename(fichier)
-        if data_format[0:2]  == 'NC_' : 
+        if data_format[0:3]  == 'NC_' : 
             print "OK1"
             file_pos_tmp=re.sub('.nc','.pos',file_pos_tmp)
         elif data_format[:]  == 'ASCII' : 
@@ -228,6 +233,7 @@ for fichier in list_files:
             file_pos_tmp=re.sub('.txt','.pos',file_pos_tmp)
         else : 
             log.error("Format not known %s" %(data_format))
+            sys.exit(1)
         file_pos=coloc_rep+file_pos_tmp
         print file_pos
         Writer().write_ASCII(file_pos,new_position)
@@ -350,8 +356,8 @@ if ll_file_ok :
                 lead_fin=['clim2']
                 sort_rep=dirclim2  
             elif time == 'CLIM_WOA13' :
-                dirclim3=param_dict.get('climato','DIRCLIM3')           
-                lead_fin=['clim3']
+                dirclim3=param_dict.get('climato','DIRLEV')           
+                lead_fin=['clim']
                 sort_rep=dirclim3  
             elif time == 'CLIM_MED' :
                 dirclim=param_dict.get('climato','DIRCLIM')
@@ -365,7 +371,7 @@ if ll_file_ok :
                 nml=os.path.join(nml_dir,'interpolate_3D_%s_%s_%s_%s.nml' %(data_type.upper(),cl_config,time,dateval))
                 print nml
                 NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
-                           time,sort_rep,coloc_rep,dirwork,time,dateval,gridtemp,gridsal,cl_schedule,type_run)
+                           time,sort_rep,coloc_rep,dirwork,time,dateval,gridtemp,gridsal,cl_schedule,type_run,coordinates,type_file)
                 log.info('NmlCreator OK')
                 if not os.path.exists(exe) :
                     print 'Did not find executable %s' %exe
@@ -396,6 +402,7 @@ if ll_file_ok :
                 ## Design File
                 config_d=re.sub("V","QV",cl_config) 
                 Design().factory(data_origin).run(filename,dateval,contact,cl_config_d,model_type.lower(),inst,version,desc)
+    sys.exit(1)
     ## Zipped files and move in output directory 
     for filename in glob.glob(dirwork+"*.nc") :
         f_in=open(filename,'rb')
@@ -417,8 +424,11 @@ if DAYMAX :
     schedule=param_dict.get('GLOBAL','SCHEDULE')
     if schedule == "MONTHLY" : 
         date_next=date1.goforward(31)
+        date_next=date1.goforward(31)
     elif schedule == "WEEKLY" :
         date_next=SyDate(daterun).goforward(7)
+    elif schedule == "YEARLY" :
+        date_next=date1.goforward(365)
     elif schedule == "DAILY" :
         date_next=SyDate(daterun).goforward(1)
     else : 
@@ -438,6 +448,10 @@ if DAYMAX :
             cl_daterun=SyDate.__str__(date_next)
             print 'Lancement du run %s ' %(cl_daterun)
             code_lancement=homedir+'script/Launcher_NAVITI_cycle.ksh '+cl_config+'  '+cl_daterun+' '+str(nb_proc)
+        elif schedule == "YEARLY" :
+            cl_daterun=SyDate.__str__(date_next)
+            print 'Lancement du run %s ' %(cl_daterun)
+            code_lancement='python '+homedir+'script/TEP_CLASS4.py --config=PSY4V3R1 --date1='+cl_daterun[0:4]+' --src=CORA4 --data=profile --typemod=allege'
         else : 
             log.error("Schedule not found %s" %(schedule))
         print code_lancement
