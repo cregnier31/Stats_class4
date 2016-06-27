@@ -233,13 +233,16 @@ PROGRAM COLOCALIZE
           TRIM(clpa_dimname(il_ji)).EQ.'z') THEN
         il_ndepth = ilpa_dimlen(il_ji)
      ENDIF
-     IF (TRIM(clpa_dimname(il_ji)).EQ.'x') THEN
+     IF (TRIM(clpa_dimname(il_ji)).EQ.'x' .or. TRIM(clpa_dimname(il_ji)).EQ.'lon' ) THEN
         il_nlon = ilpa_dimlen(il_ji)
      ENDIF
-     IF (TRIM(clpa_dimname(il_ji)).EQ.'y') THEN
+     IF (TRIM(clpa_dimname(il_ji)).EQ.'y' .or. TRIM(clpa_dimname(il_ji)).EQ.'lat' ) THEN
         il_nlat = ilpa_dimlen(il_ji)
      ENDIF
   ENDDO
+#if defined key_debug
+  WRITE(0,*) 'Dimensions x y ::',il_nlon,il_nlat
+#endif
   !** 
   ! Recherche du nom et du type de la variable latitude
   cl_varname = 'nav_lat'
@@ -265,6 +268,9 @@ PROGRAM COLOCALIZE
                            rlpa_gridlatvalue)
   rl_latmin = MINVAL(rlpa_gridlatvalue)
   rl_latmax = MAXVAL(rlpa_gridlatvalue)
+#if defined key_debug
+  WRITE(0,*) 'Read lat ok :',rl_latmin,rl_latmax
+#endif
   ! Recherche du nom et du type de la variable longitude
   cl_varname = 'nav_lon'
   CALL MIOL_inquire_type_NC(il_file_id, &
@@ -289,6 +295,10 @@ PROGRAM COLOCALIZE
                           rlpa_gridlonvalue)
   rl_lonmin = MINVAL(rlpa_gridlonvalue)
   rl_lonmax = MAXVAL(rlpa_gridlonvalue)
+#if defined key_debug
+  WRITE(0,*) 'Read lon ok :',rl_lonmin,rl_lonmax
+#endif
+  ! Recherche du nom et du type de la variable longitude
 
   !* Lecture du mask
   cl_varname = cl_mask
@@ -297,6 +307,9 @@ PROGRAM COLOCALIZE
                             il_type,&
                             il_nbdim,&
                             ll_mask)
+#if defined key_debug
+  WRITE(0,*) 'Read mask :',cl_varname,ll_mask
+#endif
   IF (ll_mask) THEN 
 #if defined key_debug
      WRITE(0,*) ' lecture du mask ...',cl_varname
@@ -428,7 +441,7 @@ PROGRAM COLOCALIZE
 #endif
   IF (ALLOCATED(ila_mask)) DEALLOCATE(ila_mask)
   il_len=len_trim(cl_resFile)
-  cl_colocFile=TRIM(cl_resFile(1:il_len-3))//'.dat'
+  cl_colocFile=TRIM(cl_resFile(1:il_len-3))//'dat'
   cl_logfile=TRIM(cl_resFile(1:il_len-3))//'txt'
 #if defined key_debug
         WRITE (0,*) "Fichier de colloc :: ",cl_colocFile
@@ -560,7 +573,7 @@ PROGRAM COLOCALIZE
                    WRITE (0,*) 'Poids le plus proche ::',rla_poids_vertex(il_loc(1))
                    WRITE (0,*) 'Distance la plus proche ::',rla_dist_vertex(il_loc(1))
 #endif
-  		   IF ( rla_dist_vertex(il_loc(1)) > 15. ) THEN
+  		   IF ( rla_dist_vertex(il_loc(1)) > 50. ) THEN
                         WRITE (0,*) 'Erreur sur le point il_jk ::',il_jk,rla_dist_vertex(il_loc(1)),ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1))
                         !STOP
                    ENDIF

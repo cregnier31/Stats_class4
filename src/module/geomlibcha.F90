@@ -1954,34 +1954,34 @@ END FUNCTION segIntersect
 !<
 !==========================================================================
 
-LOGICAL FUNCTION inSight ( x1, y1, x2, y2, nw, xw1, xw2, yw1, yw2 )
-
-  IMPLICIT NONE
-  
-  REAL :: x1, y1, x2, y2
-  REAL :: x3, y3, x4, y4
-  INTEGER :: nw
-  REAL, DIMENSION(nw) :: xw1, yw1, xw2, yw2
-
-  LOGICAL :: segIntersect
-!  EXTERNAL segIntersect
-  INTEGER kseg
-
-  inSight = .true.
-
-  DO kseg = 1, nw
-    x3 = xw1(kseg)
-    y3 = yw1(kseg)
-    x4 = xw2(kseg)
-    y4 = yw2(kseg)
-    IF ( segIntersect(x1,y1,x2,y2,x3,y3,x4,y4) ) THEN
-	inSight = .false.
-	RETURN
-    END IF
-  END DO
-  
-  RETURN
-END FUNCTION inSight
+!!LOGICAL FUNCTION inSight ( x1, y1, x2, y2, nw, xw1, xw2, yw1, yw2 )
+!!
+!!  IMPLICIT NONE
+!!  
+!!  REAL :: x1, y1, x2, y2
+!!  REAL :: x3, y3, x4, y4
+!!  INTEGER :: nw
+!!  REAL, DIMENSION(nw) :: xw1, yw1, xw2, yw2
+!!
+!!  LOGICAL :: segIntersect
+!!!  EXTERNAL segIntersect
+!!  INTEGER kseg
+!!
+!!  inSight = .true.
+!!
+!!  DO kseg = 1, nw
+!!    x3 = xw1(kseg)
+!!    y3 = yw1(kseg)
+!!    x4 = xw2(kseg)
+!!    y4 = yw2(kseg)
+!!    IF ( segIntersect(x1,y1,x2,y2,x3,y3,x4,y4) ) THEN
+!!	inSight = .false.
+!!	RETURN
+!!    END IF
+!!  END DO
+!!  
+!!  RETURN
+!!END FUNCTION inSight
 
 !========================================================================
 !> \brief
@@ -2064,7 +2064,7 @@ REAL FUNCTION distancenorm( x0,y0,xcan0,ycan0)
   dx =  x0 - xcan0
 #ifdef NO_NORMLON
 #else
-#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1
+#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1 ||  defined key_orca_r12_allege
   IF ( ifconv /= 0 ) CALL normLon(dx)
 #endif
 #endif
@@ -2256,14 +2256,14 @@ SUBROUTINE getSWnodeWeights( x, y, xcan,ycan,vertex, c )
   REAL(KIND=4) :: rl_sum
   REAL(KIND=4), DIMENSION(:,:), INTENT(IN) :: xcan,ycan
 
-#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_atl12 || defined key_atl12_zNEATL36 || defined key_orca_r1 || defined key_med12 || defined key_ibi12 || defined key_ibi36
+#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r12_allege || defined key_atl12 || defined key_atl12_zNEATL36 || defined key_orca_r1 || defined key_med12 || defined key_ibi12 || defined key_ibi36
 #ifdef key_weights_method_OASIS
   REAL(KIND=4) :: xvmin,yvmin,xvmax,yvmax
   INTEGER :: iamb1, iamb2
 #endif
 #endif
 
-#if defined key_minipog || defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_atl12 || defined key_atl12_zNEATL36 || defined key_orca_r1 || defined key_med12 || defined key_ibi12 || defined key_ibi36
+#if defined key_minipog || defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 ||  defined key_orca_r12_allege || defined key_atl12 || defined key_atl12_zNEATL36 || defined key_orca_r1 || defined key_med12 || defined key_ibi12 || defined key_ibi36
   REAL(KIND=4) :: DiffLon
   EXTERNAL DiffLon
 #endif
@@ -2290,7 +2290,7 @@ SUBROUTINE getSWnodeWeights( x, y, xcan,ycan,vertex, c )
     xv(iv) = xcan(igrd(vertex(iv)),jgrd(vertex(iv)))
 #endif
 #if defined key_weights_method_PDM
-#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1
+#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1 || defined key_orca_r12_allege 
     xv(iv) = DiffLon( xcan(igrd(vertex(iv)),jgrd(vertex(iv))) , xx )
 #endif
 #if defined key_atl12 || defined key_atl4 || defined key_atl12_zNEATL36 || defined key_med12 || defined key_ibi12 || defined key_ibi36
@@ -2362,7 +2362,7 @@ SUBROUTINE getSWnodeWeights( x, y, xcan,ycan,vertex, c )
   xvmin = MIN( xv(1),xv(2),xv(3),xv(4) )
   IF ( xx < xvmin ) xx = xx + 360.
 #endif
-#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1
+#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1 || defined key_orca_r12_allege
 !
 ! Constantes pour gerer l 'ambiguite des 360 degres
 ! ---------------------------------------------------
@@ -2376,7 +2376,7 @@ SUBROUTINE getSWnodeWeights( x, y, xcan,ycan,vertex, c )
 ! correction bug!!(pas clair pourquoi)
   iamb1 = 217
 #endif
-#if defined key_orca_r12
+#if defined key_orca_r12 || defined key_orca_r12_allege
 ! correction bug!!(pas clair pourquoi)
   iamb1 = 10
 #endif

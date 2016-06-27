@@ -58,8 +58,10 @@ PROGRAM SPATIAL_INTERPOLATION
        cl_modelVarname_T, &
        cl_modelVarname_S, &
        cl_input_type, &
+       cl_input_typemod, &
        cl_modele,&
-       cl_daterun,& 
+       cl_daterun,&
+       cl_meshfile,& 
        cl_log
 
   CHARACTER(LEN=255), DIMENSION(:), ALLOCATABLE :: cla_inputFile
@@ -74,6 +76,8 @@ PROGRAM SPATIAL_INTERPOLATION
        cl_outputVarname_T, &
        cl_outputVarname_S, &
        cl_input_type, &
+       cl_input_typemod, &
+       cl_meshfile, &
        il_nbfile
   !
 
@@ -168,8 +172,10 @@ PROGRAM SPATIAL_INTERPOLATION
           cl_outputVarname_T, &
           cl_outputVarname_S, &
           cl_input_type, &
+          cl_input_typemod, &
           il_nbfile, &
-          cla_inputFile)
+          cla_inputFile,&
+          cl_meshfile)
      !      
      IF (ALLOCATED(cla_inputFile)) DEALLOCATE(cla_inputFile, stat=il_status)
      IF ( il_status /= 0 ) THEN
@@ -179,7 +185,8 @@ PROGRAM SPATIAL_INTERPOLATION
      ENDIF
      !
   !
-ENDPROGRAM SPATIAL_INTERPOLATION
+CONTAINS
+!ENDPROGRAM SPATIAL_INTERPOLATION
 !
 !
 !
@@ -198,8 +205,10 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                       cd_outputVarname_T, &
                                       cd_outputVarname_S, &
                                       cd_input_type, &
+                                      cd_input_modtype, &
                                       id_nbfile, &
-                                      cda_inputFile)
+                                      cda_inputFile,&
+                                      cd_meshfile)
   !==============================================================================================================
   !> \brief    Description : Routine principale qui réalise l'interpolation des profiles modèles colocalisés autour 
   !!                         des points d'observation
@@ -222,14 +231,17 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                                           cd_modelVarname_S, &            
                                                           cd_outputVarname_S,&
                                                           cd_outputVarname_T,&
-                                                          cd_input_type
+                                                          cd_input_type,&
+                                                          cd_input_modtype,&
+                                                          cd_meshfile
   !
   INTEGER(KIND=4)                                       :: il_ji,il_v,il_nbdim,il_nlon,il_nlat, &
                                                            il_fic,il_ndepth,il_nprof,il_nlevels,&
                                                            il_nbvar,il_t1,il_t2,il_ir,il_eof,il_status,il_nbrec
   INTEGER, DIMENSION(:,:), ALLOCATABLE                  :: ila_xindex,ila_yindex
   CHARACTER(LEN=255)                                    :: cl_depthvarname,cl_inputFile,&
-                                                           cl_tmp,cl_colocFile,cl_outputfile,cl_outputVarname
+                                                           cl_tmp,cl_colocFile,cl_outputfile,&
+                                                           cl_outputVarname,cl_file,cl_varname
   CHARACTER(LEN=255), DIMENSION(2)                      :: cla_dimname
   CHARACTER(LEN=1), DIMENSION(:), ALLOCATABLE           :: cla_positionqc
   REAL(KIND=4),DIMENSION(:,:),ALLOCATABLE               :: rla_poids
@@ -272,12 +284,22 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
   !
   !---------------------------------------------------------------------
   ! Recherche des dimensions du fichier modele
-#if defined key_debug
-     WRITE(0,*) ' Function inquire_model_file ',TRIM(cd_modelFileT)
-#endif
   !
-  CALL inquire_model_file(cd_modelFileT, &
-                          cd_modelVarname_T, &
+  IF (TRIM(cd_input_modtype) .EQ. "NETCDF") THEN
+#if defined key_debug
+     WRITE(0,*) ' Function inquire_model_Netcdf',TRIM(cd_modelFileT)
+#endif
+      cl_file=cd_modelFileT
+      cl_varname=cd_modelVarname_T
+  ELSE IF (TRIM(cd_input_modtype) .EQ. "ALLEGE") THEN
+#if defined key_debug
+     WRITE(0,*) ' Function inquire_model_file_allege ',TRIM(cd_meshfile)
+#endif
+      cl_file=cd_meshfile
+      cl_varname='mask'
+  ENDIF 
+  CALL inquire_model_file(cl_file, &
+                          cl_varname, &
                           il_nbdim, &
                           il_nlon, &
                           il_nlat, &
@@ -519,22 +541,44 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
      il_t2=0
      CALL SYSTEM_CLOCK(count=il_t1)
 #endif
-        CALL read_model_file(cd_modelFileT, &
-                             cd_modelFileS, &
-                             cd_modelVarname_T, &
-                             cd_modelVarname_S, &
-                             cl_depthvarname, &
-                             ila_xindex,&
-                             ila_yindex,&
-                             rla_modelvalue_T, & 
-                             rla_modelvalue_S, & 
-                             rla_modeldepth, &
-                             il_nprof,&
-                             il_nlon, &
-                             il_nlat, &
-                             il_ndepth, &
-                             il_nbdim)
-#if defined key_cputime                                                                                      
+        IF (TRIM(cd_input_modtype) .EQ. "NETCDF") THEN
+#if defined key_debug
+    WRITE(0,*) 'Read model file NETCDF'
+#endif
+            CALL read_model_file(cd_modelFileT, &
+                                 cd_modelFileS, &
+                                 cd_modelVarname_T, &
+                                 cd_modelVarname_S, &
+                                 cl_depthvarname, &
+                                 ila_xindex,&
+                                 ila_yindex,&
+                                 rla_modelvalue_T, & 
+                                 rla_modelvalue_S, & 
+                                 rla_modeldepth, &
+                                 il_nprof,&
+                                 il_nlon, &
+                                 il_nlat, &
+                                 il_ndepth, &
+                                 il_nbdim)
+        ELSE IF (TRIM(cd_input_modtype) .EQ. "ALLEGE") THEN
+#if defined key_debug
+    WRITE(0,*) 'Read model file ALLEGE'
+#endif
+            CALL read_allege_model_file(cd_modelFileT, &
+                                 cd_modelFileS, &
+                                 cd_meshfile,&
+                                 ila_xindex,&
+                                 ila_yindex,&
+                                 rla_modelvalue_T, & 
+                                 rla_modelvalue_S, & 
+                                 rla_modeldepth, &
+                                 il_nprof,&
+                                 il_nlon, &
+                                 il_nlat, &
+                                 il_ndepth, &
+                                 il_nbdim)
+        ENDIF
+#if defined key_cputime
      CALL SYSTEM_CLOCK(count=il_t2, count_rate=il_ir)
      WRITE(0,*) "Temps read_model_file :",REAL(il_t2 - il_t1) / il_ir
 #endif
@@ -1286,6 +1330,9 @@ SUBROUTINE inquire_model_file(cd_file, &
   !---------------------------------------------------------------------
   ! Lecture du fichier modele
   !
+#if defined key_debug
+  WRITE (0,*) " open file :: ",cd_file
+#endif
   CALL MIOL_openr_file_NC(cd_file, &
        il_file_id)
   CALL MIOL_inquire_dimensions_NC(il_file_id, &
@@ -1297,6 +1344,9 @@ SUBROUTINE inquire_model_file(cd_file, &
        clpa_varname, &
        ilpa_nbdim)
   CALL MIOL_close_file_NC(il_file_id)
+#if defined key_debug
+  WRITE (0,*) " inquire ok :: ",ilpa_dimlen,ilpa_nbdim
+#endif
   !
   !
   !------------------------------------------------------------------------
@@ -1308,14 +1358,17 @@ SUBROUTINE inquire_model_file(cd_file, &
      CASE ('deptht', 'depthu', 'depthv', 'depth', 'z')
         id_ndepth = ilpa_dimlen(il_ji)
 
-     CASE ('x', 'longitude')
+     CASE ('x', 'longitude', 'lon')
         id_nlon = ilpa_dimlen(il_ji)
 
-     CASE ('y', 'latitude')
+     CASE ('y', 'latitude', 'lat')
         id_nlat = ilpa_dimlen(il_ji)
 
      ENDSELECT
   ENDDO
+#if defined key_debug
+  WRITE (0,*) " Find dim ok :: ",id_nlon,id_nlat,id_ndepth
+#endif
   !
   !
   !------------------------------------------------------------------------
@@ -1344,6 +1397,9 @@ SUBROUTINE inquire_model_file(cd_file, &
         ll_isvarexist = .TRUE.
      ENDIF
   ENDDO
+#if defined key_debug
+  WRITE (0,*) "Find variable :: ",cd_depthvarname,ll_isvarexist
+#endif
   !
   !
   !------------------------------------------------------------------------
@@ -1372,6 +1428,142 @@ SUBROUTINE inquire_model_file(cd_file, &
   !
 ENDSUBROUTINE inquire_model_file
 
+!
+!******************************************************************************
+!******************************************************************************
+!******************************************************************************
+
+SUBROUTINE read_allege_model_file(cd_fileT, &
+                                  cd_fileS,&
+                                  cd_meshfile, &
+                                  ida_xindex,&
+                                  ida_yindex,&
+                                  rda_fieldvalue_T, &
+                                  rda_fieldvalue_S, &
+                                  rda_depthvalue, &
+                                  id_nprofs,&
+                                  id_nlon, &
+                                  id_nlat, &
+                                  id_ndepth, &
+                                  id_nbdim)
+    !==============================================================================================================
+    !> \brief    Description : Routine permettant de lire les profiles modèles autour de chaque mesure insitu, la lecture 
+    !                          est accéléré par le fait que l'on va chercher directement les vecteurs concernés en fonction
+    !                          des vecteurs de positions en x et y (xindex et yindex), nous ne chargeons jamais le champs en entier
+    !                          ce qui est beaucoup plus performant sur les grosses configurations. La conversion de la température
+    !                          potentielle en insitu pour chacun des profiles est faite là, cette routine est adaptée pour la lecture
+    !                          fichiers allégés
+    !<
+    !===================================================================================================================
+    !
+    USE netcdf
+    USE MCAL
+    USE MFT_error
+    USE MIOL
+    USE GSW_TEOS10  
+    IMPLICIT NONE
+    !
+    CHARACTER(LEN=255)                                      :: cd_fileT, &
+                                                               cd_fileS, &
+                                                               cd_meshfile
+    CHARACTER(LEN=255)                                        :: cl_dim
+    INTEGER(KIND=4),INTENT(IN)                              :: id_nlon,id_nlat, &
+                                                              id_ndepth,id_nbdim,id_nprofs
+ !! INTEGER(KIND=4)                                        :: il_varid,il_type_T,il_type_S,&
+ !!                                                           il_status,il_nbdim
+    INTEGER (KIND=4), DIMENSION(4,id_nprofs)               :: ida_xindex,ida_yindex
+    INTEGER, DIMENSION(1)                                  :: ila_indx,ila_indy
+    INTEGER, DIMENSION(id_ndepth)                          :: ila_indz
+    REAL(KIND=4), DIMENSION(4,id_nprofs,id_ndepth)         :: rda_fieldvalue_T,rda_fieldvalue_S
+    REAL(KIND=4), DIMENSION(id_ndepth)                     :: rda_depthvalue
+    INTEGER(KIND=4)                                        :: il_ji,il_jk,il_jl,il_fill
+ !! !
+ !! INTEGER(KIND=4)                                        :: il_fill,il_ji,il_jk,il_jl,il_file_id_T,il_file_id_S
+ !! INTEGER(KIND=4),DIMENSION(3)                           :: ila_T_size_3D,ila_S_size_3D
+ !! INTEGER(KIND=4),DIMENSION(4)                           :: ila_T_size,ila_S_size
+ !! REAL(KIND=8), DIMENSION(2)                             :: rla_offsetvalue
+ !! REAL(KIND=4), DIMENSION(:), POINTER                    :: rlpa_value_1D
+    REAL(KIND=4),DIMENSION(:,:,:),POINTER                   :: rlpa_varT,rlpa_varS
+    REAL(KIND=4),DIMENSION(:,:),POINTER                     :: rlpa_lon,rlpa_lat
+    REAL(KIND=4),DIMENSION(:),POINTER                       :: rlpa_depth
+ !! REAL(KIND=4), DIMENSION(:,:,:,:), POINTER              :: rlpa_valueT_4D,rlpa_valueS_4D
+ !! REAL(KIND=8), DIMENSION(:,:,:,:), POINTER              :: rlpa_valueT_4D_R8,rlpa_valueS_4D_R8
+ !! REAL(KIND=4), DIMENSION(:,:,:), POINTER                :: rlpa_valueT_3D,rlpa_valueS_3D
+ !! REAL(KIND=8), DIMENSION(:,:,:), POINTER                :: rlpa_valueT_3D_R8,rlpa_valueS_3D_R8
+    REAL(KIND=4)                                           :: rl_pres,rl_ref,rl_psal,rl_temp
+    REAL(KIND=8)                                           :: rl_tempinsitu,rl_psal_R8,rl_temp_R8
+ !! INTEGER(KIND=2), DIMENSION(:,:,:,:), POINTER           :: ilpa_valueT_4D,ilpa_valueS_4D
+ !! INTEGER(KIND=2), DIMENSION(:,:,:), POINTER             :: ilpa_valueT_3D,ilpa_valueS_3D
+    LOGICAL                                                 :: ll_exist_T,ll_exist_S,ll_write
+    !
+    !
+    !---------------------------------------------------------------------
+    il_fill=9999.
+    !** Read allegés
+    ll_write=.FALSE.
+    cl_dim="3D"
+#if defined key_debug
+    WRITE(0,*) "------------------------"
+    WRITE(0,*) 'Inside read_allege_model_file '
+    WRITE(0,*) "------------------------"
+    print *,cd_fileT,cl_dim,cd_meshfile
+#endif
+    !** Read temperature
+    CALL read_lightout_withmask(cd_fileT,TRIM(cl_dim),cd_meshfile,rlpa_lon,rlpa_lat,rlpa_depth,rlpa_varT)
+    !CALL read_lightout_test(cd_fileT,TRIM(cl_dim),cd_meshfile,rlpa_lon,rlpa_lat,rlpa_depth,rlpa_varT)
+    !CALL read_lightout_test(cd_fileT,TRIM(cl_dim),cd_meshfile,rlpa_lat)
+#if defined key_debug
+  WRITE (0,*) "Read Temp OK "
+#endif
+    !** Read salinity 
+    CALL read_lightout_withmask(cd_fileS,TRIM(cl_dim),cd_meshfile,rlpa_lon,rlpa_lat,rlpa_depth,rlpa_varS) 
+#if defined key_debug
+  WRITE (0,*) "Read psal OK "
+#endif
+    rda_depthvalue(1:id_ndepth) =  rlpa_depth(1:id_ndepth)
+    DEALLOCATE(rlpa_depth)
+    !  Boucle sur les profiles
+    DO il_ji=1,id_nprofs 
+#if defined key_debug
+  WRITE (0,*) "Read model files "
+#endif
+
+        ! Lecture des variables à traiter
+        !
+        DO il_jk=1,4
+            ila_indx(:)=ida_xindex(il_jk,il_ji)
+            ila_indy(:)=ida_yindex(il_jk,il_ji)
+            ila_indz(:)=(/1:id_ndepth/)
+            IF (ila_indx(1) .NE. il_fill .AND. ila_indy(1).NE. il_fill) THEN
+                !** Lecture de la temperature
+                rda_fieldvalue_T(il_jk,il_ji,:)=rlpa_varT(ila_indx(1),ila_indy(1),ila_indz)
+                !** Lecture de la salinité
+                rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_varS(ila_indx(1),ila_indy(1),ila_indz)
+                !** Conversion en temperature insitu
+                DO il_jl=1,id_ndepth
+                    rl_temp=rda_fieldvalue_T(il_jk,il_ji,il_jl)
+                    rl_psal=rda_fieldvalue_S(il_jk,il_ji,il_jl)
+                    rl_pres=rda_depthvalue(il_jl)
+                    rl_ref=0
+                    !WRITE (0,*) 'Avant correction :: ',rda_fieldvalue_T(il_jk,il_ji,il_jl) ,rl_temp,rl_psal
+                    IF ( rl_temp .NE. rg_fillvalue .AND. rl_psal .NE. rg_fillvalue) THEN 
+                        CALL gsw_pt_from_t(REAL(rl_psal,8),REAL(rl_temp,8),REAL(rl_ref,8),REAL(rl_pres,8),rl_tempinsitu)
+                        rda_fieldvalue_T(il_jk,il_ji,il_jl)=REAL(rl_tempinsitu,4)
+                    ENDIF
+                ENDDO
+            ELSE
+                rda_fieldvalue_T(il_jk,il_ji,:)=rg_fillvalue
+                rda_fieldvalue_S(il_jk,il_ji,:)=rg_fillvalue
+            ENDIF
+        ENDDO
+#if defined key_debug
+  WRITE (0,*) "Read model files OK profile/nbprofs : ",il_ji,id_nprofs
+#endif
+    ENDDO
+
+
+
+END SUBROUTINE read_allege_model_file
 !
 !******************************************************************************
 !******************************************************************************
@@ -1446,7 +1638,7 @@ SUBROUTINE read_model_file(cd_fileT, &
   ll_clim=.FALSE.
   IF (TRIM(cd_fieldname_T(1:4)).EQ. 'temp') ll_clim=.TRUE.  
   !
-  !  Recherche du type de la varible et de son existence
+  !  Recherche du type de la variable et de son existence
   CALL MIOL_inquire_type_NC(cd_fileT, &
                             cd_fieldname_T,&
                             il_type_T,&
@@ -1491,7 +1683,6 @@ SUBROUTINE read_model_file(cd_fileT, &
                        call MIOL_read_field_NC(cd_fileS,cd_fieldname_S,rlpa_valueS_4D_R8,ila_S_size,ila_indx,ila_indy,ila_indz,ila_indt)
                        rda_fieldvalue_S(il_jk,il_ji,:)=REAL(rlpa_valueS_4D_R8(1,1,:,1),4)
                        IF ( .NOT. ll_clim) THEN
-                       !WRITE(0,*) 'Cas du Modele'
                        !** Conversion en temperature insitu
                           DO il_jl=1,id_ndepth
                              rl_temp_R8=rlpa_valueT_4D_R8(1,1,il_jl,1)
@@ -1508,6 +1699,7 @@ SUBROUTINE read_model_file(cd_fileT, &
                        DEALLOCATE(rlpa_valueS_4D_R8)
                        DEALLOCATE(rlpa_valueT_4D_R8)
                    ELSE 
+                       WRITE(0,*) 'Cas ll clim pas de conversion'
                        rda_fieldvalue_T(il_jk,il_ji,:)=rg_fillvalue
                        rda_fieldvalue_S(il_jk,il_ji,:)=rg_fillvalue
                    ENDIF
@@ -1534,7 +1726,9 @@ SUBROUTINE read_model_file(cd_fileT, &
                                CALL gsw_pt_from_t(REAL(rl_psal,8),REAL(rl_temp,8),REAL(rl_ref,8),REAL(rl_pres,8),rl_tempinsitu)
                                rda_fieldvalue_T(il_jk,il_ji,il_jl)=REAL(rl_tempinsitu,4)
                              ENDIF
-                          ENDDO 
+                          ENDDO
+                       ELSE 
+                            WRITE(0,*) 'Cas ll clim pas de conversion'
                        ENDIF
                    ELSE 
                        rda_fieldvalue_T(il_jk,il_ji,:)=rg_fillvalue
@@ -1544,7 +1738,7 @@ SUBROUTINE read_model_file(cd_fileT, &
 !  WRITE (0,*) "Read field S OK :: ",rda_fieldvalue_S(il_jk,il_ji,:),shape(rlpa_valueS_4D)
 !#endif
                 CASE (NF90_SHORT)
-                 !  WRITE(0,*) 'Cas short'
+                   WRITE(0,*) 'Cas short'
                    IF (ila_indx(1) .NE. il_fill .AND. ila_indy(1).NE. il_fill) THEN
                        !** Lecture de la temperature
                        call MIOL_read_field_NC(cd_fileT,cd_fieldname_T,ilpa_valueT_4D,ila_T_size,rlpa_valueT_4D,&
@@ -1624,6 +1818,7 @@ SUBROUTINE read_model_file(cd_fileT, &
                        rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_valueS_3D(1,1,:)
                        DEALLOCATE(rlpa_valueS_3D)
                        IF ( .NOT. ll_clim) THEN
+                          WRITE(0,*) 'Conversion in situ'
                       ! WRITE(0,*) 'Cas du Modele'
                        !** Conversion en temperature insitu
                           DO il_jl=1,id_ndepth
@@ -1636,7 +1831,7 @@ SUBROUTINE read_model_file(cd_fileT, &
                                CALL gsw_pt_from_t(REAL(rl_psal,8),REAL(rl_temp,8),REAL(rl_ref,8),REAL(rl_pres,8),rl_tempinsitu)
                                rda_fieldvalue_T(il_jk,il_ji,il_jl)=REAL(rl_tempinsitu,4)
                              ENDIF
-                          ENDDO 
+                          ENDDO
                        ENDIF
                    ELSE 
                        rda_fieldvalue_T(il_jk,il_ji,:)=rg_fillvalue
@@ -2772,3 +2967,177 @@ ALLOCATE(rla_prof(id_nlevels))
   !
 ENDSUBROUTINE read_coriolis_file
 
+
+!SUBROUTINE read_lightout_test(cd_filename,cd_dim,cd_meshfile,rdpa_lon,rdpa_lat,rdpa_var)
+SUBROUTINE read_lightout_test(cd_filename,cd_dim,cd_meshfile,rdpa_lat)
+    CHARACTER(LEN=255),INTENT(IN)                  :: cd_filename,cd_meshfile
+    CHARACTER(LEN=2),INTENT(IN)                    :: cd_dim
+    REAL(KIND=4),DIMENSION(:,:),POINTER,INTENT(IN) :: rdpa_lat
+    REAL(KIND=4),DIMENSION(:,:),POINTER            :: rdpa_lon
+    REAL(KIND=4),DIMENSION(:,:,:),POINTER          :: rdpa_var
+    !CHARACTER(LEN=256)                             :: cl_outputfile
+    WRITE(0,*) '----------- Inside read_lightout_test -----------'
+    WRITE(0,*) cd_filename,cd_dim,cd_meshfile
+END SUBROUTINE read_lightout_test
+
+    !!=======================================================================
+    !> \brief
+    !!**** subroutine read_ligthout \n
+    !!
+    !!     Purpose:\n
+    !!     --------\n
+    !!     Program to read lightoutfile coded in bytes
+    !!     Input : \n
+    !!     ------\n
+    !!     @filename : input filename
+    !!     @dimension : input dimension in 2D or 3D
+    !!     @variable : name of output variable 
+    !!     @meshfile :  mesh file for lon lat construction
+    !!     @sampling :  sampling of the lightout file (for ex 3 for PSY4 and 2 for PSY3)
+    !!     @lon      : 2D pointer for output longitude
+    !!     @lat      : 2D pointer for output latitude
+    !!     @var      : 3D pointer for output variable
+    !!     Output : \n
+    !!     file in netcdf with lon/lat/depth
+    !!     @lon      : 2D pointer for output longitude
+    !!     @lat      : 2D pointer for output latitude
+    !!     @var      : 3D pointer for output variable
+    !!
+    !!***  Method: \n
+    !!     ------- \n
+    !!     History: \n
+    !!     -------- \n
+    !!   \n Version    Programmer      Date            Description
+    !!   \n -------    ----------      ----            -----------
+    !!   \n  1.0        C. REGNIER     1st June 2016        Creation with jmi contribution
+    !<
+    !!=======================================================================
+    !
+SUBROUTINE read_lightout_withmask(cd_filename,cd_dim,cd_meshfile,&
+                                  rdpa_lon,rdpa_lat,rdpa_depth,&
+                                  rdpa_var)
+    !
+    !
+    !**   0. DECLARATIONS
+    !        ------------
+    !
+    !**   0.1 Include files and modules
+    !
+    USE MIOL
+    IMPLICIT NONE
+    !
+    !
+    !**   0.2 Local variables
+    !
+    !
+    CHARACTER(LEN=255),INTENT(IN)                  :: cd_filename,cd_meshfile
+    CHARACTER(LEN=2),INTENT(IN)                    :: cd_dim
+    !CHARACTER(LEN=256)                             :: cl_outputfile
+    CHARACTER(LEN=256)                             :: cl_lon,cl_lat,cl_depth
+    REAL(KIND=4)                                   :: rl_dimiglo_sampling,rl_dimjglo_sampling,rl_dimk
+    REAL(KIND=4)                                   :: rl_AUXMIN,rl_AUXMAX,rl_UNDEFO,rl_AUXMID,&
+                                                      rl_scale,rl_ATANMAX,rl_ATANMIN
+    REAL(KIND=4),DIMENSION(:,:),POINTER            :: rdpa_lon,rdpa_lat
+    REAL(KIND=4),DIMENSION(:,:,:),POINTER          :: rdpa_var
+    REAL(KIND=4),DIMENSION(:),POINTER              :: rdpa_depth
+    REAL(KIND=4),DIMENSION(:,:,:),ALLOCATABLE      :: rla_tab3D
+    REAL(KIND=4),DIMENSION(:,:,:,:),ALLOCATABLE    :: rla_tab4D
+    REAL(KIND=4), parameter                        :: rp_pi     = 3.14159265358979323846  
+    CHARACTER(LEN=255),DIMENSION(:),ALLOCATABLE    :: cla_dimname
+    INTEGER(KIND=4)  ,DIMENSION(:),ALLOCATABLE     :: ila_dimlen
+    INTEGER(KIND=2)                                :: il_MAXINT,il_RMAXINT
+    INTEGER(KIND=2), DIMENSION(:,:,:), ALLOCATABLE :: ila_AUXglo
+    INTEGER(KIND=4)                                :: il_ji,il_err,il_dimiglo_sampling,il_dimjglo_sampling,&
+                                                      il_nx,il_ny,il_nx_ini,il_ny_ini,il_nz,il_dim,il_dimk,il_unit_lu,il_narg,&
+                                                      iargc,il_file_id,il_meshfile
+    INTEGER(KIND=4),DIMENSION(2)                   :: ila_lon2D,ila_lat2D
+    INTEGER(KIND=4),DIMENSION(2)                   :: ila_depth
+    INTEGER(KIND=4),DIMENSION(3)                   :: ila_dim3D
+    INTEGER(KIND=4),DIMENSION(4)                   :: ila_dim4D
+
+#if defined key_debug
+  WRITE (0,*) "Read lightout :: ",cd_filename
+#endif
+
+    CALL MIOL_getFreeLU(il_unit_lu)
+    OPEN(il_unit_lu,file=TRIM(cd_filename),form='unformatted',access='sequential',action='READ',status='OLD',iostat=il_err)
+    IF (il_err > 0) THEN
+       WRITE (0,*) "read_lightout: Problem opening file "//TRIM(cd_filename)
+       CALL flush(0)
+       STOP
+    ENDIF
+!
+    READ(il_unit_lu) rl_dimiglo_sampling
+    READ(il_unit_lu) rl_dimjglo_sampling
+    READ(il_unit_lu) rl_dimk
+    READ(il_unit_lu) rl_AUXMIN,rl_AUXMAX,rl_UNDEFO,il_MAXINT
+!
+    il_dimiglo_sampling=INT(rl_dimiglo_sampling,4)
+    il_dimjglo_sampling=INT(rl_dimjglo_sampling,4)
+    il_dimk=INT(rl_dimk,4)
+!
+    ALLOCATE(ila_AUXglo(il_dimiglo_sampling,il_dimjglo_sampling,il_dimk))
+!
+    READ(il_unit_lu) ila_AUXglo
+!   Convert with offset and scale factor
+#if defined key_debug
+    WRITE(0,*) 'Read OK : ',shape(ila_AUXglo)
+    WRITE(0,*) 'Min : ',minval(ila_AUXglo)
+    WRITE(0,*) 'Max : ',maxval(ila_AUXglo)
+    WRITE(0,*) 'Dimensions : ',size(shape(ila_AUXglo))
+#endif
+    il_dim=size(shape(ila_AUXglo))
+    IF ( cd_dim == '3D')  THEN
+        IF ( il_dim /= 3 ) THEN
+            WRITE(0,*) cd_filename,' is not a 3D file'
+            STOP
+        ENDIF 
+        ila_dim3D=shape(ila_AUXglo)
+        ALLOCATE(rdpa_var(ila_dim3D(1),ila_dim3D(2),ila_dim3D(3)))
+        rdpa_var(:,:,:)=rg_fillValue
+        il_nx=ila_dim3D(1)
+        il_ny=ila_dim3D(2)
+        il_nz=ila_dim3D(3)
+    !ELSEIF ( cd_dim == '4D')  THEN
+    !    IF ( il_dim /= 4 ) THEN
+    !        WRITE(0,*) cd_filename,' is not a 3D file'
+    !        STOP
+    !    ENDIF 
+    !    ila_dim4D=shape(ila_AUXglo)
+    !    ALLOCATE(rla_tab4D(ila_dim4D(1),ila_dim4D(2),ila_dim4D(3),ila_dim4D(4)))
+    !    rla_tab4D(:,:,:,:)=rg_fillValue
+    ELSE 
+        WRITE(0,*) 'Problem with dimensions : ',cd_dim
+        STOP
+    ENDIF
+    rl_AUXMID = (rl_AUXMIN+rl_AUXMAX)/2.
+    rl_scale = rl_AUXMAX-rl_AUXMID
+    IF  (rl_scale .ne. 0.) THEN
+        rl_scale = 4./rl_scale
+    ELSE 
+        rl_scale = 1.
+    ENDIF
+    rl_ATANMAX=atan( (rl_AUXMAX - rl_AUXMID )*rl_scale ) / rp_pi
+    rl_ATANMIN=ATAN( (rl_AUXMIN - rl_AUXMID )*rl_scale ) / rp_pi
+    il_RMAXINT=il_MAXINT-1
+    IF ( il_dim == 3 ) THEN 
+        WHERE (ila_AUXglo .ne. il_MAXINT) rdpa_var=TAN(ila_AUXglo/(il_RMAXINT/rl_ATANMAX)*rp_pi)/rl_scale+rl_AUXMID
+  !!  ELSE IF ( il_dim == 4 ) THEN
+  !!      WHERE (ila_AUXglo .ne. il_MAXINT) rla_tab4d=TAN(ila_AUXglo/(il_RMAXINT/rl_ATANMAX)*rp_pi)/rl_scale+rl_AUXMID
+    ENDIF  
+    cl_lon="longitude"
+    cl_lat="latitude"
+    cl_depth="depth"
+   !! open mesh file
+    CALL MIOL_openr_file_NC(cd_meshfile,il_meshfile)
+    CALL MIOL_read_field_NC(il_meshfile,cl_lon,rdpa_lon,ila_lon2D)
+    CALL MIOL_read_field_NC(il_meshfile,cl_lat,rdpa_lat,ila_lat2D)
+    CALL MIOL_read_field_NC(il_meshfile,cl_depth,rdpa_depth,ila_depth)
+    CALL MIOL_close_file_NC(il_meshfile)
+#if defined key_debug
+  WRITE (0,*) "Read lightout OK "
+#endif
+
+END SUBROUTINE read_lightout_withmask
+ENDPROGRAM SPATIAL_INTERPOLATION
+!

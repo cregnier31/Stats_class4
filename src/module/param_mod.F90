@@ -177,7 +177,19 @@ MODULE PARAM_MOD
                         jpnisl  = 3000            !: maximum number of pointsper island
 
 #endif
-
+#if defined key_orca_r12_allege
+  INTEGER, PARAMETER :: ip_jpiglo = 1440 !4322 ! number of grid points x
+  INTEGER, PARAMETER :: ip_jpjglo = 1019 !3059 ! number of grid points y
+  INTEGER, PARAMETER :: ip_maxgrd = 900473 !901046 ! maximum number of grid points
+  INTEGER, PARAMETER :: jpkdta  = 50, &  !: number of levels > or = to jpk
+                        jpiglo  = ip_jpiglo,      &  !: first  dimension of global domain --> i
+                        jpjglo  = ip_jpjglo,      &  !: second dimension of global domain --> j
+                        jpk     = jpkdta,      &  !: number of vertical levels
+! Domain characteristics
+                        jperio  =    4  ,      &  !: lateral cond. type (between 0 and 6)
+                        jpisl   =  150  ,      &  !: number of islands
+                        jpnisl  = 3000            !: maximum number of pointsper island
+#endif
 !! PRESAL
 #if defined key_presal
 ! PSY4
