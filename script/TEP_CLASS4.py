@@ -69,7 +69,7 @@ log.info("Daterun %s " %(daterun))
 #   Load db configuration file
 # ==================================
 CONF_PATH=os.getcwd()
-#CONF_PATH="/home/cregnier/SVN/mo/TEP_CLASS4_V3/script"
+CONF_PATH="/naviti/data2/cregnier/TEP_CLASS4/V4_branch/script"
 filename = [CONF_PATH+'/'+confname]
 print filename
 param_dict=Loader.factory('NML').load(filename,level)
@@ -84,7 +84,7 @@ model_type=param_dict.get('GLOBAL','MODELTYPE')
 dirdata=param_dict.get('input_dir', 'INPUTDATA')
 dirmodel=param_dict.get('input_dir', 'DATA_IN')
 data_format=param_dict.get('input_dir', 'DATA_FMT')
-dirwork=param_dict.get('output_dir', 'DIRTMP')
+dirwork=param_dict.get('output_dir', 'DIRTMP')+str(date1)+'_'+str(date2)+'/'
 diroutput=param_dict.get('output_dir', 'DIROUTPUT')
 homedir=param_dict.get('GLOBAL','DIRHOME')
 dirtmp=dirwork+'ext-'
@@ -164,6 +164,7 @@ else :
     log.info('========================================================')
     log.info('              DATE Selection and extraction  %s         ' %(prefix_data)) 
     log.info('========================================================')
+    print prefix_data
     list_files=Extractor().factory(prefix_data).run_list(date1,date2,dirwork)
 
 log.info('List Files  %s ' % (list_files))
@@ -213,7 +214,8 @@ for fichier in list_files:
         new_position=position
         print "Data origin %s" %(data_origin)
         print ll_file_interp
-        unique,counts = np.unique(new_position, return_counts=True)
+        #unique,counts = np.unique(new_position, return_counts=True)
+        unique = np.unique(new_position)
         if len(unique) == 2 : 
             new_position=position[0:1]
             ll_uniq=True
@@ -402,7 +404,6 @@ if ll_file_ok :
                 ## Design File
                 config_d=re.sub("V","QV",cl_config) 
                 Design().factory(data_origin).run(filename,dateval,contact,cl_config_d,model_type.lower(),inst,version,desc)
-    sys.exit(1)
     ## Zipped files and move in output directory 
     for filename in glob.glob(dirwork+"*.nc") :
         f_in=open(filename,'rb')
@@ -413,6 +414,7 @@ if ll_file_ok :
         log.info('File ok %s' %(filename))
         shutil.move(filename+'.gz',diroutput)
         os.remove(filename)
+sys.exit(1)
 # Lancement du run d'après
 DAYMAX=param_dict.get('GLOBAL','DAY_MAX')
 ## Clear stuck objects
