@@ -149,8 +149,9 @@ class InputLoader(Loader):
                 date2=SyDate(cl_start_date+"1231")
                 log.info("Year values")
                 cl_schedule='y'
-            else : 
-                log.info("Date must be a year")
+            else :
+                log.info("Start date %s" %(cl_start_date))
+                log.info("Date must be a year %s" %(cl_start_date))
                 sys.exit(1)
 
         else :

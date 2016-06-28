@@ -301,7 +301,9 @@ class NmlCreator_CORIOLIS(NmlCreator):
                     first_date=jdatemin.goforward(daytogo)
                 else : 
                     print "jours negatif"
-                    first_date=jdatemin.gobackward(-daytogo)
+                    daytogo2=7+daytogo
+                    first_date=jdatemin.goforward(daytogo2)
+                   # first_date=jdatemin.gobackward(-daytogo)
                 print first_date
                 daterun=first_date
                 if type_run == 'RTR' :

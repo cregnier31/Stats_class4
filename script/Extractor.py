@@ -23,7 +23,7 @@ class Extractor(object) :
         if type == "CORA4.1_MERC": return Extract_cora4()
         if type == "CORIOLIS": return ExtractCorio()
         if type == "ENS": return ExtractEns()
-        if type == "ARMOR_CO" or type == "ARMOR_AR" : return Extract_ARMOR()
+        if type == "ARMOR_CO" or type == "ARMOR_AR" or type == "AR_" : return Extract_ARMOR()
         if type == "GODAE" : return Extract_GODAE()
         if type == "ASCII" : return Extract_ASCII()
 
@@ -154,7 +154,7 @@ class Extract_ARMOR(Extractor):
 
     """ Extract ARMOR file """
 
-    def run(self,date1,date2,dirdata,dirtmp,typedata,template):
+    def run(self,date1,date2,dirdata,dirtmp,typedata,template,prefix):
         # ===============
         # LOGGER
         # ===============
@@ -167,7 +167,7 @@ class Extract_ARMOR(Extractor):
         while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
             dateval=SyDate.__str__(valeurj)
             log.info('Day %s ' % (dateval)) 
-            frame=dirdata+'*'+dateval.strip()+'*.nc'
+            frame=dirdata+prefix+'*'+dateval.strip()+'*.nc'
             print frame
             liste_file=glob.glob(frame)
             #liste_file=glob.glob(dirdata+'/*[TS]*'+dateval+'*.nc')
@@ -182,6 +182,22 @@ class Extract_ARMOR(Extractor):
                     print "I/O error({0}): {1}".format(e.errno, e.strerror)
             valeurj=valeurj.goforward(1)
 
+        return liste_tot
+
+    def run_list(self,date1,date2,dirdata):
+        liste_tot=[]
+        valeurj=date1
+        print valeurj
+        while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
+            dateval=SyDate.__str__(valeurj)
+            print dirdata+'/*'+dateval+'*.nc'
+            liste_file=glob.glob(dirdata+'/*'+dateval+'*.nc')
+            for file in liste_file :
+                try :
+                    liste_tot.append(file)
+                except IOError as e:
+                    print "I/O error({0}): {1}".format(e.errno, e.strerror)
+            valeurj=valeurj.goforward(1)
         return liste_tot
 
 
