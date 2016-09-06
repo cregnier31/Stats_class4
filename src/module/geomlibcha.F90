@@ -154,6 +154,7 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
   xcanmax=MAXVAL(xcan)
   ycanmin=MINVAL(ycan)
   ycanmax=MAXVAL(ycan)
+  ll_return=.FALSE.
 #if defined key_debuggeomlib
   WRITE(0,*) 'Valeurs MIN MAX :: ',xcanmin,xcanmax,ycanmin,ycanmax
 #endif
@@ -167,19 +168,19 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
   ENDIF
 #endif
 !
-#if defined key_global
-! no selected data in caspian sea
-  IF (x >= 46. .AND. x <= 56. .AND. y >= 35. .AND. y <= 50.) THEN
-      SWnode=0
-      RETURN
-  ENDIF
-! no selected data in ANTARCTICA area
-  IF ( y < MINVAL(ycan(2:ncan1-1,2)) ) THEN
-      SWnode=0
-      RETURN
-  ENDIF
-!
-#endif
+!!#if defined key_global
+!!! no selected data in caspian sea
+!!  IF (x >= 46. .AND. x <= 56. .AND. y >= 35. .AND. y <= 50.) THEN
+!!      SWnode=0
+!!      RETURN
+!!  ENDIF
+!!! no selected data in ANTARCTICA area
+!!  IF ( y < MINVAL(ycan(2:ncan1-1,2)) ) THEN
+!!      SWnode=0
+!!      RETURN
+!!  ENDIF
+!!!
+!!#endif
 !
 #if defined key_atl4 || defined key_atl12
 ! On verifie si l'observation est dans le domaine considere
@@ -326,6 +327,9 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
 ! 1.1 Algorithme 1 : dichotomie classique
 ! ---------------------------------------
 !
+#if defined key_debuggeomlib
+    WRITE(0,*) 'Algo 1 dichotomie classique'
+#endif
   ic = INT(( ncan1 + 1 ) / 2)
   jc = INT(( ncan2 + 1 ) / 2)
 !
@@ -347,6 +351,7 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
 !! on est dans la terre
 #if defined key_debuggeomlib
 !!debuggeomlib
+        WRITE (0,*) 'RETURN onvertice,kan=0:',x,y
         WRITE (200,*) 'RETURN onvertice,kan=0:',x,y
         CALL FLUSH(200)
         WRITE (300,*) x,y,0
@@ -758,6 +763,9 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
 ! II - Recherche around [icandeb,jcandeb]
 ! ---------------------------------------
 !
+#if defined key_debuggeomlib
+    WRITE(0,*) 'Recherche around'
+#endif
   DO ipoint=1,4
 !
      SELECT CASE(ipoint)
@@ -831,7 +839,8 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
      ENDIF
 #endif
 #endif
-     IF ( insidecell0(xv,yv) ) THEN
+     !IF ( insidecell0(xv,yv) ) THEN
+     IF ( insideCellstrict(xv,yv) ) THEN
 !
         ll_return=.TRUE.
         vertex(1)=kanvas(icansw,jcansw)
