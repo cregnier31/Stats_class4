@@ -231,6 +231,25 @@ class LoaderNCgodae(Loader):
         np.set_printoptions(suppress=True)
         return position
 
+    def read_pos_amsr(self,filename):
+        nc = netCDF4.Dataset(filename,'r')        
+        variable = 'LON'
+        rla_lon = nc.variables[variable][:]
+        variable = 'LAT'
+        rla_lat = nc.variables[variable][:]
+        n_profiles=len(rla_lon[:])
+        ## Optional Read juld
+        ##variable='juld'
+        ##rla_juld= nc.variables[variable][:]
+        position=np.ndarray(shape=(n_profiles,2),dtype=float, order='F')
+        il_val=0
+        for il_ind in range(n_profiles):
+            position[il_val,0]=rla_lon[il_ind]
+            position[il_val,1]=rla_lat[il_ind]
+            il_val=il_val+1
+        np.set_printoptions(suppress=True)
+        return position
+
 class AsciiLoader(Loader):
 
     """Loader for ASCII dataset"""
