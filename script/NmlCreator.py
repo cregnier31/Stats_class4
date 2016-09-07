@@ -45,7 +45,7 @@ class NmlCreator_GODAE(NmlCreator):
         # ===============
         log=Logger("NmlCreator_GODAE").run(2)
         # ===============
-        if type_data != "SLA" and  type_data != "SST" and type_data != "profile" and type_data != "aice":
+        if type_data != "SLA" and  type_data != "SST" and type_data != "profile" and type_data != "aice" and type_data != "AMSR" :
             print "Data %s not known %s !!! "
             sys.exit(1)
         if type_data == "profile" :
@@ -78,8 +78,9 @@ class NmlCreator_GODAE(NmlCreator):
                 for file in glob.glob(dirmodel+directory+"/"+modele+"_"+mean_type+"_"+dateval+"*_"+gridtemp+"*.nc") : 
                     list_file_T.append(file)
                     list_file_S.append(re.sub(gridtemp,gridsal,file))
-            elif type_data == 'aice' :
-                for file in glob.glob(dirmodel+directory+"/"+modele+"_"+mean_type+"_"+dateval+"*_icemod*.nc") :
+            elif type_data == 'aice' or  type_data == 'AMSR' :
+                #for file in glob.glob(dirmodel+directory+"/"+modele+"_"+mean_type+"_"+dateval+"*_icemod*.nc") :
+                for file in glob.glob(dirmodel+directory+"/"+modele+"_"+mean_type+"_"+dateval+"*_ileadfra*.nc") :
                     list_file.append(str(file))
 
         if type_data == 'profile'  :

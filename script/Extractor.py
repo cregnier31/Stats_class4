@@ -88,7 +88,7 @@ class Extract_GODAE(Extractor):
     """ Extract cora 4.1 file """
 
     def run(self,date1,date2,dirdata,dirtmp,typedata,template):
-        if typedata != "SLA" and  typedata != "SST" and typedata != "profile" and typedata !=  "aice" :
+        if typedata != "SLA" and  typedata != "SST" and typedata != "profile" and typedata !=  "aice" and typedata !=  "AMSR" :
             print "Data %s not known !!! " %(typedata)
             sys.exit(1)
         # =============== 
@@ -106,17 +106,22 @@ class Extract_GODAE(Extractor):
         while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
             dateval=SyDate.__str__(valeurj)
             log.info('Day  %s ' % (dateval)) 
-            liste_file=glob.glob(dirdata+'/class4*'+dateval+'*'+typedata+'*.nc')
-            print dirdata+'/class4*'+dateval+'*'+typedata+'*.nc'
+            if typedata ==  "AMSR" : 
+            	liste_file=glob.glob(dirdata+'/*'+dateval+'*.nc')
+	    else :
+            	liste_file=glob.glob(dirdata+'/class4*'+dateval+'*'+typedata+'*.nc')
+            	print dirdata+'/class4*'+dateval+'*'+typedata+'*.nc'
             #liste_file=glob.glob(dirdata+'/*[TS]*'+dateval+'*.nc')
             log.info('Liste file %s ' % (liste_file)) 
             for new_file in liste_file :
                 try :
                     filename=os.path.basename(new_file)
-                    if typedata ==  "aice" : 
-                        filename=re.sub('GIOPS_CONCEPTS_1.1',template,filename)
+                    if typedata ==  "AMSR" : 
+                        #filename=re.sub('GIOPS_CONCEPTS_1.1',template,filename)
+                        filename=re.sub('GL_h5',template,filename)
                     else:
-                        filename=re.sub('FOAM_orca025_12.0',template,filename)
+                        filename=re.sub('PSY4V2R2','PSY4V3R1',filename)
+                    #    filename=re.sub('FOAM_orca025_12.0',template,filename)
                     ## Copy extracted value of GODAE file with nco module
                     #shutil.copy(new_file,dirtmp)
                     options = []
@@ -133,8 +138,21 @@ class Extract_GODAE(Extractor):
                         #nco.ncks(input=dirstatic+'/'+filein,output=dirtmp+filename,fortran=True,options=options)
                         # Solution2 : add dimensions and variable varname
                         cl_fileIn=dirtmp+filename
+                        #nc   = netCDF4.Dataset(cl_fileIn,'a')
+                        #nc.createDimension('string_length8',8)
+                        ## for AMSR
+                        ## nc.createDimension('numvars',1)
+                        ##nc.createVariable('varname','c',('numvars','string_length8'))
+                        ##nc.variables['varname'][:]='ileadfra'
+                        ##nc.close
+                    if typedata == "AMSR" :
+                        ## add missing varname
+                        # Solution2 : add dimensions and variable varname
+                        cl_fileIn=dirtmp+filename
                         nc   = netCDF4.Dataset(cl_fileIn,'a')
                         nc.createDimension('string_length8',8)
+                        # for AMSR
+                        nc.createDimension('numvars',1)
                         nc.createVariable('varname','c',('numvars','string_length8'))
                         nc.variables['varname'][:]='ileadfra'
                         nc.close
