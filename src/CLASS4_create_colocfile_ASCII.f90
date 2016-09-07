@@ -268,6 +268,8 @@ PROGRAM COLOCALIZE
                            rlpa_gridlatvalue)
   rl_latmin = MINVAL(rlpa_gridlatvalue)
   rl_latmax = MAXVAL(rlpa_gridlatvalue)
+!  rl_latmin = 75.0
+!  rl_latmax = 90.0
 #if defined key_debug
   WRITE(0,*) 'Read lat ok :',rl_latmin,rl_latmax
 #endif
@@ -295,6 +297,9 @@ PROGRAM COLOCALIZE
                           rlpa_gridlonvalue)
   rl_lonmin = MINVAL(rlpa_gridlonvalue)
   rl_lonmax = MAXVAL(rlpa_gridlonvalue)
+!  rl_lonmin=-110
+!  rl_lonmax=-105
+  
 #if defined key_debug
   WRITE(0,*) 'Read lon ok :',rl_lonmin,rl_lonmax
 #endif
@@ -491,7 +496,7 @@ PROGRAM COLOCALIZE
                   (rla_lonpos(il_jk) .LE. rl_lonmax) .AND. &
                   (rla_latpos(il_jk) .GE. rl_latmin) .AND. &
                   (rla_latpos(il_jk) .LE. rl_latmax)) THEN
-                   CALL getSWnode_orca_grid(rla_lonpos(il_jk),&
+                  CALL getSWnode_orca_grid(rla_lonpos(il_jk),&
                         rla_latpos(il_jk),&
                         rlpa_gridlonvalue(:,:), &
                         rlpa_gridlatvalue(:,:), &
@@ -561,7 +566,7 @@ PROGRAM COLOCALIZE
                       ila_yindex(:,il_jk)=ila_vertyindex(:)
                    ELSE
 #if defined key_debug
-  		      WRITE(0,*) 'position du point :: ',rla_lonpos(il_jk),rla_latpos(il_jk)
+  		      WRITE(0,*) 'position du point :: ',il_jk,rla_lonpos(il_jk),rla_latpos(il_jk)
                       WRITE(0,*) 'Les 4 points se situent sur la terre!!'
                       WRITE(0,*) 'Valeur nulle'
 #endif
@@ -573,7 +578,7 @@ PROGRAM COLOCALIZE
                    WRITE (0,*) 'Poids le plus proche ::',rla_poids_vertex(il_loc(1))
                    WRITE (0,*) 'Distance la plus proche ::',rla_dist_vertex(il_loc(1))
 #endif
-  		   IF ( rla_dist_vertex(il_loc(1)) > 50. ) THEN
+  		   IF ( rla_dist_vertex(il_loc(1)) > 15. ) THEN
                         WRITE (0,*) 'Erreur sur le point il_jk ::',il_jk,rla_dist_vertex(il_loc(1)),ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1))
                         !STOP
                    ENDIF
