@@ -168,19 +168,19 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
   ENDIF
 #endif
 !
-#if defined key_global
-! no selected data in caspian sea
-  IF (x >= 46. .AND. x <= 56. .AND. y >= 35. .AND. y <= 50.) THEN
-      SWnode=0
-      RETURN
-  ENDIF
-! no selected data in ANTARCTICA area
-  IF ( y < MINVAL(ycan(2:ncan1-1,2)) ) THEN
-      SWnode=0
-      RETURN
-  ENDIF
-!
-#endif
+!!#if defined key_global
+!!! no selected data in caspian sea
+!!  IF (x >= 46. .AND. x <= 56. .AND. y >= 35. .AND. y <= 50.) THEN
+!!      SWnode=0
+!!      RETURN
+!!  ENDIF
+!!! no selected data in ANTARCTICA area
+!!  IF ( y < MINVAL(ycan(2:ncan1-1,2)) ) THEN
+!!      SWnode=0
+!!      RETURN
+!!  ENDIF
+!!!
+!!#endif
 !
 #if defined key_atl4 || defined key_atl12
 ! On verifie si l'observation est dans le domaine considere
@@ -775,9 +775,9 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
 !
         icansw=icandeb
         icanne=icansw+1
-!#if defined key_global
+#if defined key_global
         IF ( icansw == ncan1-1 ) icanne=2
-!#endif
+#endif
         jcansw=jcandeb
         jcanne=jcansw+1
 !
@@ -787,9 +787,9 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
 !
         icansw=icandeb-1
         icanne=icandeb
-!#if defined key_global
+#if defined key_global
         IF ( icanne == 2 ) icansw=ncan1-1
-!#endif
+#endif
         jcansw=jcandeb
         jcanne=jcansw+1
 !
@@ -799,9 +799,9 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
 !
         icansw=icandeb-1
         icanne=icandeb
-!#if defined key_global
+#if defined key_global
         IF ( icanne == 2 ) icansw=ncan1-1
-!#endif
+#endif
         jcansw=jcandeb-1
         jcanne=jcandeb
 !
@@ -811,9 +811,9 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
 !
         icansw=icandeb
         icanne=icansw+1
-!#if defined key_global
+#if defined key_global
         IF ( icansw == ncan1-1 ) icanne=2
-!#endif
+#endif
         jcansw=jcandeb-1
         jcanne=jcandeb
 !
@@ -829,7 +829,7 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
      yv(4) = ycan(icanne,jcansw) - y
 #ifdef NO_NORMLON
 #else
-!#if defined key_global
+#if defined key_global
 !  modifs cas global :
      IF ( ifconv /= 0 ) THEN
         CALL normLon(xv(1))
@@ -837,10 +837,10 @@ SUBROUTINE getSWnode_orca_grid( x, y, xcan, ycan, ida_kanvas,ida_igrd,ida_jgrd,i
         CALL normLon(xv(3))
         CALL normLon(xv(4))
      ENDIF
-!#endif
 #endif
-     !IF ( insidecell0(xv,yv) ) THEN
-     IF ( insideCellstrict(xv,yv) ) THEN
+#endif
+     IF ( insidecell0(xv,yv) ) THEN
+     !IF ( insideCellstrict(xv,yv) ) THEN
 !
         ll_return=.TRUE.
         vertex(1)=kanvas(icansw,jcansw)
@@ -1052,7 +1052,6 @@ ENDDO
 ! ----------------------------
 !
 #if defined key_debuggeomlib
-   WRITE(0,*)  'Debut recherche spirale'
 !!debuggeomlib
   IF (kanvas(icandeb,jcandeb) == 0) THEN
 !
@@ -1101,9 +1100,9 @@ ENDDO
 #endif 
 !
            icanne=icansw+1
-!#if defined key_global
+#if defined key_global
            IF ( icansw == ncan1-1 ) icanne=2
-!#endif
+#endif
            jcanne=jcansw+1
 !
            xv(1) = xcan(icansw,jcansw) - x
@@ -1116,7 +1115,7 @@ ENDDO
            yv(4) = ycan(icanne,jcansw) - y
 #ifdef NO_NORMLON
 #else
-!#if defined key_global
+#if defined key_global
 !  modifs cas global :
            IF ( ifconv /= 0 ) THEN
               CALL normLon(xv(1))
@@ -1124,7 +1123,7 @@ ENDDO
               CALL normLon(xv(3))
               CALL normLon(xv(4))
            ENDIF
-!#endif
+#endif
 #endif
            IF ( insidecellstrict(xv,yv) ) THEN
 !
@@ -1279,9 +1278,9 @@ ENDDO
 #endif 
 !
            icanne=icansw+1
-!#if defined key_global
+#if defined key_global
            IF ( icansw == ncan1-1 ) icanne=2
-!#endif
+#endif
            jcanne=jcansw+1
 
            xv(1) = xcan(icansw,jcansw) - x
@@ -1294,7 +1293,7 @@ ENDDO
            yv(4) = ycan(icanne,jcansw) - y
 #ifdef NO_NORMLON
 #else
-!#if defined key_global
+#if defined key_global
 !  modifs cas global :
            IF ( ifconv /= 0 ) THEN
               CALL normLon(xv(1))
@@ -1302,7 +1301,7 @@ ENDDO
               CALL normLon(xv(3))
               CALL normLon(xv(4))
            ENDIF
-!#endif
+#endif
 #endif
 
            IF ( insidecellstrict(xv,yv) ) THEN
@@ -1323,11 +1322,7 @@ ENDDO
               WRITE(0,*) 'paramètres xv,yv :: ',xv,yv
               WRITE(0,*) 'paramètres w :: ',icansw,jcansw
               WRITE(0,*) 'paramètres e :: ',icanne,jcanne
-              WRITE(0,*) 'vertex (1) :: ',kanvas(icansw,jcansw)
-              WRITE(0,*) 'vertex (2) :: ',kanvas(icanne,jcansw)
-              WRITE(0,*) 'vertex (3) :: ',kanvas(icanne,jcanne)
-              WRITE(0,*) 'vertex (4) :: ',kanvas(icansw,jcanne)
-              !WRITE(0,*) 'kanvas :: ',kanvas(icanne,:)
+              WRITE(0,*) 'kanvas :: ',kanvas(icanne,:)
 !!debuggeomlib
               getVertices=( ALL(vertex(1:4)/=0) )
               WRITE(0,*) 'vertex',vertex(1:4)
@@ -1469,9 +1464,9 @@ ENDDO
 #endif 
 !
            icanne=icansw+1
-!#if defined key_global
+#if defined key_global
            IF ( icansw == ncan1-1 ) icanne=2
-!#endif
+#endif
            jcanne=jcansw+1
 !
            xv(1) = xcan(icansw,jcansw) - x
@@ -1496,7 +1491,7 @@ ENDDO
 
 #ifdef NO_NORMLON
 #else
-!#if defined key_global
+#if defined key_global
 !  modifs cas global :
            IF ( ifconv /= 0 ) THEN
               CALL normLon(xv(1))
@@ -1504,7 +1499,7 @@ ENDDO
               CALL normLon(xv(3))
               CALL normLon(xv(4))
            ENDIF
-!#endif
+#endif
 #endif
            IF ( insidecellstrict(xv,yv) ) THEN
 !
@@ -1653,9 +1648,9 @@ ENDDO
 #endif 
 !
            icanne=icansw+1
-!#if defined key_global
+#if defined key_global
            IF ( icansw == ncan1-1 ) icanne=2
-!#endif
+#endif
            jcanne=jcansw+1
 !
            xv(1) = xcan(icansw,jcansw) - x
@@ -1668,7 +1663,7 @@ ENDDO
            yv(4) = ycan(icanne,jcansw) - y
 #ifdef NO_NORMLON
 #else
-!#if defined key_global
+#if defined key_global
 !  modifs cas global :
            IF ( ifconv /= 0 ) THEN
               CALL normLon(xv(1))
@@ -1676,7 +1671,7 @@ ENDDO
               CALL normLon(xv(3))
               CALL normLon(xv(4))
            ENDIF
-!#endif
+#endif
 #endif
            IF ( insidecellstrict(xv,yv) ) THEN
 !
@@ -1686,7 +1681,6 @@ ENDDO
               vertex(3)=kanvas(icanne,jcanne)
               vertex(4)=kanvas(icansw,jcanne)
 #if defined key_debuggeomlib
-              WRITE(0,*) 'insidecellstrict'
 !!debuggeomlib
               getVertices=( ALL(vertex(1:4)/=0) )
 !!debuggeomlib
@@ -1856,11 +1850,6 @@ ENDDO
                        ENDIF
                     ENDDO
                     il_var=MINLOC(rla_distance, dim =1,mask = rla_distance > 0.0)
-#if defined key_debuggeomlib
-        WRITE(0,*) '-------------------------------'
-        WRITE(0,*) 'Distance',il_var
-        WRITE(0,*) '-------------------------------'
-#endif
                     IF ( il_var /= 0 .AND. il_var < 24 ) THEN     
                        vertex(1)=ila_var(il_var)
                     ELSE
@@ -1876,20 +1865,19 @@ ENDDO
         ENDIF
 !
      ENDDO
-!#if defined key_debuggeomlib
-!     WRITE(0,*) 'SPIRALE4'
-!#endif
+#if defined key_debuggeomlib
+     WRITE(0,*) 'SPIRALE4'
+#endif
   ENDIF!(largeur/=1)
 !
 ENDDO
 
 #if defined key_debuggeomlib
-   WRITE(0,*) 'RECHERCHE SPIRALE OK !!'
+   WRITE(0,*) 'RECHERCHE SPIRALE OK'
 #endif
 
 #if defined key_debuggeomlib
   WRITE (0,*) "Fin get node "
-  WRITE(0,*) 'return', ll_return
 !!debuggeomlib
   IF (kanvas(icandeb,jcandeb) == 0) THEN
      WRITE (131,*) 'debugrate2',x,y,largeur,icandeb,jcandeb
@@ -2384,6 +2372,7 @@ SUBROUTINE getSWnodeWeights( x, y, xcan,ycan,vertex, c )
   IF ( xx < xvmin ) xx = xx + 360.
 #endif
 #if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1 || defined key_orca_r12_allege
+!
 ! Constantes pour gerer l 'ambiguite des 360 degres
 ! ---------------------------------------------------
 #if defined key_orca_r2
@@ -2402,7 +2391,7 @@ SUBROUTINE getSWnodeWeights( x, y, xcan,ycan,vertex, c )
 #endif
 
   iamb2 = 3    ! traitement special si : iamb2 * lam < max(lam)
-  !
+!
 ! Normalisation des longitudes : [-180,180[ --> [0,360[
 !------------------------------------------------------
   DO WHILE (    xv(1) < 0. .OR.  xv(1) > 360. &
