@@ -317,7 +317,7 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
   IF ( ld_mssh ) THEN
      ! Recherche des dimensions du fichier MSSH
 #if defined key_debug
-       WRITE(0,*),'inquire_model_file ::',cd_msshFile
+       WRITE(0,*),'inquire_mssh_file ::',cd_msshFile
 #endif
      
      cla_msshVarname(:) = 'mssh'
@@ -342,10 +342,13 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
      !---------------------------------------------------------------------
      ! Lecture du fichier MSSH
      !
-     ALLOCATE(rla_msshvalue(il_nlonmssh,il_nlatmssh,il_ndepthmssh,il_ntime))
+     ALLOCATE(rla_msshvalue(il_nlonmssh,il_nlatmssh,il_ndepthmssh,1))
      ALLOCATE(rla_msshdepth(il_ndepthmssh))
      ll_isdepthdim = .FALSE.
-     CALL read_model_file(cd_msshFile, &
+#if defined key_debug
+      WRITE(0,*),'Read mssh file ::',cd_msshFile
+#endif
+     CALL read_model_file_2(cd_msshFile, &
           cl_msshVarname,           &
           cl_depthvarname,          &
           rla_msshvalue,            &
@@ -355,9 +358,11 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
           il_ndepthmssh,            &
           il_nbdimmssh,             &
           il_ntime,                 &
-          ll_isdepthdim,            &
-          rla_juld_mod)
+          ll_isdepthdim)
 
+#if defined key_debug
+      WRITE(0,*),'Read mssh file OK'
+#endif
      DEALLOCATE(rla_msshdepth)
   ENDIF
 !  !------------------------------------------------------------------
@@ -1180,7 +1185,7 @@ SUBROUTINE read_model_file(cd_file, &
   il_status = fi_ncError(NF90_INQ_VARID(il_file_id,cd_fieldname,il_varid),'NF90_INQ_VARID')
   il_status = fi_ncError(NF90_INQUIRE_VARIABLE(il_file_id,il_varid,cd_fieldname,il_type),'NF90_INQ_VARIABLE')
 #if defined key_debug
-  WRITE(0,*) 'inquire variables model OK'
+  WRITE(0,*) 'Read model file'
 #endif
   !! Read time_counter
   CALL MIOL_read_field_NC(il_file_id, &
@@ -1336,6 +1341,192 @@ ENDSUBROUTINE read_model_file
 !******************************************************************************
 !
 !
+SUBROUTINE read_model_file_2(cd_file, &
+     cd_fieldname, &
+     cd_depthname, &
+     rda_fieldvalue, &
+     rda_depthvalue, &
+     id_nlon, &
+     id_nlat, &
+     id_ndepth, &
+     id_nbdim,&
+     ld_isdepthdim)
+  !
+  USE netcdf
+  USE MCAL
+  USE MFT_error
+  USE MIOL
+  IMPLICIT NONE
+  !
+  CHARACTER(LEN=255) :: cd_file, &
+       cl_file_tmp, &
+       cd_fieldname, &
+       cd_depthname
+  INTEGER :: id_nlon, &
+       id_nlat, &
+       id_ndepth, &
+       id_nbdim, &
+       il_varid, &
+       il_type, &
+       il_status, &
+       il_jk
+  REAL(KIND=4)   , DIMENSION(id_nlon,id_nlat,id_ndepth,1)    :: rda_fieldvalue
+  REAL(KIND=4)   , DIMENSION(id_ndepth) :: rda_depthvalue
+  !
+  INTEGER                                        :: il_file_id
+  INTEGER(KIND=4),DIMENSION(2)                   :: ila_nbdim2D
+  INTEGER(KIND=4),DIMENSION(3)                   :: ila_nbdim3D
+  INTEGER(KIND=4),DIMENSION(4)                   :: ila_nbdim4D
+  REAL(KIND=4)   , DIMENSION(:)      , POINTER   :: rlpa_value_1D
+  REAL(KIND=4)   , DIMENSION(:,:)    , POINTER   :: rlpa_value_2D
+  REAL(KIND=4)   , DIMENSION(:,:,:)  , POINTER   :: rlpa_value_3D
+  REAL(KIND=4)   , DIMENSION(:,:,:,:), POINTER   :: rlpa_value_4D
+  INTEGER(KIND=2), DIMENSION(:,:)    , POINTER   :: ilpa_value_2D
+  INTEGER(KIND=2), DIMENSION(:,:,:)  , POINTER   :: ilpa_value_3D
+  INTEGER(KIND=2), DIMENSION(:,:,:,:), POINTER   :: ilpa_value_4D
+  LOGICAL                                        :: ld_isdepthdim
+  !
+  !
+  !---------------------------------------------------------------------
+ !
+  !---------------------------------------------------------------------
+  ! Lecture de la variable a traiter
+  !
+  CALL MIOL_openr_file_NC(TRIM(cd_file), &
+       il_file_id)
+
+  !
+  il_status = fi_ncError(NF90_INQ_VARID(il_file_id,cd_fieldname,il_varid),'NF90_INQ_VARID')
+  il_status = fi_ncError(NF90_INQUIRE_VARIABLE(il_file_id,il_varid,cd_fieldname,il_type),'NF90_INQ_VARIABLE')
+#if defined key_debug
+  WRITE(0,*) 'Read model time no time'
+#endif
+
+  IF (id_nbdim .EQ. 3) THEN
+     IF (ld_isdepthdim) THEN
+        SELECT CASE (il_type)
+        CASE (NF90_FLOAT)
+           CALL MIOL_read_field_NC(il_file_id, &
+                cd_fieldname, &
+                rlpa_value_3D)
+        CASE (NF90_SHORT)
+           CALL MIOL_read_field_NC(il_file_id, &
+                cd_fieldname, &
+                ilpa_value_3D,&
+                ila_nbdim3D,&
+                rlpa_value_3D)
+           DEALLOCATE(ilpa_value_3D)
+        CASE default
+           PRINT *,'Type non reconnu'
+        ENDSELECT
+        rda_fieldvalue(1:id_nlon,1:id_nlat,1:id_ndepth,1) = &
+             rlpa_value_3D(1:id_nlon,1:id_nlat,1:id_ndepth)
+
+        DEALLOCATE(rlpa_value_3D)
+     ELSE
+
+        SELECT CASE (il_type)
+        CASE (NF90_FLOAT)
+           CALL MIOL_read_field_NC(il_file_id, &
+                cd_fieldname, &
+                rlpa_value_2D)
+        CASE (NF90_SHORT)
+           CALL MIOL_read_field_NC(il_file_id, &
+                cd_fieldname, &
+                ilpa_value_2D,&
+                ila_nbdim2D,&
+                rlpa_value_2D)
+           DEALLOCATE(ilpa_value_2D)
+        CASE default
+           PRINT *,'Type non reconnu'
+        ENDSELECT
+        rda_fieldvalue(1:id_nlon,1:id_nlat,1,1) = &
+             rlpa_value_2D(1:id_nlon,1:id_nlat)
+
+        DEALLOCATE(rlpa_value_2D)
+     ENDIF
+  ELSE IF (id_nbdim .EQ. 4) THEN
+     IF (ld_isdepthdim) THEN
+       SELECT CASE (il_type)
+       CASE (NF90_FLOAT)
+          CALL MIOL_read_field_NC(il_file_id, &
+               cd_fieldname, &
+               rlpa_value_4D)
+
+       CASE (NF90_SHORT)
+
+          CALL MIOL_read_field_NC(il_file_id, &
+               cd_fieldname, &
+               ilpa_value_4D,&
+               ila_nbdim4D,&
+               rlpa_value_4D)
+          DEALLOCATE(ilpa_value_4D)
+       CASE default
+          PRINT *,'Type non reconnu'
+       ENDSELECT
+       rda_fieldvalue(1:id_nlon,1:id_nlat,1:id_ndepth,1) = &
+            rlpa_value_4D(1:id_nlon,1:id_nlat,1:id_ndepth,1)
+       DEALLOCATE(rlpa_value_4D)
+     ELSE
+       SELECT CASE (il_type)
+       CASE (NF90_FLOAT)
+
+          CALL MIOL_read_field_NC(il_file_id, &
+               cd_fieldname, &
+               rlpa_value_3D)
+
+       CASE (NF90_SHORT)
+
+          CALL MIOL_read_field_NC(il_file_id, &
+               cd_fieldname, &
+               ilpa_value_3D,&
+               ila_nbdim3D,&
+               rlpa_value_3D)
+          DEALLOCATE(ilpa_value_3D)
+       CASE default
+          PRINT *,'Type non reconnu'
+       ENDSELECT
+
+
+
+       rda_fieldvalue(1:id_nlon,1:id_nlat,1,1) = &
+            rlpa_value_3D(1:id_nlon,1:id_nlat,1)
+       DEALLOCATE(rlpa_value_3D)
+     ENDIF
+  ENDIF
+  !
+  !
+
+  !---------------------------------------------------------------------
+  ! Lecture de la variable de profondeur
+  !
+  CALL MIOL_read_field_NC(il_file_id, &
+       cd_depthname, &
+       rlpa_value_1D)
+  rda_depthvalue(1:id_ndepth) = &
+       rlpa_value_1D(1:id_ndepth)
+  DEALLOCATE(rlpa_value_1D)
+  !
+  !
+  !---------------------------------------------------------------------
+  ! Fermeture du fichier
+  !
+  CALL MIOL_close_file_NC(il_file_id)
+  !
+  !
+ENDSUBROUTINE read_model_file_2
+!
+!
+!
+!!******************************************************************************
+!******************************************************************************
+!******************************************************************************
+!
+
+
+
+
+
 SUBROUTINE interp_model_field_2d(rda_modelvalue, &
      rda_modelvalue_inter, &
      id_nlon, &
@@ -2097,7 +2288,7 @@ SUBROUTINE read_observation_file (cd_inputFile, &
      cda_modelVarname(il_ji) = TRIM(clpa_2Dtmp(il_ji,1)(1:8))
   ENDDO
   WRITE(0,*) 'Read varname : ', cda_modelVarname(:)
-  cda_modelVarname(:)="ileadfra"
+  !cda_modelVarname(:)="ileadfra"
   WRITE(0,*) 'Read varname OK : ',clpa_2Dtmp(:,:)
   DEALLOCATE(clpa_2Dtmp)
 
