@@ -18,24 +18,26 @@ class NmlCreator(object) :
     """ Factory for the creation of different namelists """
 
     def __init__(self,mssh_file,\
-        ll_mssh,mssh_shift,**kwargs):
+        ll_mssh,ll_compute,mssh_shift,**kwargs):
         self.mssh_file=mssh_file
         self.ll_mssh=ll_mssh
+	self.ll_compute=ll_compute
         self.mssh_shift=mssh_shift
 
     def factory(self,type):
         if type == "CORIOLIS": return NmlCreator_CORIOLIS(self.mssh_file,self.ll_mssh,self.mssh_shift)
         if type == "IAOOS": return NmlCreator_IAOOS(self.mssh_file,self.ll_mssh,self.mssh_shift)
-        if type == "GODAE" : return NmlCreator_GODAE(self.mssh_file,self.ll_mssh,self.mssh_shift)
+        if type == "GODAE" : return NmlCreator_GODAE(self.mssh_file,self.ll_mssh,self.ll_compute,self.mssh_shift)
 
 class NmlCreator_GODAE(NmlCreator):
 
     """ Class for GODAE namelists """
 
-    def __init__(self,mssh_file,ll_mssh,mssh_shift,**kwargs):
+    def __init__(self,mssh_file,ll_mssh,ll_compute,mssh_shift,**kwargs):
         super(NmlCreator,self).__init__(**kwargs)
         self.mssh_file=mssh_file
         self.ll_mssh=ll_mssh
+        self.ll_compute=ll_compute
         self.mssh_shift=mssh_shift
 
     def run(self,nml,modele,mean_type,type_data,outputVarname,\
@@ -102,6 +104,7 @@ class NmlCreator_GODAE(NmlCreator):
         obFichier.write('il_ncast         = '+str(len(listdir))+'\n')
         obFichier.write('il_nvar          = '+str(il_nvar)+'\n')
         obFichier.write('ll_mssh          = '+self.ll_mssh+'\n')
+        obFichier.write('ll_compute       = '+self.ll_compute+'\n')
         obFichier.write('rl_mssh_shift    = '+str(self.mssh_shift)+'\n')
         obFichier.write('il_nbfile        = '+str(nbfile)+'\n')
         obFichier.write('/'+'\n')
