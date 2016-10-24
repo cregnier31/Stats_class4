@@ -266,14 +266,11 @@ for fichier in list_files:
         list_filepos.append(file_pos)
         #  splitLen = 1000000       # 500000 lines per file
         file_in=file_pos
-        print file_in
         outputBase = file_pos.split('.pos')[0]
-        print outputBase
         fileout=outputBase+'.dat'
-        print fileout
         if os.path.isfile(fileout) : 
             ll_coloc=True
-            print "coloc existe"
+            print "coloc existe %s " %(fileout)
         if not ll_coloc : 
             print "coloc don't exist"
             outputBase=re.sub("coloc","coloc/split",outputBase) 
@@ -356,7 +353,7 @@ if ll_file_ok :
             Writer().write_geojson_fromdb(type_var,file_out,file_db)
         file_out2=dirtmp+'Positions_coloc_'+data_type+'_'+data_format+'_'+data_type+'_D'+SyDate.__str__(date1)+'_'+SyDate.__str__(date2)+'.geojson'
         Writer().write_geojson_fromdb('coloc',file_out2,file_db2)
-    
+
     # =============================================================================
     # PART-5 - Compute interpolation
     # =============================================================================
@@ -368,11 +365,17 @@ if ll_file_ok :
     if data_type  == "SLA" : 
         cl_msshFile =param_dict.get('static','cl_msshFile'   )      #  the mean ssh from SSH model 
         rl_mssh_shift=float(param_dict.get('static','rp_mssh_shift' ))
+        comp_mssh=int(param_dict.get('GLOBAL','comp_mssh'))
         ll_mssh='.true.'
+        if comp_mssh == 1  :
+            ll_compute='.true.'
+        else :
+            ll_compute='.false.'
     else : 
         cl_msshFile =''
         rl_mssh_shift=0.0
         ll_mssh='.false.'
+        ll_compute='.false.'
     contact=param_dict.get('GLOBAL','CONTACT')
     inst=param_dict.get('GLOBAL','INSTITUTION')
     version=param_dict.get('GLOBAL','VERSION')
@@ -402,7 +405,7 @@ if ll_file_ok :
         	        lead_new=[time[:4]+element for element in lead_new[1:] ]
         	        lead_tmp.extend(lead_new)
         	        lead_fin=lead_tmp
-            elif time == 'best_estimate' :
+            elif time == 'best_estimate' or time == 'best_estimate_RTR' :
                 cl_config_use = re.sub('Q','',cl_config)
                 lead_fin=['hdct']
                 #log.info('Lead fin %s ' % (lead_fin)) 
@@ -459,7 +462,8 @@ if ll_file_ok :
                 #for filename in glob.glob(dirwork+"*"+dateval+"*"+data_type+"*.nc") :
                 for filename in glob.glob(dirwork+"*"+dateval+"*.nc") :
                     print filename
-                    NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
+                    print ll_compute
+                    NmlCreator(cl_msshFile,ll_mssh,ll_compute,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
                                time,dirmodel,coloc_rep,filename,lead_fin,dateval,gridtemp,gridsal)  	
     	           ## Launch Interpolation  
                 if not os.path.exists(exe) : 
