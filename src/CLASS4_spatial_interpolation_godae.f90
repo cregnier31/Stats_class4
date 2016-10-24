@@ -48,7 +48,7 @@ PROGRAM SPATIAL_INTERPOLATION
        il_jdateT0, &
        il_jdateT1
   
-  LOGICAL :: ll_mssh
+  LOGICAL :: ll_mssh,ll_compute
   REAL    :: rl_mssh_shift
 
   CHARACTER(LEN=255) :: cl_input, &
@@ -71,6 +71,7 @@ PROGRAM SPATIAL_INTERPOLATION
        il_ncast,         &
        il_nvar,          &
        ll_mssh,          &
+       ll_compute,       &
        rl_mssh_shift,    &
        il_nbfile
   !
@@ -145,6 +146,7 @@ PROGRAM SPATIAL_INTERPOLATION
        il_nbfile,        &
        cla_modelFile,    &
        ll_mssh,          &
+       ll_compute,       &
        rl_mssh_shift,    &
        cl_msshFile)
   !      
@@ -172,6 +174,7 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
      id_nbfile,           &
      cda_modelFile,       &
      ld_mssh,             &
+     ld_compute,          &
      rd_mssh_shift,       &
      cd_msshFile)
   !
@@ -183,7 +186,7 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
   INTEGER ,INTENT(IN):: id_ncast,  &
        id_nvar,      &
        id_nbfile
-  LOGICAL ,INTENT(IN):: ld_mssh
+  LOGICAL ,INTENT(IN):: ld_mssh,ld_compute
   CHARACTER(LEN=255), DIMENSION(id_nbfile), INTENT(IN) :: cda_modelFile 
   CHARACTER(LEN=255), INTENT(IN) :: cd_colocFile,&
        cd_inputFile,      &
@@ -219,9 +222,11 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
   CHARACTER(LEN=255), DIMENSION(:), ALLOCATABLE :: cla_modelVarname
   REAL(KIND=4), DIMENSION(:,:,:,:), ALLOCATABLE :: rla_modelvalue, &
        rla_msshvalue,    &
-       rla_modelEquivValue
+       rla_modelEquivValue,&
+       rla_modelEquivValuemssh
   REAL(KIND=4), DIMENSION(:,:), ALLOCATABLE :: rla_depthvalue, &
        rla_interpValue,    &
+       rla_interpMSSHValue,&
        rla_poids
   REAL(KIND=4), DIMENSION(:), ALLOCATABLE   :: rla_modeldepth, &
         rla_msshdepth,rla_juld_mod
@@ -229,8 +234,8 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
         rla_LAT, &
         rla_leadtimevalue,&
         rla_juld
-
-  LOGICAL :: ll_isDepthVar,ll_isdepthdim,ll_savevalue
+  INTEGER(KIND=4)     :: il_file_id
+  LOGICAL             :: ll_isDepthVar,ll_isdepthdim,ll_savevalue
   ll_isdepthdim = .TRUE.
  !
   rl_fillValue=99999.
@@ -342,12 +347,12 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
      !---------------------------------------------------------------------
      ! Lecture du fichier MSSH
      !
-     ALLOCATE(rla_msshvalue(il_nlonmssh,il_nlatmssh,il_ndepthmssh,1))
-     ALLOCATE(rla_msshdepth(il_ndepthmssh))
-     ll_isdepthdim = .FALSE.
 #if defined key_debug
       WRITE(0,*),'Read mssh file ::',cd_msshFile
 #endif
+     ALLOCATE(rla_msshvalue(il_nlonmssh,il_nlatmssh,il_ndepthmssh,1))
+     ALLOCATE(rla_msshdepth(il_ndepthmssh))
+     ll_isdepthdim = .FALSE.
      CALL read_model_file_2(cd_msshFile, &
           cl_msshVarname,           &
           cl_depthvarname,          &
@@ -357,7 +362,6 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
           il_nlatmssh,              &
           il_ndepthmssh,            &
           il_nbdimmssh,             &
-          il_ntime,                 &
           ll_isdepthdim)
 
 #if defined key_debug
@@ -380,6 +384,7 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
   !
   !
   ALLOCATE(rla_modelEquivValue(il_nlevels,id_ncast,id_nvar,il_nprof))
+  IF ( ld_mssh .and. .not. ld_compute ) ALLOCATE(rla_modelEquivValuemssh(il_nlevels,id_ncast,id_nvar,il_nprof))
   !  modelEquiv(numdeps,numfcsts,numvars,numobs)
   !
   il_jc = 1
@@ -451,17 +456,15 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
 #endif
         
      IF ( TRIM(cl_modelVarname) .EQ. 'sossheig' .OR. TRIM(cl_modelVarname) .EQ. 'ileadfra') THEN
+        IF ( ld_mssh .and. ld_compute ) THEN
+                rla_modelvalue(:,:,:,:) = rla_modelvalue(:,:,:,:) - rla_msshvalue(:,:,:,:) - rd_mssh_shift
+                !------------------------------------------------------------------
+                ! Test pour valeurs abherentes de la MDT (dues au fichier MDT)
+                ! 
+                WHERE (rla_modelvalue .LT. -10) rla_modelvalue = rl_fillValue
+        ENDIF
         ! 
         !---------------------------------------------------------------------
-        ! Correction MSSH (MDT) si besoin 
-        ! 
-        IF ( ld_mssh ) THEN
-           rla_modelvalue(:,:,:,:) = rla_modelvalue(:,:,:,:) - rla_msshvalue(:,:,:,:) - rd_mssh_shift
-           !------------------------------------------------------------------
-           ! Test pour valeurs abherentes de la MDT (dues au fichier MDT)
-           ! 
-           WHERE (rla_modelvalue .LT. -10) rla_modelvalue = rl_fillValue
-        ENDIF
         CALL interp_model_field_2d(rla_modelvalue, &
                           rla_interpValue, &
                           il_nlon,         &
@@ -473,6 +476,25 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
                           il_nprof,        &
                           rla_poids,       &
                           rl_fillValue)
+        IF ( ld_mssh .and. .not. ld_compute ) THEN
+                ALLOCATE(rla_interpMSSHValue(il_nlevels, il_nprof))
+                CALL interp_model_field_2d(rla_msshvalue, &
+                                  rla_interpMSSHValue, &
+                                  il_nlon,         &
+                                  il_nlat,         &
+                                  ila_xindex,      &
+                                  ila_yindex,      &
+                                  rla_LON,         &
+                                  rla_LAT,         &
+                                  il_nprof,        &
+                                  rla_poids,       &
+                                  rl_fillValue)
+                !------------------------------------------------------------------
+                ! Test pour valeurs abherentes de la MDT (dues au fichier MDT)
+                ! 
+                WHERE (rla_interpMSSHValue .LT. -10) rla_interpMSSHValue = rl_fillValue
+        ENDIF
+        
      ELSE
         CALL interp_model_field_3d(rla_modelvalue, &
                           rla_modeldepth,  &
@@ -501,6 +523,7 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
         IF (TRIM(cla_modelVarname(il_jv)) .EQ. cl_modelVarname) THEN
           ll_savevalue = .TRUE.
           rla_modelEquivValue(:,il_jc,il_jv,:) = rla_interpValue(:,:)
+          IF ( ld_mssh .and. .not. ld_compute ) rla_modelEquivValuemssh(:,il_jc,il_jv,:)=rla_interpMSSHValue(:,:)
           !  forecast(numdeps,numfcsts,numvars,numobs)
         ENDIF
      ENDDO
@@ -533,7 +556,26 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
        rla_modelEquivValue, &
        cla_dimname, &
        rl_fillValue)
-
+  IF ( ld_mssh .and. .not. ld_compute ) THEN 
+        WRITE(0,*) 'Write MSSH'
+        CALL write_interp_field(cd_inputFile, &
+                                cl_msshVarname, &
+                                il_nprof, &
+                                id_nvar,  &
+                                id_ncast, &
+                                il_nlevels, &
+                                -rla_modelEquivValuemssh, &
+                                cla_dimname, &
+                                rl_fillValue)
+        CALL MIOL_openw_file_NC(TRIM(cd_inputFile), &
+                                il_file_id)
+        WRITE(0,*) 'Write MSSH shift'
+        CALL MIOL_write_attribute_NC(il_file_id,&
+                                    'mssh',&
+                                    'add_offset',&
+                                    -rd_mssh_shift)
+        CALL MIOL_close_file_NC(il_file_id)
+  ENDIF
   IF (ALLOCATED(rla_poids))         DEALLOCATE(rla_poids)
   IF (ALLOCATED(rla_depthvalue))    DEALLOCATE(rla_depthvalue)
   IF (ALLOCATED(ila_xindex))        DEALLOCATE(ila_xindex)
@@ -613,6 +655,7 @@ SUBROUTINE write_interp_field(cd_outputFile, &
   cl_FillValueatt = '_FillValue'
   cl_nameatt =  'long_name'
   cl_nameValatt =  'Model '//TRIM(cd_outputVarname)//' counterpart of obs. value'
+  
   !il_cparameterintlen = ig_cparameterint
   !il_lparameterintlen = ig_lparameterint
   !WRITE (0,*) 'Dimensions L C :: ',il_lparameterintlen,il_cparameterintlen
