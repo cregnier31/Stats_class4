@@ -268,8 +268,8 @@ PROGRAM COLOCALIZE
                            rlpa_gridlatvalue)
   rl_latmin = MINVAL(rlpa_gridlatvalue)
   rl_latmax = MAXVAL(rlpa_gridlatvalue)
-!  rl_latmin = 75.0
-!  rl_latmax = 90.0
+  !rl_latmin = 75.0
+  !rl_latmax = 90.0
 #if defined key_debug
   WRITE(0,*) 'Read lat ok :',rl_latmin,rl_latmax
 #endif
@@ -297,8 +297,8 @@ PROGRAM COLOCALIZE
                           rlpa_gridlonvalue)
   rl_lonmin = MINVAL(rlpa_gridlonvalue)
   rl_lonmax = MAXVAL(rlpa_gridlonvalue)
-!  rl_lonmin=-110
-!  rl_lonmax=-105
+  !rl_lonmin=-110
+  !rl_lonmax=-105
   
 #if defined key_debug
   WRITE(0,*) 'Read lon ok :',rl_lonmin,rl_lonmax
@@ -448,6 +448,7 @@ PROGRAM COLOCALIZE
   il_len=len_trim(cl_resFile)
   cl_colocFile=TRIM(cl_resFile(1:il_len-3))//'dat'
   cl_logfile=TRIM(cl_resFile(1:il_len-3))//'txt'
+  WRITE (0,*) "Fichier de colloc :: ",cl_colocFile
 #if defined key_debug
         WRITE (0,*) "Fichier de colloc :: ",cl_colocFile
 #endif
@@ -565,6 +566,13 @@ PROGRAM COLOCALIZE
                       ila_xindex(:,il_jk)=ila_vertxindex(:)
                       ila_yindex(:,il_jk)=ila_vertyindex(:)
                    ELSE
+                     !!IF ( rla_latpos(il_jk) >  65 ) THEN
+                     !!   IF ( rla_lonpos(il_jk) >  0 ) THEN
+                     !!     WRITE(0,*) rla_lonpos(il_jk),rla_latpos(il_jk)
+                     !!   ELSE
+                     !!     WRITE(0,*) 360.0+rla_lonpos(il_jk),rla_latpos(il_jk)
+                     !!   ENDIF
+                     !!ENDIF
 #if defined key_debug
   		      WRITE(0,*) 'position du point :: ',il_jk,rla_lonpos(il_jk),rla_latpos(il_jk)
                       WRITE(0,*) 'Les 4 points se situent sur la terre!!'
@@ -578,8 +586,11 @@ PROGRAM COLOCALIZE
                    WRITE (0,*) 'Poids le plus proche ::',rla_poids_vertex(il_loc(1))
                    WRITE (0,*) 'Distance la plus proche ::',rla_dist_vertex(il_loc(1))
 #endif
-  		   IF ( rla_dist_vertex(il_loc(1)) > 15. ) THEN
-                        WRITE (0,*) 'Erreur sur le point il_jk ::',il_jk,rla_dist_vertex(il_loc(1)),ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1))
+  		   IF ( rla_dist_vertex(il_loc(1)) > 50. ) THEN
+                        !WRITE(0,*) 'Erreur Position point lon lat Erreur : ',rla_lonpos(il_jk),rla_latpos(il_jk),rla_dist_vertex(il_loc(1))
+                        WRITE(0,*) rla_lonpos(il_jk),rla_latpos(il_jk),rla_dist_vertex(il_loc(1))
+                       ! WRITE (0,*) 'Erreur sur le point il_jk ::',il_jk,rla_dist_vertex(il_loc(1)),ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1))
+                       !WRITE(0,*) 'distance associés :: ',rla_dist_vertex(:)
                         !STOP
                    ENDIF
              ELSE	

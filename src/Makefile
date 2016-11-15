@@ -22,6 +22,11 @@ SRCDIR2=module
 ########################################################
 OBJECTS= ${SRCDIR2}/Inf_NaN_detection.o \
          ${SRCDIR2}/param_mod.o         \
+         ${SRCDIR2}/geomlibcha_arc.o        \
+         ${SRCDIR2}/Canvas.o
+
+OBJECTS3= ${SRCDIR2}/Inf_NaN_detection.o \
+         ${SRCDIR2}/param_mod.o         \
          ${SRCDIR2}/geomlibcha.o        \
          ${SRCDIR2}/Canvas.o
 
@@ -33,7 +38,11 @@ aice: $(EXEDIR)/CLASS4_spatial_interpolation_GODAE.exe
 #all: $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE).exe \
 #	$(EXEDIR)/CLASS4_spatial_interpolation.exe \
 #	$(EXEDIR)/CLASS4_spatial_interpolation_GODAE_$(MODELE).exe
+coloc: $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE).exe 
+coloc_aice: $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE)_aice.exe 
+
 all:  $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS.exe \
+      $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE)_aice.exe \
       $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE).exe \
       $(EXEDIR)/CLASS4_spatial_interpolation_GODAE.exe \
       $(EXEDIR)/CLASS4_spatial_interpolation_GODAE_AMSR.exe 
@@ -41,11 +50,17 @@ all:  $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS.exe \
 $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE)_test.exe: $(OBJECTS) CLASS4_create_colocfile_ASCII.o
 	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
 
-$(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE).exe: $(OBJECTS) CLASS4_create_colocfile_ASCII.o
+$(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE).exe: $(OBJECTS3) CLASS4_create_colocfile_ASCII.o
+	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
+
+$(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE)_aice.exe: $(OBJECTS) CLASS4_create_colocfile_ASCII.o
 	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
 
 $(EXEDIR)/CLASS4_spatial_interpolation_GODAE_AMSR.exe: $(OBJECTS2) CLASS4_spatial_interpolation_godae_AMSR.o
 	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
+
+##$(EXEDIR)/CLASS4_spatial_interpolation_GODAE.exe: $(OBJECTS2) CLASS4_spatial_interpolation_godae_RTR.o
+##	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
 
 $(EXEDIR)/CLASS4_spatial_interpolation_GODAE.exe: $(OBJECTS2) CLASS4_spatial_interpolation_godae.o
 	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)

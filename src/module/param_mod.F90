@@ -167,7 +167,9 @@ MODULE PARAM_MOD
   INTEGER, PARAMETER :: ip_jpjglo = 3059 !3059 ! number of grid points y
  !!   INTEGER, PARAMETER :: ip_maxgrd = 8118760 ! maximum number of gridpoints
   !INTEGER, PARAMETER :: ip_maxgrd = 8123087 ! maximum number of gridpoints
-  INTEGER, PARAMETER :: ip_maxgrd = 8120416 ! maximum number of gridpoints
+  !INTEGER, PARAMETER :: ip_maxgrd = 8123087 ! maximum number of gridpoints
+  INTEGER, PARAMETER :: ip_maxgrd = 8118760 ! maximum number of gridpoints
+  !INTEGER, PARAMETER :: ip_maxgrd = 8120416 ! maximum number of gridpoints
   !INTEGER, PARAMETER :: ip_maxgrd = 8118760 ! maximum number of gridpoints
   INTEGER, PARAMETER :: jpkdta  = 50 ,         &  !: number of levels > or = to jpk
                                         ! total domain matrix size
