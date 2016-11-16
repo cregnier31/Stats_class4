@@ -195,7 +195,7 @@ elif do_decomp :
     print 'do decomp'
     print prefix_data
     print date1,date2,dirdata,dirwork,data_type,template,prefix_data
-    list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,data_type,template,prefix_data)
+    list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,data_type,template)
 else :
     log.info('========================================================')
     log.info('              DATE Selection and extraction  %s         ' %(prefix_data)) 
@@ -441,7 +441,7 @@ if ll_file_ok :
             exe = os.path.join(direxec,exe)
             if data_origin == 'CORIOLIS' :
                 nml=os.path.join(nml_dir,'interpolate_3D_%s_%s_%s_%s.nml' %(data_type.upper(),cl_config,time,dateval))
-                NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
+                NmlCreator(cl_msshFile,ll_mssh,ll_compute,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
     	                            						       time,sort_rep,coloc_rep,dirwork,time,dateval,gridtemp,gridsal,cl_schedule,type_run)  	
                 #log.info('NmlCreator OK')
                 if not os.path.exists(exe) :
