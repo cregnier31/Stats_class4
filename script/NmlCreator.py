@@ -246,7 +246,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
 
     """ Class for CORIOLIS dataset """
 
-    def __init__(self,mssh_file,ll_mssh,mssh_shift,**kwargs):
+    def __init__(self,mssh_file,ll_mssh,ll_compute,mssh_shift,**kwargs):
         super(NmlCreator,self).__init__(**kwargs)
         self.mssh_file=mssh_file
         self.ll_mssh=ll_mssh
