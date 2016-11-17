@@ -141,6 +141,8 @@ gridtemp=param_dict.get('GLOBAL','gridtemp')
 gridsal=param_dict.get('GLOBAL','gridsal')
 type_run=param_dict.get('GLOBAL','TYPE_RUN')
 dirstatic=param_dict.get('static','dir_static')
+coordinates=param_dict.get('static','fic_coordinates')
+type_file=param_dict.get('GLOBAL','TYPE_FILE')
 
 ## Create Output and tmp directory if doesn't exist
 if not os.path.exists(dirwork):
@@ -442,7 +444,7 @@ if ll_file_ok :
             if data_origin == 'CORIOLIS' :
                 nml=os.path.join(nml_dir,'interpolate_3D_%s_%s_%s_%s.nml' %(data_type.upper(),cl_config,time,dateval))
                 NmlCreator(cl_msshFile,ll_mssh,ll_compute,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
-    	                            						       time,sort_rep,coloc_rep,dirwork,time,dateval,gridtemp,gridsal,cl_schedule,type_run)  	
+                          time,sort_rep,coloc_rep,dirwork,time,dateval,gridtemp,gridsal,cl_schedule,type_run,coordinates,type_file)
                 #log.info('NmlCreator OK')
                 if not os.path.exists(exe) :
                     print 'Did not find executable %s' %exe
