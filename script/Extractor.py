@@ -21,11 +21,45 @@ class Extractor(object) :
         if type == "cora4.0_merc": return Extract_cora4()
         if type == "cora4.1_raw": return Extract_cora4_1()
         if type == "CORA4.1_MERC": return Extract_cora4()
-        if type == "CORIOLIS": return ExtractCorio()
+        if type == "CORIOLIS": return Extract_corio()
         if type == "ENS": return ExtractEns()
         if type == "ARMOR_CO" or type == "ARMOR_AR" or type == "AR_" : return Extract_ARMOR()
         if type == "GODAE" : return Extract_GODAE()
         if type == "ASCII" : return Extract_ASCII()
+
+
+class Extract_corio(Extractor):
+
+    """ Extract coriolis common file """
+
+    def run(self,date1,date2,dirdata,dirtmp,typedata,template):
+        # ===============
+        # LOGGER
+        # ===============
+        logging.basicConfig(format='%(asctime)s %(message)s')
+        log = logging.getLogger("Extract_ARMOR")
+        log.setLevel(logging.INFO)
+        ## Level of logging output
+        valeurj=date1
+        liste_tot=[]
+        while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
+            dateval=SyDate.__str__(valeurj)
+            log.info('Day %s ' % (dateval))
+            frame=dirdata+'/*'+dateval.strip()+'*.nc'
+            print frame
+            liste_file=glob.glob(frame)
+            log.info('Liste file %s ' % (liste_file)) 
+            print 'OK'
+            for new_file in liste_file :
+                try :
+                    filename=os.path.basename(new_file)
+                    shutil.copy(new_file,dirtmp)
+                    liste_tot.append(dirtmp+filename)
+                except IOError as e:
+                    print "I/O error({0}): {1}".format(e.errno, e.strerror)
+            valeurj=valeurj.goforward(1)
+
+        return liste_tot
 
 
 class Extract_cora4_1(Extractor):
@@ -120,8 +154,8 @@ class Extract_GODAE(Extractor):
                         #filename=re.sub('GIOPS_CONCEPTS_1.1',template,filename)
                         filename=re.sub('GL_h5',template,filename)
                     else:
-                        filename=re.sub('PSY4V2R2','PSY4V3R1',filename)
-                    #    filename=re.sub('FOAM_orca025_12.0',template,filename)
+                        #filename=re.sub('PSY4V2R2','PSY4V3R1',filename)
+                        filename=re.sub('FOAM_orca025',template,filename)
                     ## Copy extracted value of GODAE file with nco module
                     #shutil.copy(new_file,dirtmp)
                     options = []
