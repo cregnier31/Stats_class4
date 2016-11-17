@@ -744,6 +744,7 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                   il_nprof, &
                                   il_nlevels, &
                                   rla_interpValueT, &
+                                  rla_depthvalue_T,&
                                   cla_dimname, &
                                   rg_fillValue,&
                                   ll_param,&
@@ -762,6 +763,7 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                      il_nprof, &
                                      il_nlevels, &
                                      rla_interpValueS, &
+                                     rla_depthvalue_S,&
                                      cla_dimname, &
                                      rg_fillValue,&
                                      ll_param,&
@@ -916,6 +918,7 @@ SUBROUTINE write_interp_field(cd_outputFile, &
                               id_nprof, &
                               id_nlevels, &
                               rda_interpValue, &
+                              rda_depthvalue, &
                               cda_dimname, &
                               rd_fillValue,&
                               ld_param,&
@@ -939,7 +942,7 @@ SUBROUTINE write_interp_field(cd_outputFile, &
   CHARACTER(LEN=255), DIMENSION(2) :: cda_dimname
   INTEGER :: id_nprof, &
        id_nlevels,il_var
-  REAL(KIND=4), DIMENSION(id_nlevels, id_nprof) :: rda_interpValue
+  REAL(KIND=4), DIMENSION(id_nlevels, id_nprof) :: rda_interpValue,rda_depthvalue
   REAL(KIND=4) :: rd_fillValue
   LOGICAL,INTENT(IN)    :: ld_param,ld_cparam,ld_lparam !
   INTEGER :: il_ji, &
@@ -1075,6 +1078,7 @@ SUBROUTINE write_interp_field(cd_outputFile, &
            cd_outputVarname, &
            'ZP', &
            rda_interpValue)!, &
+      WRITE(0,*) 'Write var ok',cd_outputVarname
       !rla_specialvalue)
       !------------------------------------------------------------------------
       ! Ecriture attribut 
@@ -1084,6 +1088,22 @@ SUBROUTINE write_interp_field(cd_outputFile, &
            cl_resatt, &
            rl_resvalue)
   ENDIF
+  cd_outputVarname="HDCST_DEPH"
+  il_status = (NF90_INQ_VARID(il_filid, &
+                TRIM(cd_outputVarname), &
+                il_variable_id))
+   IF (il_status .EQ. NF90_NOERR) THEN
+#if defined key_debug
+        WRITE(0,*) 'Variable existante  :: ',TRIM(cd_outputVarname)
+#endif
+   ELSE
+      WRITE(0,*) 'Taille Depth tab : ',shape(rda_depthvalue)
+      CALL MIOL_write_field_NC (il_filid, &
+           cd_outputVarname, &
+           'ZP', &
+           rda_depthvalue)
+        WRITE(0,*) 'Write Variable ok  :: ',TRIM(cd_outputVarname)
+   ENDIF
   !      
   il_status = NF90_CLOSE(il_filid)
   !
