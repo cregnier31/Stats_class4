@@ -25,7 +25,7 @@ class NmlCreator(object) :
         self.mssh_shift=mssh_shift
 
     def factory(self,type):
-        if type == "CORIOLIS": return NmlCreator_CORIOLIS(self.mssh_file,self.ll_mssh,self.mssh_shift)
+        if type == "CORIOLIS": return NmlCreator_CORIOLIS(self.mssh_file,self.ll_mssh,self.ll_compute,self.mssh_shift)
         if type == "IAOOS": return NmlCreator_IAOOS(self.mssh_file,self.ll_mssh,self.mssh_shift)
         if type == "GODAE" : return NmlCreator_GODAE(self.mssh_file,self.ll_mssh,self.ll_compute,self.mssh_shift)
 
@@ -318,7 +318,8 @@ class NmlCreator_CORIOLIS(NmlCreator):
                 print template
                 ll_lightout=True
             else : 
-                template=dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
+                #template=dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
+                template=dirmodel+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
 
         output_varname_T=prefix_var+'_'+input_varname_T
         output_varname_S=prefix_var+'_'+input_varname_S
@@ -372,10 +373,21 @@ class NmlCreator_CORIOLIS(NmlCreator):
         log.info('Fichier temp %s' %(fic_temp)) 
         log.info('Fichier psal %s' %(fic_psal)) 
         ## Add test to see missing values
-        cl_file = glob.glob(template)
-        if len(cl_file) != 1 :
-            log.error('Found %i files corresponding to %s while expecting 1' %(len(cl_file),listdir))
-            sys.exit(1)
+        ##cl_file = glob.glob(template)
+        ##if ( len( glob.glob(template)) == 2 ) : 
+        ##     #log.info('Cas climato ') 
+        ##     if fnmatch.fnmatch(filename,"*temp*"):
+        ##         fic_temp=filename
+        ##     if fnmatch.fnmatch(filename,"*sal*"):
+        ##         fic_psal=filename
+        ## else :
+        ##     template_temp=template
+        ##     fic_temp=filename
+        ##     fic_psal=filename
+        ## Add test to see missing values
+        ##if len(cl_file) != 1 :
+        ##    log.error('Found %i files corresponding to %s while expecting 1' %(len(cl_file),listdir))
+        ##    sys.exit(1)
         ##
         nbfile=len(glob.glob(output+"*"+str(dateval)+"*.nc"))
         # Write Namelist
