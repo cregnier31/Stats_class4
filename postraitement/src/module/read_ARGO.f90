@@ -93,6 +93,9 @@ CONTAINS
     !
     !** initialisation
     id_stat = 0
+#if defined key_debug
+ PRINT *,'Ouverture du fichier CORIOLIS ARGO : ',cd_filename
+#endif
     !** Ouverture du fichier CORIOLIS ARGO      
     INQUIRE(FILE=cd_filename,EXIST=ll_tri_prof)
     IF ( .NOT. ll_tri_prof ) THEN
@@ -1395,8 +1398,8 @@ CONTAINS
        ll_TEMP=.TRUE.
        lg_TEMP=.TRUE.
        CALL MIOL_read_field_NC(cd_filename,cl_tmp,rgpa_TEMP)
-      ! CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted,rgpa_TEMP_ADJUSTED)
-      ! CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_error,rgpa_TEMP_ADJUSTED_ERROR)
+       CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted,rgpa_TEMP_ADJUSTED)
+       CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_error,rgpa_TEMP_ADJUSTED_ERROR)
 !#if defined key_debug
 !  WRITE (0,*) 'Lecture TEMP_ADJUSTED_ERROR OK'
 !#endif 
@@ -1405,7 +1408,7 @@ CONTAINS
 #if defined key_debug
   WRITE (0,*) 'Lecture TEMP_QC OK'
 #endif 
-!       CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_qc,cgpa_TEMP_ADJUSTED_QC,il_taille)
+       CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_qc,cgpa_TEMP_ADJUSTED_QC,il_taille)
 !#if defined key_debug
 !  WRITE (0,*) 'Lecture TEMP_ADJUSTED_QC OK'
 !#endif 
@@ -1430,12 +1433,12 @@ CONTAINS
        ll_DEPH=.TRUE.
        lg_DEPH=.TRUE.
        CALL MIOL_read_field_NC(cd_filename,cl_tmp,rgpa_DEPH)
-       !CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted,rgpa_DEPH_ADJUSTED)
-      ! CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_error,rgpa_DEPH_ADJUSTED_ERROR)
+       CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted,rgpa_DEPH_ADJUSTED)
+       CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_error,rgpa_DEPH_ADJUSTED_ERROR)
        il_taille=1
        CALL MIOL_read_field_NC(cd_filename,cg_deph_qc,cgpa_DEPH_QC,il_taille)
-      ! CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_qc,cgpa_DEPH_ADJUSTED_QC,il_taille)
-     !  WRITE(id_ficlog,fmt='(a)')'DEPH OK '
+       CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_qc,cgpa_DEPH_ADJUSTED_QC,il_taille)
+     ! WRITE(id_ficlog,fmt='(a)')'DEPH OK '
 
      !  DO il_i=1,ig_nprof
      !     if ( count (cgpa_DEPH_QC(:,il_i) .EQ. '1' .OR. cgpa_DEPH_QC(:,il_i) .EQ. '0' ) > 0  ) then
@@ -1459,11 +1462,11 @@ CONTAINS
        ll_PRES=.TRUE.
        lg_PRES=.TRUE.
        CALL MIOL_read_field_NC(cd_filename,cl_tmp,rgpa_PRES)
-      ! CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted,rgpa_PRES_ADJUSTED)
-      ! CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_error,rgpa_PRES_ADJUSTED_ERROR)
+       CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted,rgpa_PRES_ADJUSTED)
+       CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_error,rgpa_PRES_ADJUSTED_ERROR)
        il_taille=1
        CALL MIOL_read_field_NC(cd_filename,cg_pres_qc,cgpa_PRES_QC,il_taille)
-      ! CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_qc,cgpa_PRES_ADJUSTED_QC,il_taille)
+       CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_qc,cgpa_PRES_ADJUSTED_QC,il_taille)
 
      !  WRITE(id_ficlog,fmt='(a)')'Pres OK '
      !  DO il_i=1,ig_nprof
@@ -1706,6 +1709,7 @@ CONTAINS
     USE BATHY
     USE table_bathy
     USE HYDRO_POTENTIEL
+    USE MIOL
     IMPLICIT NONE
     !
     !**   0.2 Local variables
@@ -1864,24 +1868,24 @@ CONTAINS
 #if defined key_debug
  PRINT *,'iga_IndParam(ib_p,ip_PRES) > 0'
 #endif
-             IF ( cgpa_DATA_MODE(ib_p) == 'A') THEN
+             IF ( cgpa_DATA_MODE(ib_p) == 'A' .OR. cgpa_DATA_MODE(ib_p) == 'D' ) THEN
 #if defined key_debug
- PRINT *,'DANS DATA MODE == A :: ',TRIM(cgpa_DATA_MODE(ib_p))
+ PRINT *,'DANS DATA MODE == A  or DATA MODE == D  ADJSUTED:: ',TRIM(cgpa_DATA_MODE(ib_p))
 #endif
                 !** test de validite sur la pression
                 !** Pression Valide : 1 0 7   , good, no_control,fixed
-                WHERE ( cgpa_PRES_QC(:,ib_p) .EQ. '1' .OR. cgpa_PRES_QC(:,ib_p) .EQ. '0' .OR. &
-			cgpa_PRES_QC(:,ib_p) .EQ. '7'  )
-                   rga_DepthVal(:,ib_p) = rgpa_PRES(:,ib_p)
-                   rga_PresVal(:,ib_p) = rgpa_PRES(:,ib_p)
+                WHERE ( cgpa_PRES_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR. cgpa_PRES_ADJUSTED_QC(:,ib_p) .EQ. '0' .OR. &
+			cgpa_PRES_ADJUSTED_QC(:,ib_p) .EQ. '7'  )
+                   rga_DepthVal(:,ib_p) = rgpa_PRES_ADJUSTED(:,ib_p)
+                   rga_PresVal(:,ib_p) = rgpa_PRES_ADJUSTED(:,ib_p)
                 ELSEWHERE
                    rga_DepthVal(:,ib_p) = rg_DepthVal_Def
                 END WHERE
-                if ( count (cgpa_PRES_QC(:,ib_p) .EQ. '1' .OR. cgpa_PRES_QC(:,ib_p) .EQ. '0' .OR. &
-			       & cgpa_PRES_QC(:,ib_p) .EQ. '7') < 1  ) il_PRES_QC = il_PRES_QC +1
+                if ( count (cgpa_PRES_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR. cgpa_PRES_ADJUSTED_QC(:,ib_p) .EQ. '0' .OR. &
+			       & cgpa_PRES_ADJUSTED_QC(:,ib_p) .EQ. '7') < 1  ) il_PRES_QC = il_PRES_QC +1
              ELSE
 #if defined key_debug
- PRINT *,'DANS PRES DATA MODE /= A :: ',TRIM(cgpa_DATA_MODE(ib_p))
+ PRINT *,'DANS PRES DATA MODE /= A or D :: ',TRIM(cgpa_DATA_MODE(ib_p))
 #endif
                 WHERE ( cgpa_PRES_QC(:,ib_p) .EQ. '1' .OR. cgpa_PRES_QC(:,ib_p) .EQ. '0' .OR. &
 			cgpa_PRES_QC(:,ib_p) .EQ. '7')
@@ -1898,20 +1902,26 @@ CONTAINS
 #if defined key_debug
  PRINT *,'iga_IndParam(ib_p,ip_DEPH) > 0'
 #endif
-             IF ( cgpa_DATA_MODE(ib_p) == 'A') THEN
+             IF ( cgpa_DATA_MODE(ib_p) == 'A' .OR. cgpa_DATA_MODE(ib_p) == 'D' ) THEN
                 !** test de validite sur la profondeur 
                 !** Profondeur Valide : 1 0 7   , good, no_control,fixed
-                WHERE ( cgpa_DEPH_QC(:,ib_p) .EQ. '1' .OR. cgpa_DEPH_QC(:,ib_p) .EQ. '0' .OR. &
-			cgpa_DEPH_QC(:,ib_p) .EQ. '7' )
-                   rga_DepthVal(:,ib_p) = rgpa_DEPH(:,ib_p)
+                WHERE ( cgpa_DEPH_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR. cgpa_DEPH_ADJUSTED_QC(:,ib_p) .EQ. '0' .OR. &
+			cgpa_DEPH_ADJUSTED_QC(:,ib_p) .EQ. '7' )
+                   rga_DepthVal(:,ib_p) = rgpa_DEPH_ADJUSTED(:,ib_p)
                 ELSEWHERE
                    rga_DepthVal(:,ib_p) = rg_DepthVal_Def
                 END WHERE
-                if ( count (cgpa_DEPH_QC(:,ib_p) .EQ. '1' .OR. cgpa_DEPH_QC(:,ib_p) .EQ. '0' .OR. &
-			      cgpa_DEPH_QC(:,ib_p) .EQ. '7' ) < 1  ) il_DEPH_QC = il_DEPH_QC +1
+#if defined key_debug
+ PRINT *,'OK1'
+#endif
+                if ( count (cgpa_DEPH_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR. cgpa_DEPH_ADJUSTED_QC(:,ib_p) .EQ. '0' .OR. &
+                 cgpa_DEPH_ADJUSTED_QC(:,ib_p) .EQ. '7' ) < 1  ) il_DEPH_QC = il_DEPH_QC +1
+#if defined key_debug
+ PRINT *,'OK2 ',il_DEPH_QC
+#endif
              ELSE
 #if defined key_debug
- PRINT *,'DANS DEPH DATA MODE /= A',TRIM(cgpa_DATA_MODE(ib_p))
+ PRINT *,'DANS DEPH DATA MODE /= A or MODE /= D ',TRIM(cgpa_DATA_MODE(ib_p))
 #endif
                 WHERE ( cgpa_DEPH_QC(:,ib_p) .EQ. '1' .OR. cgpa_DEPH_QC(:,ib_p) .EQ. '0' .OR. &
 			cgpa_DEPH_QC(:,ib_p) .EQ. '7' )
@@ -1924,11 +1934,21 @@ CONTAINS
              ENDIF
 !!            PRINT *,'Profondeur :: ', rga_DepthVal(:,ib_p)
              ! Calcul d une pression a partir de l immersion
+#if defined key_debug
+ PRINT *,'Calcul d une pression a partir de l immersion'
+#endif
 
              DO il_i=1,ig_nlevels
-                IF ( rga_DepthVal(il_i,ib_p) .NE. rg_DepthVal_Def  ) THEN
+                IF ( rga_DepthVal(il_i,ib_p) .NE. rg_DepthVal_Def &
+                  & .AND. rga_DepthVal(il_i,ib_p) .NE. rg_fillvalue  ) THEN
                    rl_depth = rga_DepthVal(il_i,ib_p)
+!#if defined key_debug
+! PRINT *,'il_i, Depth : ',rl_depth,il_i
+!#endif
                    CALL imm2pres(rl_depth,rl_lat,rl_pres)
+!#if defined key_debug
+! PRINT *,'pres : ',rl_pres
+!#endif
                    rga_PresVal(il_i,ib_p) = rl_pres
                 ELSE
                    rga_PresVal(il_i,ib_p) = rg_DepthVal_Def
@@ -1936,21 +1956,27 @@ CONTAINS
              ENDDO
           ENDIF
 
+#if defined key_debug
+ PRINT *,'Correction ok'
+#endif
 
           rl_nbvaleur_1=0.
           rl_nbvaleur_2=0.
           rl_div=0.
           !** gestion de la temperature valide
-          IF ( iga_IndParam(ib_p,ip_TEMP) > 0 ) THEN
-             IF ( cgpa_DATA_MODE(ib_p) == 'A') THEN
 #if defined key_debug
- PRINT *,'Gestion temp valide DATA MODE= A'
+ PRINT *,'gestion de la temperature valide'
 #endif
-                rl_nbvaleur_1=COUNT( cgpa_TEMP_QC(:,ib_p) .EQ. '4' )
-                rl_nbvaleur_2=COUNT( cgpa_TEMP_QC(:,ib_p) .EQ. '0' .OR. &
-                                     cgpa_TEMP_QC(:,ib_p) .EQ. '1' .OR. &
-                                     cgpa_TEMP_QC(:,ib_p) .EQ. '2' .OR. &
-                                     cgpa_TEMP_QC(:,ib_p) .EQ. '3')
+          IF ( iga_IndParam(ib_p,ip_TEMP) > 0 ) THEN
+             IF ( cgpa_DATA_MODE(ib_p) == 'A' .OR. cgpa_DATA_MODE(ib_p) == 'D' ) THEN
+#if defined key_debug
+ PRINT *,'Gestion temp valide DATA MODE= A or MODE = D ADJUSTED'
+#endif
+                rl_nbvaleur_1=COUNT( cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '4' )
+                rl_nbvaleur_2=COUNT( cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '0' .OR. &
+                                     cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR. &
+                                     cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '2' .OR. &
+                                     cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '3')
                 !PRINT *,'Profil :: ',ib_p
                 !PRINT *,'il_nbvaleur_1,il_nbvaleur_2, rl_div ::',rl_nbvaleur_1,rl_nbvaleur_2 
                 IF ( rl_nbvaleur_1+rl_nbvaleur_2 > 0 ) THEN  
@@ -1959,10 +1985,10 @@ CONTAINS
                   rl_div=0
                 ENDIF
                 IF ( rl_div > 0.2 ) THEN
-                    WHERE ( cgpa_TEMP_QC(:,ib_p) .EQ. '0' .OR. &
-                            cgpa_TEMP_QC(:,ib_p) .EQ. '1' .OR. &
-                            cgpa_TEMP_QC(:,ib_p) .EQ. '2' .OR. &
-                            cgpa_TEMP_QC(:,ib_p) .EQ. '3' ) cgpa_TEMP_QC(:,ib_p) = '4' 
+                    WHERE ( cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '0' .OR. &
+                            cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR. &
+                            cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '2' .OR. &
+                            cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '3' ) cgpa_TEMP_ADJUSTED_QC(:,ib_p) = '4' 
 !**           Ecriture fichier
                       INQUIRE(FILE=cg_TEMP_badprof,EXIST=ll_exist_TEMP)
                       IF ( .NOT. ll_exist_TEMP) THEN
@@ -1976,17 +2002,17 @@ CONTAINS
                       WRITE(50,FMT=100,advance="yes") TRIM(cg_filename),ib_p,rl_nbvaleur_1,rl_nbvaleur_2,rl_div
                       CLOSE(50)
 !**
-                 if ( count (cgpa_TEMP_QC(:,ib_p) .EQ. '1' ) < 1  ) il_TEMP_NOK = il_TEMP_NOK + 1
+                 if ( count (cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '1' ) < 1  ) il_TEMP_NOK = il_TEMP_NOK + 1
                 ENDIF
                ! PRINT *,'Pourcentage mauvais :: ',rl_div*100
-                WHERE ( cgpa_TEMP_QC(:,ib_p) .EQ. '1' .OR. cgpa_TEMP_QC(:,ib_p) .EQ. '0' )
-                   rga_TempVal(:,ib_p) = rgpa_TEMP(:,ib_p)
+                WHERE ( cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR. cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '0' )
+                   rga_TempVal(:,ib_p) = rgpa_TEMP_ADJUSTED(:,ib_p)
                 ELSEWHERE
                    rga_TempVal(:,ib_p) = rg_TempVal_Def
                 END WHERE
              ELSE
 #if defined key_debug
- PRINT *,'Gestion temp valide DATA MODE/= A'
+ PRINT *,'Gestion temp valide DATA MODE/= A or /= D'
 #endif
 !                WRITE(id_ficlog,'(a)')'DANS TEMP DATA MODE /= A'
                 rl_nbvaleur_1=COUNT( cgpa_TEMP_QC(:,ib_p) .EQ. '4' )
@@ -2026,22 +2052,22 @@ CONTAINS
 !**
                  if ( count (cgpa_TEMP_QC(:,ib_p) .EQ. '1' ) < 1  ) il_TEMP_NOK = il_TEMP_NOK + 1
                 ENDIF
-#if defined key_debug
- PRINT *, 'cgpa_TEMP_QC(:,ib_p) :: ',cgpa_TEMP_QC(:,ib_p),ib_p
-#endif
+!#if defined key_debug
+! PRINT *, 'cgpa_TEMP_QC(:,ib_p) :: ',cgpa_TEMP_QC(:,ib_p),ib_p
+!#endif
                 WHERE ( cgpa_TEMP_QC(:,ib_p) .EQ. '1' .OR. cgpa_TEMP_QC(:,ib_p) .EQ. '0' )
                    rga_TempVal(:,ib_p) = rgpa_TEMP(:,ib_p)
                 ELSEWHERE
                    rga_TempVal(:,ib_p) = rg_TempVal_Def
                 END WHERE
-#if defined key_debug
- PRINT *, ' rga_TempVal(:,ib_p) :: ', rga_TempVal(:,ib_p),ib_p
-#endif
+!#if defined key_debug
+! PRINT *, ' rga_TempVal(:,ib_p) :: ', rga_TempVal(:,ib_p),ib_p
+!#endif
              ENDIF
-#if defined key_debug
- PRINT *, ' rga_DepthVal(:,ib_p) :: ', rga_DepthVal(:,ib_p)
- PRINT *,'COUNT: ',COUNT( (rga_DepthVal(:,ib_p) .NE. rg_DepthVal_Def) .AND.  (rga_TempVal(:,ib_p) .NE. rg_TempVal_Def ) )
-#endif
+!#if defined key_debug
+! PRINT *, ' rga_DepthVal(:,ib_p) :: ', rga_DepthVal(:,ib_p)
+! PRINT *,'COUNT: ',COUNT( (rga_DepthVal(:,ib_p) .NE. rg_DepthVal_Def) .AND.  (rga_TempVal(:,ib_p) .NE. rg_TempVal_Def ) )
+!#endif
 
              !** Comptage des mesures valides (en tenant compte de la profondeur valide)
              iga_MesTempVal(ib_p)=COUNT( (rga_DepthVal(:,ib_p) .NE. rg_DepthVal_Def) .AND.&
@@ -2064,18 +2090,18 @@ CONTAINS
 
           !** gestion de la salinite valide
           IF ( iga_IndParam(ib_p,ip_PSAL) > 0 ) THEN
-             IF  ( cgpa_DATA_MODE(ib_p) == 'A') THEN
+             IF  ( cgpa_DATA_MODE(ib_p) == 'A' .OR.  cgpa_DATA_MODE(ib_p) == 'D' ) THEN
 !                rl_nbvaleur_1=COUNT( cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '4' )
 !                rl_nbvaleur_2=COUNT( cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '0' .OR.&
 !                                     cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR.&
 !                                     cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '2' .OR.&
 !                                     cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '3')
 !
-                rl_nbvaleur_1=COUNT( cgpa_PSAL_QC(:,ib_p) .EQ. '4' )
-                rl_nbvaleur_2=COUNT( cgpa_PSAL_QC(:,ib_p) .EQ. '0' .OR.&
-                                     cgpa_PSAL_QC(:,ib_p) .EQ. '1' .OR.&
-                                     cgpa_PSAL_QC(:,ib_p) .EQ. '2' .OR.&
-                                     cgpa_PSAL_QC(:,ib_p) .EQ. '3')
+                rl_nbvaleur_1=COUNT( cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '4' )
+                rl_nbvaleur_2=COUNT( cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '0' .OR.&
+                                     cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR.&
+                                     cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '2' .OR.&
+                                     cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '3')
                 IF ( rl_nbvaleur_1+rl_nbvaleur_2 > 0 ) THEN  
                   rl_div=rl_nbvaleur_1/(rl_nbvaleur_1+rl_nbvaleur_2)
                 ELSE 
@@ -2089,10 +2115,10 @@ CONTAINS
                     !        cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR. &
                     !        cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '2' .OR. &
                     !        cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '3')  cgpa_PSAL_ADJUSTED_QC(:,ib_p) = '4'
-                    WHERE ( cgpa_PSAL_QC(:,ib_p) .EQ. '0' .OR. &
-                            cgpa_PSAL_QC(:,ib_p) .EQ. '1' .OR. &
-                            cgpa_PSAL_QC(:,ib_p) .EQ. '2' .OR. &
-                            cgpa_PSAL_QC(:,ib_p) .EQ. '3')  cgpa_PSAL_QC(:,ib_p) = '4'
+                    WHERE ( cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '0' .OR. &
+                            cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR. &
+                            cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '2' .OR. &
+                            cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '3')  cgpa_PSAL_ADJUSTED_QC(:,ib_p) = '4'
 !**           Ecriture fichier
                       INQUIRE(FILE=cg_PSAL_badprof,EXIST=ll_exist_PSAL)
                       IF ( .NOT. ll_exist_PSAL) THEN
@@ -2107,8 +2133,8 @@ CONTAINS
                       CLOSE(50)
 !**
                 ENDIF
-                WHERE ( cgpa_PSAL_QC(:,ib_p) .EQ. '1' .OR. cgpa_PSAL_QC(:,ib_p) .EQ. '0' )
-                   rga_PsalVal(:,ib_p) = rgpa_PSAL(:,ib_p)
+                WHERE ( cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR. cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '0' )
+                   rga_PsalVal(:,ib_p) = rgpa_PSAL_ADJUSTED(:,ib_p)
                 ELSEWHERE
                    rga_PsalVal(:,ib_p) = rg_PsalVal_Def
                 END WHERE
@@ -2152,9 +2178,9 @@ CONTAINS
                    rga_PsalVal(:,ib_p) = rg_PsalVal_Def
                 END WHERE
              ENDIF
-#if defined key_debug
- PRINT *, ' rga_PsalVal :: ', rga_PsalVal(:,ib_p),ib_p
-#endif
+!#if defined key_debug
+! PRINT *, ' rga_PsalVal :: ', rga_PsalVal(:,ib_p),ib_p
+!#endif
 
              !** Comptage des mesures valides (en tenant compte de la profondeur valide)
              iga_MesPsalVal(ib_p)=COUNT( (rga_DepthVal(:,ib_p) .NE. rg_DepthVal_Def) .AND.&
@@ -2264,6 +2290,7 @@ CONTAINS
     IF ( il_TEMP_NOK > 0 ) WRITE(id_ficlog,'(a,i6)')&
          &'- Rejet test TEMP QC /= 1 : ',il_TEMP_NOK
 100 FORMAT(a100,1x,i5,1x,f6.3,1x,f6.3,1x,f6.3)
+
 
 
   END SUBROUTINE valid_profile
