@@ -339,7 +339,8 @@ prof=0L
 ;;      Tracé des images
 ;;------------------------------------------------------------------------------------
 ;;if ( nom_var eq "HDCST_SLA" or nom_var eq "HDCST_SST" )  THEN BEGIN
-if ( nom_var eq "FRCST1D_SLA" or nom_var eq "FRCST1D_SST" )  THEN BEGIN
+if ( nom_var eq "FRCST1D_SLA" or nom_var eq "FRCST1D_SST" or nom_var eq "HDCST_SLA" or nom_var eq "HDCST_SST" or nom_var eq "FRCST3D_SLA" or nom_var eq "FRCST3D_SST" or nom_var eq "FRCST5D_SST" or nom_var eq "FRCST5D_SLA" )  THEN BEGIN
+;;if ( nom_var eq "FRCST1D_SLA" or nom_var eq "FRCST1D_SST" or nom_var eq "HDCST_SLA" or nom_var eq "HDCST_SST" )  THEN BEGIN
        ;; Ecriture fichier
        file=dirname_out+'stats_rms_'+modele+'_'+nom_var+'_'+date_title+'.nc'
        TAB=val1
@@ -592,7 +593,7 @@ ENDIF
        SPAWN,'rm '+dirname_out+name_out+'.ps'
        IF Keyword_Set(month) THEN BEGIN
 	  print,'Passe la '
-	  SPAWN,'scp '+dirname_out+name_out+'.gif qualif@kara:/home/qualif/squal_images/COMPARAISON_OBS/GLOBAL/'+year+'/'
+	  SPAWN,'scp '+dirname_out+name_out+'.gif squal@bali:/home/squal/images/COMPARAISON_OBS/GLOBAL/'+year+'/'
 	  print,'OK '
        ENDIF	
 	
@@ -778,7 +779,7 @@ ENDIF
         SPAWN,'rm '+dirname_out+name_out+'.ps'
         clear,longitude2,latitude2
        IF Keyword_Set(month) THEN BEGIN
-	  SPAWN,'scp '+dirname_out+name_out+'.gif qualif@kara:/home/qualif/squal_images/COMPARAISON_OBS/GLOBAL/'+year+'/'
+	  SPAWN,'scp '+dirname_out+name_out+'.gif squal@bali:/home/squal/images/COMPARAISON_OBS/GLOBAL/'+year+'/'
        ENDIF	
     label:
     ENDFOR
