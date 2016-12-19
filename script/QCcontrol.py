@@ -167,7 +167,7 @@ class QCCorio(QCcontroller):
             #print 'Read DEPH'
             namevar='DEPH_QC'
             cla_depthqc=NetcdReader().read_2D(filename,namevar)
-            namevar='DEPTH'
+            namevar='DEPH'
             rla_depth=NetcdReader().read_2D(filename,namevar)
             #print "Read DEPTH_QC %s " %(cla_depthqc)
         elif ll_pres and not ll_depth : 
