@@ -1,4 +1,3 @@
-!******************************************************************************
 !
 PROGRAM SPATIAL_INTERPOLATION
   !!==============================================================================================================
@@ -235,15 +234,21 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                                           cd_input_modtype,&
                                                           cd_meshfile
   !
-  INTEGER(KIND=4)                                       :: il_ji,il_v,il_nbdim,il_nlon,il_nlat, &
+  INTEGER(KIND=4)                                       :: il_ji,il_jk,il_v,il_nbdim,il_nlon,il_nlat, &
                                                            il_fic,il_ndepth,il_nprof,il_nlevels,&
-                                                           il_nbvar,il_t1,il_t2,il_ir,il_eof,il_status,il_nbrec
+                                                           il_nbvar,il_t1,il_t2,il_ir,il_eof,il_status,il_nbrec,&
+                                                           il_filid,il_outputVarname1,il_file_id,il_variable_id,il_parameterintid,il_offset
   INTEGER, DIMENSION(:,:), ALLOCATABLE                  :: ila_xindex,ila_yindex
   CHARACTER(LEN=255)                                    :: cl_depthvarname,cl_inputFile,&
                                                            cl_tmp,cl_colocFile,cl_outputfile,&
-                                                           cl_outputVarname,cl_file,cl_varname
+                                                           cl_outputVarname,cl_file,cl_varname,&
+                                                           cl_param,cl_outputVarname1,cl_outputVarname2
+  CHARACTER(LEN=25)                                     :: cl_cparam,cl_lparam
+  CHARACTER(LEN=12)                                     :: cl_null
   CHARACTER(LEN=255), DIMENSION(2)                      :: cla_dimname
   CHARACTER(LEN=1), DIMENSION(:), ALLOCATABLE           :: cla_positionqc
+  CHARACTER(LEN=20), DIMENSION(:), ALLOCATABLE          :: cla_dephvarname
+  CHARACTER(LEN=12), DIMENSION(20)                      :: cla_parameterint
   REAL(KIND=4),DIMENSION(:,:),ALLOCATABLE               :: rla_poids
 
   CHARACTER(LEN=255), DIMENSION(:), POINTER             :: clpa_varname
@@ -416,6 +421,8 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
         ALLOCATE(rla_depthadjustvalue(il_nlevels, il_nprof))
         IF (ALLOCATED(cla_positionqc)) DEALLOCATE(cla_positionqc)
         ALLOCATE(cla_positionqc(il_nprof))
+        IF (ALLOCATED(cla_dephvarname)) DEALLOCATE(cla_dephvarname)
+        ALLOCATE(cla_dephvarname(il_nprof))
         IF (ALLOCATED(rla_juldvalue)) DEALLOCATE(rla_juldvalue)
         ALLOCATE(rla_juldvalue(il_nprof))
         IF (ALLOCATED(rla_LON)) DEALLOCATE(rla_LON)
@@ -474,7 +481,8 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                    rla_juldvalue, &
                                    rl_fillvalue,&
                                    rla_LON,&
-                                   rla_LAT)
+                                   rla_LAT,&
+                                   cla_dephvarname)
         ELSE
           WRITE(0,*) 'Input type not define ! '
           STOP
@@ -739,19 +747,89 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
 #endif
            ENDIF
         ELSE IF (TRIM(cd_input_type) .EQ. "NETCDF") THEN 
-          CALL write_interp_field(cl_inputFile, &
-                                  cd_outputVarname_T, &
-                                  il_nprof, &
-                                  il_nlevels, &
-                                  rla_interpValueT, &
-                                  rla_depthvalue_T,&
-                                  cla_dimname, &
-                                  rg_fillValue,&
-                                  ll_param,&
-                                  ll_cparam,&
-                                  ll_lparam)
+#if defined key_debug
+           WRITE(0,*) 'Write interp field ',ll_param,ll_cparam,ll_lparam
+#endif
+           CALL write_interp_field(cl_inputFile, &
+                                   cd_outputVarname_T, &
+                                   il_nprof, &
+                                   il_nlevels, &
+                                   rla_interpValueT, &
+                                   cla_dimname, &
+                                   rg_fillValue,&
+                                   ll_param,&
+                                   ll_cparam,&
+                                   ll_lparam)
+#if defined key_debug
+           WRITE(0,*) 'Write interp field OK'
+#endif
+           CALL MIOL_openw_file_NC(TRIM(cl_inputFile),il_file_id)
+           cl_outputVarname1="HDCST_DEPH"
+           il_status = NF90_INQ_VARID(il_file_id, &
+                                      TRIM(cl_outputVarname1), &
+                                      il_outputVarname1)
+           IF (il_status .NE. NF90_NOERR) THEN
+              CALL MIOL_write_field_NC (il_file_id, &
+                                        cl_outputVarname1, &
+                                        'ZP', &
+                                        rla_depthvalue_T)
+#if defined key_debug
+              WRITE(0,*) 'Write OK ',cl_outputVarname1
+#endif
+              cl_outputVarname2="DEPH_VAR_CHOICE"
+              CALL MIOL_write_field_NC (il_file_id, &
+                                        cl_outputVarname2, &
+                                        'CP', &
+                                        cla_dephvarname(:),&
+                                        20)
+#if defined key_debug
+              WRITE(0,*) 'Write OK ',cl_outputVarname2
+#endif
+              !** Write variable name in parameterint
+              if ( .NOT. ll_cparam .AND. .NOT. ll_lparam .AND. .NOT. ll_param) THEN
+                  cl_cparam='C_PARAMETERINT'
+                  cl_lparam='L_PARAMETERINT'
+                  cl_param='PARAMETERINT'
+              ENDIF
+              if ( ll_cparam .AND. ll_lparam .AND. .NOT. ll_param) THEN
+                  cl_cparam='C_PARAMETERINT2'
+                  cl_lparam='L_PARAMETERINT2'
+                  cl_param='PARAMETERINT2'
+              endif
+              if ( ll_cparam .AND. ll_lparam .AND. ll_param) THEN
+                  cl_cparam='C_PARAMETERINT'
+                  cl_lparam='L_PARAMETERINT'
+                  cl_param='PARAMETERINT'
+              endif
+              il_status = NF90_INQ_VARID(il_file_id, &
+                                         TRIM(cl_param), &
+                                         il_parameterintid)
+              il_status = NF90_GET_VAR(il_file_id, &
+                                       il_parameterintid, &
+                                       cla_parameterint)
+              il_offset=1
+              cl_null = " "
+              DO il_jk=1,20
+                  IF (TRIM(cla_parameterint(il_jk)) .NE. cl_null) THEN
+                     il_offset = il_offset + 1
+                   ENDIF
+              ENDDO
+              cla_parameterint(il_offset) = TRIM(cl_outputVarname1)
+              il_offset=1
+              cl_null = " "
+              DO il_jk=1,20
+                  IF (TRIM(cla_parameterint(il_jk)) .NE. cl_null) THEN
+                     il_offset = il_offset + 1
+                   ENDIF
+              ENDDO
+              cla_parameterint(il_offset) = TRIM(cl_outputVarname2)
+              il_status = NF90_PUT_VAR(il_file_id, &
+                                       il_parameterintid, &
+                                       cla_parameterint)
+           ENDIF
+           CALL MIOL_close_file_NC(il_file_id)
         ENDIF
-#if defined key_cputime                                                                                      
+#if defined key_cputime
      CALL SYSTEM_CLOCK(count=il_t2, count_rate=il_ir)
      WRITE(0,*) "Temps write_interp_field :",REAL(il_t2 - il_t1) / il_ir
 #endif
@@ -763,7 +841,6 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                      il_nprof, &
                                      il_nlevels, &
                                      rla_interpValueS, &
-                                     rla_depthvalue_S,&
                                      cla_dimname, &
                                      rg_fillValue,&
                                      ll_param,&
@@ -918,7 +995,6 @@ SUBROUTINE write_interp_field(cd_outputFile, &
                               id_nprof, &
                               id_nlevels, &
                               rda_interpValue, &
-                              rda_depthvalue, &
                               cda_dimname, &
                               rd_fillValue,&
                               ld_param,&
@@ -940,9 +1016,11 @@ SUBROUTINE write_interp_field(cd_outputFile, &
   CHARACTER(LEN=255) :: cd_outputFile, &
        cd_outputVarname
   CHARACTER(LEN=255), DIMENSION(2) :: cda_dimname
+!  CHARACTER(LEN=20), DIMENSION(id_nprof) :: cda_dephvarname
+
   INTEGER :: id_nprof, &
        id_nlevels,il_var
-  REAL(KIND=4), DIMENSION(id_nlevels, id_nprof) :: rda_interpValue,rda_depthvalue
+  REAL(KIND=4), DIMENSION(id_nlevels, id_nprof) :: rda_interpValue!,rda_depthvalue
   REAL(KIND=4) :: rd_fillValue
   LOGICAL,INTENT(IN)    :: ld_param,ld_cparam,ld_lparam !
   INTEGER :: il_ji, &
@@ -966,7 +1044,7 @@ SUBROUTINE write_interp_field(cd_outputFile, &
   INTEGER, DIMENSION(2) :: ila_dimids
   !
 #if defined key_debug
-  WRITE(0,*),' Write interp field'
+  WRITE(0,*),' Write interp field normal'
 #endif
   !
   cl_resatt = 'resolution'
@@ -1040,6 +1118,7 @@ SUBROUTINE write_interp_field(cd_outputFile, &
   il_status = NF90_GET_VAR(il_filid, &
        il_parameterintid, &
        cla_parameterint)
+!   WRITE(0,*) 'PARAMETERINT : ',cla_parameterint(:)
   IF (il_status .NE. NF90_NOERR) THEN
 #if defined key_debug
      WRITE(0,*) ' write_interp_field : ', TRIM(NF90_STRERROR(il_status))
@@ -1064,7 +1143,6 @@ SUBROUTINE write_interp_field(cd_outputFile, &
 #if defined key_debug
   print *,'Write field '
   WRITE(0,*) 'Output varname ::',cd_outputVarname
-  !        WRITE(0,*) 'Value ::',rda_interpValue
 #endif
    il_status = (NF90_INQ_VARID(il_filid, &
                 TRIM(cd_outputVarname), &
@@ -1078,7 +1156,9 @@ SUBROUTINE write_interp_field(cd_outputFile, &
            cd_outputVarname, &
            'ZP', &
            rda_interpValue)!, &
-      WRITE(0,*) 'Write var ok',cd_outputVarname
+#if defined key_debug
+      WRITE(0,*) 'variable  OK :: ',TRIM(cd_outputVarname)
+#endif
       !rla_specialvalue)
       !------------------------------------------------------------------------
       ! Ecriture attribut 
@@ -1088,22 +1168,6 @@ SUBROUTINE write_interp_field(cd_outputFile, &
            cl_resatt, &
            rl_resvalue)
   ENDIF
-  cd_outputVarname="HDCST_DEPH"
-  il_status = (NF90_INQ_VARID(il_filid, &
-                TRIM(cd_outputVarname), &
-                il_variable_id))
-   IF (il_status .EQ. NF90_NOERR) THEN
-#if defined key_debug
-        WRITE(0,*) 'Variable existante  :: ',TRIM(cd_outputVarname)
-#endif
-   ELSE
-      WRITE(0,*) 'Taille Depth tab : ',shape(rda_depthvalue)
-      CALL MIOL_write_field_NC (il_filid, &
-           cd_outputVarname, &
-           'ZP', &
-           rda_depthvalue)
-        WRITE(0,*) 'Write Variable ok  :: ',TRIM(cd_outputVarname)
-   ENDIF
   !      
   il_status = NF90_CLOSE(il_filid)
   !
@@ -2528,7 +2592,8 @@ SUBROUTINE read_coriolis_file (cd_inputFile, &
                                rda_juldvalue, &
                                rd_fillvalue,&
                                rda_LON,&
-                               rda_LAT)
+                               rda_LAT,&
+                               cda_depthvarname)
   !                                     
   USE netcdf
   USE MIOL 
@@ -2551,10 +2616,12 @@ SUBROUTINE read_coriolis_file (cd_inputFile, &
                                                               ld_isdepthadj,&
                                                               ld_ispres, &
                                                               ld_ispresadj
+  CHARACTER(LEN=20), DIMENSION(id_nprof),INTENT(OUT)     :: cda_depthvarname
   REAL(KIND=4), DIMENSION(id_nlevels,id_nprof),INTENT(OUT) :: rda_depthvalue_T,rda_depthvalue_S
 
   REAL(KIND=8), DIMENSION(id_nprof),INTENT(OUT)            :: rda_juldvalue,rda_LON,rda_LAT
   CHARACTER(LEN=1), DIMENSION(id_nprof),INTENT(OUT)        :: cda_positionqc
+  CHARACTER(LEN=1), DIMENSION(id_nprof)                    :: cda_datamode
   REAL(KIND=4), DIMENSION(id_nlevels,id_nprof)             :: rla_depthadjustvalue,rla_presadjustvalue,rla_presvalue
   REAL(KIND=4),INTENT(OUT)                                 :: rd_fillvalue
   !  
@@ -2574,7 +2641,8 @@ SUBROUTINE read_coriolis_file (cd_inputFile, &
   INTEGER, DIMENSION(:), POINTER                           :: ilpa_dimlen, &
                                                               ilpa_nbdim
   CHARACTER(LEN=1), DIMENSION(:), POINTER                  :: clpa_1Dtmp
-  CHARACTER(LEN=1), DIMENSION(id_nlevels,id_nprof)         :: cla_depthqc,cla_varqc_T,cla_varqc_S,cla_presqc
+  CHARACTER(LEN=1), DIMENSION(id_nlevels,id_nprof)         :: cla_depthqc,cla_varqc_T,cla_varqc_S,cla_presqc,&
+                                                              cla_presadjqc,cla_depthadjqc
   CHARACTER(LEN=1), DIMENSION(id_nlevels)                  :: cla_profqc
   CHARACTER(LEN=255)                                       :: cl_varname,cl_inputVarname_qc
   CHARACTER(LEN=255), DIMENSION(:), POINTER                :: clpa_dimname, &
@@ -2622,8 +2690,11 @@ SUBROUTINE read_coriolis_file (cd_inputFile, &
   rda_LON(:)=rl_missvalue
   rda_LAT(:)=rl_missvalue
   cda_positionqc(1:id_nprof) = ' '
+  cda_datamode(1:id_nprof) = ' '
   cla_depthqc(1:id_nlevels, 1:id_nprof) = ' '
   cla_presqc(1:id_nlevels, 1:id_nprof) = ' '
+  cla_depthadjqc(1:id_nlevels, 1:id_nprof) = ' '
+  cla_presadjqc(1:id_nlevels, 1:id_nprof) = ' '
   cla_varqc_T(1:id_nlevels, 1:id_nprof) = ' '
   cla_varqc_S(1:id_nlevels, 1:id_nprof) = ' '
   ll_exist_ficlog=.FALSE.
@@ -2646,7 +2717,14 @@ SUBROUTINE read_coriolis_file (cd_inputFile, &
        rlpa_1D_LAT_tmp)
 
   rda_LAT(:)=rlpa_1D_LAT_tmp(:)
-
+  !*  DATA_MODE : definition du temps de la donnée réel, avec delai ou ajusté
+  cl_varname = 'DATA_MODE'
+  CALL MIOL_read_field_NC(il_file_id,&
+                          cl_varname,&
+                          clpa_1Dtmp,&
+                          1)
+  cda_datamode(1:id_nprof) = clpa_1Dtmp(1:id_nprof)
+  !WRITE(0,*) 'Data mode : ',cda_datamode(:)
   ! Lecture du positionqc
   cl_varname = 'POSITION_QC'
   CALL MIOL_read_field_NC(il_file_id, &
@@ -2715,6 +2793,13 @@ SUBROUTINE read_coriolis_file (cd_inputFile, &
              rlpa_tmp)
         rla_depthadjustvalue(1:id_nlevels, 1:id_nprof) = &
              rlpa_tmp(1:id_nlevels, 1:id_nprof)
+        cl_varname = 'DEPH_ADJUSTED_QC'
+        CALL MIOL_read_field_NC(il_file_id, &
+             cl_varname, &
+             clpa_2Dtmp, &
+             1)
+        cla_depthadjqc(1:id_nlevels, 1:id_nprof) = &
+               clpa_2Dtmp(1:id_nlevels, 1:id_nprof)
 #if defined key_debug
      PRINT *,'OK DEPH_ADJUSTED'
 #endif
@@ -2772,6 +2857,13 @@ IF (ld_ispres) THEN
           rlpa_tmp)
      rla_presadjustvalue(1:id_nlevels, 1:id_nprof) = &
           rlpa_tmp(1:id_nlevels, 1:id_nprof)
+     cl_varname = 'PRES_ADJUSTED_QC'
+     CALL MIOL_read_field_NC(il_file_id, &
+          cl_varname, &
+          clpa_2Dtmp, &
+          1)
+     cla_presadjqc(1:id_nlevels, 1:id_nprof) = &
+            clpa_2Dtmp(1:id_nlevels, 1:id_nprof)
 #if defined key_debug
    PRINT *,'Read PRES ADJUSTED OK'
 #endif
@@ -2804,36 +2896,103 @@ ALLOCATE(rla_prof(id_nlevels))
      IF ( ld_ispres .OR. ld_isdepth ) THEN
 
         IF ( ld_ispres .and. .not. ld_isdepth  ) THEN
-          rla_prof(:)=rla_presvalue(:,il_jj)
-          cla_profqc(:)=cla_presqc(:,il_jj)
+            IF ( cda_datamode(il_jj) == 'R' )  THEN
+               rla_prof(:)=rla_presvalue(:,il_jj)
+               cla_profqc(:)=cla_presqc(:,il_jj)
+               cda_depthvarname(il_jj)='PRES'
+            ELSE
+               IF ( ld_ispresadj) THEN
+                  rla_prof(:)=rla_presadjustvalue(:,il_jj)
+                  cla_profqc(:)=cla_presadjqc(:,il_jj)
+                  cda_depthvarname(il_jj)='PRES_ADJUSTED'
+               ELSE
+                  rla_prof(:)=rla_presvalue(:,il_jj)
+                  cla_profqc(:)=cla_presqc(:,il_jj)
+                  cda_depthvarname(il_jj)='PRES'
+               ENDIF
+            ENDIF
         ENDIF
-        IF (ld_isdepth_corr) THEN 
-          rla_prof(:)=rla_depthadjustvalue(:,il_jj)
-          cla_profqc(:)=cla_depthqc(:,il_jj)
-        ENDIF
+        !!IF (ld_isdepth_corr) THEN 
+        !!  rla_prof(:)=rla_depthadjustvalue(:,il_jj)
+        !!  cla_profqc(:)=cla_depthqc(:,il_jj)
+        !!  cda_depthvarname(il_jj)='DEPH_CORR'
+        !!ENDIF
         IF ( ld_isdepth .and. .not. ld_ispres ) THEN
-          rla_prof(:)=rla_depthvalue(:,il_jj)
-          cla_profqc(:)=cla_depthqc(:,il_jj)
+           IF ( cda_datamode(il_jj) == 'R' )  THEN
+              rla_prof(:)=rla_depthvalue(:,il_jj)
+              cla_profqc(:)=cla_depthqc(:,il_jj)
+              cda_depthvarname(il_jj)='DEPH'
+           ELSE
+              IF ( ld_isdepthadj) THEN
+                 rla_prof(:)=rla_depthadjustvalue(:,il_jj)
+                 cla_profqc(:)=cla_depthadjqc(:,il_jj)
+                 cda_depthvarname(il_jj)='DEPH_ADJUSTED'
+              ELSE
+                 rla_prof(:)=rla_depthvalue(:,il_jj)
+                 cla_profqc(:)=cla_depthqc(:,il_jj)
+                 cda_depthvarname(il_jj)='DEPH'
+              ENDIF
+           ENDIF
         ENDIF
         IF ( ld_ispres .and. ld_isdepth ) THEN
           il_pres=COUNT(rla_presvalue(:,il_jj)<rl_missvalue)
           il_depth=COUNT(rla_depthvalue(:,il_jj)<rl_missvalue)
           IF ( il_pres > 0 .AND. il_depth > 0 ) THEN
-            rla_prof(:)=rla_depthvalue(:,il_jj)
-            cla_profqc(:)=cla_depthqc(:,il_jj)
+             IF ( cda_datamode(il_jj) ==  'R' )  THEN
+                rla_prof(:)=rla_depthvalue(:,il_jj)
+                cla_profqc(:)=cla_depthqc(:,il_jj)
+                cda_depthvarname(il_jj)='DEPH'
+             ELSE
+                IF ( ld_isdepthadj) THEN
+                   rla_prof(:)=rla_depthadjustvalue(:,il_jj)
+                   cla_profqc(:)=cla_depthadjqc(:,il_jj)
+                   cda_depthvarname(il_jj)='DEPH_ADJUSTED'
+                ELSE
+                   rla_prof(:)=rla_depthvalue(:,il_jj)
+                   cla_profqc(:)=cla_depthqc(:,il_jj)
+                   cda_depthvarname(il_jj)='DEPH'
+                ENDIF
+            ENDIF
           !  WRITE(0,*) 'Pres et depth valable on garde depth'
           ELSE IF ( il_pres > 0 .AND. il_depth == 0 ) THEN
-            rla_prof(:)=rla_presvalue(:,il_jj)
-            cla_profqc(:)=cla_presqc(:,il_jj)
            ! WRITE(0,*) 'Pres valable on garde pres'
+             IF ( cda_datamode(il_jj) == 'R' )  THEN
+                rla_prof(:)=rla_presvalue(:,il_jj)
+                cla_profqc(:)=cla_presqc(:,il_jj)
+                cda_depthvarname(il_jj)='PRES'
+             ELSE
+                IF ( ld_ispresadj) THEN
+                   rla_prof(:)=rla_presadjustvalue(:,il_jj)
+                   cla_profqc(:)=cla_presadjqc(:,il_jj)
+                   cda_depthvarname(il_jj)='PRES_ADJUSTED'
+                ELSE
+                   rla_prof(:)=rla_presvalue(:,il_jj)
+                   cla_profqc(:)=cla_presqc(:,il_jj)
+                   cda_depthvarname(il_jj)='PRES'
+                ENDIF
+             ENDIF
           ELSE IF (il_pres == 0 .AND. il_depth > 0 ) THEN
-            rla_prof(:)=rla_depthvalue(:,il_jj)
-            cla_profqc(:)=cla_depthqc(:,il_jj)
+             IF ( cda_datamode(il_jj) == 'R' )  THEN
+                rla_prof(:)=rla_depthvalue(:,il_jj)
+                cla_profqc(:)=cla_depthqc(:,il_jj)
+                cda_depthvarname(il_jj)='DEPH'
+             ELSE
+                IF ( ld_isdepthadj) THEN
+                   rla_prof(:)=rla_depthadjustvalue(:,il_jj)
+                   cla_profqc(:)=cla_depthadjqc(:,il_jj)
+                   cda_depthvarname(il_jj)='DEPH_ADJUSTED'
+                ELSE
+                   rla_prof(:)=rla_depthvalue(:,il_jj)
+                   cla_profqc(:)=cla_depthqc(:,il_jj)
+                   cda_depthvarname(il_jj)='DEPH'
+                ENDIF
+             ENDIF
            ! WRITE(0,*) 'Depth valable on garde Depth'
           ELSE 
            !  WRITE(0,*) 'Probleme pres et depth non valable'
             rla_prof(:)=rl_missvalue
             cla_profqc(:)=cla_depthqc(:,il_jj)
+            cda_depthvarname(il_jj)='None'
           ENDIF         
         ENDIF
 
