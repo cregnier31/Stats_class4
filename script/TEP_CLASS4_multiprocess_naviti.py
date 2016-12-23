@@ -59,7 +59,7 @@ def run_coloc(args):
     # ==================================
     #   Load db configuration file
     # ==================================
-    CONF_PATH=os.getcwd()
+    CONF_PATH='/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/script/'
     filename = [CONF_PATH+'/'+confname]
     param_dict=Loader.factory('NML').load(filename,level)
     model_type=param_dict.get('GLOBAL','MODELTYPE')
@@ -101,13 +101,14 @@ log.info('========================================================')
 # ===========================================
 # Load options and compute date interval
 # ===========================================
-[date1,date2,confname,data_type,daterun,cl_schedule,cl_src,nb_proc]=Loader().factory('INPUT').load(sys.argv[1:],level)
-log.error("Nombre de proc %i" %(nb_proc))
+[date1,date2,confname,data_type,daterun,cl_schedule,cl_src,nb_proc,cl_typemod]=Loader().factory('INPUT').load(sys.argv[1:],level)
+log.info("Type des fichiers d'entree %s " %(cl_typemod))
+log.info("Nombre de proc %i" %(nb_proc))
 # ==================================
 #   Load db configuration file
 # ==================================
 CONF_PATH=os.getcwd()
-CONF_PATH="/home/cregnier/SVN/mo/TEP_CLASS4_V3/script"
+CONF_PATH="/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/script/"
 filename = [CONF_PATH+'/'+confname]
 param_dict=Loader.factory('NML').load(filename,level)
 nb_level=int(param_dict.get('GLOBAL','LEVELS'))
@@ -116,6 +117,7 @@ write_geojson=int(param_dict.get('GLOBAL','write_geojson'))
 qc_level=int(param_dict.get('GLOBAL','qc_level'))
 do_qc=int(param_dict.get('GLOBAL','do_qc'))
 do_sort=int(param_dict.get('GLOBAL','do_sort'))
+do_decomp=int(param_dict.get('GLOBAL','do_decomp'))
 model_type=param_dict.get('GLOBAL','MODELTYPE')
 dirdata=param_dict.get('input_dir', 'INPUTDATA')
 dirmodel=param_dict.get('input_dir', 'DATA_IN')
@@ -141,6 +143,8 @@ gridtemp=param_dict.get('GLOBAL','gridtemp')
 gridsal=param_dict.get('GLOBAL','gridsal')
 type_run=param_dict.get('GLOBAL','TYPE_RUN')
 dirstatic=param_dict.get('static','dir_static')
+coordinates=param_dict.get('static','fic_coordinates')
+type_file=param_dict.get('GLOBAL','TYPE_FILE')
 
 ## Create Output and tmp directory if doesn't exist
 if not os.path.exists(dirwork):
@@ -184,15 +188,25 @@ else :
 #  PART-2 -  DATE Selection and extraction
 # =============================================================================
 if zoom or data_origin == 'GODAE' : 
-   log.info('========================================================')
-   log.info('              DATE Selection and extraction             ') 
-   log.info('========================================================')
-   log.info('Prefix  %s ' %(prefix_data))
-   log.info('Prefix  %s %s %s ' %(date1,date2,dirdata))
-   log.info('Prefix  %s %s %s' %(dirwork,data_type,template))
-   list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,data_type,template)
+    log.info('========================================================')
+    log.info('              DATE Selection and extraction             ') 
+    log.info('========================================================')
+    log.info('Prefix  %s ' %(prefix_data))
+    log.info('Prefix  %s %s %s ' %(date1,date2,dirdata))
+    log.info('Prefix  %s %s %s' %(dirwork,data_type,template))
+    list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,data_type,template)
+elif do_decomp : 
+    print 'do decomp'
+    print prefix_data
+    print date1,date2,dirdata,dirwork,data_type,template,prefix_data
+    list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,data_type,template,prefix_data)
+
 else :
-   list_files=Extractor().factory(prefix_data).run_list(date1,date2,dirwork)
+    log.info('========================================================')
+    log.info('              DATE Selection and extraction  %s         ' %(prefix_data)) 
+    log.info('========================================================')
+    print prefix_data
+    list_files=Extractor().factory(prefix_data).run_list(date1,date2,dirwork)
 
 
 log.info('List Files  %s ' % (list_files)) 
@@ -235,126 +249,149 @@ for fichier in list_files:
           continue	
           #break	
     else :
-       # Case Global without qc
-       log.info("GLOBAL MODE => SELECT ALL ") 
-       position=Loader.factory(data_format).read_pos(fichier)
-       new_position=position
-       selector=Selector(data_format,data_type).factory(data_origin)
-       ll_file_ok=True
-       ll_file_interp=True
-
+        # Case Global without qc
+        log.info("GLOBAL MODE => SELECT ALL ")
+        if data_type ==  "AMSR" :
+            position=Loader.factory(data_format).read_pos_amsr(fichier)
+        else :
+            position=Loader.factory(data_format).read_pos(fichier)
+        new_position=position
+        selector=Selector(data_format,data_type).factory(data_origin)
+        ll_file_ok=True
+        ll_file_interp=True
     ## Case  : File in the area selection
     if ll_file_interp : 
-       # Write ASCII pos for Coloc
-       file_pos_tmp=os.path.basename(fichier)
-       file_pos_tmp=re.sub('.nc','.pos',file_pos_tmp)
-       file_pos=coloc_rep+file_pos_tmp
-       print file_pos
-       Writer().write_ASCII(file_pos,new_position)
-       list_filepos.append(file_pos)
-     #  splitLen = 1000000       # 500000 lines per file
-       file_in=file_pos
-       outputBase = file_in.split('.')[0]
-       input=open(file_in,'r').read().split('\n')
-       cpt=1
-       nb_pts=len(input)
-       nb_process=nb_proc
-       splitLen=int(ceil(nb_pts/nb_process))+1
-       print splitLen
-       for lines in range(0,len(input),splitLen):
-           # First, get the list slice
-           outputData = input[lines:lines+splitLen]
-           # Now open the output file, join the new slice with newlines
-           # and write it out. Then close the file.
-           output = open(outputBase +'_split'+ str(cpt) + '.pos', 'w')
-           print ('Output %s ok'%(output))
-           output.write('\n'.join(outputData))
-           output.close()
-           print ('Split %s ok'%(cpt))
-           cpt += 1
-       #===========================================================================================
-       # Colocation in multiprocessing
-       #===========================================================================================
-       log.info("Multiprocessing ")
-       ### 2eme solution
-       log.info("List file %s "  %(outputBase))
-       list_files=glob.glob(outputBase+"*split*.pos")
-       log.info(list_files)
-       mp_pool = Pool(nb_process)
-       mp_pool.map(run_coloc, [ [x] for x in list_files ])
-       ## TODO
-       ## Recombinaisons of .dat
-       log.info("Coloc ok start recombination ")
-       toc = time.time()
-       print '%s elapsed time' %(toc-tic)
-       ind=1
-       ind_tot=1
-       fileout=outputBase+'.dat'
-       with open(fileout, 'w') as outFile:
-          for i in range(1,nb_process+1):
-               filename=outputBase +'_split'+ str(ind) + '.dat'
-               input=open(filename,'r').read()
-               outFile.write(input)     
-               ind=ind+1
-       log.info("Recombination OK")
-      # Cleanup
-       for filename in glob.glob(outputBase+"*split*"): 
-           os.remove(filename)
+        ll_coloc=False
+        # Write ASCII pos for Coloc
+        file_pos_tmp=os.path.basename(fichier)
+        file_pos_tmp=re.sub('.nc','.pos',file_pos_tmp)
+        file_pos=coloc_rep+file_pos_tmp
+        outputBase = file_pos.split('.pos')[0]
+        fileout=outputBase+'.dat'
+        if os.path.isfile(fileout) : 
+            ll_coloc=True
+            print "coloc existe %s " %(fileout)
+        if not ll_coloc : 
+            print "coloc don't exist"
+            Writer().write_ASCII(file_pos,new_position)
+            list_filepos.append(file_pos)
+            #  splitLen = 1000000       # 500000 lines per file
+            file_in=file_pos
+            outputBase=re.sub("coloc","coloc/split",outputBase) 
+            outputBase_orig = file_pos.split('.pos')[0]
+            input=open(file_in,'r').read().split('\n')
+            nb_pts=len(input)
+            if nb_pts <=  nb_proc : 
+                nb_process=len(input)
+                splitLen=1
+            else :
+                nb_process=nb_proc
+                splitLen=int(ceil(nb_pts/nb_process))+1
+            cpt=1
+            log.info("longueur %i" %(splitLen))
+            for lines in range(0,len(input),splitLen):
+                # First, get the list slice
+                outputData = input[lines:lines+splitLen]
+                # Now open the output file, join the new slice with newlines
+                # and write it out. Then close the file.
+                output = open(outputBase +'_split'+ str(cpt) + '.pos', 'w')
+                log.info("Output %s ok"%(output))
+                output.write('\n'.join(outputData))
+                output.close()
+                #log.info("Split %s ok"%(cpt))
+                #log.info("lines cpt %i %i "%(lines,cpt))
+                cpt += 1
+            #===========================================================================================
+            # Colocation in multiprocessing
+            #===========================================================================================
+            log.info("Multiprocessing ")
+            ### 2eme solution
+            log.info("List file %s "  %(outputBase))
+            list_files=glob.glob(outputBase+"*split*.pos")
+            log.info(list_files)
+            mp_pool = Pool(nb_process)
+            mp_pool.map(run_coloc, [ [x] for x in list_files ])
+            ## TODO
+            ## Recombinaisons of .dat
+            log.info("Coloc ok start recombination ")
+            toc = time.time()
+            print '%s elapsed time' %(toc-tic)
+            ind=1
+            ind_tot=1
+            fileout=outputBase_orig+'.dat'
+            log.info("file out : %s " %(fileout))
+            with open(fileout, 'w') as outFile:
+                for i in range(1,nb_process+1):
+                    filename=outputBase +'_split'+ str(ind) + '.dat'
+                    if os.path.isfile(filename) :
+                       input=open(filename,'r').read()
+                       outFile.write(input)     
+                    ind=ind+1
+            log.info("Recombination OK")
+            # Cleanup
+            for filename in glob.glob(outputBase+"*split*"): 
+                os.remove(filename)
 
-       if write_geojson  :
-              # Store input position and coloc position to plot the results in a GIS like qGis 
-          # Input
-          ## Store only ext files for extract area
-          type_f=os.path.basename(fichier).split('_')[2]
-          length=new_position.size
-          if length > 1 :
-             log.info("Store geojson positions %s " %(type_f))
-             selector.store_pos(new_position,type_f,file_db)
-          else :
-             print "No position to store %s " %(type_f)
-          # Coloc
-          file_coloc=os.path.basename(fichier).split('.')[0]+'.dat'
-          #coloc_pos=Loader.factory('DAT').read_pos(dirwork+'coloc/'+file_coloc)
-          coloc_pos=Loader.factory('DAT').read_pos(coloc_rep+file_coloc)
-          length=coloc_pos.size
-          if length > 1 :
-            log.info("Store geojson positions db2 %i " %(length))
-            selector.store_pos_single(coloc_pos,'coloc',file_db2)
+        if write_geojson  :
+               # Store input position and coloc position to plot the results in a GIS like qGis 
+           # Input
+           ## Store only ext files for extract area
+           type_f=os.path.basename(fichier).split('_')[2]
+           length=new_position.size
+           if length > 1 :
+              log.info("Store geojson positions %s " %(type_f))
+              selector.store_pos(new_position,type_f,file_db)
+           else :
+              print "No position to store %s " %(type_f)
+           # Coloc
+           file_coloc=os.path.basename(fichier).split('.')[0]+'.dat'
+           #coloc_pos=Loader.factory('DAT').read_pos(dirwork+'coloc/'+file_coloc)
+           coloc_pos=Loader.factory('DAT').read_pos(coloc_rep+file_coloc)
+           length=coloc_pos.size
+           if length > 1 :
+             log.info("Store geojson positions db2 %i " %(length))
+             selector.store_pos_single(coloc_pos,'coloc',file_db2)
  
 if ll_file_ok :
-   ## Create Geojson file for coloc verification with Qgis
-   if write_geojson : 
-      liste_type=['GLO','XB','CT','DC','BA','GL','ML','PF','TE','DB','FB','MO','TS']
-      for type_var in liste_type : 
-        ## Write files with positions of dataset
-        file_out=dirtmp+'Positions_'+type_var+'_'+data_format+'_'+data_type+'_D'+SyDate.__str__(date1)+'_'+SyDate.__str__(date2)+'.geojson'
-        Writer().write_geojson_fromdb(type_var,file_out,file_db)
-      file_out2=dirtmp+'Positions_coloc_'+data_type+'_'+data_format+'_'+data_type+'_D'+SyDate.__str__(date1)+'_'+SyDate.__str__(date2)+'.geojson'
-      Writer().write_geojson_fromdb('coloc',file_out2,file_db2)
-   
-   # =============================================================================
-   # PART-5 - Compute interpolation
-   # =============================================================================
-   log.info('=======================================================')
-   log.info('               Compute interpolation                   ')
-   log.info('=======================================================')
-   ## Create object interpolator depending on data type
-   ll_mssh=None
-   if data_type  == "SLA" : 
-      cl_msshFile =eval(param_dict.get('static','cl_msshFile'   ))      #  the mean ssh from SSH model 
-      rl_mssh_shift=float(param_dict.get('static','rp_mssh_shift' ))
-      ll_mssh='.true.'
-   else : 
-       cl_msshFile =''
-       rl_mssh_shift=0.0
-       ll_mssh='.false.'
-   contact=param_dict.get('GLOBAL','CONTACT')
-   inst=param_dict.get('GLOBAL','INSTITUTION')
-   version=param_dict.get('GLOBAL','VERSION')
-   desc=param_dict.get('GLOBAL','DESCRIPTION')
-   valeurj=date1
-   log.info('Data origin %s ' %(data_origin))
-   while valeurj.__ge__(date1) and valeurj.__le__(date2) :
+    ## Create Geojson file for coloc verification with Qgis
+    if write_geojson : 
+        liste_type=['GLO','XB','CT','DC','BA','GL','ML','PF','TE','DB','FB','MO','TS']
+        for type_var in liste_type : 
+            ## Write files with positions of dataset
+            file_out=dirtmp+'Positions_'+type_var+'_'+data_format+'_'+data_type+'_D'+SyDate.__str__(date1)+'_'+SyDate.__str__(date2)+'.geojson'
+            Writer().write_geojson_fromdb(type_var,file_out,file_db)
+        file_out2=dirtmp+'Positions_coloc_'+data_type+'_'+data_format+'_'+data_type+'_D'+SyDate.__str__(date1)+'_'+SyDate.__str__(date2)+'.geojson'
+        Writer().write_geojson_fromdb('coloc',file_out2,file_db2)
+
+    # =============================================================================
+    # PART-5 - Compute interpolation
+    # =============================================================================
+    log.info('=======================================================')
+    log.info('               Compute interpolation                   ')
+    log.info('=======================================================')
+    ## Create object interpolator depending on data type
+    ll_mssh=None
+    if data_type  == "SLA" : 
+        cl_msshFile =param_dict.get('static','cl_msshFile'   )      #  the mean ssh from SSH model 
+        rl_mssh_shift=float(param_dict.get('static','rp_mssh_shift' ))
+        comp_mssh=int(param_dict.get('GLOBAL','comp_mssh'))
+        ll_mssh='.true.'
+        if comp_mssh == 1  :
+            ll_compute='.true.'
+        else :
+            ll_compute='.false.'
+    else : 
+        cl_msshFile =''
+        rl_mssh_shift=0.0
+        ll_mssh='.false.'
+        ll_compute='.false.'
+    contact=param_dict.get('GLOBAL','CONTACT')
+    inst=param_dict.get('GLOBAL','INSTITUTION')
+    version=param_dict.get('GLOBAL','VERSION')
+    desc=param_dict.get('GLOBAL','DESCRIPTION')
+    valeurj=date1
+    log.info('Data origin %s ' %(data_origin))
+    while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         log.info('Interp day  %s ' % (SyDate.__str__(valeurj))) 
         dateval=SyDate.__str__(valeurj)
         nml=os.path.join(nml_dir,'interpolate_3D_%s_%s_%s.nml' %(data_type.upper(),cl_config,dateval))
@@ -366,94 +403,115 @@ if ll_file_ok :
             sort_rep=dirmodel  
             cl_config_use = cl_config
             if  time == 'forecast' : 
-   	     #cl_config_use = cl_config[0:4]+'Q'+cl_config[4:]
+    	    #cl_config_use = cl_config[0:4]+'Q'+cl_config[4:]
         	    lead_new=[time[0]+time[4]+time[6:8]+element for element in lead_new ]
         	    lead_fin=lead_new
             elif time == 'persistence' :
-               if filter(lambda x: 'best_weekly' in x, lead_time)  :
-        	      lead_fin=['pers']
-               else :
-        	      lead_tmp=['nwct']
-        	      lead_new=[time[:4]+element for element in lead_new[1:] ]
-        	      lead_tmp.extend(lead_new)
-        	      lead_fin=lead_tmp
-            elif time == 'best_estimate' :
-               cl_config_use = re.sub('Q','',cl_config)
-               lead_fin=['hdct']
-               #log.info('Lead fin %s ' % (lead_fin)) 
+                if filter(lambda x: 'best_weekly' in x, lead_time)  :
+        	        lead_fin=['pers']
+                else :
+        	        lead_tmp=['nwct']
+        	        lead_new=[time[:4]+element for element in lead_new[1:] ]
+        	        lead_tmp.extend(lead_new)
+        	        lead_fin=lead_tmp
+            elif time == 'best_estimate' or time == 'best_estimate_RTR' :
+                cl_config_use = re.sub('Q','',cl_config)
+                lead_fin=['hdct']
+                #log.info('Lead fin %s ' % (lead_fin)) 
             elif time == 'best_weekly' :
-               lead_fin=['hdct','nwct']
+                lead_fin=['hdct','nwct']
             elif time == 'CLIM_WOA05' :
-               dirclim4=param_dict.get('climato','DIRCLIM4')
-               lead_fin=['clim4']
-               sort_rep=dirclim4
+                dirclim4=param_dict.get('climato','DIRCLIM4')
+                lead_fin=['clim4']
+                sort_rep=dirclim4
             elif time == 'CLIM_WOA09' :
-               dirclim1=param_dict.get('climato','DIRCLIM1')           
-               lead_fin=['clim1']
-               sort_rep=dirclim1
+                dirclim1=param_dict.get('climato','DIRCLIM1')           
+                lead_fin=['clim1']
+                sort_rep=dirclim1
             elif time == 'CLIM_ARV11' :
-               dirclim2=param_dict.get('climato','DIRCLIM2')           
-               lead_fin=['clim2']
-               sort_rep=dirclim2  
+                dirclim2=param_dict.get('climato','DIRCLIM2')           
+                lead_fin=['clim2']
+                sort_rep=dirclim2  
             elif time == 'CLIM_WOA13' :
-               dirclim3=param_dict.get('climato','DIRCLIM3')           
-               lead_fin=['clim3']
-               sort_rep=dirclim3  
+                dirclim3=param_dict.get('climato','DIRLEV')           
+                lead_fin=['clim3']
+                sort_rep=dirclim3  
             elif time == 'CLIM_MED' :
-               dirclim=param_dict.get('climato','DIRCLIM')
-               lead_fin=['clim']
-               sort_rep=dirclim
+                dirclim=param_dict.get('climato','DIRCLIM')
+                lead_fin=['clim']
+                sort_rep=dirclim
             else : 
-               log.error('Lead time %s not expected ' %(time))
-            exe    = 'CLASS4_spatial_interpolation_'+data_origin+'.exe'    
+                log.error('Lead time %s not expected ' %(time))
+            if data_type ==  "AMSR" :
+                exe    = 'CLASS4_spatial_interpolation_'+data_origin+'_AMSR.exe'
+                print "AMSR"
+            else :
+                exe    = 'CLASS4_spatial_interpolation_'+data_origin+'.exe'    
             exe = os.path.join(direxec,exe)
             if data_origin == 'CORIOLIS' :
-               nml=os.path.join(nml_dir,'interpolate_3D_%s_%s_%s_%s.nml' %(data_type.upper(),cl_config,time,dateval))
-               NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
-   	                             						       time,sort_rep,coloc_rep,dirwork,time,dateval,gridtemp,gridsal,cl_schedule,type_run)  	
-               #log.info('NmlCreator OK')
-               if not os.path.exists(exe) :
-                  print 'Did not find executable %s' %exe
-                  sys.exit(1)
-               codexe = '%s -r %s -c %s -m %s -l %s' %(exe,dateval,nml,cl_config_use,dir_log)
-               args   = shlex.split(codexe)
-               print(args)
-               try :   subprocess.check_call(args)
-               except :
-                   print 'executable %s failed' %exe
-                   sys.exit(1)
-   		
-   	        ## Case GODAE
+                nml=os.path.join(nml_dir,'interpolate_3D_%s_%s_%s_%s.nml' %(data_type.upper(),cl_config,time,dateval))
+                NmlCreator(cl_msshFile,ll_mssh,ll_compute,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
+                          time,sort_rep,coloc_rep,dirwork,time,dateval,gridtemp,gridsal,cl_schedule,type_run,coordinates,type_file)
+                #log.info('NmlCreator OK')
+                if not os.path.exists(exe) :
+                    print 'Did not find executable %s' %exe
+                    sys.exit(1)
+                codexe = '%s -r %s -c %s -m %s -l %s' %(exe,dateval,nml,cl_config_use,dir_log)
+                args   = shlex.split(codexe)
+                try :   subprocess.check_call(args)
+                except :
+                    print 'executable %s failed' %exe
+                    sys.exit(1)
+    	   
+    	    ## Case GODAE
             if data_origin == 'GODAE' : 
-               ##    Create namelist 
-               for filename in glob.glob(dirwork+"*"+dateval+"*"+data_type+"*.nc") :
-                   NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
-                              time,dirmodel,coloc_rep,filename,lead_fin,dateval,gridtemp,gridsal)  	
-   		       ## Launch Interpolation  
-               if not os.path.exists(exe) : 
-                   print 'Did not find executable %s' %exe
-                   sys.exit(1)
-               codexe = '%s -r %s -c %s -m %s' %(exe,dateval,nml,cl_config_use) 
-               args   = shlex.split(codexe)
-               try :   subprocess.check_call(args)
-               except :
-                   print 'executable %s failed' %exe
-                   sys.exit(1)
-   		       ## Design File
-               config_d=re.sub("V","QV",cl_config) 
-               Design().factory(data_origin).run(filename,dateval,contact,config_d,model_type.lower(),inst,version,desc)
+                ##    Create namelist 
+                log.info('Create namelist') 
+                #for filename in glob.glob(dirwork+"*"+dateval+"*"+data_type+"*.nc") :
+                for filename in glob.glob(dirwork+"*"+dateval+"*.nc") :
+                    print filename
+                    print ll_compute
+                    NmlCreator(cl_msshFile,ll_mssh,ll_compute,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
+                               time,dirmodel,coloc_rep,filename,lead_fin,dateval,gridtemp,gridsal)  	
+    	           ## Launch Interpolation  
+                if not os.path.exists(exe) : 
+                    print 'Did not find executable %s' %exe
+                    sys.exit(1)
+                codexe = '%s -r %s -c %s -m %s' %(exe,dateval,nml,cl_config_use) 
+                args   = shlex.split(codexe)
+                try :   subprocess.check_call(args)
+                except :
+                    print 'executable %s failed' %exe
+                    sys.exit(1)
+    	        ## Design File
+                config_d=re.sub("V","QV",cl_config) 
+                Design().factory(data_origin).run(filename,dateval,contact,config_d,model_type.lower(),inst,version,desc)
         ## Zipped files and move in output directory 
-        for filename in glob.glob(dirwork+"class4_"+dateval+"*.nc") :
-          ## Copy in other repertory
-          shutil.copy(filename,diroutput+os.sep+'dezip')
-          f_in=open(filename,'rb')
-          f_out=gzip.open(filename+'.gz','wb')
-          f_out.writelines(f_in)
-          f_out.close()
-          f_in.close()
-          log.info('File ok %s' %(filename))
-          shutil.move(filename+'.gz',diroutput)
-          os.remove(filename)
+        for filename in glob.glob(dirwork+"*"+dateval+"*.nc") :
+            ## Copy in other repertory
+            #log.info('ZIP and move file %s' %(filename))
+            #f_in=open(filename,'rb')
+            #f_out=gzip.open(filename+'.gz','wb')
+            #f_out.writelines(f_in)
+            #f_out.close()
+            #f_in.close()
+            log.info('File ok %s' %(filename))
+            if os.path.exists(diroutput+os.path.basename(filename)):
+                os.remove(diroutput+os.path.basename(filename))
+            shutil.move(filename,diroutput)
+           ## if os.path.exists(diroutput+os.path.basename(filename)+'.gz'):
+           ##     os.remove(diroutput+os.path.basename(filename)+'.gz')
+           ## shutil.move(filename+'.gz',diroutput)
+           ## os.remove(filename)
+            #shutil.copy(filename,diroutput+os.sep+'dezip')
+            #f_in=open(filename,'rb')
+            #f_out=gzip.open(filename+'.gz','wb')
+            #f_out.writelines(f_in)
+            #f_out.close()
+            #f_in.close()
+            #log.info('File ok %s' %(filename))
+            #shutil.move(filename,diroutput)
+            #os.remove(filename)
 # Lancement du run d'après
 DAYMAX=param_dict.get('GLOBAL','DAY_MAX')
 ## Clear stuck objects
@@ -475,8 +533,8 @@ if DAYMAX :
       if schedule == "MONTHLY" : 
           cl_date=SyDate.__str__(date_next)[0:6]
           cl_date2=SyDate.__str__(dayvalmax)[0:6]
-          code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --date1='+cl_date+ \
-               '  --date2='+cl_date2+' --src='+cl_src+'  --data='+data_type
+          #code_lancement=homedir+'script/Launcher_NAVITI_cycle_CORA.ksh '+cl_config+'  '+cl_date+' '+cl_date2+' '+str(nb_proc)
+          code_lancement=homedir+'script/Launcher_NAVITI_cycle_CORIO.ksh '+cl_config+'  '+cl_date+' '+cl_date2+' '+str(nb_proc)
       elif schedule == "WEEKLY" :
           cl_daterun=SyDate.__str__(date_next)
           print 'Lancement du run %s ' %(cl_daterun)
