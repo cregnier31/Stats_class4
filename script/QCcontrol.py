@@ -16,7 +16,6 @@ class QCcontroller(object):
     def __init__(self,data_type,data_source,**kwargs):
         self.data_type = data_type
         self.data_src = data_source
-        print "DATA_TYPE :: %s  " %(self.data_type)
     # Factory creation based on class name:
     def factory(self):
         if self.data_src == "ARGO" :
@@ -32,7 +31,7 @@ class QCcontroller(object):
 
 class QCArgo(QCcontroller):
 
-    """ Class to compute qc on Argo files"""
+    """ Class to compute qc on Argo files """
 
     def QCrun(self,filename):
         nc = netCDF4.Dataset(filename)
@@ -132,7 +131,7 @@ class QCCorio(QCcontroller):
         self.data_type=data_type
         self.data_src = data_source
     def QCrun(self,filename,qc_level):
-        print "Class to compute au qc on Coriolis files"
+        #print "Class to compute au qc on Coriolis files"
         nc = netCDF4.Dataset(filename)
         ll_pres=0
         ll_depth=0
