@@ -1,6 +1,71 @@
 MODULE READ_ARGO
 
-  !*======================================================================
+!*======================================================================
+!               Merry  Christmas Everybody !
+!
+!   
+!                   .,,,...                            :$L ;$  ,dP
+!               ,!!!!!!!',cd$$$$$e,                 q  4$f,$$,z$"
+!             ,!!!!!!!',c$$$$$$$$$$$$c              `$o`$$kuC3$$ .zf
+!           ,!!!!!!!',c$$$$$$P**""**?$c              R$beeF?$$$$$"
+!          ;!!!!!!! c$$$$$$",eed$$F"?t"               "$$$$bd$$$"
+!         ;!!!!!!!.d$$$$$F j"j$3$bf""?b?e,             '$$$$$$P"
+!        !!!!!!:  $$$$$$P J,f ,d$$b?$bde`$c          .$k<?????>'$b
+!        !!!!!!!$$$$F".$$".u$$??P}"""^ ?$$c.       d$$$$$dd$$$$$>
+!         `!!!!!  ?L e$$ $$$$$P'zee^"$$$$boc"$$,     R$$$$$$$$$$$$
+!          '!!!   z$$$$$c,"$P'd$$F'zdbeereee$$$$$eu    "??$$$$PF"
+!   Mn      !!   d$$$$$$$$ee z$P",d$$$$$$c?$$$$$$$$C  '!!!::::!!!>
+!   MMM   ,cec, '^$$$$$$$$$c,",e$$C?$$$$$$bc?$$$$$$$k !!!!!!!!!!!!
+!   MMM'.$$$$$$$, ?$$$$$$$$P$$$$$$$bc?T$$$$$$d$$$$$$$ . -.`!!!!!!!
+!   nMM d$$$$$$$F  $$P???",e4$$$$$$$$bcc?$$$$$$$$$$$$ /~:.!!!!!!!!!
+!   n.  "$$$$$$$'   ::,"??e,.-.?$$$$$$$$$$$$$$$$$$$$F.C"m.`!!!!!!!'
+!   M":!:`"""""   :!!!!!!i:."?o. "? ?$$$??$$$"$$F"$P<$$$b/4.`4!!!
+!   : 4!!!!h     <!!!!!!!!!!:  .CL.F'.zeElu. : ?eb o$$$$$$o(#c'`
+!     '`~!!~.ud !!````'!''``zd$$$$$`d$$$CuuJ" !: 4$$$$$$$$$$c"$c
+!   ." !~`z$$$":!!!~`..:i! d$$$$$$$`$$$$FCCJ" !!!: ?$$$$$$$$$b $L
+!   $$"z$$$$$":!!! :!!!!!'4$$$$$$$$`$$$$$" "" !!!!!:`$$$$$$$$$$ "
+!   ?o$$$$$$F !!!!!!!!!!! 4$$$$$$$$;?$P": JL \.~!!!!i $$$$P?"l.u-
+!   $$$$$$$$F!!!!!!!!!!!!:'R$$$$$$$E.:! $.$$c3$%:`!!! .l==7Cuec^ <
+!   $$$$$$$$ !!!!!!!!!!!!!i ?$$$$P"<!!! ?$`$$$$N.     Rk`$$$$$$r\
+!   $$$$$$$$L`!!!!!!!!!!!!!!! .:::!!!''`   $$$$$$      $c"??"7u+? !
+!   $$$$$$$$$ !!!!!!!!!!!'` :!!''`         '""        .'?b"l.4d$ !!!:
+!   $$$$$$$$$b `!!!'''`.. '''`               ...:::!!!!!! $$$.?$b'!!!>
+!   $$$$$$$$$$$beee@$$$$$$$$        ..:::!!!!!!!!!!!!!!!! 3$$b ?$c`!!!
+!   $$$$$$$$$$$$$$$$$$$$$$$f .::!!!!!!!!!!!!!!!!!!!!!!!!! d$$$$`$$b !!!
+!   $$$$$$$$$$$"3$$$$$$$$$":!!!!!!!!!!!!!!!!!!!!!!!!!!!!! $$$$$,$$$k !!!
+!   $$$$$$$$$P,d$$$$$$$$F !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 3$$$$$ $$$i`!!! 3>
+!   $$$$$$F$Fz$$$$$$$$$$ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! d$$$$$h`$$$,!!! $&
+!   $$$$$FJFx$$$$$$$$$$ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'4$$$$$$$ 9$$$.'.$$$L
+!   $$$$$ F.$$$$$$$$F.r !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! $$$$$$$F  ?$$$e$$$$F
+!   $$$$F .$$$$$$$$"d$$bu,,.```''!!!!!!!!!!!!!!!!'''''`,d$$$$$$$F.! ?$$$$$$F
+!   $$$$F d$$$$$$$$ $$$$$$$$$$$bc,,,,,,,,,,,,,,,,ccd$$$$$$$$$$$$ !!f ?$$$$"
+!    "$$$e$$$$$$$$&'$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ !! $P"
+!      `"?$$$$$$$$$e`?$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ !!'
+!         `?$$$$$$$$$$e `""**???$$$$$$$$$$$$$$$$$$$$$$$P***""..:!!'
+!            "?$$$$$$$$k`!!!!!!;;;;;;::,,,...... ,,,,,;;!!!!!!!!!!
+!                ""???"" !!!!!!!!!!!!!!!!!!!!!!  !!!!!!!!!!!!!!!!!:
+!                         !!!!!!!!!!!!!!!!!!!'   !!!!!!!!!!!!!!!!!!
+!                          !!!!!!!!!!!!!!!!.   `!!!!!!!!!'''!!!!'
+!                        :i !!!!!!!!!!!!!!!!   .``''`.,uu,,.```.
+!                        !!!!!!!!!!!!!!!!!~`    d$$$$$$$$$$$$$$$$$>
+!                       c.`~~~~~!!!!!:..        $$$$$$$$$$$$$$$$$$
+!                       $$$$$eeeeeeeuuuee$      $$$$$$$$$$$$$$$$$"
+!                       $$$$$$$$$$$$$$$$$$       """"...........
+!                       ?$$$$$$$$$$$$$$$P"       '!!!!!!!!!!!!!!
+!                        .."""""""""".:          !!!!!!!!!!!!!
+!                       :!!!!!!!!!!!!!!          `!!!!!!!!!!!'
+!                       i!!!!!!!!!!!!!'          !!!!!!!!!!!'::
+!                       :!!!!!!!!!!!!!           !!!!!!!!!!:!!:.
+!                       !!!!!!!!!!'!!!           . `!!!!!!!!!!!!`...
+!                       `!!!!!!!! -'``           !!!!!!!!!!!!!!!!!!!!!::
+!                        !!!!!!!!!i!!!:           `~~~~~```~~~~~~~~~~~~`
+!                        !!!!!!!!!!!!!!!.
+!                          ```'!!!!!!!'``::..
+!                                `!!!!!!!!!!!'
+!                                   `````
+
+
+!*======================================================================
   !                       ***  MODULE Read_ARGO  ***
   !                Ce module realise la lecture des differents              
   !                fichiers ARGO pour les classe4                        
@@ -545,12 +610,14 @@ CONTAINS
        ll_PSAL=.TRUE.
        lg_PSAL=.TRUE.
        CALL MIOL_read_field_NC(cd_filename,cl_tmp,rgpa_PSAL)
-       CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted,rgpa_PSAL_ADJUSTED)
-       CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted_error,rgpa_PSAL_ADJUSTED_ERROR)
        il_taille=1
        CALL MIOL_read_field_NC(cd_filename,cg_psal_qc,cgpa_PSAL_QC,il_taille)
-       CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted_qc,cgpa_PSAL_ADJUSTED_QC,il_taille)
-
+       CALL MIOL_inquire_type_NC(cd_filename,cg_psal_adjusted,il_type,il_nbdim,ll_exist)
+       IF ( ll_exist ) THEN
+          CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted,rgpa_PSAL_ADJUSTED)
+          CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted_qc,cgpa_PSAL_ADJUSTED_QC,il_taille)
+          !CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted_error,rgpa_PSAL_ADJUSTED_ERROR)
+       ENDIF
        DO il_i=1,ig_nprof
           if ( count (cgpa_PSAL_QC(:,il_i) .EQ. '1' .OR. cgpa_PSAL_QC(:,il_i) .EQ. '0' ) > 0  ) then
              iga_IndParam(il_i,ip_PSAL) = ip_PSAL
@@ -571,12 +638,14 @@ CONTAINS
        ll_TEMP=.TRUE.
        lg_TEMP=.TRUE.
        CALL MIOL_read_field_NC(cd_filename,cl_tmp,rgpa_TEMP)
-       CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted,rgpa_TEMP_ADJUSTED)
-       CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_error,rgpa_TEMP_ADJUSTED_ERROR)
        il_taille=1
        CALL MIOL_read_field_NC(cd_filename,cg_temp_qc,cgpa_TEMP_QC,il_taille)
-       CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_qc,cgpa_TEMP_ADJUSTED_QC,il_taille)
-
+       CALL MIOL_inquire_type_NC(cd_filename,cg_temp_adjusted,il_type,il_nbdim,ll_exist)
+       IF ( ll_exist ) THEN
+          CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted,rgpa_TEMP_ADJUSTED)
+          CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_qc,cgpa_TEMP_ADJUSTED_QC,il_taille)
+          !CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_error,rgpa_TEMP_ADJUSTED_ERROR)
+       ENDIF
        DO il_i=1,ig_nprof
           if ( count (cgpa_TEMP_QC(:,il_i) .EQ. '1' .OR. cgpa_TEMP_QC(:,il_i) .EQ. '0' ) > 0  ) then
              iga_IndParam(il_i,ip_TEMP) = ip_TEMP
@@ -597,12 +666,14 @@ CONTAINS
        ll_DEPH=.TRUE.
        lg_DEPH=.TRUE.
        CALL MIOL_read_field_NC(cd_filename,cl_tmp,rgpa_DEPH)
-       CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted,rgpa_DEPH_ADJUSTED)
-       CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_error,rgpa_DEPH_ADJUSTED_ERROR)
        il_taille=1
        CALL MIOL_read_field_NC(cd_filename,cg_deph_qc,cgpa_DEPH_QC,il_taille)
-       CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_qc,cgpa_DEPH_ADJUSTED_QC,il_taille)
-
+       CALL MIOL_inquire_type_NC(cd_filename,cg_deph_adjusted,il_type,il_nbdim,ll_exist)
+       IF ( ll_exist ) THEN
+          CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted,rgpa_DEPH_ADJUSTED)
+          CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_qc,cgpa_DEPH_ADJUSTED_QC,il_taille)
+          !CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_error,rgpa_DEPH_ADJUSTED_ERROR)
+       ENDIF
        DO il_i=1,ig_nprof
           if ( count (cgpa_DEPH_QC(:,il_i) .EQ. '1' .OR. cgpa_DEPH_QC(:,il_i) .EQ. '0' ) > 0  ) then
              iga_IndParam(il_i,ip_DEPH) = ip_DEPH
@@ -623,12 +694,14 @@ CONTAINS
        ll_PRES=.TRUE.
        lg_PRES=.TRUE.
        CALL MIOL_read_field_NC(cd_filename,cl_tmp,rgpa_PRES)
-       CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted,rgpa_PRES_ADJUSTED)
-       CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_error,rgpa_PRES_ADJUSTED_ERROR)
+       CALL MIOL_inquire_type_NC(cd_filename,cg_pres_adjusted,il_type,il_nbdim,ll_exist)
        il_taille=1
        CALL MIOL_read_field_NC(cd_filename,cg_pres_qc,cgpa_PRES_QC,il_taille)
-       CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_qc,cgpa_PRES_ADJUSTED_QC,il_taille)
-
+       IF ( ll_exist ) THEN
+          CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted,rgpa_PRES_ADJUSTED)
+          CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_qc,cgpa_PRES_ADJUSTED_QC,il_taille)
+          !CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_error,rgpa_PRES_ADJUSTED_ERROR)
+       ENDIF
        DO il_i=1,ig_nprof
           if ( count (cgpa_PRES_QC(:,il_i) .EQ. '1' .OR. cgpa_PRES_QC(:,il_i) .EQ. '0' ) > 0  ) then
              iga_IndParam(il_i,ip_PRES) = ip_PRES
@@ -1366,18 +1439,20 @@ CONTAINS
        ll_PSAL=.TRUE.
        lg_PSAL=.TRUE.
        CALL MIOL_read_field_NC(cd_filename,cl_tmp,rgpa_PSAL)
-       !CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted,rgpa_PSAL_ADJUSTED)
-      ! CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted_error,rgpa_PSAL_ADJUSTED_ERROR)
        il_taille=1
        CALL MIOL_read_field_NC(cd_filename,cg_psal_qc,cgpa_PSAL_QC,il_taille)
 #if defined key_debug
   WRITE (0,*) 'Lecture PSAL_QC OK'
 #endif 
-!       CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted_qc,cgpa_PSAL_ADJUSTED_QC,il_taille)
-!#if defined key_debug
-!  WRITE (0,*) 'Lecture PSAL_ADJUSTED_QC OK'
-!#endif 
-
+       CALL MIOL_inquire_type_NC(cd_filename,cg_psal_adjusted,il_type,il_nbdim,ll_exist)
+       IF ( ll_exist ) THEN
+          CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted_qc,cgpa_PSAL_ADJUSTED_QC,il_taille)
+          CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted,rgpa_PSAL_ADJUSTED)
+          !CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted_error,rgpa_PSAL_ADJUSTED_ERROR)
+#if defined key_debug
+  WRITE (0,*) 'Lecture PSAL_ADJUSTED_QC OK'
+#endif 
+       ENDIF
        DO il_i=1,ig_nprof
           if ( count (cgpa_PSAL_QC(:,il_i) .EQ. '1' .OR. cgpa_PSAL_QC(:,il_i) .EQ. '0' ) > 0  ) then
              iga_IndParam(il_i,ip_PSAL) = ip_PSAL
@@ -1398,21 +1473,20 @@ CONTAINS
        ll_TEMP=.TRUE.
        lg_TEMP=.TRUE.
        CALL MIOL_read_field_NC(cd_filename,cl_tmp,rgpa_TEMP)
-       CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted,rgpa_TEMP_ADJUSTED)
-       CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_error,rgpa_TEMP_ADJUSTED_ERROR)
-!#if defined key_debug
-!  WRITE (0,*) 'Lecture TEMP_ADJUSTED_ERROR OK'
-!#endif 
        il_taille=1
        CALL MIOL_read_field_NC(cd_filename,cg_temp_qc,cgpa_TEMP_QC,il_taille)
 #if defined key_debug
   WRITE (0,*) 'Lecture TEMP_QC OK'
 #endif 
-       CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_qc,cgpa_TEMP_ADJUSTED_QC,il_taille)
-!#if defined key_debug
-!  WRITE (0,*) 'Lecture TEMP_ADJUSTED_QC OK'
-!#endif 
-
+       CALL MIOL_inquire_type_NC(cd_filename,cg_temp_adjusted,il_type,il_nbdim,ll_exist)
+       IF ( ll_exist ) THEN
+          CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted,rgpa_TEMP_ADJUSTED)
+          CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_qc,cgpa_TEMP_ADJUSTED_QC,il_taille)
+          !CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_error,rgpa_TEMP_ADJUSTED_ERROR)
+#if defined key_debug
+  WRITE (0,*) 'Lecture TEMP_ADJUSTED_QC OK'
+#endif 
+       ENDIF
        DO il_i=1,ig_nprof
           if ( count (cgpa_TEMP_QC(:,il_i) .EQ. '1' .OR. cgpa_TEMP_QC(:,il_i) .EQ. '0' ) > 0  ) then
              iga_IndParam(il_i,ip_TEMP) = ip_TEMP
@@ -1433,11 +1507,14 @@ CONTAINS
        ll_DEPH=.TRUE.
        lg_DEPH=.TRUE.
        CALL MIOL_read_field_NC(cd_filename,cl_tmp,rgpa_DEPH)
-       CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted,rgpa_DEPH_ADJUSTED)
-       CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_error,rgpa_DEPH_ADJUSTED_ERROR)
        il_taille=1
        CALL MIOL_read_field_NC(cd_filename,cg_deph_qc,cgpa_DEPH_QC,il_taille)
-       CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_qc,cgpa_DEPH_ADJUSTED_QC,il_taille)
+       CALL MIOL_inquire_type_NC(cd_filename,cg_deph_adjusted,il_type,il_nbdim,ll_exist)
+       IF ( ll_exist ) THEN
+          CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted,rgpa_DEPH_ADJUSTED)
+          CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_qc,cgpa_DEPH_ADJUSTED_QC,il_taille)
+          !CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_error,rgpa_DEPH_ADJUSTED_ERROR)
+       ENDIF
      ! WRITE(id_ficlog,fmt='(a)')'DEPH OK '
 
      !  DO il_i=1,ig_nprof
@@ -1462,12 +1539,14 @@ CONTAINS
        ll_PRES=.TRUE.
        lg_PRES=.TRUE.
        CALL MIOL_read_field_NC(cd_filename,cl_tmp,rgpa_PRES)
-       CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted,rgpa_PRES_ADJUSTED)
-       CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_error,rgpa_PRES_ADJUSTED_ERROR)
        il_taille=1
        CALL MIOL_read_field_NC(cd_filename,cg_pres_qc,cgpa_PRES_QC,il_taille)
-       CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_qc,cgpa_PRES_ADJUSTED_QC,il_taille)
-
+       CALL MIOL_inquire_type_NC(cd_filename,cg_pres_adjusted,il_type,il_nbdim,ll_exist)
+       IF ( ll_exist ) THEN
+          CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted,rgpa_PRES_ADJUSTED)
+          CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_qc,cgpa_PRES_ADJUSTED_QC,il_taille)
+          !CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_error,rgpa_PRES_ADJUSTED_ERROR)
+       ENDIF
      !  WRITE(id_ficlog,fmt='(a)')'Pres OK '
      !  DO il_i=1,ig_nprof
      !     if ( count (cgpa_PRES_QC(:,il_i) .EQ. '1' .OR. cgpa_PRES_QC(:,il_i) .EQ. '0' ) > 0  ) then
