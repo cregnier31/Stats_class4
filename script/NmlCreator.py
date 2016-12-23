@@ -188,6 +188,8 @@ class NmlCreator_IAOOS(NmlCreator):
             output_varname_S='SMLEV13'
             template_temp=searchdir+'*M'+monthval+'*temp*.nc'
             template_sal=searchdir+'*M'+monthval+'*sal*.nc'
+            model_varname_T="temperature"
+            model_varname_S="vosaline"
         elif listdir == 'CLIM_MED' :
             output_varname_T='TMMED'
             output_varname_S='SMMED'
@@ -287,7 +289,8 @@ class NmlCreator_CORIOLIS(NmlCreator):
             searchdir="MONTHLY_"+yearval 	
             print "monthly values"
             daterun=dateval[0:6]
-            template=dirmodel+searchdir+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
+            #template=dirmodel+searchdir+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
+            template=dirmodel+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
         elif type_run == 'free' :
             print modele,daterun,gridtemp
             template=dirmodel+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
@@ -343,9 +346,12 @@ class NmlCreator_CORIOLIS(NmlCreator):
             output_varname_S='SMARV11'
         elif listdir == 'CLIM_WOA13' :
             ll_lightout=False
-            template=searchdir+'*M'+monthval+'*_TEMP.nc'
+            #template=searchdir+'*M'+monthval+'*_TEMP.nc'
+            template=searchdir+'*M'+monthval+'*_tempinsitu.nc'
             output_varname_T='TMLEV13'
             output_varname_S='SMLEV13'
+            model_varname_T="temperature"
+            model_varname_S="vosaline"
         elif listdir == 'CLIM_MED' :
             output_varname_T='TMMED'
             output_varname_S='SMMED'
@@ -363,7 +369,8 @@ class NmlCreator_CORIOLIS(NmlCreator):
                     fic_psal=re.sub(gridtemp,gridsal,fic_temp)
             else :
                 if listdir == 'CLIM_WOA13' :
-                    fic_psal=re.sub('TEMP','PSAL',fic_temp)
+                    #fic_psal=re.sub('TEMP','PSAL',fic_temp)
+                    fic_psal=re.sub('tempinsitu','sal',fic_temp)
                 else :
                     fic_psal=fic_temp
         if not fic_temp or not fic_psal : 
