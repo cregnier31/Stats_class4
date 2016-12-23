@@ -6,6 +6,7 @@ import tarfile
 import netCDF4
 from sytoolkit.sydate import SyDate
 from nco import Nco
+from gz import ZipManipulator
 
 ##############################################################
 ## C.REGNIER Juin 2014
@@ -155,7 +156,8 @@ class Extract_GODAE(Extractor):
                         filename=re.sub('GL_h5',template,filename)
                     else:
                         #filename=re.sub('PSY4V2R2','PSY4V3R1',filename)
-                        filename=re.sub('FOAM_orca025',template,filename)
+                        filename=re.sub('GIOPS_CONCEPTS_2.1',template,filename)
+                    #    filename=re.sub('FOAM_orca025_12.0',template,filename)
                     ## Copy extracted value of GODAE file with nco module
                     #shutil.copy(new_file,dirtmp)
                     options = []
@@ -219,7 +221,7 @@ class Extract_ARMOR(Extractor):
         while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
             dateval=SyDate.__str__(valeurj)
             log.info('Day %s ' % (dateval)) 
-            frame=dirdata+prefix+'*'+dateval.strip()+'*.nc'
+            frame=dirdata+prefix+'*'+dateval.strip()+'*.nc*'
             print frame
             liste_file=glob.glob(frame)
             #liste_file=glob.glob(dirdata+'/*[TS]*'+dateval+'*.nc')
@@ -229,7 +231,20 @@ class Extract_ARMOR(Extractor):
                 try :
                     filename=os.path.basename(new_file)
                     shutil.copy(new_file,dirtmp)
-                    liste_tot.append(dirtmp+filename)
+                    if filename[-2:] == 'gz' :
+                        log.info('Dezip')
+                        filename2=filename
+                        dezip=ZipManipulator(dirtmp)
+                        fichier=dirtmp+filename2
+                        dezip.gunzip(fichier)
+                        filename=fichier.split('.gz')[:][0]
+                        ##tar = tarfile.open(dirtmp+filename2, "r:gz")
+                        ##tar.extractall()
+                        ##tar.close()
+                        liste_tot.append(filename)
+                    else :
+                        liste_tot.append(dirtmp+filename)
+                    log.info("append : %s " %(filename))
                 except IOError as e:
                     print "I/O error({0}): {1}".format(e.errno, e.strerror)
             valeurj=valeurj.goforward(1)
@@ -333,9 +348,10 @@ class Extract_cora4(Extractor) :
     """ Extract Cora4 file """
 
     def __init__(self):
-        print "Constructor ------"
+        print "Constructor cora 4 ------"
         self.PREFIX='cora4.0_merc'
     def run(self,date1,date2,dirdata,dirtmp,typedata,templat,prefix):
+        print 'Extractor cora4'
         # ===============
         # LOGGER
         # ===============
@@ -366,20 +382,23 @@ class Extract_cora4(Extractor) :
         for file in liste_file :
             file_path=dirdata+file
             print file_path
-            if os.path.isfile(file_path)  :
-                try :
-                    shutil.copy(file_path,dirtmp)
-                    os.chdir(dirtmp)
-                    tar = tarfile.open(file)
-                    tar.extractall()
-                    tar.close()
-                    os.remove(file)
-                except  IOError as e :
-                    print "I/O error({0}): {1}".format(e.errno, e.strerror)
-                    #print 'Problem with copy or extraction'
-            else :
-                print 'file not known %s ' %(file_path) 	
-                sys.exit(1)
+            ## Test the existence of the year
+            if not os.path.isdir(dirtmp+liste_year[0]):
+                print "Directory doesn t exist extract"
+                if os.path.isfile(file_path)  :
+                    try :
+                        shutil.copy(file_path,dirtmp)
+                        os.chdir(dirtmp)
+                        tar = tarfile.open(file)
+                        tar.extractall()
+                        tar.close()
+                        os.remove(file)
+                    except  IOError as e :
+                        print "I/O error({0}): {1}".format(e.errno, e.strerror)
+                        #print 'Problem with copy or extraction'
+                else :
+                    print 'file not known %s ' %(file_path) 	
+                    sys.exit(1)
         ## Remove file
         liste_tot=[]
         for year in liste_year : 
@@ -398,7 +417,7 @@ class Extract_cora4(Extractor) :
                         print "I/O error({0}): {1}".format(e.errno, e.strerror)
                 valeurj=valeurj.goforward(1)
             ## Remove directory 
-            shutil.rmtree(dirtmp+year)
+            #shutil.rmtree(dirtmp+year)
         ## Write log
         ok_file=dirtmp+"Extract_cora4_"+str(presyear)+"_"+str(backyear)+"_OK"
         return liste_tot
