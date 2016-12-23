@@ -6,7 +6,9 @@ import geojson
 from geojson import MultiPoint
 import shelve
 import json
-from Logger import Logger                                                                                                   
+from Logger import Logger
+from datetime import date
+from netCDF4 import Dataset
 
 ##############################################################
 ## C.REGNIER Juin 2014
@@ -67,3 +69,35 @@ class Writer():
                 print "Type doesn't exist %s " %(type_f)
             shelf.close()
 #
+    def write_GODAE_files(self,filename,hdct_tab,fcst_tab,pers_tab,dateval,model):
+        nc_fid = Dataset(filename, 'r+', format='NETCDF3_CLASSIC')
+        nc_best = nc_fid.createVariable('best_estimate','f4',('numobs','numvars','numdeps'),fill_value=9999.0)
+        nc_best.setncatts({'long_name': u"Model best_estimate counterpart of obs. value"})
+        nc_fcst = nc_fid.createVariable('forecast','f4',('numobs','numvars','numfcsts','numdeps'),fill_value=9999.0)
+        nc_fcst.setncatts({'long_name': u"Model forecast counterpart of obs. value"})
+        nc_pers = nc_fid.createVariable('persistence','f4',('numobs','numvars','numfcsts','numdeps'),fill_value=9999.0)
+        nc_pers.setncatts({'long_name': u"Model persistence counterpart of obs. value"})
+        nc_fid.variables['best_estimate'][:,:,:] = hdct_tab[:,:,:]
+        nc_fid.variables['forecast'][:,:,:,:] = fcst_tab[:,:,:,:]
+        nc_fid.variables['persistence'][:,:,:,:] = pers_tab[:,:,:,:]
+        ## Add global attributs
+        nc_fid.institution= 'MERCATOR OCEAN'
+        nc_fid.contact= 'cregnier@mercator-ocean.fr'
+        nc_fid.obs_type='AMSR2 brightness temperature'
+        nc_fid.time_interp = "daily average fields" ;
+        today=date.today() 
+        yyyy=str(today)[0:4]
+        yyyy2=dateval[0:4]
+        month=str(today)[5:7]
+        month2=dateval[4:6]
+        day=str(today)[8:10]
+        day2=dateval[7:9]
+        nc_fid.validity_time =yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.creation_date=yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.system=model
+        nc_fid.Conventions = 'CF-1.6'
+        nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
+        print '-------------------------------'
+        print 'Creation OK %s '
+        print '-------------------------------'
+        nc_fid.close()  # close the new file
