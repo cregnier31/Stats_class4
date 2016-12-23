@@ -65,8 +65,8 @@ class SelectCorio(Selector) :
         logging.basicConfig(format='%(asctime)s %(message)s')
         log = logging.getLogger(" Run Selector")
         ## Level of logging output
-        log.setLevel(logging.INFO)
-        #log.setLevel(logging.ERROR)
+        #log.setLevel(logging.INFO)
+        log.setLevel(logging.ERROR)
         # Read position of profiles
         position=Loader.factory(self.data_format).read_pos(fichier)
         nb_profs=len(position[:,0])
@@ -134,11 +134,11 @@ class SelectCorio(Selector) :
         logging.basicConfig(format='%(asctime)s %(message)s')
         log = logging.getLogger(" Run Selector")
         ## Level of logging output
-        log.setLevel(logging.INFO)
+        #log.setLevel(logging.INFO)
+        log.setLevel(logging.ERROR)
         ## Nco constructor
         nco = Nco()
         il_ind=0
-        print fichier
         file_out=os.path.basename(fichier)
         for il_it in list_index:
             file_out2=os.path.basename(fichier).split('.')[0]+'_pf_'+str(il_it)+'.nc'
