@@ -13,7 +13,7 @@ profondeur,profondeur2,liste_zone,liste_zone_PSY2,$
 liste_TEST,listemodele,liste_zone_GLOMyo,profondeur3,$
 profondeur4,liste_zone_PSY2_SHOM,tab_prof,tab_model,$
 tab_e3t,tab_prof_2,variable_name_2,variable_name_3,$
-variable_name_4,tab_prof_3,profondeur5,file_mask,file_save
+variable_name_4,tab_prof_3,profondeur5,file_mask,file_save,tab_prof_4
 
 ;; Definition des variable_names
 variable_name=strarr(26)
@@ -211,6 +211,13 @@ tab_prof_3(1)=100
 tab_prof_3(2)=300
 tab_prof_3(3)=800
 tab_prof_3(4)=2000
+
+tab_prof_4=fltarr(3)
+tab_prof_4(0)=0
+tab_prof_4(1)=700
+tab_prof_4(2)=2000
+
+
 
 tab_model=fltarr(51)
 tab_model(0)=0.4940254
