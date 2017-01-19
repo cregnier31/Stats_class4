@@ -27,6 +27,7 @@ PROGRAM Lecture_class4
   !       1.2       C.REGNIER    02/10/2007    clean, work with all MERSEA files
   !       1.3       F. HERNANDEZ 18/04/2008    add bathy interpolation
   !       1.4       C.REGNIER    02/09/2013    new version to separate OPER from
+  !       1.5       C.REGNIER    19/01/2017    remove hard coded path
   !       RTR and REANALYSIS
   !
   !*-------------------------------------------------------------
@@ -152,6 +153,7 @@ PROGRAM Lecture_class4
   !** Ouverture et lecture du fichier BOITE et mise en memoire des zones
   SELECT CASE (ig_typegrid)
    CASE(1) 
+     PRINT *,'Lire def boite :',FP_BoxDefFile
      CALL LireDefBoite (TRIM(cl_utils)//TRIM(FP_BoxDefFile),il_status)
    CASE(2)
 #if defined key_debug
@@ -176,14 +178,17 @@ PROGRAM Lecture_class4
   rg_EcartSalMax = rl_EcartSalMax  
   !** Ouverture du fichier LOG
   CALL MIOL_getFreeLu(il_ficlog)
-  OPEN(unit=il_ficlog,file=TRIM(cd_LogFile),form='FORMATTED',&
-       &ACCESS='SEQUENTIAL',STATUS='REPLACE')
+  OPEN(unit=il_ficlog,file=TRIM(cl_logdir)//TRIM(cd_LogFile),form='FORMATTED',ACCESS='SEQUENTIAL',STATUS='REPLACE')
   PRINT *,'Ouverture du fichier Log :: ',cd_LogFile
   !** Ouverture du fichier synthese
   CALL MIOL_getFreeLu(il_ficsynth)
-  OPEN(unit=il_ficsynth,file=TRIM(cd_SynthFile),form='FORMATTED',&
-       &ACCESS='SEQUENTIAL',STATUS='REPLACE')
+  OPEN(unit=il_ficsynth,file=TRIM(cl_logdir)//TRIM(cd_SynthFile),form='FORMATTED',ACCESS='SEQUENTIAL',STATUS='REPLACE')
   PRINT *,'Ouverture du fichier synthese :: ',cd_SynthFile
+  !** Boucle de lecture des fichiers CORIOLIS
+  WRITE(il_ficlog,'(a)')' '
+  WRITE(il_ficlog,'(a)')'----------------------------------------------------'
+  WRITE(il_ficlog,'(a)')'           Lecture des fichiers Class 4             '
+  PRINT *,'Ouverture du fichier Log :: ',cd_LogFile
   !** Boucle de lecture des fichiers CORIOLIS
   WRITE(il_ficlog,'(a)')' '
   WRITE(il_ficlog,'(a)')'----------------------------------------------------'
@@ -246,7 +251,7 @@ PROGRAM Lecture_class4
   WRITE(il_ficlog,'(a)')' '
   WRITE(il_ficlog,'(a)')'----------------------------------------------------'
   !** Definition des parametres traites
-  CALL affect_table_class4(il_status,cl_utils)
+  CALL affect_table_class4(il_status,cl_utils,cg_modele)
   IF ( il_status /= 0 ) THEN
      WRITE(0,*) 'Error in affect_table_class4'
      CALL flush(0)
@@ -294,7 +299,7 @@ PROGRAM Lecture_class4
 #if defined key_debug
         PRINT *,'Valid profil'
 #endif
-        CALL valid_profile(il_ficlog,il_ficsynth,il_stat,cla_inputFile(il_ji))
+        CALL valid_profile(il_ficlog,il_ficsynth,il_stat,cla_inputFile(il_ji),cl_logdir)
 #if defined key_debug
         PRINT *,"Valid profile OK"
 #endif
