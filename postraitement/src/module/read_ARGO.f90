@@ -1741,7 +1741,7 @@ CONTAINS
   !
   !========================================================
   !
-  SUBROUTINE valid_profile(id_ficlog,id_ficsynth,id_stat,cd_file)
+  SUBROUTINE valid_profile(id_ficlog,id_ficsynth,id_stat,cd_file,cd_dirlog)
     !
     !**** valid_profile
     !
@@ -1793,7 +1793,7 @@ CONTAINS
     !
     !**   0.2 Local variables
     !
-    CHARACTER(LEN=255)         :: cd_file
+    CHARACTER(LEN=255)         :: cd_file,cd_dirlog
     INTEGER(KIND=4)            :: ib_p,il_k,il_s,il_status,il_i
     INTEGER(KIND=4)            :: il_juld_qc_NOK,il_position_qc_NOK,il_j
     INTEGER(kind=4)            :: il_dsi_NOK,il_NO_PRES_DEPH,il_PRES_ET_DEPH,&
@@ -1870,6 +1870,8 @@ CONTAINS
 #if defined key_debug
  PRINT *,'Numéro profil::',ib_p
 #endif
+       rl_lon=dgpa_LONGITUDE(ib_p)
+       rl_lat=dgpa_LATITUDE(ib_p)
        !** test de validite de la date 
        !** Date Valide : 1 0 5 8 , good, no_control,corrected, interpolated
        !WRITE(id_ficlog,'(a,1x,4i)')'Profil',ib_p
@@ -1905,6 +1907,10 @@ CONTAINS
 !!$          if ( TRIM(cgpa_DATA_STATE_INDICATOR(ib_p,1)) == '0A'  ) &
 !!$               & il_dsi_NOK =  il_dsi_NOK + 1
 !!$
+        ELSE IF ( rl_lon > 360. .OR. rl_lon < -180. .OR. &
+            & rl_lat >  90. .OR. rl_lat < -90.) THEN
+            WRITE(0,*)' lon or lat value out of range'
+            il_position_qc_NOK = il_position_qc_NOK + 1
 !!$          !** test de presence de PRES ou DEPH pour ce profil
        ELSE IF ( .NOT. ( iga_IndParam(ib_p,ip_PRES) > 0 .OR. &
             &            iga_IndParam(ib_p,ip_DEPH) > 0 ) ) THEN
@@ -1924,14 +1930,14 @@ CONTAINS
             &    iga_IndParam(ib_p,ip_DEPH) > 0 ) il_PRES_ET_DEPH = il_PRES_ET_DEPH + 1
 !         WRITE(id_ficlog,'(a,1x,i4)')'Pression valide',il_PRES_ET_DEPH
           !** recherche de la bathymetrie
-          rl_lon=dgpa_LONGITUDE(ib_p)
-          rl_lat=dgpa_LATITUDE(ib_p)
 #if defined key_debug
     WRITE(0,*) 'Interp bathy :: ',rl_lon,rl_lat
 #endif 
           CALL InterpBathy(rl_lon,rl_lat,il_bathy,il_status )
           IF ( il_status /= 0 ) THEN
              WRITE(*,*) 'Pb interp bathy ',rl_lon,rl_lat
+             WRITE(*,*) 'Profile :',ib_p
+             WRITE(*,*) 'Fichier :',cd_file
              STOP
           ENDIF
           iga_BathyProfil(ib_p) = il_bathy
@@ -2069,14 +2075,14 @@ CONTAINS
                             cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '2' .OR. &
                             cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '3' ) cgpa_TEMP_ADJUSTED_QC(:,ib_p) = '4' 
 !**           Ecriture fichier
-                      INQUIRE(FILE=cg_TEMP_badprof,EXIST=ll_exist_TEMP)
+                      INQUIRE(FILE=TRIM(cd_dirlog)//TRIM(cg_TEMP_badprof),EXIST=ll_exist_TEMP)
                       IF ( .NOT. ll_exist_TEMP) THEN
                         !* Create file      
-                        OPEN(unit=50,file=cg_TEMP_badprof,form='FORMATTED',STATUS='new')
+                        OPEN(unit=50,file=TRIM(cd_dirlog)//TRIM(cg_TEMP_badprof),form='FORMATTED',STATUS='new')
                         CLOSE(50)
                         ll_exist_TEMP=.TRUE.
                       ENDIF
-                      OPEN(unit=50,file=cg_TEMP_badprof,form='FORMATTED',&
+                      OPEN(unit=50,file=TRIM(cd_dirlog)//TRIM(cg_TEMP_badprof),form='FORMATTED',&
                            & POSITION='APPEND',STATUS='old')
                       WRITE(50,FMT=100,advance="yes") TRIM(cg_filename),ib_p,rl_nbvaleur_1,rl_nbvaleur_2,rl_div
                       CLOSE(50)
@@ -2116,14 +2122,14 @@ CONTAINS
                             cgpa_TEMP_QC(:,ib_p) .EQ. '2' .OR. &
                             cgpa_TEMP_QC(:,ib_p) .EQ. '3' ) cgpa_TEMP_QC(:,ib_p) = '4'
 !**           Ecriture fichier
-                      INQUIRE(FILE=cg_TEMP_badprof,EXIST=ll_exist_TEMP)
+                      INQUIRE(FILE=TRIM(cd_dirlog)//TRIM(cg_TEMP_badprof),EXIST=ll_exist_TEMP)
                       IF ( .NOT. ll_exist_TEMP) THEN
                         !* Create file      
-                        OPEN(unit=50,file=cg_TEMP_badprof,form='FORMATTED',STATUS='new')
+                        OPEN(unit=50,file=TRIM(cd_dirlog)//TRIM(cg_TEMP_badprof),form='FORMATTED',STATUS='new')
                         CLOSE(50)
                         ll_exist_TEMP=.TRUE.
                       ENDIF
-                      OPEN(unit=50,file=cg_TEMP_badprof,form='FORMATTED',&
+                      OPEN(unit=50,file=TRIM(cd_dirlog)//TRIM(cg_TEMP_badprof),form='FORMATTED',&
                            & POSITION='APPEND',STATUS='old')
                       WRITE(50,FMT=100,advance="yes") TRIM(cg_filename),ib_p,rl_nbvaleur_1,rl_nbvaleur_2,rl_div
                       CLOSE(50)
@@ -2199,14 +2205,14 @@ CONTAINS
                             cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '2' .OR. &
                             cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '3')  cgpa_PSAL_ADJUSTED_QC(:,ib_p) = '4'
 !**           Ecriture fichier
-                      INQUIRE(FILE=cg_PSAL_badprof,EXIST=ll_exist_PSAL)
+                      INQUIRE(FILE=TRIM(cd_dirlog)//TRIM(cg_PSAL_badprof),EXIST=ll_exist_PSAL)
                       IF ( .NOT. ll_exist_PSAL) THEN
                         !* Create file      
-                        OPEN(unit=50,file=cg_PSAL_badprof,form='FORMATTED',STATUS='new')
+                        OPEN(unit=50,file=TRIM(cd_dirlog)//TRIM(cg_PSAL_badprof),form='FORMATTED',STATUS='new')
                         CLOSE(50)
                         ll_exist_PSAL=.TRUE.
                       ENDIF
-                      OPEN(unit=50,file=cg_PSAL_badprof,form='FORMATTED',&
+                      OPEN(unit=50,file=TRIM(cd_dirlog)//TRIM(cg_PSAL_badprof),form='FORMATTED',&
                            & POSITION='APPEND',STATUS='old')
                       WRITE(50,FMT=100,advance="yes") TRIM(cg_filename),ib_p,rl_nbvaleur_1,rl_nbvaleur_2,rl_div
                       CLOSE(50)
@@ -2237,14 +2243,14 @@ CONTAINS
                             cgpa_PSAL_QC(:,ib_p) .EQ. '2' .OR. &
                             cgpa_PSAL_QC(:,ib_p) .EQ. '3') cgpa_PSAL_QC(:,ib_p) = '4'
 !**           Ecriture fichier
-                      INQUIRE(FILE=cg_PSAL_badprof,EXIST=ll_exist_PSAL)
+                      INQUIRE(FILE=TRIM(cd_dirlog)//TRIM(cg_PSAL_badprof),EXIST=ll_exist_PSAL)
                       IF ( .NOT. ll_exist_PSAL) THEN
                         !* Create file      
-                        OPEN(unit=50,file=cg_PSAL_badprof,form='FORMATTED',STATUS='new')
+                        OPEN(unit=50,file=TRIM(cd_dirlog)//TRIM(cg_PSAL_badprof),form='FORMATTED',STATUS='new')
                         CLOSE(50)
                         ll_exist_PSAL=.TRUE.
                       ENDIF
-                      OPEN(unit=50,file=cg_PSAL_badprof,form='FORMATTED',&
+                      OPEN(unit=50,file=TRIM(cd_dirlog)//TRIM(cg_PSAL_badprof),form='FORMATTED',&
                            & POSITION='APPEND',STATUS='old')
                       WRITE(50,FMT=100,advance="yes") TRIM(cg_filename),ib_p,rl_nbvaleur_1,rl_nbvaleur_2,rl_div
                       CLOSE(50)

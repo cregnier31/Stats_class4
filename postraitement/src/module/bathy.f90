@@ -222,12 +222,12 @@ CONTAINS
     ! -------------------------------------------
     IF ( rd_lonValue > 360. .OR. rd_lonValue < -180. ) THEN
        id_status = -1
-       WRITE(*,'(a)')'InterpBathy_R4: lonValue Out of Range ',rd_lonValue
+       WRITE(0,*) 'InterpBathy_R4: lonValue Out of Range R4 ',rd_lonValue
        CALL EXIT(1)
     ENDIF
     IF ( rd_latValue > 90. .OR. rd_latValue < -90. ) THEN
        id_status = -1
-       WRITE(*,'(a)')'InterpBathy: latValue Out of Range',rd_latValue
+       WRITE(0,*) 'InterpBathy: latValue Out of Range R4',rd_latValue
        CALL EXIT(1)
     ENDIF
 
@@ -423,15 +423,13 @@ END SUBROUTINE InterpBathy_R4
     ! -------------------------------------------
     IF ( rd_lonValue > 360. .OR. rd_lonValue < -180. ) THEN
        id_status = -1
-       WRITE(*,'(a)')'InterpBathy_R8: lonValue Out of Range',rd_lonValue
-       STOP
-      ! CALL EXIT(1)
+       WRITE(0,*)'InterpBathy_R8: lonValue Out of Range R8',rd_lonValue
+       CALL EXIT(1) 
     ENDIF
     IF ( rd_latValue > 90. .OR. rd_latValue < -90. ) THEN
        id_status = -1
-       WRITE(*,'(a)')'InterpBathy: latValue Out of Range',rd_latValue
-       STOP
-     !  CALL EXIT(1)
+       WRITE(0,*)'InterpBathy: latValue Out of Range R8',rd_latValue
+       CALL EXIT(1)
     ENDIF
 
 
@@ -572,7 +570,7 @@ END SUBROUTINE InterpBathy_R4
 
 
     ENDIF
-  END SUBROUTINE InterpBathy_R8
+15  END SUBROUTINE InterpBathy_R8
 
 
   !---------------------------------------------------------------------------------------

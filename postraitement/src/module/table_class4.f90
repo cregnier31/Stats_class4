@@ -22,7 +22,7 @@ MODULE table_class4
   CHARACTER(LEN=255),PARAMETER  :: FP_DepthDefFile ='fic_tri_prof.in'
   CHARACTER(LEN=255),PARAMETER  :: FP_Deptht ='deptht.in'
   CHARACTER(LEN=255),PARAMETER  :: FP_E3t ='e3t_0.in'
-  CHARACTER(LEN=255),PARAMETER  :: FP_ParamNameFile ='param_names.in'
+  CHARACTER(LEN=255),PARAMETER  :: FP_ParamNameFile ='param_names_'
   ! Existence du fichier classe de profondeur
   LOGICAL  :: lg_DepthDefFile,lg_ParamFile
 

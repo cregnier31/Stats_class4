@@ -17,7 +17,7 @@ CONTAINS
   !
   !===============================================================
   !
-  SUBROUTINE affect_table_class4(id_stat,cd_utils)
+  SUBROUTINE affect_table_class4(id_stat,cd_utils,cd_modele)
     !
     !**** affect_table_class4
     !
@@ -73,22 +73,25 @@ CONTAINS
     INTEGER(KIND=4)                                    :: id_ParamFile,il_nbparams,&
                                                           il_status,il_ji,il_ind,il_i
     CHARACTER(LEN=255),INTENT(IN)                      :: cd_utils
+    CHARACTER(LEN=30),INTENT(IN)                       :: cd_modele
     CHARACTER(LEN=255),DIMENSION(:),ALLOCATABLE        :: cda_ParamFile
-    CHARACTER(LEN=255)                                 :: cl_tmp
+    CHARACTER(LEN=255)                                 :: cl_tmp,cl_paramfile
     !
     !*--------------------------------------------------------------------------
     !
     !**  Lecture de la namelist
-    INQUIRE(FILE=TRIM(cd_utils)//TRIM(FP_ParamNameFile),EXIST=lg_ParamFile)
+    cl_paramfile=TRIM(cd_utils)//TRIM(FP_ParamNameFile)//TRIM(cd_modele)//'.in'
+    WRITE(0,*) 'Lecture param name ',cl_paramfile
+    INQUIRE(FILE=cl_paramfile,EXIST=lg_ParamFile)
     IF ( lg_ParamFile ) THEN
        NAMELIST / liste_param  / il_nbparams 
        !** Ouverture du fichier avec le nom des paramètres LUS 
        CALL MIOL_getFreeLu(id_paramFile)
-       OPEN (unit=id_ParamFile,file=TRIM(cd_utils)//TRIM(FP_ParamNameFile),&
+       OPEN (unit=id_ParamFile,file=cl_paramfile,&
              status='old',form='formatted',&
             & iostat=il_status)
        IF ( il_status /= 0 ) THEN
-          WRITE(0,'(a,a)')'Cannot open param file ',TRIM(cd_utils)//TRIM(FP_ParamNameFile)
+          WRITE(0,'(a,a)')'Cannot open param file ',cl_paramfile
           CLOSE(id_ParamFile)
           CALL EXIT(2)
        ENDIF
@@ -127,7 +130,11 @@ CONTAINS
       SELECT CASE(cda_ParamFile(il_i))
         CASE ('TEMP')
          il_ind=ip_TEMP
+        CASE ('TEMP_ADJUSTED')
+         il_ind=ip_TEMP
         CASE ('PSAL')
+         il_ind=ip_PSAL
+        CASE ('PSAL_ADJUSTED')
          il_ind=ip_PSAL
         CASE ('HDCST_TEMP')
          il_ind=ip_HDCST_TEMP
@@ -765,9 +772,9 @@ END SUBROUTINE definir_classe_profondeur
 750 FORMAT(a100,1x,a16,1x,i5,1x,i5,f16.8,2x,f10.2,2x,2i5,2x,f9.4,2x,f9.4,2x,a,2x,a,2x,a,2x,a,2x,i5)
 760 FORMAT(a100,1x,a16,1x,i5,1x,i5,f16.8,2x,f16.8,2x,f16.8,2x,f10.2,2x,2i5,2x,f9.4,2x,f9.4,2x,a,2x,a,2x,a,2x,a,2x,i5)
 800 FORMAT(a100,2x,i5,2x,i5,2x,f10.2,2x,f10.2,2x,f10.2,2x,f10.2,2x,f10.2)
-#if defined key_debug
-    WRITE(0,*) 'Remplir tableau'
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'Remplir tableau'
+!#endif
 
     !** boucle sur toutes les valeurs d un profil
     DO il_i=1,ig_nlevels
@@ -775,9 +782,9 @@ END SUBROUTINE definir_classe_profondeur
        IF ( rga_DepthVal(il_i,id_IndProf) > rd_DepthMin .AND. &
             & rga_DepthVal(il_i,id_IndProf) .LE. rd_DepthMax .AND. &
             & rga_DepthVal(il_i,id_IndProf) .NE. rg_DepthVal_Def ) THEN
-#if defined key_debug
-    WRITE(0,*) 'test sur la profondeur ::',rga_DepthVal(il_i,id_IndProf),rd_DepthMin,rd_DepthMax ,rg_DepthVal_Def
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'test sur la profondeur ::',rga_DepthVal(il_i,id_IndProf),rd_DepthMin,rd_DepthMax ,rg_DepthVal_Def
+!#endif
          rl_diff2=9999.
          rl_diff3=9999.
          IF ( id_var == 1 ) THEN
@@ -805,9 +812,9 @@ END SUBROUTINE definir_classe_profondeur
               rl_diff3=rgpa_TMARV11(il_i,id_IndProf)-rl_temp
               il_count_clim=2
             ENDIF
-#if defined key_debug
-    WRITE(0,*) 'Diff clim ::',rl_diff2,rl_diff3,iga_IndParamStat(id_param)
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'Diff clim ::',rl_diff2,rl_diff3,iga_IndParamStat(id_param)
+!#endif
             SELECT CASE (iga_IndParamStat(id_param))
                CASE(ip_TEMP)
                   rl_var=rl_temp
@@ -858,9 +865,9 @@ END SUBROUTINE definir_classe_profondeur
                           .AND. ABS(rl_diff2).GE.rg_EcartTempMax &
                           .AND. ABS(rl_diff3).GE.rg_EcartTempMax) THEN
                        ig_StatNOK(id_IndDepth,id_param) =ig_StatNOK(id_IndDepth,id_param) + 1
-#if defined key_debug
-    WRITE(0,*) 'Diff TEMP NOK ::',rl_diff,rl_diff2,rl_diff3
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'Diff TEMP NOK ::',rl_diff,rl_diff2,rl_diff3
+!#endif
                        ! Output: valeur a rejeter
                        ! note: on n ecrit pas les valeurs pour la colonne totale
                        ! (inutile car deja
@@ -910,9 +917,9 @@ END SUBROUTINE definir_classe_profondeur
                              !   CLOSE(50)
                              ! ENDIF
                               ig_StatNOK(id_IndDepth,id_param) =ig_StatNOK(id_IndDepth,id_param) + 1
-#if defined key_debug
-    WRITE(0,*) 'Diff TEMP NOK ::',rl_diff,rl_diff2,rl_diff3
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'Diff TEMP NOK ::',rl_diff,rl_diff2,rl_diff3
+!#endif
                        ELSE
 #if defined plot_high_depth
                           IF ( id_IndDepth > 40 .AND. id_IndDepth < 51 ) THEN  
@@ -951,9 +958,9 @@ END SUBROUTINE definir_classe_profondeur
                           dd_rms = dd_rms + rl_var*rl_var
                           dd_moy_diff = dd_moy_diff + rl_diff
                           dd_rms_diff = dd_rms_diff + rl_diff*rl_diff
-#if defined key_debug
-    WRITE(0,*) 'Diff TEMP OK ::',TRIM(cga_param(iga_IndParamStat(id_param))),rl_diff,rl_diff2,rl_diff3
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'Diff TEMP OK ::',TRIM(cga_param(iga_IndParamStat(id_param))),rl_diff,rl_diff2,rl_diff3
+!#endif
                     ENDIF  
                     !**
                   ENDIF
@@ -962,9 +969,9 @@ END SUBROUTINE definir_classe_profondeur
                   IF (rl_diff2 /= 9999. .AND. il_count_clim == 1.) THEN   
                      IF ( ABS(rl_diff).GE.rg_EcartTempMax .AND. ABS(rl_diff2).GE.rg_EcartTempMax) THEN
                          ig_StatNOK(id_IndDepth,id_param)=ig_StatNOK(id_IndDepth,id_param) + 1
-#if defined key_debug
-    WRITE(0,*) 'Diff TEMP NOK 1 clim::',rl_diff,rl_diff2
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'Diff TEMP NOK 1 clim::',rl_diff,rl_diff2
+!#endif
                          IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
                             OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffTEMP),form='FORMATTED',&
                                  & POSITION='APPEND',STATUS='old')
@@ -984,9 +991,9 @@ END SUBROUTINE definir_classe_profondeur
                          dd_rms = dd_rms + rl_var*rl_var
                          dd_moy_diff = dd_moy_diff + rl_diff
                          dd_rms_diff = dd_rms_diff + rl_diff*rl_diff
-#if defined key_debug
-    WRITE(0,*) 'Diff TEMP OK 1 clim ::',TRIM(cga_param(iga_IndParamStat(id_param))),rl_diff,rl_diff2
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'Diff TEMP OK 1 clim ::',TRIM(cga_param(iga_IndParamStat(id_param))),rl_diff,rl_diff2
+!#endif
                     ENDIF
                   ELSE
                      !**  Cas pas de clim on vire les valeurs abhérentes seulement
@@ -1004,9 +1011,9 @@ END SUBROUTINE definir_classe_profondeur
                              CLOSE(50)
                           ENDIF
                      ELSE
-#if defined key_debug
-    WRITE(0,*) 'Diff TEMP OK ::',rl_diff,rl_diff2,rl_diff3
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'Diff TEMP OK ::',rl_diff,rl_diff2,rl_diff3
+!#endif
                           ig_StatOK(id_IndDepth,id_param) =ig_StatOK(id_IndDepth,id_param) + 1
                           id_nval = id_nval + 1
                           dd_moy = dd_moy + rl_var
@@ -1083,9 +1090,9 @@ END SUBROUTINE definir_classe_profondeur
                                TRIM(cgpa_PLATFORM_NUMBER(id_IndProf,1)),TRIM(cgpa_WMO_INST_TYPE(id_IndProf,1))
                           CLOSE(50)
                        ENDIF
-#if defined key_debug
-    WRITE(0,*) 'Diff PSAL NOK ::',rl_diff,rl_diff2,rl_diff3
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'Diff PSAL NOK ::',rl_diff,rl_diff2,rl_diff3
+!#endif
                     ELSE  
                          IF ( ABS( rl_diff)  > 3. )  THEN
                              WRITE(0,*) 'PROBLEME PSAL !!!'
@@ -1146,9 +1153,9 @@ END SUBROUTINE definir_classe_profondeur
                                ENDIF
                              ENDIF
 #endif
-#if defined key_debug
-    WRITE(0,*) 'Diff PSAL OK ::',rl_diff,rl_diff2,rl_diff3
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'Diff PSAL OK ::',rl_diff,rl_diff2,rl_diff3
+!#endif
                              ig_StatOK(id_IndDepth,id_param) = ig_StatOK(id_IndDepth,id_param) + 1
                              id_nval = id_nval + 1
                              dd_moy = dd_moy + rl_var
@@ -1162,9 +1169,9 @@ END SUBROUTINE definir_classe_profondeur
                   IF (rl_diff2 /= 9999. .AND. il_count_clim == 1.) THEN
                      IF ( ABS(rl_diff).GE.rg_EcartTempMax .AND.ABS(rl_diff2).GE.rg_EcartTempMax) THEN
                          ig_StatNOK(id_IndDepth,id_param)=ig_StatNOK(id_IndDepth,id_param)+ 1
-#if defined key_debug
-    WRITE(0,*) 'Diff PSAL NOK 1 clim::',rl_diff,rl_diff2
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'Diff PSAL NOK 1 clim::',rl_diff,rl_diff2
+!#endif
                          IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
                             OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffTEMP),form='FORMATTED',&
                                  & POSITION='APPEND',STATUS='old')
@@ -1184,9 +1191,9 @@ END SUBROUTINE definir_classe_profondeur
                          dd_rms = dd_rms + rl_var*rl_var
                          dd_moy_diff = dd_moy_diff + rl_diff
                          dd_rms_diff = dd_rms_diff + rl_diff*rl_diff
-#if defined key_debug
-    WRITE(0,*) 'Diff PSAL OK 1 clim ::',TRIM(cga_param(iga_IndParamStat(id_param))),rl_diff,rl_diff2
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'Diff PSAL OK 1 clim ::',TRIM(cga_param(iga_IndParamStat(id_param))),rl_diff,rl_diff2
+!#endif
                      ENDIF
                   ELSE
                      !**  Cas pas de clim on vire les valeurs abhérentes
@@ -1209,9 +1216,9 @@ END SUBROUTINE definir_classe_profondeur
                         dd_rms = dd_rms + rl_var*rl_var
                         dd_moy_diff = dd_moy_diff + rl_diff
                         dd_rms_diff = dd_rms_diff + rl_diff*rl_diff
-#if defined key_debug
-    WRITE(0,*) 'Diff PSAL OK ::',rl_diff,rl_diff2,rl_diff3
-#endif
+!#if defined key_debug
+!    WRITE(0,*) 'Diff PSAL OK ::',rl_diff,rl_diff2,rl_diff3
+!#endif
                      ENDIF !**  IF ( ABS(rl_diff).GE.rg_EcartTempMax)
                   ENDIF !** IF (rl_diff2 /= 9999. .AND. il_count_clim == 1.)
                 ENDIF  !**IF (rl_diff2 /= 9999. .AND. rl_diff3 /= 9999.)
