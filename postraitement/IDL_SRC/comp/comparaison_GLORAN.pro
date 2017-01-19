@@ -46,7 +46,7 @@ COMMON param_CLASS4,variable_name,valeurs_cmax,$
         profondeur,profondeur2,liste_zone,liste_zone_PSY2,liste_TEST,$
         listemodele,liste_zone_GLOMyo,profondeur3,profondeur4,$
         liste_zone_PSY2_SHOM,tab_prof,tab_prof_model,tab_e3t,tab_prof_2,variable_name_2,$
-        variable_name_3,variable_name_4,tab_prof_3,profondeur5,file_mask,file_save
+        variable_name_3,variable_name_4,tab_prof_3,profondeur5,file_mask,file_save,tab_prof_4,tab_prof_5
 
 tab_prof=profondeur2 ; 0-50 50-100 100-150 ...
 tab_prof=profondeur5 ; 0-100 100-300 300-800
