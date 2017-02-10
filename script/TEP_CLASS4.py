@@ -65,11 +65,13 @@ log.info("Type des fichiers d'entree %s " %(cl_typemod))
 log.info("Schedule %s " %(cl_schedule))
 log.info("Dates %s %s " %(date1,date2))
 log.info("Daterun %s " %(daterun))
+
+
 # ==================================
 #   Load db configuration file
 # ==================================
 CONF_PATH=os.getcwd()
-CONF_PATH="/naviti/data2/cregnier/TEP_CLASS4/V4_branch/script"
+#CONF_PATH="/home/cregnier/SVN/mo/TEP_CLASS4_V3/script"
 filename = [CONF_PATH+'/'+confname]
 print filename
 param_dict=Loader.factory('NML').load(filename,level)
@@ -84,10 +86,8 @@ model_type=param_dict.get('GLOBAL','MODELTYPE')
 dirdata=param_dict.get('input_dir', 'INPUTDATA')
 dirmodel=param_dict.get('input_dir', 'DATA_IN')
 data_format=param_dict.get('input_dir', 'DATA_FMT')
-dirwork=param_dict.get('output_dir', 'DIRTMP')+str(date1)+'_'+str(date2)+'/'
 diroutput=param_dict.get('output_dir', 'DIROUTPUT')
 homedir=param_dict.get('GLOBAL','DIRHOME')
-dirtmp=dirwork+'ext-'
 prefix_data=param_dict.get('input_dir','PREFIX')
 nml_dir=param_dict.get('GLOBAL','NAMELIST_DIR')
 daily_pref=param_dict.get('GLOBAL','DAILY_PREF')
@@ -105,6 +105,15 @@ gridtemp=param_dict.get('GLOBAL','gridtemp')
 gridsal=param_dict.get('GLOBAL','gridsal')
 type_run=param_dict.get('GLOBAL','TYPE_RUN')
 type_file=param_dict.get('GLOBAL','TYPE_FILE')
+
+## Search date1 and date if not exist
+if not date1 and not date2 :
+    log.info("need to find date1 and date2")
+    date1,date2=Extractor().factory(prefix_data).search(dirdata)      
+    print date1,date2
+
+dirwork=param_dict.get('output_dir', 'DIRTMP')+str(date1)+'_'+str(date2)+'/'
+dirtmp=dirwork+'ext-'
 
 ## Create Output and tmp directory if doesn't exist
 if not os.path.exists(dirwork):
@@ -125,6 +134,8 @@ if write_geojson  :
     ## Clean old db
     if (os.path.isfile(file_db2)) :
         os.remove(file_db2)
+
+
 # =============================================================================
 # PART 1-bis : DO SORT if not available
 # =============================================================================
@@ -164,9 +175,7 @@ else :
     log.info('========================================================')
     log.info('              DATE Selection and extraction  %s         ' %(prefix_data)) 
     log.info('========================================================')
-    print prefix_data
     list_files=Extractor().factory(prefix_data).run_list(date1,date2,dirwork)
-
 log.info('List Files  %s ' % (list_files))
 # =============================================================================
 #  PART-3 - Area Selection and QC selection
@@ -306,10 +315,15 @@ if ll_file_ok :
         cl_msshFile =eval(param_dict.get('static','cl_msshFile'   ))      #  the mean ssh from SSH model 
         rl_mssh_shift=float(param_dict.get('static','rp_mssh_shift' ))
         ll_mssh='.true.'
+        if comp_mssh == 1  :
+            ll_compute='.true.'
+        else :
+            ll_compute='.false.'
     else : 
         cl_msshFile =''
         rl_mssh_shift=0.0
         ll_mssh='.false.'
+        ll_compute='.false.'
     contact=param_dict.get('GLOBAL','CONTACT')
     inst=param_dict.get('GLOBAL','INSTITUTION')
     version=param_dict.get('GLOBAL','VERSION')
@@ -369,10 +383,9 @@ if ll_file_ok :
                 log.error('Lead time %s not expected ' %(time))
             exe    = 'CLASS4_spatial_interpolation_'+data_origin+'.exe'    
             exe = os.path.join(direxec,exe)
-            if data_origin == 'CORIOLIS' or data_origin == 'IAOOS' :
+            if data_origin == 'CORIOLIS' or data_origin == 'IAOOS' or data_origin == 'CORIOLIS_RAW' :
                 nml=os.path.join(nml_dir,'interpolate_3D_%s_%s_%s_%s.nml' %(data_type.upper(),cl_config,time,dateval))
-                print nml
-                NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
+                NmlCreator(cl_msshFile,ll_mssh,ll_compute,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
                            time,sort_rep,coloc_rep,dirwork,time,dateval,gridtemp,gridsal,cl_schedule,type_run,coordinates,type_file)
                 log.info('NmlCreator OK')
                 if not os.path.exists(exe) :
@@ -389,7 +402,7 @@ if ll_file_ok :
             if data_origin == 'GODAE' : 
                 ##    Create namelist 
                 for filename in glob.glob(dirwork+"*"+dateval+"*"+data_type+"*.nc") :
-                    NmlCreator(cl_msshFile,ll_mssh,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
+                    NmlCreator(cl_msshFile,ll_mssh,ll_compute,rl_mssh_shift).factory(data_origin).run(nml,cl_config_use,daily_pref,data_type , \
                                time,dirmodel,coloc_rep,filename,lead_fin,dateval,gridtemp,gridsal)  	
                     ## Launch Interpolation  
                 if not os.path.exists(exe) : 
