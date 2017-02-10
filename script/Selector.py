@@ -34,7 +34,7 @@ class Selector(object) :
         #return eval(type + "()")
         if type == "ARGO":
             return QCArgo()
-        elif type == "CORIOLIS" or type == "GODAE" : 
+        elif type == "CORIOLIS" or type == "GODAE" or type == "CORIOLIS_RAW" : 
             return SelectCorio(self.data_format,self.data_type,self.lonmin,\
                                self.lonmax,self.latmin,self.latmax)
         elif type == "ENS": 
