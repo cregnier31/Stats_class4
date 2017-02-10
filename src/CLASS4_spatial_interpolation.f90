@@ -636,6 +636,9 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
        WRITE(0,*),'rla_modelValueT :: ',rla_modelvalue_T(1,1,:)
        WRITE(0,*),'rla_interpValueT :: ',rla_interpValueT(:,1)
        WRITE(0,*),'rla_modelValueS :: ',rla_modelvalue_S(1,1,:)
+       WRITE(0,*),'rla_depthvalue_interp_T :: ',rla_depthvalue_T(:,1)
+       WRITE(0,*),'rla_depthvalue_interp_S :: ',rla_depthvalue_S(:,1)
+       WRITE(0,*),'rla_modelvalue:: ',rla_modeldepth(:)
        WRITE(0,*),'rla_interpValueS :: ',rla_interpValueS(:,1)
 #endif
         !
@@ -2633,7 +2636,8 @@ SUBROUTINE read_coriolis_file (cd_inputFile, &
                                                               il_jj, &
                                                               il_jk, &
                                                               il_nbatt,&
-                                                              il_ind,il_pres,il_depth
+                                                              il_ind,il_pres,&
+                                                              il_depth,il_type
   INTEGER (KIND=8)                                         :: il_max,&
                                                               il_min,&
                                                               il_pas
@@ -2658,7 +2662,7 @@ SUBROUTINE read_coriolis_file (cd_inputFile, &
   REAL(KIND=4), DIMENSION(:), POINTER                      :: rlpa_modelattvalue
   REAL(KIND=8), DIMENSION(:), POINTER                      :: rlpa_1D_LON_tmp,rlpa_1D_LAT_tmp,rlpa_juldvalue
   REAL(KIND=4)                                             :: rl_pas,rl_missvalue
-  LOGICAL                                                  :: ll_flag_nprof, &
+  LOGICAL                                                  :: ll_exist,ll_flag_nprof, &
                                                               ll_flag_nlevels,ll_exist_ficlog,ll_exist_ficlog2
   !
   !------------------------------------------------------------------------
@@ -2748,6 +2752,9 @@ SUBROUTINE read_coriolis_file (cd_inputFile, &
           clpa_2Dtmp_T(1:id_nlevels, 1:id_nprof)
      DEALLOCATE(clpa_2Dtmp_T) 
   ENDIF 
+#if defined key_debug
+     WRITE(0,*) 'READ variable QC OK'
+#endif
 
   IF (ld_ispsal) THEN 
      cl_inputVarname_qc=TRIM(cd_inputVarname_S)//'_QC'
@@ -2763,11 +2770,23 @@ SUBROUTINE read_coriolis_file (cd_inputFile, &
           clpa_2Dtmp_S(1:id_nlevels, 1:id_nprof)
      DEALLOCATE(clpa_2Dtmp_S) 
   ENDIF
+#if defined key_debug
+     WRITE(0,*) 'READ variable QC OK'
+#endif
   !** Lecture plateform number 
-  CALL MIOL_read_field_NC(il_file_id,&
-                          'PLATFORM_NUMBER',&
-                          clpa_PLATFORM_NUMBER,&
-                           8)
+  CALL MIOL_inquire_type_NC(il_file_id, &
+                            'PLATFORM_NUMBER',&
+                            il_type,&
+                            il_nbdim,&
+                            ll_exist)
+  IF ( .NOT. ll_exist)  THEN
+       WRITE (0,*) "Missing variable  : PLATFORM_NUMBER  "
+  ELSE 
+     CALL MIOL_read_field_NC(il_file_id,&
+                             'PLATFORM_NUMBER',&
+                             clpa_PLATFORM_NUMBER,&
+                              8)
+  ENDIF 
 ! Lecture des profondeurs
   IF (ld_isdepth) THEN 
 #if defined key_debug
