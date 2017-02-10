@@ -5,7 +5,9 @@
 #       module load netcdf/netcdf-4.0_pgi80_r4
 #       module load mft/mft-3.1
 type=orca12_allege
-include ../macro/make_intel_$(type).macro
+type=orca12
+type=glorys2v4
+include ../macro/make_intel_$(type)_local.macro
 ## Rules
 .SUFFIXES:.F90 .F .f90 .mod
 .F90.o:
@@ -14,7 +16,7 @@ include ../macro/make_intel_$(type).macro
 .f90.o:
 	$(F90PT) -c $(FFLAGS) ${INCLUDE} $< -o $@ $(CPP_KEYS)
 
-EXEDIR= ../bin
+EXEDIR= ../bin_local/
 SRCDIR= .
 SRCDIR2=module
 
@@ -23,9 +25,12 @@ SRCDIR2=module
 ########################################################
 OBJECTS= ${SRCDIR2}/Inf_NaN_detection.o \
          ${SRCDIR2}/param_mod.o         \
-         ${SRCDIR2}/geomlibcha.o        \
+         ${SRCDIR2}/geomlibcha_arc.o        \
          ${SRCDIR2}/Canvas.o
-
+OBJECTS3= ${SRCDIR2}/Inf_NaN_detection.o \
+	  ${SRCDIR2}/param_mod.o         \
+	  ${SRCDIR2}/geomlibcha.o        \
+	  ${SRCDIR2}/Canvas.o
 OBJECTS2= $(SRCDIR2)/GSW_TEOS10.o \
           ${SRCDIR2}/table_CLASS4.o
 
@@ -34,9 +39,20 @@ OBJECTS2= $(SRCDIR2)/GSW_TEOS10.o \
 #	$(EXEDIR)/CLASS4_spatial_interpolation_GODAE_$(MODELE).exe
 all:  $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS.exe \
       $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE).exe \
+      $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE)_aice.exe \
       $(EXEDIR)/CLASS4_spatial_interpolation_GODAE.exe 
+aice: $(EXEDIR)/CLASS4_spatial_interpolation_GODAE.exe
+coloc_aice: $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE)_aice.exe
+test: $(EXEDIR)/test_write.exe
+inter_corio: $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS.exe 
 
-$(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE).exe: $(OBJECTS) CLASS4_create_colocfile_ASCII.o
+$(EXEDIR)/test_write.exe: test_write.o
+	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
+
+$(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE).exe: $(OBJECTS3) CLASS4_create_colocfile_ASCII.o
+	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
+
+$(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE)_aice.exe: $(OBJECTS) CLASS4_create_colocfile_ASCII.o
 	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
 
 $(EXEDIR)/CLASS4_spatial_interpolation_GODAE.exe: $(OBJECTS2) CLASS4_spatial_interpolation_godae.o
