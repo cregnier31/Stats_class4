@@ -22,7 +22,8 @@ PROGRAM COLOCALIZE
   !!                                    avec GLORYS sur CORA02
   !!        \n 03/26/2009   (C.REGNIER) Version CE pour NEATL  
   !!        \n 13/12/2013   (C.REGNIER) Modifications pour la lecture du masque d'entrée  
-  !!        \n 06/06/2014   (C.REGNIER) Modifications pour lire un fichier de positions lon,lat et sortir le point de plus proche ainsi que sa distance                          !<
+  !!        \n 06/06/2014   (C.REGNIER) Modifications pour lire un fichier de positions lon,lat et sortir le point de plus proche ainsi que sa distance 
+  !<
   !===================================================================================================================
   !
   USE Canvas
@@ -268,8 +269,6 @@ PROGRAM COLOCALIZE
                            rlpa_gridlatvalue)
   rl_latmin = MINVAL(rlpa_gridlatvalue)
   rl_latmax = MAXVAL(rlpa_gridlatvalue)
-  !rl_latmin = 75.0
-  !rl_latmax = 90.0
 #if defined key_debug
   WRITE(0,*) 'Read lat ok :',rl_latmin,rl_latmax
 #endif
@@ -297,9 +296,6 @@ PROGRAM COLOCALIZE
                           rlpa_gridlonvalue)
   rl_lonmin = MINVAL(rlpa_gridlonvalue)
   rl_lonmax = MAXVAL(rlpa_gridlonvalue)
-  !rl_lonmin=-110
-  !rl_lonmax=-105
-  
 #if defined key_debug
   WRITE(0,*) 'Read lon ok :',rl_lonmin,rl_lonmax
 #endif
@@ -448,7 +444,6 @@ PROGRAM COLOCALIZE
   il_len=len_trim(cl_resFile)
   cl_colocFile=TRIM(cl_resFile(1:il_len-3))//'dat'
   cl_logfile=TRIM(cl_resFile(1:il_len-3))//'txt'
-  WRITE (0,*) "Fichier de colloc :: ",cl_colocFile
 #if defined key_debug
         WRITE (0,*) "Fichier de colloc :: ",cl_colocFile
 #endif
@@ -490,14 +485,17 @@ PROGRAM COLOCALIZE
              ila_yindex(1:4,il_jk) = 9999
   !!           !
              IF ( rla_lonpos(il_jk) .EQ. 0 .AND. rla_latpos(il_jk) .EQ. 0 ) THEN 
-  		 rla_lonpos(il_jk)=9999.0
-  		 rla_latpos(il_jk)=9999.0
+                 rla_lonpos(il_jk)=9999.0
+                 rla_latpos(il_jk)=9999.0
              ENDIF
              IF ((rla_lonpos(il_jk) .GE. rl_lonmin) .AND. &
                   (rla_lonpos(il_jk) .LE. rl_lonmax) .AND. &
                   (rla_latpos(il_jk) .GE. rl_latmin) .AND. &
                   (rla_latpos(il_jk) .LE. rl_latmax)) THEN
-                  CALL getSWnode_orca_grid(rla_lonpos(il_jk),&
+#if defined key_debug
+                 WRITE (0,*) " Inside select getSWnode_orca_grid"
+#endif
+                   CALL getSWnode_orca_grid(rla_lonpos(il_jk),&
                         rla_latpos(il_jk),&
                         rlpa_gridlonvalue(:,:), &
                         rlpa_gridlatvalue(:,:), &
@@ -544,19 +542,14 @@ PROGRAM COLOCALIZE
                            ila_vertyindex(:),&
                            lla_nbr_vertex(:),&
                            rla_dist_vertex(:))
-  		      IF ( SUM(rla_poids_vertex(:)) > 1.01 ) THEN
-  		           WRITE(0,*) 'Somme des poids > 1 :: ',SUM(rla_poids_vertex(:))
-  		           WRITE(0,*) 'Valeur des vertex en x :: ',ila_vertxindex(:)
-  		           WRITE(0,*) 'Valeur des vertex en y :: ',ila_vertyindex(:)
-  		           WRITE(0,*) 'nombre de vextex :: ',lla_nbr_vertex(:)
-  		           WRITE(0,*) 'position du point :: ',rla_lonpos(il_jk),rla_latpos(il_jk)
-  		           STOP
-  		      ! ELSE
-  		      !     WRITE(0,*) 'nombre de vextex :: ',lla_nbr_vertex(:)
-                      !     WRITE(0,*) 'poids associés :: ',rla_poids_vertex(:)
-                      !     WRITE(0,*) 'distance associés :: ',rla_dist_vertex(:)
-                      !     WRITE(0,*) 'Somme des poids associés :: ',SUM(rla_poids_vertex(:))
-  		      ENDIF
+                      IF ( SUM(rla_poids_vertex(:)) > 1.01 ) THEN
+                           WRITE(0,*) 'Somme des poids > 1 :: ',SUM(rla_poids_vertex(:))
+                           WRITE(0,*) 'Valeur des vertex en x :: ',ila_vertxindex(:)
+                           WRITE(0,*) 'Valeur des vertex en y :: ',ila_vertyindex(:)
+                           WRITE(0,*) 'nombre de vextex :: ',lla_nbr_vertex(:)
+                           WRITE(0,*) 'position du point :: ',rla_lonpos(il_jk),rla_latpos(il_jk)
+                           STOP
+                      ENDIF
                       il_loc=MAXLOC(rla_poids_vertex(:))
                       ila_findxindex(il_jk)=ila_vertxindex(il_loc(1))
                       ila_findyindex(il_jk)=ila_vertyindex(il_loc(1))
@@ -566,34 +559,28 @@ PROGRAM COLOCALIZE
                       ila_xindex(:,il_jk)=ila_vertxindex(:)
                       ila_yindex(:,il_jk)=ila_vertyindex(:)
                    ELSE
-                     !!IF ( rla_latpos(il_jk) >  65 ) THEN
-                     !!   IF ( rla_lonpos(il_jk) >  0 ) THEN
-                     !!     WRITE(0,*) rla_lonpos(il_jk),rla_latpos(il_jk)
-                     !!   ELSE
-                     !!     WRITE(0,*) 360.0+rla_lonpos(il_jk),rla_latpos(il_jk)
-                     !!   ENDIF
-                     !!ENDIF
 #if defined key_debug
-  		      WRITE(0,*) 'position du point :: ',il_jk,rla_lonpos(il_jk),rla_latpos(il_jk)
+                      WRITE(0,*) 'position du point :: ',rla_lonpos(il_jk),rla_latpos(il_jk)
                       WRITE(0,*) 'Les 4 points se situent sur la terre!!'
                       WRITE(0,*) 'Valeur nulle'
 #endif
                       rla_poids_vertex(:)=0.0
                    ENDIF
-                   rla_poids(:,il_jk)=rla_poids_vertex(:)                   
+                   rla_poids(:,il_jk)=rla_poids_vertex(:) 
 #if defined key_debug
                    WRITE (0,*) 'Position du point le plus proche ::',ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1))
+                   WRITE (0,*) 'Position du point le plus proche lon :',rlpa_gridlonvalue(ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1)))
+                   WRITE (0,*) 'Position du point le plus proche lat :',rlpa_gridlatvalue(ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1)))
                    WRITE (0,*) 'Poids le plus proche ::',rla_poids_vertex(il_loc(1))
                    WRITE (0,*) 'Distance la plus proche ::',rla_dist_vertex(il_loc(1))
 #endif
-  		   IF ( rla_dist_vertex(il_loc(1)) > 50. ) THEN
-                        !WRITE(0,*) 'Erreur Position point lon lat Erreur : ',rla_lonpos(il_jk),rla_latpos(il_jk),rla_dist_vertex(il_loc(1))
-                        WRITE(0,*) rla_lonpos(il_jk),rla_latpos(il_jk),rla_dist_vertex(il_loc(1))
-                       ! WRITE (0,*) 'Erreur sur le point il_jk ::',il_jk,rla_dist_vertex(il_loc(1)),ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1))
-                       !WRITE(0,*) 'distance associés :: ',rla_dist_vertex(:)
-                        !STOP
+#if defined key_debug_dist
+                   IF ( rla_dist_vertex(il_loc(1)) > 50. ) THEN
+                       WRITE (0,*) 'Erreur sur le point il_jk ::',il_jk,rla_dist_vertex(il_loc(1)),ila_vertxindex(il_loc(1)),ila_vertyindex(il_loc(1))
+                       STOP
                    ENDIF
-             ELSE	
+#endif
+             ELSE
                 !** When the file is not into the grid
 #if defined key_debug
                WRITE(0,*) 'Not in the grid'
@@ -602,12 +589,11 @@ PROGRAM COLOCALIZE
 #endif
                ila_xindex(:,il_jk)=9999
                ila_yindex(:,il_jk)=9999
-               rla_poids(:,il_jk)=0.0       		
+               rla_poids(:,il_jk)=0.0
              ENDIF   ! rla_colonvalue(il_ji) .GE. rl_lonmin ...
 #if defined key_log
       WRITE(il_ficlog,FMT=600,advance="yes") "profile ok: ",il_jk,il_nb_files
 #endif
-      !print *,  "profile ok: ",il_jk,il_nb_files
     ENDDO !il_nb_files
 #if defined key_log
     CLOSE(il_ficlog)
@@ -622,15 +608,6 @@ PROGRAM COLOCALIZE
 
     !!* Case write with format
     DO il_ji=1,il_nb_files
-    !!   WRITE(il_fic,'(i6,2x,f12.5,2x,f12.5,2x,i6,2x,i6,2x,f12.9,2x,i6,2x,i6,2x,f12.9,2x,i6,2x,i6,2x,f12.9,2x,i6,2x,i6,2x,f12.9)',ADVANCE='yes') &
-    !!         il_ji, rla_lonpos(il_ji),&
-    !!         rla_latpos(il_ji),ila_xindex(1,il_ji),&
-    !!         ila_yindex(1,il_ji),rla_poids(1,il_ji),&
-    !!         ila_xindex(2,il_ji), ila_yindex(2,il_ji),rla_poids(2,il_ji),&
-    !!         ila_xindex(3,il_ji), ila_yindex(3,il_ji),rla_poids(3,il_ji),&
-    !!         ila_xindex(4,il_ji), ila_yindex(4,il_ji),rla_poids(4,il_ji)
-    !!* Case write with unformatted format
-!       WRITE(il_fic) il_ji, rla_lonpos(il_ji), rla_latpos(il_ji), &
        WRITE(il_fic,'(i6,2x,f12.5,2x,f12.5,2x,i6,2x,i6,2x,&
                       f12.9,2x,i6,2x,i6,2x,f12.9,2x,i6,2x,i6,2x,&
                       f12.9,2x,i6,2x,i6,2x,f12.9,2x,f12.5,2x,f12.5)',ADVANCE='yes') &
@@ -641,21 +618,6 @@ PROGRAM COLOCALIZE
            ila_xindex(4,il_ji), ila_yindex(4,il_ji),rla_poids(4,il_ji),&
            rla_findlon(il_ji),rla_findlat(il_ji)
     ENDDO
-
-!! Case de test
-!!
-!!    DO il_ji=1,il_nb_files
-!!       WRITE(il_fic,'(i6,2x,f12.5,2x,f12.5,2x,i6,2x,i6,2x,f12.5,2x,f12.5,2x,f12.9)',ADVANCE='yes') &
-!!                     il_ji, rla_lonpos(il_ji), rla_latpos(il_ji), &
-!!                     ila_findxindex(il_ji),ila_findyindex(il_ji),&
-!!                     rla_findlon(il_ji),rla_findlat(il_ji),&
-!!                     rla_finddist(il_ji)
-!!       !WRITE(il_fic) il_ji, rla_lonpos(il_ji), rla_latpos(il_ji), &
-!!       !              ila_findxindex(il_ji),ila_findyindex(il_ji),&
-!!       !              rla_findlon(il_ji),rla_findlat(il_ji),&
-!!       !              rla_finddist(il_ji)
-!!    ENDDO
-!! Case de test
     CLOSE(il_fic)
     IF (ALLOCATED(rla_latpos))  DEALLOCATE(rla_latpos)
     IF (ALLOCATED(rla_lonpos)) DEALLOCATE(rla_lonpos)
