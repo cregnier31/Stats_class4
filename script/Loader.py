@@ -26,19 +26,21 @@ class Loader(object):
     def factory(type):
         #return eval(type + "()")
         if type == "NC_CORIO": return LoaderNCcorio()
+        if type == "NC_CORIO_ORIGIN": return LoaderNCcorio()
         if type == "NC_GODAE": return LoaderNCgodae()
         if type == "ASCII": return AsciiLoader()
         if type == "LIST": return ListWriter()
         if type == "NML": return NmlLoader()
         if type == "DAT": return ColocLoader()
         if type == "INPUT": return InputLoader()
+        if type == "PGN_coords": return PGN_coords_Loader()
         assert 0, "Format not known: " + type
 
 
 class InputLoader(Loader): 
     def load(self,options,level):
         """Loader for input options"""
-        keywords = ['date1=','date2=','delta=','nbdate=','daterun=','config=','data=','src=','nbproc=','typemod=']
+        keywords = ['date1=','date2=','delta=','nbdate=','daterun=','config=','data=','src=','nbproc=','typemod=',"schedule="]
         cla_opts = getopt.getopt(options,'',keywords)
         log=Logger("InputLoader").run(level)
         ll_delta=None
@@ -52,6 +54,7 @@ class InputLoader(Loader):
         cl_daterun=None
         list_var=[]
         nb_proc=0
+        cl_schedule='d'
         for o,p in cla_opts[0] :
             if o in ['--delta'] :
                 ll_delta=True
@@ -82,6 +85,8 @@ class InputLoader(Loader):
             elif o in  ['--src'] : 
                 ll_src=True
                 cl_src = p
+            elif o in  ['--schedule'] : 
+                cl_schedule = p
             elif o in  ['--nbproc'] : 
                 ll_optim=True
                 cl_nbproc = p
@@ -90,7 +95,6 @@ class InputLoader(Loader):
         list_var.append(ll_date2)
         list_var.append(ll_daterun)
         list_var.append(ll_nbdate)
-        cl_schedule='d'
         if not ll_config :
             log.error("Config is missing : add --config= in the launcher")
             log.error("Type TEP_CLASS4.py --data=XXX --src=XXX --config=XXX --date1=XXXX --date2=XXXX or ")
@@ -113,6 +117,7 @@ class InputLoader(Loader):
             ## Test LEN of input date
             datelen1=len(cl_start_date)
             datelen2=len(cl_end_date)
+            log.info("Lenght of date %i %i"%(datelen1,datelen2))
             if  datelen1 == datelen2 and datelen1 == 6 :  
                 log.info("Monthly values")
                 log.info("Values %s %s :" %(cl_start_date[0:4],cl_start_date[4:6]))
@@ -149,11 +154,13 @@ class InputLoader(Loader):
                 date2=SyDate(cl_start_date+"1231")
                 log.info("Year values")
                 cl_schedule='y'
-            else :
-                log.info("Start date %s" %(cl_start_date))
-                log.info("Date must be a year %s" %(cl_start_date))
+            else : 
+                log.info("Date must be a year")
                 sys.exit(1)
-
+        elif cl_daterun == "all" :
+            log.info("Need to find dates in file")
+            date1=None
+            date2=None
         else :
             log.error("Case not valid")
             log.error("Type TEP_CLASS4.py --data=XXX --src=XXX --config=XXX --date1=XXXX --date2=XXXX or ")
@@ -161,9 +168,12 @@ class InputLoader(Loader):
             log.error("Type TEP_CLASS4.py --data=XXX --src=XXX --config=XXX --daterun=XXXX --nbdate=X --delta=X  \
                             (for example 1 week before today -14 and today -7)")
             sys.exit(1)
-        confname='config_'+str(cl_config)+'_'+str(cl_src)+'.cfg'
+        confname='config_'+str(cl_config)+'_'+str(cl_src)+'_'+str(cl_data)+'.cfg'
         return date1,date2,confname,cl_data,cl_daterun,cl_schedule,cl_src,nb_proc,cl_typemod
-
+    def find_date(self):
+        date1="20150101"
+        date2="20150231"
+        return date1,date2
 class NmlLoader(Loader): 
     """Loader for namelists"""
     def load(self,filename,level):
@@ -181,7 +191,7 @@ class LoaderNCcorio(Loader):
     """Loader for coriolis dataset"""
 
     def read_pos(self,filename):
-        print 'read netcdf file : %s ' %(filename)
+        #print 'read netcdf file : %s ' %(filename)
         nc = netCDF4.Dataset(filename,'r')        
         variable = 'LONGITUDE'
         rla_lon = nc.variables[variable][:]
@@ -191,7 +201,7 @@ class LoaderNCcorio(Loader):
         #nb_tot=len(rla_lon)
         n_profiles=len(rla_lon)
         #n_profiles=386
-        print n_profiles
+        #print n_profiles
         #n_profiles=1000
         #position=np.ndarray(shape=(n_profiles,2))
         #position[:,0]=rla_lon[:] 
@@ -231,6 +241,7 @@ class LoaderNCgodae(Loader):
         np.set_printoptions(suppress=True)
         return position
 
+
     def read_pos_amsr(self,filename):
         nc = netCDF4.Dataset(filename,'r')        
         variable = 'LON'
@@ -249,6 +260,28 @@ class LoaderNCgodae(Loader):
             il_val=il_val+1
         np.set_printoptions(suppress=True)
         return position
+
+    def read_pos_and_value(self,filename):
+        nc = netCDF4.Dataset(filename,'r')        
+        variable = 'longitude'
+        rla_lon = nc.variables[variable][:]
+        variable = 'latitude'
+        rla_lat = nc.variables[variable][:]
+        rla_value = nc.variables['observation'][:]
+        return rla_lon,rla_lat,rla_value
+
+
+class PGN_coords_Loader(Loader):
+
+    """Loader for PGN dataset"""
+    def read_pos(self,filename):
+        nc = netCDF4.Dataset(filename,'r')
+        variable = 'nav_lon'
+        rla_lon = nc.variables[variable][:,:]
+        variable = 'nav_lat'
+        rla_lat = nc.variables[variable][:,:]
+        return rla_lon,rla_lat
+
 
 class AsciiLoader(Loader):
 
