@@ -26,6 +26,7 @@ class NmlCreator(object) :
 
     def factory(self,type):
         if type == "CORIOLIS": return NmlCreator_CORIOLIS(self.mssh_file,self.ll_mssh,self.ll_compute,self.mssh_shift)
+        if type == "CORIOLIS_RAW": return NmlCreator_CORIOLIS(self.mssh_file,self.ll_mssh,self.ll_compute,self.mssh_shift)
         if type == "IAOOS": return NmlCreator_IAOOS(self.mssh_file,self.ll_mssh,self.mssh_shift)
         if type == "GODAE" : return NmlCreator_GODAE(self.mssh_file,self.ll_mssh,self.ll_compute,self.mssh_shift)
 
