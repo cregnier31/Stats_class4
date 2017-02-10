@@ -23,11 +23,76 @@ class Extractor(object) :
         if type == "cora4.1_raw": return Extract_cora4_1()
         if type == "CORA4.1_MERC": return Extract_cora4()
         if type == "CORIOLIS": return Extract_corio()
+        if type == "CORIOLIS_RAW": return Extract_corio_raw()
         if type == "ENS": return ExtractEns()
         if type == "ARMOR_CO" or type == "ARMOR_AR" or type == "AR_" : return Extract_ARMOR()
         if type == "GODAE" : return Extract_GODAE()
         if type == "ASCII" : return Extract_ASCII()
 
+
+
+class Extract_corio_raw(Extractor):
+
+    """ Extract coriolis raw common file """
+
+    def __init__(self): 
+
+        # ===============
+        # LOGGER
+        # ===============
+        logging.basicConfig(format='%(asctime)s %(message)s')
+        self.log = logging.getLogger("Extract_corio_raw")
+        self.log.setLevel(logging.INFO)
+        self.date=SyDate('19500101')
+
+    def search(self,dirdata,**kwargs):
+        list_dateval=[]
+        ind=0
+        for file in glob.glob(dirdata+"*.nc"):
+            nc   = netCDF4.Dataset(file,'r')
+            variable="JULD"
+            v = nc.variables[variable][:]
+            # Convert to date
+            dateval=[SyDate.__str__(self.date.setfromjulian(int(valeurj))) for valeurj in v]
+            ind=0
+            for val in dateval : 
+                if SyDate(val).tojulian() < 16189 :
+                   print file
+                   print "Probleme  : %s %i  "%(val,ind)
+                else :
+                    list_dateval.append(val)
+                ind+=1
+        dateval = sorted(set(list_dateval))
+        return SyDate(dateval[0]),SyDate(dateval[-1])
+
+    def run(self,date1,date2,dirdata,dirtmp,typedata,template,prefix):
+        liste_tot=[]
+        ind=0
+        dimprof='N_PROF'
+        options = []
+        options.extend(['-h'])
+        ## Nco constructor
+        nco = Nco()
+        for file in glob.glob(dirdata+"*.nc"):
+            print file
+            frame=os.path.basename(file).split('.')[0]
+            nc   = netCDF4.Dataset(file,'r')
+            variable="JULD"
+            v = nc.variables[variable][:]
+            # Convert to date
+            dateval=[SyDate.__str__(self.date.setfromjulian(int(valeurj))) for valeurj in v]
+            ind=0
+            for val in dateval : 
+                if SyDate(val).tojulian() < 16189 :
+                   print file
+                   print "Probleme  : %s %i  "%(val,ind)
+                else :
+                    file_out=str(val)+'_'+frame+'_profile_'+str(ind)+'.nc'
+                    nco.ncks(input=file,output=dirtmp+file_out, fortran=True ,dimension=str(dimprof)+','+str(ind+1),options=options)              
+                    liste_tot.append(dirtmp+file_out)
+                    #self.log.info('Day %s ' % (dateval))
+                ind+=1
+        return liste_tot
 
 class Extract_corio(Extractor):
 
