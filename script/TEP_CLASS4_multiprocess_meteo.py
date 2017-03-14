@@ -197,7 +197,8 @@ elif do_decomp :
     print 'do decomp'
     print prefix_data
     print date1,date2,dirdata,dirwork,data_type,template,prefix_data
-    list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,data_type,template)
+    list_files=Extractor().factory(prefix_data).run(date1,date2,dirdata,dirwork,data_type,template,prefix_data)
+
 else :
     log.info('========================================================')
     log.info('              DATE Selection and extraction  %s         ' %(prefix_data)) 
@@ -263,11 +264,6 @@ for fichier in list_files:
         file_pos_tmp=os.path.basename(fichier)
         file_pos_tmp=re.sub('.nc','.pos',file_pos_tmp)
         file_pos=coloc_rep+file_pos_tmp
-        print file_pos
-        Writer().write_ASCII(file_pos,new_position)
-        list_filepos.append(file_pos)
-        #  splitLen = 1000000       # 500000 lines per file
-        file_in=file_pos
         outputBase = file_pos.split('.pos')[0]
         fileout=outputBase+'.dat'
         if os.path.isfile(fileout) : 
@@ -275,25 +271,33 @@ for fichier in list_files:
             print "coloc existe %s " %(fileout)
         if not ll_coloc : 
             print "coloc don't exist"
+            Writer().write_ASCII(file_pos,new_position)
+            list_filepos.append(file_pos)
+            #  splitLen = 1000000       # 500000 lines per file
+            file_in=file_pos
             outputBase=re.sub("coloc","coloc/split",outputBase) 
             outputBase_orig = file_pos.split('.pos')[0]
             input=open(file_in,'r').read().split('\n')
-            cpt=1
             nb_pts=len(input)
-            nb_process=nb_proc
-            print nb_pts,nb_process
-            splitLen=int(ceil(nb_pts/nb_process))+1
-            print splitLen
+            if nb_pts <=  nb_proc : 
+                nb_process=len(input)
+                splitLen=1
+            else :
+                nb_process=nb_proc
+                splitLen=int(ceil(nb_pts/nb_process))+1
+            cpt=1
+            log.info("longueur %i" %(splitLen))
             for lines in range(0,len(input),splitLen):
                 # First, get the list slice
                 outputData = input[lines:lines+splitLen]
                 # Now open the output file, join the new slice with newlines
                 # and write it out. Then close the file.
                 output = open(outputBase +'_split'+ str(cpt) + '.pos', 'w')
-                print ('Output %s ok'%(output))
+                log.info("Output %s ok"%(output))
                 output.write('\n'.join(outputData))
                 output.close()
-                print ('Split %s ok'%(cpt))
+                #log.info("Split %s ok"%(cpt))
+                #log.info("lines cpt %i %i "%(lines,cpt))
                 cpt += 1
             #===========================================================================================
             # Colocation in multiprocessing
@@ -317,8 +321,9 @@ for fichier in list_files:
             with open(fileout, 'w') as outFile:
                 for i in range(1,nb_process+1):
                     filename=outputBase +'_split'+ str(ind) + '.dat'
-                    input=open(filename,'r').read()
-                    outFile.write(input)     
+                    if os.path.isfile(filename) :
+                       input=open(filename,'r').read()
+                       outFile.write(input)     
                     ind=ind+1
             log.info("Recombination OK")
             # Cleanup
@@ -426,7 +431,7 @@ if ll_file_ok :
                 lead_fin=['clim2']
                 sort_rep=dirclim2  
             elif time == 'CLIM_WOA13' :
-                dirclim3=param_dict.get('climato','DIRCLIM3')           
+                dirclim3=param_dict.get('climato','DIRLEV')           
                 lead_fin=['clim3']
                 sort_rep=dirclim3  
             elif time == 'CLIM_MED' :
@@ -490,51 +495,53 @@ if ll_file_ok :
             #f_out.close()
             #f_in.close()
             log.info('File ok %s' %(filename))
+            if os.path.exists(diroutput+os.path.basename(filename)):
+                os.remove(diroutput+os.path.basename(filename))
             shutil.move(filename,diroutput)
             #os.remove(filename)
-### Lancement du run d'après
-##DAYMAX=param_dict.get('GLOBAL','DAY_MAX')
-#### Clear stuck objects
-##sys.exc_clear()
-##sys.exc_traceback = sys.last_traceback = None
-####
-##if DAYMAX : 
-##   dayvalmax=SyDate(DAYMAX)
-##   schedule=param_dict.get('GLOBAL','SCHEDULE')
-##   if schedule == "MONTHLY" : 
-##      date_next=date1.goforward(31)
-##   elif schedule == "WEEKLY" :
-##     date_next=SyDate(daterun).goforward(7)
-##   elif schedule == "DAILY" :
-##     date_next=SyDate(daterun).goforward(1)
-##   else : 
-##     log.error("Schedule not found %s" %(schedule))
-##   if  date_next < dayvalmax :
-##      if schedule == "MONTHLY" : 
-##          cl_date=SyDate.__str__(date_next)[0:6]
-##          cl_date2=SyDate.__str__(dayvalmax)[0:6]
-##          code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --date1='+cl_date+ \
-##               '  --date2='+cl_date2+' --src='+cl_src+'  --data='+data_type
-##      elif schedule == "WEEKLY" :
-##          cl_daterun=SyDate.__str__(date_next)
-##          print 'Lancement du run %s ' %(cl_daterun)
-##          code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --daterun='+cl_daterun+ \
-##               '  --nbdate=7 --delta=7 --src='+cl_src+'  --data='+data_type
-##      elif schedule == "DAILY" :
-##          cl_daterun=SyDate.__str__(date_next)
-##          print 'Lancement du run %s ' %(cl_daterun)
-##          code_lancement=homedir+'script/Launcher_NAVITI_cycle.ksh '+cl_config+'  '+cl_daterun+' '+str(nb_proc)
-##      else : 
-##          log.error("Schedule not found %s" %(schedule))
-##      print code_lancement
-##      try:
-##           os.system(code_lancement)
-##           print "Lancement date run %s ok " % (cl_date)
-##      except:
-##         print 'Probleme execution'
-##         sys.exit(1)
-##      sys.exit(1)
-## 
-##   else :
-##     print 'Dépassement de JMAX : %s ' % (SyDate.__str__(date_next))
-##     sys.exit(1)
+# Lancement du run d'après
+DAYMAX=param_dict.get('GLOBAL','DAY_MAX')
+## Clear stuck objects
+sys.exc_clear()
+sys.exc_traceback = sys.last_traceback = None
+##
+if DAYMAX : 
+   dayvalmax=SyDate(DAYMAX)
+   schedule=param_dict.get('GLOBAL','SCHEDULE')
+   if schedule == "MONTHLY" : 
+      date_next=date1.goforward(31)
+   elif schedule == "WEEKLY" :
+     date_next=SyDate(daterun).goforward(7)
+   elif schedule == "DAILY" :
+     date_next=SyDate(daterun).goforward(1)
+   else : 
+     log.error("Schedule not found %s" %(schedule))
+   if  date_next < dayvalmax :
+      if schedule == "MONTHLY" : 
+          cl_date=SyDate.__str__(date_next)[0:6]
+          cl_date2=SyDate.__str__(dayvalmax)[0:6]
+          #code_lancement=homedir+'script/Launcher_NAVITI_cycle_CORA.ksh '+cl_config+'  '+cl_date+' '+cl_date2+' '+str(nb_proc)
+          code_lancement=homedir+'script/Launcher_NAVITI_cycle_CORIO.ksh '+cl_config+'  '+cl_date+' '+cl_date2+' '+str(nb_proc)
+      elif schedule == "WEEKLY" :
+          cl_daterun=SyDate.__str__(date_next)
+          print 'Lancement du run %s ' %(cl_daterun)
+          code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --daterun='+cl_daterun+ \
+               '  --nbdate=7 --delta=7 --src='+cl_src+'  --data='+data_type
+      elif schedule == "DAILY" :
+          cl_daterun=SyDate.__str__(date_next)
+          print 'Lancement du run %s ' %(cl_daterun)
+          code_lancement=homedir+'script/Launcher_NAVITI_cycle.ksh '+cl_config+'  '+cl_daterun+' '+str(nb_proc)
+      else : 
+          log.error("Schedule not found %s" %(schedule))
+      print code_lancement
+      try:
+           os.system(code_lancement)
+           print "Lancement date run %s ok " % (cl_date)
+      except:
+         print 'Probleme execution'
+         sys.exit(1)
+      sys.exit(1)
+ 
+   else :
+     print 'Dépassement de JMAX : %s ' % (SyDate.__str__(date_next))
+     sys.exit(1)
