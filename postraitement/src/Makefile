@@ -1,7 +1,10 @@
 # Makefile for Fortran program Class 4
 # Modifs C.REGNIER Janvier 2010
+type=glorys2v4
+#type=cglors
+include ../../macro/make_intel_$(type).macro
 #include ../../macro/make_intel.macro
-include ../../macro/make_intel.macro
+#include ../../macro/make_intel_orca12_allege.macro
 
 # Rules
 .SUFFIXES:.F90 .F .f90 .mod
@@ -67,6 +70,7 @@ change_path:
 
 $(EXEDIR)/Lecture_class4.exe: $(OBJ) $(SRCDIR2)/Lecture_class4.o
 	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY) 
+#	@perl -pi -e "s|FP_ParamNameFile =.*|FP_ParamNameFile ='param_names_${type}.in'|g" ${PWD}/module/table_class4.f90
 
 $(EXEDIR)/Lecture_class4_EN3.exe: $(OBJ3) $(SRCDIR2)/Lecture_class4_EN3.o
 	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY) 
