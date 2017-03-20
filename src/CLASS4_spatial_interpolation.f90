@@ -334,6 +334,7 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
      WRITE(0,*) ' fichier traite 3D : ',TRIM(cda_inputFile(il_ji))
      WRITE(0,*) ' fichier coloc : ',TRIM(cl_colocFile)
 #endif
+     WRITE(0,*) ' fichier traite 3D : ',TRIM(cda_inputFile(il_ji))
 !     !------------------------------------------------------------------
 !     !  Lecture des dimensions de parameterint
 !     CALL read_parameterint_dim(cl_inputFile,ll_cparam,ll_lparam,ll_param)  
@@ -878,6 +879,7 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
 #endif
      ENDIF
      !
+     WRITE(0,*) ' fichier traite 3D OK '
   ENDDO
   !
   !
@@ -1657,7 +1659,7 @@ END SUBROUTINE read_allege_model_file
 !******************************************************************************
 !
 !
-SUBROUTINE read_model_file(cd_fileT, &
+SUBROUTINE read_model_file_1D(cd_fileT, &
                            cd_fileS,&
                            cd_fieldname_T, &
                            cd_fieldname_S, &
@@ -1972,6 +1974,385 @@ SUBROUTINE read_model_file(cd_fileT, &
 #endif
   ENDDO
 
+ENDSUBROUTINE read_model_file_1D
+!
+!******************************************************************************
+!******************************************************************************
+!******************************************************************************
+!
+!
+SUBROUTINE read_model_file(cd_fileT, &
+                           cd_fileS,&
+                           cd_fieldname_T, &
+                           cd_fieldname_S, &
+                           cd_depthname, &
+                           ida_xindex,&
+                           ida_yindex,&
+                           rda_fieldvalue_T, &
+                           rda_fieldvalue_S, &
+                           rda_depthvalue, &
+                           id_nprofs,&
+                           id_nlon, &
+                           id_nlat, &
+                           id_ndepth, &
+                           id_nbdim)
+  
+  !==============================================================================================================
+  !> \brief    Description : Routine permettant de lire les profiles modèles autour de chaque mesure insitu, la lecture 
+  !                          est accéléré par le fait que l'on va chercher directement les vecteurs concernés en fonction
+  !                          des vecteurs de positions en x et y (xindex et yindex), nous ne chargeons jamais le champs en entier
+  !                          ce qui est beaucoup plus performant sur les grosses configurations. La conversion de la température
+  !                          potentielle en insitu pour chacun des profiles est faite là
+  !<
+  !===================================================================================================================
+  !
+  USE netcdf
+  USE MCAL
+  USE MFT_error
+  USE MIOL
+  USE GSW_TEOS10  
+  IMPLICIT NONE
+  !
+  CHARACTER(LEN=255)                                      :: cd_fileT, &
+                                                             cd_fileS, &
+                                                             cd_fieldname_T, &
+                                                             cd_fieldname_S, &
+                                                             cd_depthname
+  INTEGER(KIND=4),INTENT(IN)                             :: id_nlon,id_nlat, &
+                                                            id_ndepth,id_nbdim,id_nprofs
+  INTEGER(KIND=4)                                        :: il_varid,il_type_T,il_type_S,&
+                                                            il_status,il_nbdim,il_t1,il_t2,il_ir,il_alloc
+  INTEGER (KIND=4), DIMENSION(4,id_nprofs)               :: ida_xindex,ida_yindex
+  INTEGER, DIMENSION(1)                                  :: ila_indx,ila_indy,ila_indt
+  INTEGER, DIMENSION(id_ndepth)                          :: ila_indz
+  REAL(KIND=4), DIMENSION(4,id_nprofs,id_ndepth)         :: rda_fieldvalue_T,rda_fieldvalue_S
+  REAL(KIND=4), DIMENSION(id_ndepth)                     :: rda_depthvalue
+  !
+  INTEGER(KIND=4)                                        :: il_fill,il_ji,il_jk,il_jl,il_file_id_T,il_file_id_S
+  INTEGER(KIND=4),DIMENSION(3)                           :: ila_T_size_3D,ila_S_size_3D
+  INTEGER(KIND=4),DIMENSION(4)                           :: ila_T_size,ila_S_size
+  REAL(KIND=8), DIMENSION(2)                             :: rla_offsetvalue
+  REAL(KIND=4), DIMENSION(:), POINTER                    :: rlpa_value_1D
+  REAL(KIND=4), DIMENSION(:,:,:,:), POINTER              :: rlpa_valueT_4D,rlpa_valueS_4D
+  REAL(KIND=8), DIMENSION(:,:,:,:), POINTER              :: rlpa_valueT_4D_R8,rlpa_valueS_4D_R8
+  REAL(KIND=4), DIMENSION(:,:,:), POINTER                :: rlpa_valueT_3D,rlpa_valueS_3D
+  REAL(KIND=8), DIMENSION(:,:,:), POINTER                :: rlpa_valueT_3D_R8,rlpa_valueS_3D_R8
+  REAL(KIND=4)                                           :: rl_pres,rl_ref,rl_psal,rl_temp
+  REAL(KIND=8)                                           :: rl_tempinsitu,rl_psal_R8,rl_temp_R8
+  INTEGER(KIND=2), DIMENSION(:,:,:,:), POINTER           :: ilpa_valueT_4D,ilpa_valueS_4D
+  INTEGER(KIND=2), DIMENSION(:,:,:), POINTER             :: ilpa_valueT_3D,ilpa_valueS_3D
+  LOGICAL                                                :: ll_exist_T,ll_exist_S,ll_clim
+  !
+  !
+  !---------------------------------------------------------------------
+  il_fill=9999.
+  ll_clim=.FALSE.
+  IF (TRIM(cd_fieldname_T(1:4)).EQ. 'temp') ll_clim=.TRUE.  
+#if defined key_debug
+  WRITE(0,*),'ll_clim ',ll_clim,cd_fieldname_T,cd_fieldname_T(1:4)
+  IF ( ll_clim ) WRITE(0,*) 'Variable CLIMATO'
+  WRITE(0,*),'Inquire Type',cd_fileT,cd_fieldname_T
+#endif
+  !
+  !  Recherche du type de la varible et de son existence
+  CALL MIOL_inquire_type_NC(cd_fileT, &
+                            cd_fieldname_T,&
+                            il_type_T,&
+                            il_nbdim,&
+                            ll_exist_T)
+  IF ( .NOT. ll_exist_T)  THEN
+       WRITE (0,*) "Missing variable  :: ",cd_fieldname_T
+       STOP
+  ENDIF 
+#if defined key_debug
+  WRITE(0,*) 'Type de la variable :: ',il_type_T
+#endif
+  !
+  !
+  !---------------------------------------------------------------------
+  ! Lecture de la variable de profondeur
+  
+  CALL MIOL_read_field_NC(cd_fileT, &
+                          cd_depthname, &
+                          rlpa_value_1D)
+  rda_depthvalue(1:id_ndepth) =  rlpa_value_1D(1:id_ndepth)
+  DEALLOCATE(rlpa_value_1D)
+  !
+  !---------------------------------------------------------------------
+  ! Lecture de la Temperature et salinité
+  IF (id_nbdim .EQ. 3) THEN
+     SELECT CASE (il_type_T)
+     CASE (NF90_DOUBLE)
+        call MIOL_read_field_NC(cd_fileT,cd_fieldname_T,rlpa_valueT_3D_R8)
+        call MIOL_read_field_NC(cd_fileS,cd_fieldname_S,rlpa_valueS_3D_R8)
+        il_alloc=1
+     CASE (NF90_FLOAT)
+        call MIOL_read_field_NC(cd_fileT,cd_fieldname_T,rlpa_valueT_3D)
+        call MIOL_read_field_NC(cd_fileS,cd_fieldname_S,rlpa_valueS_3D)
+        il_alloc=2
+     CASE (NF90_SHORT)
+        call MIOL_read_field_NC(cd_fileT,cd_fieldname_T,ilpa_valueT_3D,ila_T_size,rlpa_valueT_3D)
+        DEALLOCATE(ilpa_valueT_3D)
+        call MIOL_read_field_NC(cd_fileS,cd_fieldname_S,ilpa_valueS_3D,ila_S_size,rlpa_valueS_3D)
+        DEALLOCATE(ilpa_valueS_3D)
+        il_alloc=2
+     CASE default
+        WRITE(0,*) 'Type non reconnu'
+     ENDSELECT
+  ELSE IF (id_nbdim .EQ. 4) THEN
+     SELECT CASE (il_type_T)
+     CASE (NF90_DOUBLE)
+        call MIOL_read_field_NC(cd_fileT,cd_fieldname_T,rlpa_valueT_4D_R8)
+        call MIOL_read_field_NC(cd_fileS,cd_fieldname_S,rlpa_valueS_4D_R8)
+        il_alloc=3
+     CASE (NF90_FLOAT)
+        call MIOL_read_field_NC(cd_fileT,cd_fieldname_T,rlpa_valueT_4D)
+        call MIOL_read_field_NC(cd_fileS,cd_fieldname_S,rlpa_valueS_4D)
+        il_alloc=4
+     CASE (NF90_SHORT)
+        call MIOL_read_field_NC(cd_fileT,cd_fieldname_T,ilpa_valueT_4D,ila_T_size,rlpa_valueT_4D)
+        DEALLOCATE(ilpa_valueT_4D)
+        call MIOL_read_field_NC(cd_fileS,cd_fieldname_S,ilpa_valueS_4D,ila_S_size,rlpa_valueS_4D)
+        DEALLOCATE(ilpa_valueS_4D)
+        il_alloc=4
+     CASE default
+        WRITE(0,*) 'Type non reconnu'
+     ENDSELECT
+  ELSE
+     WRITE(0,*) 'Dimension non prise en compte :: ',id_nbdim
+     STOP
+  ENDIF
+#if defined key_debug
+  WRITE(0,*) 'Debut boucle'
+#endif
+  !
+  !  Boucle sur les profiles
+  DO il_ji=1,id_nprofs 
+#if defined key_debug
+  WRITE (0,*) "Read model files "
+#endif
+!#if defined key_cputime                                                                                      
+!     il_t1=0
+!     il_t2=0
+!     CALL SYSTEM_CLOCK(count=il_t1)
+!#endif
+        ! Lecture des variables à traiter
+        !
+        IF (id_nbdim .EQ. 4) THEN
+           DO il_jk=1,4
+                ila_indx(:)=ida_xindex(il_jk,il_ji)
+                ila_indy(:)=ida_yindex(il_jk,il_ji)
+                ila_indz(:)=(/1:id_ndepth/)
+                ila_indt(:)=1 
+                SELECT CASE (il_type_T)
+                CASE (NF90_DOUBLE)
+                   IF (ila_indx(1) .NE. il_fill .AND. ila_indy(1).NE. il_fill) THEN
+                       !** Lecture de la temperature
+                       rda_fieldvalue_T(il_jk,il_ji,:)=REAL(rlpa_valueT_4D_R8(ila_indx(1),ila_indy(1),ila_indz(:),ila_indt(1)),4)
+                       !** Lecture de salinité
+                       rda_fieldvalue_S(il_jk,il_ji,:)=REAL(rlpa_valueS_4D_R8(ila_indx(1),ila_indy(1),ila_indz(:),ila_indt(1)),4)
+                       IF ( .NOT. ll_clim) THEN
+                       !WRITE(0,*) 'Cas du Modele'
+                       !** Conversion en temperature insitu
+                          DO il_jl=1,id_ndepth
+                             rl_temp_R8=rlpa_valueT_4D_R8(ila_indx(1),ila_indy(1),il_jl,ila_indt(1))
+                             rl_psal_R8=rlpa_valueS_4D_R8(ila_indx(1),ila_indy(1),il_jl,ila_indt(1))
+                             rl_pres=rda_depthvalue(il_jl)
+                             rl_ref=0
+                             !WRITE (0,*) 'Avant correction :: ',rda_fieldvalue_T(il_jk,il_ji,il_jl) ,rl_temp,rl_psal
+                             IF ( rl_temp .NE. rg_fillvalue .AND. rl_psal .NE. rg_fillvalue) THEN 
+                               CALL gsw_pt_from_t(rl_psal_R8,rl_temp_R8,REAL(rl_ref,8),REAL(rl_pres,8),rl_tempinsitu)
+                               rda_fieldvalue_T(il_jk,il_ji,il_jl)=REAL(rl_tempinsitu,4)
+                             ENDIF
+                          ENDDO 
+                       ENDIF
+                       DEALLOCATE(rlpa_valueS_4D_R8)
+                       DEALLOCATE(rlpa_valueT_4D_R8)
+                   ELSE 
+                       rda_fieldvalue_T(il_jk,il_ji,:)=rg_fillvalue
+                       rda_fieldvalue_S(il_jk,il_ji,:)=rg_fillvalue
+                   ENDIF
+                CASE (NF90_FLOAT)
+                   IF (ila_indx(1) .NE. il_fill .AND. ila_indy(1).NE. il_fill) THEN
+                       !** Lecture de la temperature
+                       rda_fieldvalue_T(il_jk,il_ji,:)=rlpa_valueT_4D(ila_indx(1),ila_indy(1),ila_indz(:),ila_indt(1))
+                       !** Lecture de salinité
+                       rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_valueS_4D(ila_indx(1),ila_indy(1),ila_indz(:),ila_indt(1))
+                       IF ( .NOT. ll_clim) THEN
+                       !WRITE(0,*) 'Cas du Modele'
+                       !** Conversion en temperature insitu
+                          DO il_jl=1,id_ndepth
+                             rl_temp=rda_fieldvalue_T(il_jk,il_ji,il_jl)
+                             rl_psal=rda_fieldvalue_S(il_jk,il_ji,il_jl)
+                             rl_pres=rda_depthvalue(il_jl)
+                             rl_ref=0
+                             !WRITE (0,*) 'Avant correction :: ',rda_fieldvalue_T(il_jk,il_ji,il_jl) ,rl_temp,rl_psal
+                             IF ( rl_temp .NE. rg_fillvalue .AND. rl_psal .NE. rg_fillvalue) THEN 
+                               CALL gsw_pt_from_t(REAL(rl_psal,8),REAL(rl_temp,8),REAL(rl_ref,8),REAL(rl_pres,8),rl_tempinsitu)
+                               rda_fieldvalue_T(il_jk,il_ji,il_jl)=REAL(rl_tempinsitu,4)
+                             ENDIF
+                          ENDDO 
+                       ENDIF
+                   ELSE 
+                       rda_fieldvalue_T(il_jk,il_ji,:)=rg_fillvalue
+                       rda_fieldvalue_S(il_jk,il_ji,:)=rg_fillvalue
+                   ENDIF
+!#if defined key_debug
+!  WRITE (0,*) "Read field S OK :: ",rda_fieldvalue_S(il_jk,il_ji,:),shape(rlpa_valueS_4D)
+!#endif
+                CASE (NF90_SHORT)
+                 !  WRITE(0,*) 'Cas short'
+                   IF (ila_indx(1) .NE. il_fill .AND. ila_indy(1).NE. il_fill) THEN
+                       !** Lecture de la temperature
+                       rda_fieldvalue_T(il_jk,il_ji,:)=rlpa_valueT_4D(ila_indx(1),ila_indy(1),ila_indz(:),ila_indt(1))
+                       rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_valueS_4D(ila_indx(1),ila_indy(1),ila_indz(:),ila_indt(1))
+                       IF ( .NOT. ll_clim) THEN
+                       !** Conversion en temperature insitu
+                         DO il_jl=1,id_ndepth
+                            rl_temp=rda_fieldvalue_T(il_jk,il_ji,il_jl)
+                            rl_psal=rda_fieldvalue_S(il_jk,il_ji,il_jl)
+                            rl_pres=rda_depthvalue(il_jl)
+                            rl_ref=0
+                            IF ( rl_temp .NE. rg_fillvalue .AND. rl_psal .NE. rg_fillvalue) THEN 
+                              CALL gsw_pt_from_t(REAL(rl_psal,8),REAL(rl_temp,8),REAL(rl_ref,8),REAL(rl_pres,8),rl_tempinsitu)
+                              rda_fieldvalue_T(il_jk,il_ji,il_jl)=REAL(rl_tempinsitu,4)
+                            ENDIF
+                         ENDDO 
+                       ENDIF 
+                  ELSE
+                      rda_fieldvalue_T(il_jk,il_ji,:)=rg_fillvalue
+                      rda_fieldvalue_S(il_jk,il_ji,:)=rg_fillvalue
+                   ENDIF
+                
+                CASE default
+                   WRITE(0,*) 'Type non reconnu'
+                ENDSELECT
+           ENDDO
+        ELSE IF (id_nbdim .EQ. 3) THEN
+           DO il_jk=1,4
+                ila_indx(:)=ida_xindex(il_jk,il_ji)
+                ila_indy(:)=ida_yindex(il_jk,il_ji)
+                ila_indz(:)=(/1:id_ndepth/)
+                SELECT CASE (il_type_T)
+                CASE (NF90_DOUBLE)
+                   IF (ila_indx(1) .NE. il_fill .AND. ila_indy(1).NE. il_fill) THEN
+                       !** Lecture de la temperature
+                       rda_fieldvalue_T(il_jk,il_ji,:)=REAL(rlpa_valueT_3D_R8(ila_indx(1),ila_indy(1),ila_indz(:)),4)
+                       !** Lecture de salinité
+                       rda_fieldvalue_S(il_jk,il_ji,:)=REAL(rlpa_valueS_3D_R8(ila_indx(1),ila_indy(1),ila_indz(:)),4)
+                       IF ( .NOT. ll_clim) THEN
+                       !WRITE(0,*) 'Cas du Modele'
+                       !** Conversion en temperature insitu
+                          DO il_jl=1,id_ndepth
+                             rl_temp_R8=rlpa_valueT_3D_R8(ila_indx(1),ila_indy(1),il_jl)
+                             rl_psal_R8=rlpa_valueS_3D_R8(ila_indx(1),ila_indy(1),il_jl)
+                             rl_pres=rda_depthvalue(il_jl)
+                             rl_ref=0
+                             !WRITE (0,*) 'Avant correction :: ',rda_fieldvalue_T(il_jk,il_ji,il_jl) ,rl_temp,rl_psal
+                             IF ( rl_temp .NE. rg_fillvalue .AND. rl_psal .NE. rg_fillvalue) THEN 
+                               CALL gsw_pt_from_t(rl_psal_R8,rl_temp_R8,REAL(rl_ref,8),REAL(rl_pres,8),rl_tempinsitu)
+                               rda_fieldvalue_T(il_jk,il_ji,il_jl)=REAL(rl_tempinsitu,4)
+                             ENDIF
+                          ENDDO 
+                       ENDIF
+                       DEALLOCATE(rlpa_valueS_3D_R8)
+                       DEALLOCATE(rlpa_valueT_3D_R8)
+                   ELSE 
+                       rda_fieldvalue_T(il_jk,il_ji,:)=rg_fillvalue
+                       rda_fieldvalue_S(il_jk,il_ji,:)=rg_fillvalue
+                   ENDIF
+                CASE (NF90_FLOAT)
+                   IF (ila_indx(1) .NE. il_fill .AND. ila_indy(1).NE. il_fill) THEN
+                       !** Lecture de la temperature
+                       rda_fieldvalue_T(il_jk,il_ji,:)=rlpa_valueT_3D(ila_indx(1),ila_indy(1),ila_indz(:))
+                       !** Lecture de salinité
+                       rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_valueS_3D(ila_indx(1),ila_indy(1),ila_indz(:))
+                       IF ( .NOT. ll_clim) THEN
+                       ! WRITE(0,*) 'Cas du Modele'
+                       !** Conversion en temperature insitu
+                          DO il_jl=1,id_ndepth
+                             rl_temp=rda_fieldvalue_T(il_jk,il_ji,il_jl)
+                             rl_psal=rda_fieldvalue_S(il_jk,il_ji,il_jl)
+                             rl_pres=rda_depthvalue(il_jl)
+                             rl_ref=0
+                             !WRITE (0,*) 'Avant correction :: ',rda_fieldvalue_T(il_jk,il_ji,il_jl) ,rl_temp,rl_psal
+                             IF ( rl_temp .NE. rg_fillvalue .AND. rl_psal .NE. rg_fillvalue) THEN 
+                               CALL gsw_pt_from_t(REAL(rl_psal,8),REAL(rl_temp,8),REAL(rl_ref,8),REAL(rl_pres,8),rl_tempinsitu)
+                               rda_fieldvalue_T(il_jk,il_ji,il_jl)=REAL(rl_tempinsitu,4)
+                             ENDIF
+                          ENDDO 
+                       ENDIF
+                   ELSE 
+                       rda_fieldvalue_T(il_jk,il_ji,:)=rg_fillvalue
+                       rda_fieldvalue_S(il_jk,il_ji,:)=rg_fillvalue
+                   ENDIF
+!#if defined key_debug
+!  WRITE (0,*) "Read field S OK :: ",rda_fieldvalue_S(il_jk,il_ji,:),shape(rlpa_valueS_4D)
+!#endif
+                CASE (NF90_SHORT)
+                 !  WRITE(0,*) 'Cas short'
+                   IF (ila_indx(1) .NE. il_fill .AND. ila_indy(1).NE. il_fill) THEN
+                       !** Lecture de la temperature
+                       rda_fieldvalue_T(il_jk,il_ji,:)=rlpa_valueT_3D(ila_indx(1),ila_indy(1),ila_indz(:))
+                       !** Lecture de salinité
+                       rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_valueS_3D(ila_indx(1),ila_indy(1),ila_indz(:))
+                       IF ( .NOT. ll_clim) THEN
+                       !** Conversion en temperature insitu
+                         DO il_jl=1,id_ndepth
+                            rl_temp=rda_fieldvalue_T(il_jk,il_ji,il_jl)
+                            rl_psal=rda_fieldvalue_S(il_jk,il_ji,il_jl)
+                            rl_pres=rda_depthvalue(il_jl)
+                            rl_ref=0
+                            IF ( rl_temp .NE. rg_fillvalue .AND. rl_psal .NE. rg_fillvalue) THEN 
+                              CALL gsw_pt_from_t(REAL(rl_psal,8),REAL(rl_temp,8),REAL(rl_ref,8),REAL(rl_pres,8),rl_tempinsitu)
+                              rda_fieldvalue_T(il_jk,il_ji,il_jl)=REAL(rl_tempinsitu,4)
+                            ENDIF
+                         ENDDO 
+                       ENDIF 
+                  ELSE
+                      rda_fieldvalue_T(il_jk,il_ji,:)=rg_fillvalue
+                      rda_fieldvalue_S(il_jk,il_ji,:)=rg_fillvalue
+                   ENDIF
+                
+                CASE default
+                   WRITE(0,*) 'Type non reconnu'
+                ENDSELECT
+           ENDDO
+        ELSE
+           WRITE(0,*) 'Dimension non prise en compte :: ',id_nbdim
+           STOP
+        ENDIF
+  !   WRITE (0,*) 'Profil lu OK :: ',il_ji,id_nprofs
+!#if defined key_cputime 
+!      CALL SYSTEM_CLOCK(count=il_t2, count_rate=il_ir)
+!      WRITE(0,*) "Temps read profile  : ",REAL(il_t2 - il_t1) / il_ir
+!#endif
+#if defined key_debug
+  WRITE (0,*) "Read model files OK profile/nbprofs : ",il_ji,id_nprofs
+#endif
+  ENDDO
+!*
+!** DESALLOCATION TAB 3D
+SELECT CASE (il_alloc)
+    CASE (1)
+       DEALLOCATE(rlpa_valueT_3D_R8)
+       DEALLOCATE(rlpa_valueS_3D_R8)
+    CASE (2)
+       DEALLOCATE(rlpa_valueT_3D)
+       DEALLOCATE(rlpa_valueS_3D)
+    CASE (3)
+       DEALLOCATE(rlpa_valueT_4D_R8)
+       DEALLOCATE(rlpa_valueS_4D_R8)
+    CASE (4)
+       DEALLOCATE(rlpa_valueT_4D)
+       DEALLOCATE(rlpa_valueS_4D)
+    CASE default
+       WRITE(0,*) 'Type non reconnu'
+ENDSELECT
+
+#if defined key_debug
+  WRITE(0,*) 'End read_model_file'
+#endif
 ENDSUBROUTINE read_model_file
 !
 !******************************************************************************
@@ -2033,7 +2414,7 @@ SUBROUTINE interp_model_field(rda_modelvalue_T, &
   !
   INTEGER                                                               :: il_ji,il_jj,il_jk,il_den,il_den2, &
                                                                            il_poids,il_status,il_ind,il_n,il_n2,&
-                                                                           il_n3,il_jp,il_nbx,il_nby,il_ficlog
+                                                                           il_t1,il_t2,il_ir,il_n3,il_jp,il_nbx,il_nby,il_ficlog
   REAL(KIND=4), DIMENSION(id_ndepth)                                    :: rla_modelvalueT_tmp,rla_modelvalueS_tmp
   REAL(KIND=4), DIMENSION(:),ALLOCATABLE                                :: rla_modelvalueT_tmp2,rla_modelvalueS_tmp2,&
                                                                            rla_modeldepth2,rla_codepthT_tmp2,&
