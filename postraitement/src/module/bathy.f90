@@ -565,7 +565,6 @@ END SUBROUTINE InterpBathy_R4
     rl_interp =  rl_interp / &
          & ( rl_W_ix_iy+rl_W_ix1_iy+rl_W_ix_iy1+rl_W_ix1_iy1)
 
-
     id_interpBathyValue = NINT(rl_interp)
 
 

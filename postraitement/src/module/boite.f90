@@ -785,7 +785,7 @@ CONTAINS
           WRITE(*,'(2F9.2)')rl_lonmax,rl_latmin
           WRITE(*,'(2F9.2)')rl_lonmin,rl_latmin
           WRITE(*,'(2F9.2)')rl_lon_bary,rl_lat_bary
-         STOP
+         CALL EXIT(1)
        CASE (2)! cas rond
           id_Ncarac = 1
 !!$        WRITE(*,'(4F9.2)')  rga_info(1:4,il_jregion)
@@ -825,7 +825,7 @@ CONTAINS
   ! suivante
 
   ! reprise de createcmz.F90 (C.E. Testut). Mais rajout d'une gestion des
-  ! erreurs de facon a ne pas faire un stop brutal: en cas de probleme de
+  ! erreurs de facon a ne pas faire un CALL EXIT(1) brutal: en cas de probleme de
   ! lecture on attribut la valeur -1 a id_err (sinon O)
 
 !!$  CHARACTER(len=256) FUNCTION readnextline(id_numfil,cd_textexclusion,id_err) 

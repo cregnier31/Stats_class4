@@ -1789,6 +1789,8 @@ CONTAINS
     USE table_bathy
     USE HYDRO_POTENTIEL
     USE MIOL
+    USE MFT_Inf_NaN_Detection
+
     IMPLICIT NONE
     !
     !**   0.2 Local variables
@@ -1907,8 +1909,11 @@ CONTAINS
 !!$          if ( TRIM(cgpa_DATA_STATE_INDICATOR(ib_p,1)) == '0A'  ) &
 !!$               & il_dsi_NOK =  il_dsi_NOK + 1
 !!$
-        ELSE IF ( rl_lon > 360. .OR. rl_lon < -180. .OR. &
+       ELSE IF ( rl_lon > 360. .OR. rl_lon < -180. .OR. &
             & rl_lat >  90. .OR. rl_lat < -90.) THEN
+            WRITE(0,*)' lon or lat value out of range'
+            il_position_qc_NOK = il_position_qc_NOK + 1
+       ELSE IF ( isnan(rl_lon)  .OR. isnan(rl_lat)) THEN
             WRITE(0,*)' lon or lat value out of range'
             il_position_qc_NOK = il_position_qc_NOK + 1
 !!$          !** test de presence de PRES ou DEPH pour ce profil
@@ -1931,6 +1936,7 @@ CONTAINS
 !         WRITE(id_ficlog,'(a,1x,i4)')'Pression valide',il_PRES_ET_DEPH
           !** recherche de la bathymetrie
 #if defined key_debug
+    WRITE(0,*) 'Profil number :: ',ib_p
     WRITE(0,*) 'Interp bathy :: ',rl_lon,rl_lat
 #endif 
           CALL InterpBathy(rl_lon,rl_lat,il_bathy,il_status )
@@ -1938,7 +1944,7 @@ CONTAINS
              WRITE(*,*) 'Pb interp bathy ',rl_lon,rl_lat
              WRITE(*,*) 'Profile :',ib_p
              WRITE(*,*) 'Fichier :',cd_file
-             STOP
+             CALL EXIT(1)
           ENDIF
           iga_BathyProfil(ib_p) = il_bathy
 #if defined key_debug

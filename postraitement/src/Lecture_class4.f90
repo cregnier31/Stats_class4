@@ -89,7 +89,7 @@ PROGRAM Lecture_class4
   IF (il_narg.lt.8) THEN
      PRINT *,'Pb with arguments :: ',il_narg, '/= 8 '
      PRINT *,'USAGE :: cd_commandFile modele rep_in date_run il_typegrid fic_log type_run dir_utils'
-     STOP 
+     CALL EXIT(1) 
   ENDIF
   ! recup nom de la nameliste
   CALL getarg(1,cd_commandFile)
@@ -106,7 +106,7 @@ PROGRAM Lecture_class4
   READ(cl_input5,*) ig_typegrid
   IF ( ig_typegrid /= 1 .AND. ig_typegrid /= 2) THEN
     PRINT *,'Grid type not valid',ig_typegrid
-     STOP 
+     CALL EXIT(1) 
   ENDIF
   CALL getarg(6,cl_input6)
   cg_ficlog=TRIM(cl_input6)
@@ -114,7 +114,7 @@ PROGRAM Lecture_class4
   READ(cl_input7,*) ig_typedata
   IF ( ig_typedata /= 1 .AND. ig_typedata /= 2) THEN
     PRINT *,'type data non valid'
-    STOP
+    CALL EXIT(1)
   ENDIF
   CALL getarg(8,cl_input8)
   cl_utils=TRIM(cl_input8)
@@ -138,7 +138,7 @@ PROGRAM Lecture_class4
   IF ( il_status /= 0 ) THEN
      WRITE(0,*) 'Liste argo memory allocation error.'
      CALL flush(0)
-     STOP
+     CALL EXIT(1)
   ENDIF
   cl_RmsDiffFicOut=TRIM(cl_input3)//TRIM(cl_input2)//'_rms_diff_R'//TRIM(cl_input4)//'.nc'
 
@@ -167,7 +167,7 @@ PROGRAM Lecture_class4
   IF ( il_status /= 0 ) THEN
      WRITE(0,*) 'Box Def file reading error',TRIM(cl_utils)//TRIM(FP_BoxDefFile)
      CALL flush(0)
-     STOP
+     CALL EXIT(1)
   ENDIF
 
   !** prise en compte du seuil bathy
@@ -203,7 +203,7 @@ PROGRAM Lecture_class4
   IF ( il_status /= 0 ) THEN
      WRITE(0,'(a)')'Error in definir_classe_profondeur'
      CALL flush(0)
-     STOP
+     CALL EXIT(1)
   ENDIF
   IF ( lg_DepthDefFile ) THEN
      WRITE(il_ficlog,'(a,a)') 'TRI des profils par PROFONDEUR ',TRIM(FP_DepthDefFile)
@@ -236,7 +236,7 @@ PROGRAM Lecture_class4
   IF ( il_status /= 0 ) THEN
      WRITE(0,*) 'Bathy file reading error ',TRIM(cg_BathyFile)
      CALL flush(0)
-     STOP
+     CALL EXIT(1)
   ENDIF
   ! Ecriture en Log
   WRITE(il_ficlog,'(a)')' '
@@ -255,7 +255,7 @@ PROGRAM Lecture_class4
   IF ( il_status /= 0 ) THEN
      WRITE(0,*) 'Error in affect_table_class4'
      CALL flush(0)
-     STOP
+     CALL EXIT(1)
   ENDIF
 
   IF ( il_nbfile > 1000 ) THEN
@@ -350,7 +350,7 @@ PROGRAM Lecture_class4
   IF ( il_status /= 0 ) THEN
      WRITE(0,*) 'Bathy data closing error '
      CALL flush(0)
-     STOP
+     CALL EXIT(1)
   ENDIF
   WRITE(il_ficlog,'(a)')' '
   WRITE(il_ficlog,'(a)')'De-Allocage Bathy data'
@@ -422,7 +422,7 @@ PROGRAM Lecture_class4
         WRITE(0,'(a,a)')'Cannot open Depth file ',TRIM(cl_utils)//TRIM(FP_Deptht)
         CLOSE(il_deptht)
         CALL flush(0)
-        STOP
+        CALL EXIT(1)
      ENDIF
      !** lecture du fichier: premier point qui donne la taille des classes de
      !prof a lire
@@ -451,7 +451,7 @@ PROGRAM Lecture_class4
         WRITE(0,'(a,a)')'Cannot open Depth file ',TRIM(cl_utils)//TRIM(FP_E3t)
         CLOSE(il_e3t)
         CALL flush(0)
-        STOP
+        CALL EXIT(1)
      ENDIF
      !** lecture du fichier: premier point qui donne la taille des classes de
      !prof a lire
@@ -543,7 +543,7 @@ PROGRAM Lecture_class4
   IF ( il_status /= 0 ) THEN
      WRITE(0,*) 'cla_var1D memory allocation error.'
      CALL flush(0)
-     STOP
+     CALL EXIT(1)
   ENDIF
   cla_var1D(:)=cga_param(iga_IndParamStat(1:ig_ParamStat))
   CALL MIOL_write_field_NC (il_file_id,&
@@ -631,7 +631,7 @@ PROGRAM Lecture_class4
   IF ( il_status /= 0 ) THEN
      WRITE(0,*) 'Error in fermer_table_class4'
      CALL flush(0)
-     STOP
+     CALL EXIT(1)
   ENDIF
 
   !** Fermeture du fichier LOG et SYNTH

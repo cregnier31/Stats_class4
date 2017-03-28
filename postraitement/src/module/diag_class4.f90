@@ -102,7 +102,7 @@ CONTAINS
       IF ( il_status /= 0 ) THEN
         WRITE(0,*) 'Liste param memory allocation error.'
         CALL flush(0)
-        STOP
+        CALL EXIT(1)
       ENDIF
       !WRITE(0,*) 'Nombre de variables ::',il_nbparams
       !** Remplit le tableaux avec le nom des fichiers selectionnés 
@@ -202,7 +202,7 @@ CONTAINS
          il_ind=ip_SMMED
         CASE default
           WRITE(0,*) 'Variable not known :', cda_ParamFile(il_i)
-          STOP
+          CALL EXIT(1)
       END SELECT
       iga_IndParamStat(il_i)=il_ind
     ENDDO 
@@ -538,7 +538,7 @@ END SUBROUTINE definir_classe_profondeur
           ENDSELECT
           IF ( il_status /= 0 ) THEN
              WRITE(*,*) 'Pb d Identification boite',rl_lon,rl_lat
-             STOP
+             CALL EXIT(1)
           ENDIF
 #if defined key_debug
     WRITE(0,*) 'Call IdentifierBoite ok ::',rl_lon,rl_lat,rl_IDboite
