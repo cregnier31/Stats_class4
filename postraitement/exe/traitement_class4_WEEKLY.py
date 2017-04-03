@@ -32,18 +32,19 @@ resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM
 #
 ## Test input parameters
 if len(sys.argv) != 4: 
-   print 'Usage: traitement_class4.py <daterun> <MODELE_TYPE> <gridtype>' 
-   sys.exit(1) 
+    print 'Usage: traitement_class4.py <daterun> <MODELE_TYPE> <gridtype>' 
+    print len(sys.argv)
+    sys.exit(1) 
 else:
-   DATERUN=sys.argv[1]
-   MODELE_TYPE=sys.argv[2]
-   GRID=sys.argv[3]
+    DATERUN=sys.argv[1]
+    MODELE_TYPE=sys.argv[2]
+    GRID=sys.argv[3]
 # =============
 # CONFIGURATION
 # =============
 
 #_DBFILE_ = ['/home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_trunk/postraitement/exe/config_'+MODELE_TYPE+'.cfg']
-_DBFILE_ = ['/sortref/reanalyse/glorys/phy/MATHIEU_HAMON/CLASS4/V3/postraitement/exe/config_'+MODELE_TYPE+'.cfg']
+_DBFILE_ = ['/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/exe/config_'+MODELE_TYPE+'.cfg']
 # =========
 # FUNCTIONS
 # =========
@@ -175,6 +176,10 @@ else:
 if TYPEDATANAME ==  "CORA" :       
   TYPEDATA="1"
   PREFIX="ext-CO" 
+elif TYPEDATANAME ==  "CORA4.1" :       
+  TYPEDATA="1"
+  PREFIX="CO" 
+  print "Cora4.1"
 elif TYPEDATANAME ==  "CORIOLIS" :
   TYPEDATA="1"
   PREFIX="CO" 
@@ -205,8 +210,9 @@ julrun=Obj.d2j(DATERUN)
 yyyy=DATERUN[:4]
 date_run=SyDate(DATERUN)
 presmonth=DATERUN[:6]
-backmonth=SyDate.__str__(date_run.gobackward(30))[:6]
+backmonth=SyDate.__str__(date_run.gobackward(28))[:6]
 
+print presmonth,backmonth
 if  TYPERUN == "OPER" :
   julcorstart=julrun - 14
   julcorend=julrun - 8
@@ -226,6 +232,10 @@ for fic in glob.glob(LISTFILE) :
   fic_bis=os.path.basename(fic)
   files.append(fic_bis)
 LISTFILE2=dir_CL4+PREFIX+"_*"+presmonth+"*.nc"
+print LISTFILE2
+if TYPEDATANAME ==  "CORA" :       
+  TYPEDATA="1"
+  PREFIX="ext-CO" 
 for fic in glob.glob(LISTFILE2) :
    fic_bis=os.path.basename(fic)
    files.append(fic_bis)
@@ -250,7 +260,8 @@ for object in files[:] :
        ## Cas CORA
        elif TYPEDATANAME ==  "CORA" :
           datefic=int(Obj.d2j(object.split('_')[2].split('.')[0]))
-
+       elif TYPEDATANAME ==  "CORA4.1" :
+          datefic=int(Obj.d2j(object.split('_')[2].split('.')[0]))
        if datefic >= julcorstart and datefic <= julcorend :
          new_files.append(object)
    #      print " oK %s %s %s "  %(julcorstart,datefic,julcorend)
@@ -290,7 +301,8 @@ log.info("----------------------------")
 # ==========================================
 
 taille_param=len(LISTE_VAR)
-fic_namelist_param=DIR_utils+"/param_names.in"
+#fic_namelist_param=DIR_utils+"/param_names_"+modele.lower()+".in"
+fic_namelist_param=DIR_utils+"/param_names_"+modele+".in"
 try:
   # Creation fichier
   obFichier=open(fic_namelist_param,'w')
@@ -467,8 +479,8 @@ print 'nextrun %s ' %(jrunext)
 if  jrunext <= jmax :
    JRUN=Obj.j2d(jrunext)
    print 'Lancement du run %s ' %(JRUN)
-   #code_lancement=HOMEDIR+'exe/Launch_Stat_CLASS4.ksh '+JRUN+' '+MODELE_TYPE+' '+GRID
-   code_lancement='python '+HOMEDIR+'exe/traitement_class4_WEEKLY.py '+JRUN+' '+MODELE_TYPE+' '+GRID
+   code_lancement=HOMEDIR+'exe/Launch_Stat_CLASS4_naviti.ksh '+JRUN+' '+MODELE_TYPE+' '+GRID
+   #code_lancement='python '+HOMEDIR+'exe/traitement_class4_WEEKLY.py '+JRUN+' '+MODELE_TYPE+' '+GRID
    print code_lancement
    try:
         os.system(code_lancement)
