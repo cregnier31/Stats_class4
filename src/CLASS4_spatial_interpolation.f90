@@ -1613,9 +1613,6 @@ SUBROUTINE read_allege_model_file(cd_fileT, &
     DEALLOCATE(rlpa_depth)
     !  Boucle sur les profiles
     DO il_ji=1,id_nprofs 
-#if defined key_debug
-  WRITE (0,*) "Read model files "
-#endif
 
         ! Lecture des variables à traiter
         !
@@ -1645,9 +1642,9 @@ SUBROUTINE read_allege_model_file(cd_fileT, &
                 rda_fieldvalue_S(il_jk,il_ji,:)=rg_fillvalue
             ENDIF
         ENDDO
-#if defined key_debug
-  WRITE (0,*) "Read model files OK profile/nbprofs : ",il_ji,id_nprofs
-#endif
+!#if defined key_debug
+!  WRITE (0,*) "Read model files OK profile/nbprofs : ",il_ji,id_nprofs
+!#endif
     ENDDO
 
 
@@ -2556,6 +2553,9 @@ SUBROUTINE interp_model_field(rda_modelvalue_T, &
         ! 2D -> 1D pour la profondeur insitu
         !
         rla_codepthT_tmp(1:id_nlevels) = rda_codepthvalueT(1:id_nlevels,il_ji)
+#if defined key_debug
+    PRINT *, 'Profondeur insitu T ',rda_codepthvalueT(1:10,il_ji),il_ji
+#endif
         rla_codepthS_tmp(1:id_nlevels) = rda_codepthvalueS(1:id_nlevels,il_ji)
         DO il_jj = 1, id_nlevels
            IF (rla_codepthT_tmp(il_jj).EQ.rd_emptyvalue ) THEN
@@ -2595,6 +2595,12 @@ SUBROUTINE interp_model_field(rda_modelvalue_T, &
            ALLOCATE(rla_codepthS_tmp2(il_n3))
            rla_codepthT_tmp2(:)=rla_codepthT_tmp(1:il_n2)
            rla_codepthS_tmp2(:)=rla_codepthS_tmp(1:il_n3)
+#if defined key_debug
+    PRINT *, 'Profondeur insitu T ',rla_codepthT_tmp(:)
+    PRINT *, 'Profondeur insitu S ',rla_codepthS_tmp(:)
+    PRINT *, 'Profondeur insitu T tmp2 ',rla_codepthT_tmp2(:)
+    PRINT *, 'Profondeur insitu S tmp2 ',rla_codepthS_tmp2(:)
+#endif
 
            IF (ALLOCATED(rla_modeldepth_inter2)) DEALLOCATE(rla_modeldepth_inter2) 
            ALLOCATE(rla_modeldepth_inter2(il_n2))
@@ -2612,6 +2618,16 @@ SUBROUTINE interp_model_field(rda_modelvalue_T, &
            IF (ALLOCATED(rla_modeldepth_inter2)) DEALLOCATE(rla_modeldepth_inter2) 
            ALLOCATE(rla_modeldepth_inter2(il_n3))
            rla_modeldepth_inter2(1:il_n3)=rd_emptyvalue
+#if defined key_debug
+           print *,"Before interp"
+           print *,'Valeurs rla_codepthS_tmp2 :: ',rla_codepthS_tmp2
+           print *,'Valeurs rla_modeldepth2  :: ',rla_modeldepth2
+           print *,'Valeurs il_n :: ',il_n
+           print *,'Valeurs il_n3 :: ',il_n3
+           print *,'Valeurs rla_modeldepth_inter2  :: ',rla_modeldepth_inter2
+           print *,'Valeurs rla_codepthS_tmp2  :: ',rla_codepthS_tmp2
+           PRINT *,'OK'
+#endif
            !print *,'Valeurs rla_codepthS_tmp2 :: ',rla_codepthS_tmp2,il_n3,rla_modelvalueS_tmp2
            !print *,'Valeurs rla_modeldepth2  :: ',rla_modeldepth2
            !print *,'Valeurs il_n :: ',il_n
@@ -2627,6 +2643,9 @@ SUBROUTINE interp_model_field(rda_modelvalue_T, &
                                              il_n3, &
                                              rl_emptyvalue)
            rla_modelSdepth_inter(1:il_n3)=rla_modeldepth_inter2(:)
+#if defined key_debug
+           print *,"After interp",rla_modelSdepth_inter(:)
+#endif
         ELSE
            CALL MCAL_interp1D_cubicspline_R4(rla_modelvalueT_tmp, &
                                              rda_modeldepth, &
@@ -3071,6 +3090,8 @@ SUBROUTINE read_coriolis_file (cd_inputFile, &
   rda_depthvalue_T(1:id_nlevels, 1:id_nprof) = rl_missvalue
   rda_depthvalue_S(1:id_nlevels, 1:id_nprof) = rl_missvalue
   rla_depthvalue(1:id_nlevels, 1:id_nprof) = rl_missvalue
+  rla_depthadjustvalue(1:id_nlevels, 1:id_nprof) = rl_missvalue
+  rla_presadjustvalue(1:id_nlevels, 1:id_nprof) = rl_missvalue
   rla_presvalue(1:id_nlevels, 1:id_nprof) = rl_missvalue
   rda_LON(:)=rl_missvalue
   rda_LAT(:)=rl_missvalue
@@ -3188,11 +3209,22 @@ SUBROUTINE read_coriolis_file (cd_inputFile, &
           clpa_2Dtmp(1:id_nlevels, 1:id_nprof)
      IF ( ld_isdepthadj) THEN
         cl_varname = 'DEPH_ADJUSTED'
+#if defined key_debug
+     PRINT *,'DEPH_ADJUSTED !!!'
+#endif
         CALL MIOL_read_field_NC(il_file_id, &
              cl_varname, &
              rlpa_tmp)
+#if defined key_debug
+     PRINT *,rlpa_tmp(1:10,1)
+     PRINT *,shape(rlpa_tmp)
+     PRINT *,shape(rla_depthadjustvalue)
+#endif
         rla_depthadjustvalue(1:id_nlevels, 1:id_nprof) = &
              rlpa_tmp(1:id_nlevels, 1:id_nprof)
+#if defined key_debug
+     PRINT *,rla_depthadjustvalue(1:10,1)
+#endif
         cl_varname = 'DEPH_ADJUSTED_QC'
         CALL MIOL_read_field_NC(il_file_id, &
              cl_varname, &
@@ -3202,6 +3234,7 @@ SUBROUTINE read_coriolis_file (cd_inputFile, &
                clpa_2Dtmp(1:id_nlevels, 1:id_nprof)
 #if defined key_debug
      PRINT *,'OK DEPH_ADJUSTED'
+     PRINT *,rla_depthadjustvalue(1:10,1)
 #endif
      ENDIF
      IF (ld_isdepth_corr) THEN
@@ -3228,7 +3261,6 @@ IF (ld_ispres) THEN
 #if defined key_debug
      PRINT *,'Profondeur pres'
 #endif
-     rla_depthadjustvalue(1:id_nlevels, 1:id_nprof) = rl_missvalue
      cl_varname = 'PRES'
      CALL MIOL_read_field_NC(il_file_id, &
           cl_varname, &
@@ -3250,7 +3282,6 @@ IF (ld_ispres) THEN
 
   DEALLOCATE(clpa_2Dtmp)
   IF ( ld_ispresadj) THEN
-     rla_presadjustvalue(1:id_nlevels, 1:id_nprof) = rl_missvalue 
      cl_varname = 'PRES_ADJUSTED'
      CALL MIOL_read_field_NC(il_file_id, &
           cl_varname, &
@@ -3297,15 +3328,24 @@ ALLOCATE(rla_prof(id_nlevels))
 
         IF ( ld_ispres .and. .not. ld_isdepth  ) THEN
             IF ( cda_datamode(il_jj) == 'R' )  THEN
+#if defined key_debug
+     WRITE(0,*) 'CAS1 PRES REAL not ADJUSTED'
+#endif
                rla_prof(:)=rla_presvalue(:,il_jj)
                cla_profqc(:)=cla_presqc(:,il_jj)
                cda_depthvarname(il_jj)='PRES'
             ELSE
                IF ( ld_ispresadj) THEN
+#if defined key_debug
+     WRITE(0,*) 'CAS2 PRES ADJUSTED'
+#endif
                   rla_prof(:)=rla_presadjustvalue(:,il_jj)
                   cla_profqc(:)=cla_presadjqc(:,il_jj)
                   cda_depthvarname(il_jj)='PRES_ADJUSTED'
                ELSE
+#if defined key_debug
+     WRITE(0,*) 'CAS3 PRES not ADJUSTED'
+#endif
                   rla_prof(:)=rla_presvalue(:,il_jj)
                   cla_profqc(:)=cla_presqc(:,il_jj)
                   cda_depthvarname(il_jj)='PRES'
@@ -3322,15 +3362,24 @@ ALLOCATE(rla_prof(id_nlevels))
               rla_prof(:)=rla_depthvalue(:,il_jj)
               cla_profqc(:)=cla_depthqc(:,il_jj)
               cda_depthvarname(il_jj)='DEPH'
+#if defined key_debug
+     WRITE(0,*) 'CAS4 DEPH REAL not ADJUSTED'
+#endif
            ELSE
               IF ( ld_isdepthadj) THEN
                  rla_prof(:)=rla_depthadjustvalue(:,il_jj)
                  cla_profqc(:)=cla_depthadjqc(:,il_jj)
                  cda_depthvarname(il_jj)='DEPH_ADJUSTED'
+#if defined key_debug
+     WRITE(0,*) 'CAS5 DEPH ADJUSTED'
+#endif
               ELSE
                  rla_prof(:)=rla_depthvalue(:,il_jj)
                  cla_profqc(:)=cla_depthqc(:,il_jj)
                  cda_depthvarname(il_jj)='DEPH'
+#if defined key_debug
+     WRITE(0,*) 'CAS6 DEPH not ADJUSTED'
+#endif
               ENDIF
            ENDIF
         ENDIF
@@ -3342,15 +3391,25 @@ ALLOCATE(rla_prof(id_nlevels))
                 rla_prof(:)=rla_depthvalue(:,il_jj)
                 cla_profqc(:)=cla_depthqc(:,il_jj)
                 cda_depthvarname(il_jj)='DEPH'
+#if defined key_debug
+     WRITE(0,*) 'CAS7 DEPH REAL not ADJUSTED'
+#endif
              ELSE
                 IF ( ld_isdepthadj) THEN
                    rla_prof(:)=rla_depthadjustvalue(:,il_jj)
                    cla_profqc(:)=cla_depthadjqc(:,il_jj)
                    cda_depthvarname(il_jj)='DEPH_ADJUSTED'
+#if defined key_debug
+     WRITE(0,*) 'rla_depthadjustvalue(:,il_jj) : ',rla_depthadjustvalue(1:10,il_jj)
+     WRITE(0,*) 'CAS8 DEPH ADJUSTED',il_jj
+#endif
                 ELSE
                    rla_prof(:)=rla_depthvalue(:,il_jj)
                    cla_profqc(:)=cla_depthqc(:,il_jj)
                    cda_depthvarname(il_jj)='DEPH'
+#if defined key_debug
+     WRITE(0,*) 'CAS9 DEPH not ADJUSTED'
+#endif
                 ENDIF
             ENDIF
           !  WRITE(0,*) 'Pres et depth valable on garde depth'
@@ -3360,15 +3419,24 @@ ALLOCATE(rla_prof(id_nlevels))
                 rla_prof(:)=rla_presvalue(:,il_jj)
                 cla_profqc(:)=cla_presqc(:,il_jj)
                 cda_depthvarname(il_jj)='PRES'
+#if defined key_debug
+     WRITE(0,*) 'CAS10 PRES REAL not ADJUSTED'
+#endif
              ELSE
                 IF ( ld_ispresadj) THEN
                    rla_prof(:)=rla_presadjustvalue(:,il_jj)
                    cla_profqc(:)=cla_presadjqc(:,il_jj)
                    cda_depthvarname(il_jj)='PRES_ADJUSTED'
+#if defined key_debug
+     WRITE(0,*) 'CAS11 PRES ADJUSTED'
+#endif
                 ELSE
                    rla_prof(:)=rla_presvalue(:,il_jj)
                    cla_profqc(:)=cla_presqc(:,il_jj)
                    cda_depthvarname(il_jj)='PRES'
+#if defined key_debug
+     WRITE(0,*) 'CAS12 PRES not ADJUSTED'
+#endif
                 ENDIF
              ENDIF
           ELSE IF (il_pres == 0 .AND. il_depth > 0 ) THEN
@@ -3376,15 +3444,24 @@ ALLOCATE(rla_prof(id_nlevels))
                 rla_prof(:)=rla_depthvalue(:,il_jj)
                 cla_profqc(:)=cla_depthqc(:,il_jj)
                 cda_depthvarname(il_jj)='DEPH'
+#if defined key_debug
+     WRITE(0,*) 'CAS13 DEPH REAL not ADJUSTED'
+#endif
              ELSE
                 IF ( ld_isdepthadj) THEN
                    rla_prof(:)=rla_depthadjustvalue(:,il_jj)
                    cla_profqc(:)=cla_depthadjqc(:,il_jj)
                    cda_depthvarname(il_jj)='DEPH_ADJUSTED'
+#if defined key_debug
+     WRITE(0,*) 'CAS14 DEPH ADJUSTED'
+#endif
                 ELSE
                    rla_prof(:)=rla_depthvalue(:,il_jj)
                    cla_profqc(:)=cla_depthqc(:,il_jj)
                    cda_depthvarname(il_jj)='DEPH'
+#if defined key_debug
+     WRITE(0,*) 'CAS15 DEPH not ADJUSTED '
+#endif
                 ENDIF
              ENDIF
            ! WRITE(0,*) 'Depth valable on garde Depth'
@@ -3393,8 +3470,14 @@ ALLOCATE(rla_prof(id_nlevels))
             rla_prof(:)=rl_missvalue
             cla_profqc(:)=cla_depthqc(:,il_jj)
             cda_depthvarname(il_jj)='None'
+#if defined key_debug
+     WRITE(0,*) 'DEPH none '
+#endif
           ENDIF         
         ENDIF
+#if defined key_debug
+    PRINT *, 'Profondeur insitu T ',rda_depthvalue_T(1:10,1)
+#endif
 
         IF ( id_nlevels > 4 ) THEN
           !** Gestion des cas de profils inversés ou redondés avec un bon QC
@@ -3514,6 +3597,9 @@ ALLOCATE(rla_prof(id_nlevels))
 
      ENDDO  !** il_jk=1, id_nlevels
 
+#if defined key_debug
+    PRINT *, 'Profondeur insitu T ',rda_depthvalue_T(1:10,1)
+#endif
   ENDDO !** il_jj=1, id_nprof
   !** 
   !
