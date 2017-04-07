@@ -10,6 +10,38 @@
 !!
 MODULE PARAM_MOD
 
+
+
+!** CONFIG Arctic Stereo
+#if defined key_arctic_stereo
+  CHARACTER (len=16), PARAMETER ::  cp_cfg = "arctic_stereo"        !: name of the configuration 
+  INTEGER, PARAMETER :: ip_maxgrd = 263325
+ ! INTEGER, PARAMETER :: ip_maxgrd =  500000
+  !INTEGER, PARAMETER :: ip_jpiglo = 609 ! number of grid points x
+  !INTEGER, PARAMETER :: ip_jpjglo = 881 ! number of grid points y
+  INTEGER, PARAMETER :: ip_jpiglo = 379 ! number of grid points x
+  INTEGER, PARAMETER :: ip_jpjglo = 559 ! number of grid points y
+ ! INTEGER, PARAMETER :: ip_jpiglo = 760 ! number of grid points x
+ ! INTEGER, PARAMETER :: ip_jpjglo = 1120 ! number of grid points y
+  INTEGER, PARAMETER :: jpkdta  = 43     !: number of levels      ( >= jpk    )
+  INTEGER, PARAMETER ::      jpiglo  = ip_jpiglo,      &  !: 1st dimension ofglobal domain --> i
+                             jpjglo  = ip_jpjglo,      &  !: 2nd    ""    --> jpk     = jpkdta,     
+                             jpk     = jpkdta           !: number of vertical levels
+#endif
+!** CONFIG Ant Stereo
+#if defined key_ant_stereo
+  CHARACTER (len=16), PARAMETER ::  cp_cfg = "antarctic_stereo"        !: name of the configuration 
+  INTEGER, PARAMETER :: ip_maxgrd = 323838
+ ! INTEGER, PARAMETER :: ip_maxgrd =  520000
+  INTEGER, PARAMETER :: ip_jpiglo = 632 ! number of grid points x
+  INTEGER, PARAMETER :: ip_jpjglo = 664 ! number of grid points y
+  !INTEGER, PARAMETER :: ip_jpiglo = 790 ! number of grid points x
+  !INTEGER, PARAMETER :: ip_jpjglo = 830 ! number of grid points y
+  INTEGER, PARAMETER :: jpkdta  = 43     !: number of levels      ( >= jpk    )
+  INTEGER, PARAMETER ::      jpiglo  = ip_jpiglo,      &  !: 1st dimension ofglobal domain --> i
+                             jpjglo  = ip_jpjglo,      &  !: 2nd    ""    --> jpk     = jpkdta,     
+                             jpk     = jpkdta           !: number of vertical levels
+#endif
 !** CONFIG ORCA1
 #if defined key_orca_r1
 !! NATL12
