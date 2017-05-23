@@ -235,13 +235,13 @@ CONTAINS
                 IF ( (rl_lon == rl_lonmax).OR.(rl_lon == rl_lonmin)&
                      .OR.(rd_lat == rl_latmax).OR.(rd_lat == rl_latmin) ) THEN
                    il_nbdoublepoint_bords=il_nbdoublepoint_bords+1
-                   WRITE (il_numout1,*) 'doublon bords en (lon,lat)=',rl_lon,rd_lat,&
-                        &' pour region (',ib_jregion,',value=',rga_valeur1(ib_jregion),&
-                        &')  et region(??,value=',rd_IDboite,')'
+                   !WRITE (il_numout1,*) 'doublon bords en (lon,lat)=',rl_lon,rd_lat,&
+                   !     &' pour region (',ib_jregion,',value=',rga_valeur1(ib_jregion),&
+                   !     &')  et region(??,value=',rd_IDboite,')'
                 ELSE ! sinon il est dans de la region
-                   WRITE (il_numout2,*) 'doublon interne en (lon,lat)=',rl_lon,rd_lat,&
-                        &' pour region (',ib_jregion,',value=',rga_valeur1(ib_jregion),&
-                        &')  et region(??,value=',rd_IDboite,')'
+                   !WRITE (il_numout2,*) 'doublon interne en (lon,lat)=',rl_lon,rd_lat,&
+                   !     &' pour region (',ib_jregion,',value=',rga_valeur1(ib_jregion),&
+                   !     &')  et region(??,value=',rd_IDboite,')'
                    il_nbdoublepoint_int=il_nbdoublepoint_int+1
                 ENDIF
                 il_nbdoublepoint=il_nbdoublepoint+1

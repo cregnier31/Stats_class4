@@ -1,6 +1,7 @@
 # Makefile for Fortran program Class 4
 # Modifs C.REGNIER Janvier 2010
 type=glorys2v4
+type=orca12_allege
 #type=cglors
 include ../../macro/make_intel_$(type).macro
 #include ../../macro/make_intel.macro
@@ -46,7 +47,20 @@ OBJ3 = $(SRCDIR3)/hydro_potentiel.o \
       $(SRCDIR)/diag_class4_EN3.o \
       $(SRCDIR)/read_EN3.o
 
-all: $(EXEDIR)/Lecture_class4.exe
+OBJ4 = $(SRCDIR3)/hydro_potentiel.o \
+       $(SRCDIR)/table_ARGO.o   \
+       $(SRCDIR)/table_bathy.o \
+       $(SRCDIR)/bathy.o \
+       $(SRCDIR)/table_boite.o \
+       $(SRCDIR)/table_class4_new.o \
+       $(SRCDIR)/boite.o \
+       $(SRCDIR)/dens1d.o \
+       $(SRCDIR)/boite_bins.o \
+       $(SRCDIR)/diag_class4_new.o \
+       $(SRCDIR)/read_ARGO.o  
+
+all: $(EXEDIR)/Lecture_class4.exe \
+     $(EXEDIR)/Lecture_class4_MLD.exe
 
 change_path:
 	@echo ""
@@ -71,6 +85,10 @@ change_path:
 $(EXEDIR)/Lecture_class4.exe: $(OBJ) $(SRCDIR2)/Lecture_class4.o
 	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY) 
 #	@perl -pi -e "s|FP_ParamNameFile =.*|FP_ParamNameFile ='param_names_${type}.in'|g" ${PWD}/module/table_class4.f90
+
+$(EXEDIR)/Lecture_class4_MLD.exe: $(OBJ4) $(SRCDIR2)/Lecture_class4_MLD.o
+	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY) 
+
 
 $(EXEDIR)/Lecture_class4_EN3.exe: $(OBJ3) $(SRCDIR2)/Lecture_class4_EN3.o
 	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY) 
