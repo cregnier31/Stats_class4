@@ -577,21 +577,33 @@ PROGRAM Lecture_class4
   CALL MIOL_close_file_NC(il_file_id)
 
   !**  Creation fichier MLD
-  il_nbdim=2
+  WRITE(0,*) "Creation fichier MLD"
+  il_nbdim=3
   IF (ALLOCATED(cla_dimname)) DEALLOCATE(cla_dimname)
   ALLOCATE(cla_dimname(il_nbdim))
   IF (ALLOCATED(ila_dimlen)) DEALLOCATE(ila_dimlen)
   ALLOCATE(ila_dimlen(il_nbdim))
   cla_dimname(1) = 'x'
   cla_dimname(2)=  'y'
+  cla_dimname(3)=  'string_length'
   ila_dimlen(1) = ig_nbregion
   ila_dimlen(2) = ig_ParamStat
+  ila_dimlen(3) = 25
   CALL MIOL_create_file_NC(TRIM(cl_MLDFicOut),&
                            il_nbdim,&
                            cla_dimname,&
                            ila_dimlen)
 
   CALL MIOL_openw_file_NC(TRIM(cl_MLDFicOut), il_file_id)
+  CALL MIOL_write_field_NC (il_file_id,&
+                            'box',&
+                            'X',&
+                            rga_valeur1) 
+  CALL MIOL_write_field_NC (il_file_id,&
+                            'param_stats',&
+                            'SY',&
+                            cla_var1D(:),&
+                            ila_dimlen(3))
   CALL MIOL_write_field_NC (il_file_id,&
                             'mean_cumul_data',&
                             'XY',&
@@ -729,6 +741,7 @@ PROGRAM Lecture_class4
                             'XY',&
                              rga_error_MLP)
   CALL MIOL_close_file_NC(il_file_id)
+  WRITE(0,*) "Creation fichier MLD OK"
 
   !** ecriture en ASCII des resultats
   !   ------------------------------
