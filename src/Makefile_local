@@ -1,12 +1,12 @@
 # Makefile for Fortran program Test_MIOL.F90
 # Makefile pour n'importe quel px
-# C.REGNIER 2010
-# faire module load pgi/pgi-8.0
-#       module load netcdf/netcdf-4.0_pgi80_r4
-#       module load mft/mft-3.1
-type=orca12_allege
-type=orca12
-type=glorys2v4
+# C.REGNIER 2017
+# faire module load intel/intel-15
+#                   netcdf/netcdf-4.3_intel15_hdf5
+#type=orca12_allege
+type=orca025
+#type=orca12
+#type=glorys2v4
 include ../macro/make_intel_$(type)_local.macro
 ## Rules
 .SUFFIXES:.F90 .F .f90 .mod
@@ -44,7 +44,7 @@ all:  $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS.exe \
 aice: $(EXEDIR)/CLASS4_spatial_interpolation_GODAE.exe
 coloc_aice: $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE)_aice.exe
 test: $(EXEDIR)/test_write.exe
-inter_corio: $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS.exe 
+inter_corio: $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS_local.exe 
 
 $(EXEDIR)/test_write.exe: test_write.o
 	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
@@ -61,6 +61,8 @@ $(EXEDIR)/CLASS4_spatial_interpolation_GODAE.exe: $(OBJECTS2) CLASS4_spatial_int
 $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS.exe: $(OBJECTS2) CLASS4_spatial_interpolation.o
 	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
 
+$(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS_local.exe: $(OBJECTS2) CLASS4_spatial_interpolation.o
+	$(F90) -o $@ $? $(LD_FLAGS) $(LIBRARY)
 
 ## Utilities
 cleanexe : 
