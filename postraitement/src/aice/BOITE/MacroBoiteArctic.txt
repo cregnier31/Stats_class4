@@ -1,0 +1,70 @@
+## Nom boite
+## nbre sous-boite
+## n° boite macro - liste numero sous-boite
+##
+## Nbre macro boite
+16
+#
+North_pole_Fosse_oceanique
+3
+1 7000 7010 7020
+#
+Queen_Elisabeth_Islands
+3
+2 7030 7040 7050
+#
+Beaufort_Sea
+3
+3 7170 7180 7190
+#
+Chuckchi_Sea
+2
+4 7200 7210
+#
+Siberian_Sea
+3
+5 7140 7150 7160
+#
+Laptev_Sea
+1
+6 7130
+#
+Kara_Sea
+2
+7 7110 7120
+#
+Barents_Sea
+2
+8 7090 7100
+#
+Greenland_Basin
+1
+9 7080
+#
+Southeast_Greenland
+3
+10 3050 3060 3070
+#
+Bafin_Bay
+2
+11 7060 7070
+#
+Hudson_Bay
+1
+12 3000
+#
+Labrador_Sea
+6
+13 3010 3020 3030 3040 3130 3140
+#
+Bering_Sea
+5
+14 5000 5010 5020 5030 5040
+#
+Okhotsk_Sea
+2
+15 5110 5120
+#
+Baltic_Sea
+2
+16 3110 3120
