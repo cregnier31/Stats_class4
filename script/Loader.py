@@ -168,6 +168,8 @@ class InputLoader(Loader):
             log.error("Type TEP_CLASS4.py --data=XXX --src=XXX --config=XXX --daterun=XXXX --nbdate=X --delta=X  \
                             (for example 1 week before today -14 and today -7)")
             sys.exit(1)
+        if ll_date1 and ll_date2 :
+            log.info("Date1 %s Date2 %s " %(date1,date2))
         confname='config_'+str(cl_config)+'_'+str(cl_src)+'_'+str(cl_data)+'.cfg'
         return date1,date2,confname,cl_data,cl_daterun,cl_schedule,cl_src,nb_proc,cl_typemod
     def find_date(self):
