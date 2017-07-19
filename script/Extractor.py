@@ -19,9 +19,11 @@ class Extractor(object) :
 
     def factory(self,type):
         if type == "CORA3": return Extract_cora3()
-        if type == "cora4.0_merc": return Extract_cora4()
+        if type == "cora4.0_merc": return Extract_cora4('.tgz')
         if type == "cora4.1_raw": return Extract_cora4_1()
-        if type == "CORA4.1_MERC": return Extract_cora4()
+        if type == "CORA4.1_MERC": return Extract_cora4('.tgz')
+        if type == "cora5.0_raw": return Extract_cora4('.tar.gz')
+        if type == "CORA5.0": return Extract_cora4('.tgz')
         if type == "CORIOLIS": return Extract_corio()
         if type == "CORIOLIS_RAW": return Extract_corio_raw()
         if type == "ENS": return ExtractEns()
@@ -412,11 +414,12 @@ class Extract_cora4(Extractor) :
 
     """ Extract Cora4 file """
 
-    def __init__(self):
+    def __init__(self,compress):
         print "Constructor cora 4 ------"
         self.PREFIX='cora4.0_merc'
+        self.compress=compress
     def run(self,date1,date2,dirdata,dirtmp,typedata,templat,prefix):
-        print 'Extractor cora4'
+        print 'Extractor cora4 : '+self.compress
         # ===============
         # LOGGER
         # ===============
@@ -432,17 +435,18 @@ class Extract_cora4(Extractor) :
         liste_year=[]
         print presyear,backyear
         if presyear == backyear : 
-            file=prefix+"_"+presyear+".tgz"
+            file=prefix+"_"+presyear+self.compress
             liste_file.append(file)
             liste_year.append(presyear)
         else :
-            file1=prefix+"_"+presyear+".tgz"
+            file1=prefix+"_"+presyear+self.compress
             liste_file.append(file1)
-            file2=prefix+"_"+backyear+".tgz"
+            file2=prefix+"_"+backyear+self.compress
             liste_file.append(file2)
             liste_year.append(presyear)
             liste_year.append(backyear)
         ## Extract and copy file
+        print " Liste file "
         print liste_file
         for file in liste_file :
             file_path=dirdata+file
@@ -464,6 +468,8 @@ class Extract_cora4(Extractor) :
                 else :
                     print 'file not known %s ' %(file_path) 	
                     sys.exit(1)
+            else :
+                print "Directory already exist"
         ## Remove file
         liste_tot=[]
         for year in liste_year : 
@@ -472,7 +478,10 @@ class Extract_cora4(Extractor) :
                 dateval=SyDate.__str__(valeurj)
                 log.info('Day  %s ' % (dateval)) 
                 liste_file=glob.glob(dirtmp+'/'+year+'/*'+dateval+'*.nc')
+                print dirtmp+'/'+year+'/*'+dateval+'*.nc'
+                print liste_file
                 for file in liste_file :
+                    print file
                     try :
                         log.info('Fichier  %s ' % (file))
                         shutil.move(file,dirtmp)
