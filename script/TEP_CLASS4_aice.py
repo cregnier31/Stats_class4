@@ -283,6 +283,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         pers_tab[:,:,:,:]=9999.
         fcst_tab[:,:,:,:]=9999.
         hdct_tab[:,:,:]=9999.
+        ll_miss=False
         # =============================================================================
         # PART-5 - Compute interpolation
         # =============================================================================
@@ -328,6 +329,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 list_file=glob.glob(dirmodel_new+directory+"/"+modele+"_"+daily_pref+"_"+dateval+"*_icemod*.nc")
                 if not list_file :
                     log.error("File missing for %s" %(directory))
+                    ll_miss=True
                     sys.exit(1)
                 log.info('dirmodel  %s ' % (dirmodel)) 
                 log.info('directory and file  %s %s ' % (directory,list_file[0])) 
@@ -352,24 +354,29 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                     hdct_tab[:,0,0]=interp_idw[:]
                 ind+=1
         ## Write in the file
-        filename=dirwork+file_out
-        Writer().write_GODAE_files(filename,hdct_tab,fcst_tab,pers_tab,dateval,modele)
-        log.info('----------------------------')
-        log.info('Creation file ok %s' %(filename))
-        log.info('----------------------------')
-        ## Zipped files and move in output directory 
-        for filename in glob.glob(dirwork+"*.nc") :
-            log.info('ZIP and move file %s' %(filename))
-            f_in=open(filename,'rb')
-            f_out=gzip.open(filename+'.gz','wb')
-            f_out.writelines(f_in)
-            f_out.close()
-            f_in.close()
-            log.info('File ok %s' %(filename))
-            if os.path.exists(diroutput+os.path.basename(filename)+'.gz'):
-                os.remove(diroutput+os.path.basename(filename)+'.gz')
-            shutil.move(filename+'.gz',diroutput)
-            os.remove(filename)
+        if not ll_miss : 
+            filename=dirwork+file_out
+            Writer().write_GODAE_files(filename,hdct_tab,fcst_tab,pers_tab,dateval,modele)
+            log.info('----------------------------')
+            log.info('Creation file ok %s' %(filename))
+            log.info('----------------------------')
+            ## Zipped files and move in output directory 
+            for filename in glob.glob(dirwork+"*.nc") :
+                log.info('ZIP and move file %s' %(filename))
+                f_in=open(filename,'rb')
+                f_out=gzip.open(filename+'.gz','wb')
+                f_out.writelines(f_in)
+                f_out.close()
+                f_in.close()
+                log.info('File ok %s' %(filename))
+                if os.path.exists(diroutput+os.path.basename(filename)+'.gz'):
+                    os.remove(diroutput+os.path.basename(filename)+'.gz')
+                shutil.move(filename+'.gz',diroutput)
+                os.remove(filename)
+        else : 
+            log.info('File missing')
+
+
 # Lancement du run d'après
 DAYMAX=param_dict.get('GLOBAL','DAY_MAX')
 ## Clear stuck objects

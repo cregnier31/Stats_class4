@@ -206,7 +206,6 @@ else :
     print prefix_data
     list_files=Extractor().factory(prefix_data).run_list(date1,date2,dirwork)
 
-
 log.info('List Files  %s ' % (list_files)) 
 # =============================================================================
 #  PART-3 - Area Selection and QC selection

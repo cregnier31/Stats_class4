@@ -104,6 +104,9 @@ log.info('========================================================')
 [date1,date2,confname,data_type,daterun,cl_schedule,cl_src,nb_proc,cl_typemod]=Loader().factory('INPUT').load(sys.argv[1:],level)
 log.info("Type des fichiers d'entree %s " %(cl_typemod))
 log.info("Nombre de proc %i" %(nb_proc))
+log.info("Daterun %s" %(daterun))
+log.info("Date1 %s" %(date1))
+log.info("Date2 %s" %(date2))
 # ==================================
 #   Load db configuration file
 # ==================================
@@ -277,7 +280,17 @@ for fichier in list_files:
             list_filepos.append(file_pos)
             #  splitLen = 1000000       # 500000 lines per file
             file_in=file_pos
-            outputBase=re.sub("coloc","coloc/split",outputBase) 
+            outputBase=re.sub("coloc","coloc/split",outputBase)
+            ## Create output dir
+            if not os.path.exists(outputBase):
+                try:
+                    os.makedirs(outputBase)
+                    print('Création réussie du répertoire', outputBase)
+                except OSError as exc:  
+                    if exc.errno == errno.EEXIST and os.path.isdir(outputBase):
+                        pass
+                    else:
+                        raise
             outputBase_orig = file_pos.split('.pos')[0]
             input=open(file_in,'r').read().split('\n')
             nb_pts=len(input)
@@ -529,21 +542,25 @@ if DAYMAX :
      date_next=SyDate(daterun).goforward(1)
    else : 
      log.error("Schedule not found %s" %(schedule))
+     sys.exit(1)
+   log.error("Schedule %s" %(schedule))
    if  date_next < dayvalmax :
       if schedule == "MONTHLY" : 
           cl_date=SyDate.__str__(date_next)[0:6]
           cl_date2=SyDate.__str__(dayvalmax)[0:6]
-          #code_lancement=homedir+'script/Launcher_NAVITI_cycle_CORA.ksh '+cl_config+'  '+cl_date+' '+cl_date2+' '+str(nb_proc)
-          code_lancement=homedir+'script/Launcher_NAVITI_cycle_CORIO.ksh '+cl_config+'  '+cl_date+' '+cl_date2+' '+str(nb_proc)
+          print "Launch date :  "+cl_date
+          code_lancement=homedir+'script/Launcher_NAVITI_cycle_CORA.ksh '+cl_config+'  '+cl_date+' '+cl_date2+' '+str(nb_proc)
+          #code_lancement=homedir+'script/Launcher_NAVITI_cycle_CORIO.ksh '+cl_config+'  '+cl_date+' '+cl_date2+' '+str(nb_proc)
       elif schedule == "WEEKLY" :
           cl_daterun=SyDate.__str__(date_next)
+          cl_date2=SyDate.__str__(dayvalmax)
           print 'Lancement du run %s ' %(cl_daterun)
-          code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --daterun='+cl_daterun+ \
-               '  --nbdate=7 --delta=7 --src='+cl_src+'  --data='+data_type
+          code_lancement=homedir+'script/Launcher_NAVITI_cycle_CORIO.ksh '+cl_config+'  '+cl_daterun+' '+cl_date2+' '+str(nb_proc)
       elif schedule == "DAILY" :
           cl_daterun=SyDate.__str__(date_next)
+          cl_date2=SyDate.__str__(dayvalmax)
           print 'Lancement du run %s ' %(cl_daterun)
-          code_lancement=homedir+'script/Launcher_NAVITI_cycle.ksh '+cl_config+'  '+cl_daterun+' '+str(nb_proc)
+          code_lancement=homedir+'script/Launcher_NAVITI_cycle_CORIO.ksh '+cl_config+'  '+cl_daterun+' '+cl_date2+' '+str(nb_proc)
       else : 
           log.error("Schedule not found %s" %(schedule))
       print code_lancement
