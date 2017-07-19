@@ -290,8 +290,39 @@ class NmlCreator_CORIOLIS(NmlCreator):
             searchdir="MONTHLY_"+yearval 	
             print "monthly values"
             daterun=dateval[0:6]
-            #template=dirmodel+searchdir+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
-            template=dirmodel+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
+            if type_file == 'ALLEGE' :
+                type_out='END'
+                print "lightout type"
+                ## Find next daterun
+                print dateval
+                jdatemin=SyDate(dateval)
+                daytogo=2-jdatemin.weekday()
+                if daytogo > 0 : 
+                    first_date=jdatemin.goforward(daytogo)
+                else : 
+                    print "jours negatif"
+                    if type_run == 'RTR' or type_run == 'REA' :
+                        nbdate=7
+                    elif type_run == 'HINDCAST' :
+                        nbdate=14
+                    daytogo2=nbdate+daytogo
+                    first_date=jdatemin.goforward(daytogo2)
+                   # first_date=jdatemin.gobackward(-daytogo)
+                print first_date
+                daterun=first_date
+                if type_run == 'RTR' or type_run == 'REA' :
+                    date1=daterun.gobackward(7)
+                    date2=daterun
+                elif type_run == 'HINDCAST' :
+                    date1=daterun.gobackward(14)
+                    date2=daterun.gobackward(7)
+                print date1,date2,dateval
+                template=dirmodel+'ALLEGES_'+type_run.lower()+'_'+str(date1)+'_'+str(date2)+'_R'+str(daterun)+'/'+type_out+'/'+gridtemp+'N.B.d*.50.0'
+                print template
+                ll_lightout=True
+            else : 
+                #template=dirmodel+searchdir+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
+                template=dirmodel+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
         elif type_run == 'free' :
             print modele,daterun,gridtemp
             template=dirmodel+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
@@ -309,14 +340,21 @@ class NmlCreator_CORIOLIS(NmlCreator):
                     first_date=jdatemin.goforward(daytogo)
                 else : 
                     print "jours negatif"
-                    daytogo2=7+daytogo
+                    if type_run == 'RTR' or type_run == 'REA' :
+                        nbdate=7
+                    elif type_run == 'HINDCAST' :
+                        nbdate=14
+                    daytogo2=nbdate+daytogo
                     first_date=jdatemin.goforward(daytogo2)
                    # first_date=jdatemin.gobackward(-daytogo)
                 print first_date
                 daterun=first_date
-                if type_run == 'RTR' :
+                if type_run == 'RTR' or  type_run == 'REA' :
                     date1=daterun.gobackward(7)
                     date2=daterun
+                elif type_run == 'HINDCAST' :
+                    date1=daterun.gobackward(14)
+                    date2=daterun.gobackward(7)
                 print date1,date2,dateval
                 template=dirmodel+'ALLEGES_'+type_run.lower()+'_'+str(date1)+'_'+str(date2)+'_R'+str(daterun)+'/'+type_out+'/'+gridtemp+'N.B.d*.50.0'
                 print template
@@ -347,12 +385,13 @@ class NmlCreator_CORIOLIS(NmlCreator):
             output_varname_S='SMARV11'
         elif listdir == 'CLIM_WOA13' :
             ll_lightout=False
-            #template=searchdir+'*M'+monthval+'*_TEMP.nc'
-            template=searchdir+'*M'+monthval+'*_tempinsitu.nc'
+            template=searchdir+'*M'+monthval+'*_TEMP.nc'
+            #template=searchdir+'*M'+monthval+'*_tempinsitu.nc'
             output_varname_T='TMLEV13'
             output_varname_S='SMLEV13'
             model_varname_T="temperature"
-            model_varname_S="vosaline"
+            #model_varname_S="vosaline"
+            model_varname_S="salinity"
         elif listdir == 'CLIM_MED' :
             output_varname_T='TMMED'
             output_varname_S='SMMED'
@@ -370,8 +409,8 @@ class NmlCreator_CORIOLIS(NmlCreator):
                     fic_psal=re.sub(gridtemp,gridsal,fic_temp)
             else :
                 if listdir == 'CLIM_WOA13' :
-                    #fic_psal=re.sub('TEMP','PSAL',fic_temp)
-                    fic_psal=re.sub('tempinsitu','sal',fic_temp)
+                    fic_psal=re.sub('TEMP','PSAL',fic_temp)
+                    #fic_psal=re.sub('tempinsitu','sal',fic_temp)
                 else :
                     fic_psal=fic_temp
         if not fic_temp or not fic_psal : 
