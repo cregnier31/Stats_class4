@@ -27,27 +27,16 @@ data_type='profile'
 data_origin='CORIOLIS'
 dirtmp="/homelocal-px/px-137/cregnier/tmp/CORIO/"
 ind=1
-##for fichier in gb("/naviti/data5/cregnier/GLORYS2V4/data/*.nc") :
-##    #print fichier
-###    if fichier  == "/naviti/data5/cregnier/GLORYS2V4/data/CO_DMQCGL01_19971211_PR_OC_MERC.nc" : 
-##    if fichier  == "/naviti/data5/cregnier/GLORYS2V4/data/CO_DMQCGL01_20040415_PR_OC_MERC.nc" :
-##        print ind
-##    ind=ind+1
-#print ind
-#sys.exit(1)
-il_sum=66552
-ind=1
+il_sum=len(gb("/naviti/data5/cregnier/GLORYS12V1/*.nc"))
+print il_sum
 for fichier in gb("/naviti/data5/cregnier/GLORYS2V4/data/*.nc") :
     log.info('fichier %s ' % (fichier))
-    if ind >= 18271 :
-        #log.info('Do qc and zoom %i %i ' % (do_qc,zoom)) 
-        selector=Selector(data_format,data_type,lon_min,lon_max,lat_min,lat_max).factory(data_origin)
-        [new_position,list_index]=selector.run(fichier,zoom,do_qc,data_origin,qc_level)
-        if list_index : 
-            selector.write(fichier,list_index,dirtmp)
-        else :
-            log.info('No position find in %s for the zoom ' % (fichier))
-            continue
-  #  log.info('fichier traité %i %i ' % (ind,il_sum)) 
-    print 'fichier traité %i %i ' % (ind,il_sum) 
+    selector=Selector(data_format,data_type,lon_min,lon_max,lat_min,lat_max).factory(data_origin)
+    [new_position,list_index]=selector.run(fichier,zoom,do_qc,data_origin,qc_level)
+    if list_index : 
+        selector.write(fichier,list_index,dirtmp)
+    else :
+        log.info('No position find in %s for the zoom ' % (fichier))
+        continue
+    log.info('fichier traité %i %i ' % (ind,il_sum)) 
     ind=ind+1
