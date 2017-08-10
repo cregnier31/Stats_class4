@@ -138,7 +138,7 @@ CONTAINS
     INTEGER, DIMENSION(:), POINTER                     :: ilpa_vardim
     INTEGER, DIMENSION(:), POINTER                     :: ilpa_vartype
     CHARACTER(LEN=255),DIMENSION(:),POINTER            :: clpa_varname
-    CHARACTER(LEN=255)                                 :: cl_test,cl_tmp,cl_att
+    CHARACTER(LEN=255)                                 :: cl_test,cl_tmp,cl_att,cl_station
     LOGICAL                                            :: ll_TEMP,ll_DEPH,ll_PSAL,ll_PRES
     LOGICAL                                            :: ll_C_PARAM,ll_L_PARAM,ll_NLEVELS
     LOGICAL                                            :: ll_tri_prof,ll_NPROF,ll_NPARAM
@@ -159,7 +159,7 @@ CONTAINS
     !** initialisation
     id_stat = 0
 #if defined key_debug
- PRINT *,'Ouverture du fichier CORIOLIS ARGO : ',cd_filename
+    PRINT *,'Ouverture du fichier CORIOLIS ARGO : ',cd_filename
 #endif
     !** Ouverture du fichier CORIOLIS ARGO      
     INQUIRE(FILE=cd_filename,EXIST=ll_tri_prof)
@@ -294,17 +294,37 @@ CONTAINS
     IF ( ALLOCATED(ila_IdPar) ) DEALLOCATE(ila_IdPar)
     ALLOCATE (ila_IdPar(ip_ParamTot))
     ila_IdPar(:)=0
-
-
+#if defined key_debug
+    WRITE(0,*) 'Lecture de ',TRIM(cg_station)
+#endif
     !
     !** Lecture des parametres contenus dans tous les profils
+    cl_station=cg_station
     CALL MIOL_inquire_type_NC(cd_filename,TRIM(cg_station),il_type,il_nbdim,ll_exist)
+#if defined key_debug
+    WRITE(0,*) 'Existence de  ',TRIM(cg_station),' ',ll_exist
+#endif
+    IF ( .not. ll_exist)  THEN
+        WRITE(0,*) 'STATION_PARAMETERS not exist'
+        cl_station="PARAMETERS"
+        CALL MIOL_inquire_type_NC(cd_filename,TRIM(cl_station),il_type,il_nbdim,ll_exist)
+    ENDIF
+    IF ( .not. ll_exist)  THEN
+        WRITE(0,*) 'PARAMETERS and STATION_PARAMETERS and PARAMETERS not exist'
+        CALL EXIT(1)
+        !!cg_station="PARAMETER"
+        !!CALL MIOL_inquire_type_NC(cd_filename,TRIM(cg_station),il_type,il_nbdim,ll_exist)
+    ENDIF
     IF ( ll_exist .AND. ll_NPARAM ) THEN
-       WRITE(id_ficlog,fmt='(a,a,a,i5,a)')'Lecture de ',TRIM(cg_station),&
+       WRITE(id_ficlog,fmt='(a,a,a,i5,a)')'Lecture de ',TRIM(cl_station),&
             &' dim(',il_nbdim,')'
        il_taille=16
-       CALL MIOL_read_field_NC(TRIM(cd_filename),TRIM(cg_station),cgpa_STATION_PARAMETERS,il_taille)
+       CALL MIOL_read_field_NC(TRIM(cd_filename),TRIM(cl_station),cgpa_STATION_PARAMETERS,il_taille)
        lg_STATION_PARAMETERS=.TRUE. 
+!#if defined key_debug
+!    WRITE(0,*) 'Lecture de ',TRIM(cg_station)
+!    WRITE(0,*) 'STATION_PARAMETERS :: ',cgpa_STATION_PARAMETERS
+!#endif
        !
        !* Recherche de tout les parametres contenus dans STATION_PARAMETERS
        ! on effectue une comparaison a la liste de parametres definis par defaut
@@ -418,11 +438,14 @@ CONTAINS
     iga_IndParam(:,:) = 0
 #if defined key_debug
     PRINT *,'param use :: ',cga_param_use(:)
+    PRINT *,'number of prof :: ',ig_nprof
+    PRINT *,'number of param :: ',il_param
+!    PRINT *,'cgpa_STATION_PARAMETERS :: ',cgpa_STATION_PARAMETERS
 #endif
 !!$!** Debut modif
     !** Pour chaque profil recherche des parametres standards (parmi ceux
     ! identifies ci-dessus comme etant effectivement presents dans le fichier)
-    DO il_i=1,ig_nprof       
+    DO il_i=1,ig_nprof
        DO il_ji=1,il_param
           il_p = 1
           ll_exist = .FALSE.
@@ -644,7 +667,7 @@ CONTAINS
        IF ( ll_exist ) THEN
           CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted,rgpa_TEMP_ADJUSTED)
           CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_qc,cgpa_TEMP_ADJUSTED_QC,il_taille)
-          !CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_error,rgpa_TEMP_ADJUSTED_ERROR)
+          !CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_error,rgpa_TEMP_ADJUSTED
        ENDIF
        DO il_i=1,ig_nprof
           if ( count (cgpa_TEMP_QC(:,il_i) .EQ. '1' .OR. cgpa_TEMP_QC(:,il_i) .EQ. '0' ) > 0  ) then
@@ -1098,7 +1121,7 @@ CONTAINS
     !
     !** RECHERCHE DES PARAMETRES EXISTANTS DANS LE FICHIER
     !* initialisation nombre effectif de parametres used
-   ig_param_use = 0
+    ig_param_use = 0
     IF ( ALLOCATED(cla_ParamLu) ) DEALLOCATE(cla_ParamLu)
     ALLOCATE (cla_ParamLu(ip_ParamTot))
     cla_ParamLu(:)=' '
@@ -1109,6 +1132,9 @@ CONTAINS
 
     !
     !** Lecture des parametres contenus dans tous les profils
+#if defined key_debug
+    PRINT *,'Inquire type station cg_station :: ',cg_station
+#endif
     CALL MIOL_inquire_type_NC(cd_filename,TRIM(cg_station),il_type,il_nbdim,ll_exist)
     IF ( ll_exist .AND. ll_NPARAM ) THEN
        WRITE(id_ficlog,fmt='(a,a,a,i5,a)')'Lecture de ',TRIM(cg_station),&
@@ -1802,7 +1828,7 @@ CONTAINS
 				  il_DEPH_QC,il_PRES_QC,il_TEMP_NOK
     !
     REAL(kind=8)                                    :: rl_lon,rl_lat,rl_depth,rl_pres,rl_temp,rl_sal,rl_tempPot
-    REAL(kind=4)                                    :: rl_div,rl_nbvaleur_1,rl_nbvaleur_2
+    REAL(kind=4)                                    :: rl_div,rl_nbvaleur_1,rl_nbvaleur_2,rl_missvalue
     INTEGER :: il_bathy
     !
     !
@@ -1827,6 +1853,7 @@ CONTAINS
     il_DEPH_QC=0
     il_TEMP_NOK=0
     il_PRES_QC=0
+    rl_missvalue=1.e7
     IF ( ALLOCATED (iga_BathyProfil)) DEALLOCATE (iga_BathyProfil)
     ALLOCATE( iga_BathyProfil(ig_nprof))
     IF ( ALLOCATED (rga_DepthVal)) DEALLOCATE (rga_DepthVal)
@@ -1879,6 +1906,7 @@ CONTAINS
        !WRITE(id_ficlog,'(a,1x,4i)')'Profil',ib_p
        IF ( .NOT. (cgpa_JULD_QC(ib_p).EQ.'0' &
             .OR. cgpa_JULD_QC(ib_p).EQ.'1' & 
+            .OR. cgpa_JULD_QC(ib_p).EQ.'2' & 
 	    .OR.  cgpa_JULD_QC(ib_p).EQ.'5' &
 	    .OR.  cgpa_JULD_QC(ib_p).EQ.'8')) THEN
           il_juld_qc_NOK = il_juld_qc_NOK + 1
@@ -1961,7 +1989,7 @@ CONTAINS
 #endif
              IF ( cgpa_DATA_MODE(ib_p) == 'A' .OR. cgpa_DATA_MODE(ib_p) == 'D' ) THEN
 #if defined key_debug
- PRINT *,'DANS DATA MODE == A  or DATA MODE == D  ADJSUTED:: ',TRIM(cgpa_DATA_MODE(ib_p))
+ PRINT *,'DANS DATA MODE == A  or DATA MODE == D  ADJUSTED:: ',TRIM(cgpa_DATA_MODE(ib_p))
 #endif
                 !** test de validite sur la pression
                 !** Pression Valide : 1 0 7   , good, no_control,fixed
@@ -2031,17 +2059,24 @@ CONTAINS
 
              DO il_i=1,ig_nlevels
                 IF ( rga_DepthVal(il_i,ib_p) .NE. rg_DepthVal_Def &
-                  & .AND. rga_DepthVal(il_i,ib_p) .NE. rg_fillvalue  ) THEN
+                  & .AND. rga_DepthVal(il_i,ib_p) .NE. rg_fillvalue .AND. rga_DepthVal(il_i,ib_p) .lt. rl_missvalue  ) THEN
                    rl_depth = rga_DepthVal(il_i,ib_p)
-!#if defined key_debug
-! PRINT *,'il_i, Depth : ',rl_depth,il_i
-!#endif
+#if defined key_debug
+ WRITE(*,*) 'Fichier :',cd_file
+ PRINT *,'profile,level : ',ib_p,il_i
+ PRINT *,'rga_DepthVal(:,ib_p)',rga_DepthVal(:,ib_p)
+ PRINT *,'Depth,il_i,lat : ',rl_depth,il_i,rl_lat
+#endif
                    CALL imm2pres(rl_depth,rl_lat,rl_pres)
-!#if defined key_debug
-! PRINT *,'pres : ',rl_pres
-!#endif
+#if defined key_debug
+ PRINT *,'pres : ',rl_pres
+#endif
                    rga_PresVal(il_i,ib_p) = rl_pres
                 ELSE
+                   !IF  ( rga_DepthVal(il_i,ib_p) > rl_missvalue .and. rga_DepthVal(il_i,ib_p)  < rg_fillvalue ) THEN
+                   !   WRITE(0,*) 'Prof value : ',rga_DepthVal(il_i,ib_p)
+                   !   STOP 
+                   !ENDIF
                    rga_PresVal(il_i,ib_p) = rg_DepthVal_Def
                 ENDIF
              ENDDO
@@ -2456,14 +2491,21 @@ CONTAINS
     IF (lg_PRES) THEN
       DEALLOCATE (rgpa_PRES)
       DEALLOCATE (cgpa_PRES_QC)
+      DEALLOCATE (rgpa_PRES_ADJUSTED)
+      DEALLOCATE (cgpa_PRES_ADJUSTED_QC)
     ENDIF
     IF (lg_DEPH)  THEN
       DEALLOCATE (rgpa_DEPH)
       DEALLOCATE (cgpa_DEPH_QC)
+      DEALLOCATE (rgpa_DEPH_ADJUSTED)
+      DEALLOCATE (cgpa_DEPH_ADJUSTED_QC)
+
     ENDIF
     IF (lg_TEMP) THEN 
       DEALLOCATE (rgpa_TEMP)
       DEALLOCATE (cgpa_TEMP_QC)
+      DEALLOCATE (rgpa_TEMP_ADJUSTED)
+      DEALLOCATE (cgpa_TEMP_ADJUSTED_QC)
       IF ( lg_TMARV) DEALLOCATE (rgpa_TMARV)
       IF ( lg_TMARV11) DEALLOCATE (rgpa_TMARV11)
       IF ( lg_TMLEV09) DEALLOCATE (rgpa_TMLEV09)
@@ -2481,6 +2523,9 @@ CONTAINS
     IF (lg_PSAL) THEN 
       DEALLOCATE (rgpa_PSAL)
       DEALLOCATE (cgpa_PSAL_QC)
+      DEALLOCATE (rgpa_PSAL_ADJUSTED)
+      DEALLOCATE (cgpa_PSAL_ADJUSTED_QC)
+
       IF ( lg_HDCT_PSAL )DEALLOCATE (rgpa_HDCST_PSAL)
       IF ( lg_ANA_PSAL ) DEALLOCATE (rgpa_ANA_PSAL)
       IF ( lg_FCST1D_PSAL ) DEALLOCATE (rgpa_FRCST1D_PSAL)
