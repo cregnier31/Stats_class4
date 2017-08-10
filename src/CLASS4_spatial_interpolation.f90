@@ -64,7 +64,7 @@ PROGRAM SPATIAL_INTERPOLATION
        cl_log
 
   CHARACTER(LEN=255), DIMENSION(:), ALLOCATABLE :: cla_inputFile
-  LOGICAL :: ll_3Dinterpolation
+  LOGICAL :: ll_3Dinterpolation,ll_convinsitu
   NAMELIST / interpolate_3D / cl_modelFileT, &
        cl_modelFileS, &
        cl_colocRep, &
@@ -77,6 +77,7 @@ PROGRAM SPATIAL_INTERPOLATION
        cl_input_type, &
        cl_input_typemod, &
        cl_meshfile, &
+       ll_convinsitu,&
        il_nbfile
   !
 
@@ -174,7 +175,8 @@ PROGRAM SPATIAL_INTERPOLATION
           cl_input_typemod, &
           il_nbfile, &
           cla_inputFile,&
-          cl_meshfile)
+          cl_meshfile,&
+          ll_convinsitu)
      !      
      IF (ALLOCATED(cla_inputFile)) DEALLOCATE(cla_inputFile, stat=il_status)
      IF ( il_status /= 0 ) THEN
@@ -207,7 +209,8 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                       cd_input_modtype, &
                                       id_nbfile, &
                                       cda_inputFile,&
-                                      cd_meshfile)
+                                      cd_meshfile,&
+                                      ld_convinsitu)
   !==============================================================================================================
   !> \brief    Description : Routine principale qui réalise l'interpolation des profiles modèles colocalisés autour 
   !!                         des points d'observation
@@ -233,6 +236,7 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                                           cd_input_type,&
                                                           cd_input_modtype,&
                                                           cd_meshfile
+  LOGICAL                                               :: ld_convinsitu
   !
   INTEGER(KIND=4)                                       :: il_ji,il_jk,il_v,il_nbdim,il_nlon,il_nlat, &
                                                            il_fic,il_ndepth,il_nprof,il_nlevels,&
@@ -390,6 +394,8 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                     ll_param,&
                                     ll_cparam,&
                                     ll_lparam)
+         ! force S to true
+         ll_isInputVarPresent_S=.true.
          !
          !------------------------------------------------------------------
          ! Ecriture de la nouvelle variable PARAMETERINT
@@ -564,6 +570,7 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                  rla_modelvalue_T, & 
                                  rla_modelvalue_S, & 
                                  rla_modeldepth, &
+                                 ld_convinsitu,&
                                  il_nprof,&
                                  il_nlon, &
                                  il_nlat, &
@@ -1666,6 +1673,7 @@ SUBROUTINE read_model_file_1D(cd_fileT, &
                            rda_fieldvalue_T, &
                            rda_fieldvalue_S, &
                            rda_depthvalue, &
+                           ld_convinsitu,&
                            id_nprofs,&
                            id_nlon, &
                            id_nlat, &
@@ -1695,6 +1703,7 @@ SUBROUTINE read_model_file_1D(cd_fileT, &
                                                              cd_depthname
   INTEGER(KIND=4),INTENT(IN)                             :: id_nlon,id_nlat, &
                                                             id_ndepth,id_nbdim,id_nprofs
+  LOGICAL                                                :: ld_convinsitu
   INTEGER(KIND=4)                                        :: il_varid,il_type_T,il_type_S,&
                                                             il_status,il_nbdim
   INTEGER (KIND=4), DIMENSION(4,id_nprofs)               :: ida_xindex,ida_yindex
@@ -1716,13 +1725,11 @@ SUBROUTINE read_model_file_1D(cd_fileT, &
   REAL(KIND=8)                                           :: rl_tempinsitu,rl_psal_R8,rl_temp_R8
   INTEGER(KIND=2), DIMENSION(:,:,:,:), POINTER           :: ilpa_valueT_4D,ilpa_valueS_4D
   INTEGER(KIND=2), DIMENSION(:,:,:), POINTER             :: ilpa_valueT_3D,ilpa_valueS_3D
-  LOGICAL                                                :: ll_exist_T,ll_exist_S,ll_clim
+  LOGICAL                                                :: ll_exist_T,ll_exist_S
   !
   !
   !---------------------------------------------------------------------
   il_fill=9999.
-  ll_clim=.FALSE.
-  IF (TRIM(cd_fieldname_T(1:4)).EQ. 'temp') ll_clim=.TRUE.  
   !
   !  Recherche du type de la variable et de son existence
   CALL MIOL_inquire_type_NC(cd_fileT, &
@@ -1768,7 +1775,7 @@ SUBROUTINE read_model_file_1D(cd_fileT, &
                        !** Lecture de salinité
                        call MIOL_read_field_NC(cd_fileS,cd_fieldname_S,rlpa_valueS_4D_R8,ila_S_size,ila_indx,ila_indy,ila_indz,ila_indt)
                        rda_fieldvalue_S(il_jk,il_ji,:)=REAL(rlpa_valueS_4D_R8(1,1,:,1),4)
-                       IF ( .NOT. ll_clim) THEN
+                       IF ( ld_convinsitu ) THEN
                        !** Conversion en temperature insitu
                           DO il_jl=1,id_ndepth
                              rl_temp_R8=rlpa_valueT_4D_R8(1,1,il_jl,1)
@@ -1799,7 +1806,7 @@ SUBROUTINE read_model_file_1D(cd_fileT, &
                        call MIOL_read_field_NC(cd_fileS,cd_fieldname_S,rlpa_valueS_4D,ila_S_size,ila_indx,ila_indy,ila_indz,ila_indt)
                        rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_valueS_4D(1,1,:,1)
                        DEALLOCATE(rlpa_valueS_4D)
-                       IF ( .NOT. ll_clim) THEN
+                       IF ( ld_convinsitu ) THEN
                        !WRITE(0,*) 'Cas du Modele'
                        !** Conversion en temperature insitu
                           DO il_jl=1,id_ndepth
@@ -1836,7 +1843,7 @@ SUBROUTINE read_model_file_1D(cd_fileT, &
                                                rla_offsetvalue,ila_indx,ila_indy,ila_indz,ila_indt)
                        rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_valueS_4D(1,1,:,1)
                        DEALLOCATE(ilpa_valueS_4D)
-                       IF ( .NOT. ll_clim) THEN
+                       IF ( ld_convinsitu ) THEN
                        !** Conversion en temperature insitu
                          DO il_jl=1,id_ndepth
                             rl_temp=rda_fieldvalue_T(il_jk,il_ji,il_jl)
@@ -1872,7 +1879,7 @@ SUBROUTINE read_model_file_1D(cd_fileT, &
                        !** Lecture de salinité
                        call MIOL_read_field_NC(cd_fileS,cd_fieldname_S,rlpa_valueS_3D_R8,ila_S_size_3D,ila_indx,ila_indy,ila_indz)
                        rda_fieldvalue_S(il_jk,il_ji,:)=REAL(rlpa_valueS_3D_R8(1,1,:),4)
-                       IF ( .NOT. ll_clim) THEN
+                       IF ( ld_convinsitu ) THEN
                        !WRITE(0,*) 'Cas du Modele'
                        !** Conversion en temperature insitu
                           DO il_jl=1,id_ndepth
@@ -1903,7 +1910,7 @@ SUBROUTINE read_model_file_1D(cd_fileT, &
                        call MIOL_read_field_NC(cd_fileS,cd_fieldname_S,rlpa_valueS_3D,ila_S_size_3D,ila_indx,ila_indy,ila_indz)
                        rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_valueS_3D(1,1,:)
                        DEALLOCATE(rlpa_valueS_3D)
-                       IF ( .NOT. ll_clim) THEN
+                       IF ( ld_convinsitu ) THEN
                           WRITE(0,*) 'Conversion in situ'
                       ! WRITE(0,*) 'Cas du Modele'
                        !** Conversion en temperature insitu
@@ -1939,7 +1946,7 @@ SUBROUTINE read_model_file_1D(cd_fileT, &
                                                rla_offsetvalue,ila_indx,ila_indy,ila_indz)
                        rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_valueS_3D(1,1,:)
                        DEALLOCATE(ilpa_valueS_3D)
-                       IF ( .NOT. ll_clim) THEN
+                       IF ( ld_convinsitu ) THEN
                        !** Conversion en temperature insitu
                          DO il_jl=1,id_ndepth
                             rl_temp=rda_fieldvalue_T(il_jk,il_ji,il_jl)
@@ -1988,6 +1995,7 @@ SUBROUTINE read_model_file(cd_fileT, &
                            rda_fieldvalue_T, &
                            rda_fieldvalue_S, &
                            rda_depthvalue, &
+                           ld_convinsitu,&
                            id_nprofs,&
                            id_nlon, &
                            id_nlat, &
@@ -2017,6 +2025,7 @@ SUBROUTINE read_model_file(cd_fileT, &
                                                              cd_depthname
   INTEGER(KIND=4),INTENT(IN)                             :: id_nlon,id_nlat, &
                                                             id_ndepth,id_nbdim,id_nprofs
+  LOGICAL                                                :: ld_convinsitu
   INTEGER(KIND=4)                                        :: il_varid,il_type_T,il_type_S,&
                                                             il_status,il_nbdim,il_t1,il_t2,il_ir,il_alloc
   INTEGER (KIND=4), DIMENSION(4,id_nprofs)               :: ida_xindex,ida_yindex
@@ -2038,16 +2047,13 @@ SUBROUTINE read_model_file(cd_fileT, &
   REAL(KIND=8)                                           :: rl_tempinsitu,rl_psal_R8,rl_temp_R8
   INTEGER(KIND=2), DIMENSION(:,:,:,:), POINTER           :: ilpa_valueT_4D,ilpa_valueS_4D
   INTEGER(KIND=2), DIMENSION(:,:,:), POINTER             :: ilpa_valueT_3D,ilpa_valueS_3D
-  LOGICAL                                                :: ll_exist_T,ll_exist_S,ll_clim
+  LOGICAL                                                :: ll_exist_T,ll_exist_S
   !
   !
   !---------------------------------------------------------------------
   il_fill=9999.
-  ll_clim=.FALSE.
-  IF (TRIM(cd_fieldname_T(1:4)).EQ. 'temp') ll_clim=.TRUE.  
 #if defined key_debug
-  WRITE(0,*),'ll_clim ',ll_clim,cd_fieldname_T,cd_fieldname_T(1:4)
-  IF ( ll_clim ) WRITE(0,*) 'Variable CLIMATO'
+  WRITE(0,*),'ld_convinsitu ',ld_convinsitu
   WRITE(0,*),'Inquire Type',cd_fileT,cd_fieldname_T
 #endif
   !
@@ -2148,7 +2154,7 @@ SUBROUTINE read_model_file(cd_fileT, &
                        rda_fieldvalue_T(il_jk,il_ji,:)=REAL(rlpa_valueT_4D_R8(ila_indx(1),ila_indy(1),ila_indz(:),ila_indt(1)),4)
                        !** Lecture de salinité
                        rda_fieldvalue_S(il_jk,il_ji,:)=REAL(rlpa_valueS_4D_R8(ila_indx(1),ila_indy(1),ila_indz(:),ila_indt(1)),4)
-                       IF ( .NOT. ll_clim) THEN
+                       IF ( ld_convinsitu ) THEN
                        !WRITE(0,*) 'Cas du Modele'
                        !** Conversion en temperature insitu
                           DO il_jl=1,id_ndepth
@@ -2175,7 +2181,7 @@ SUBROUTINE read_model_file(cd_fileT, &
                        rda_fieldvalue_T(il_jk,il_ji,:)=rlpa_valueT_4D(ila_indx(1),ila_indy(1),ila_indz(:),ila_indt(1))
                        !** Lecture de salinité
                        rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_valueS_4D(ila_indx(1),ila_indy(1),ila_indz(:),ila_indt(1))
-                       IF ( .NOT. ll_clim) THEN
+                       IF ( ld_convinsitu ) THEN
                        !WRITE(0,*) 'Cas du Modele'
                        !** Conversion en temperature insitu
                           DO il_jl=1,id_ndepth
@@ -2203,7 +2209,7 @@ SUBROUTINE read_model_file(cd_fileT, &
                        !** Lecture de la temperature
                        rda_fieldvalue_T(il_jk,il_ji,:)=rlpa_valueT_4D(ila_indx(1),ila_indy(1),ila_indz(:),ila_indt(1))
                        rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_valueS_4D(ila_indx(1),ila_indy(1),ila_indz(:),ila_indt(1))
-                       IF ( .NOT. ll_clim) THEN
+                       IF ( ld_convinsitu ) THEN
                        !** Conversion en temperature insitu
                          DO il_jl=1,id_ndepth
                             rl_temp=rda_fieldvalue_T(il_jk,il_ji,il_jl)
@@ -2237,7 +2243,7 @@ SUBROUTINE read_model_file(cd_fileT, &
                        rda_fieldvalue_T(il_jk,il_ji,:)=REAL(rlpa_valueT_3D_R8(ila_indx(1),ila_indy(1),ila_indz(:)),4)
                        !** Lecture de salinité
                        rda_fieldvalue_S(il_jk,il_ji,:)=REAL(rlpa_valueS_3D_R8(ila_indx(1),ila_indy(1),ila_indz(:)),4)
-                       IF ( .NOT. ll_clim) THEN
+                       IF ( ld_convinsitu ) THEN
                        !WRITE(0,*) 'Cas du Modele'
                        !** Conversion en temperature insitu
                           DO il_jl=1,id_ndepth
@@ -2264,7 +2270,7 @@ SUBROUTINE read_model_file(cd_fileT, &
                        rda_fieldvalue_T(il_jk,il_ji,:)=rlpa_valueT_3D(ila_indx(1),ila_indy(1),ila_indz(:))
                        !** Lecture de salinité
                        rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_valueS_3D(ila_indx(1),ila_indy(1),ila_indz(:))
-                       IF ( .NOT. ll_clim) THEN
+                       IF ( ld_convinsitu ) THEN
                        ! WRITE(0,*) 'Cas du Modele'
                        !** Conversion en temperature insitu
                           DO il_jl=1,id_ndepth
@@ -2293,7 +2299,7 @@ SUBROUTINE read_model_file(cd_fileT, &
                        rda_fieldvalue_T(il_jk,il_ji,:)=rlpa_valueT_3D(ila_indx(1),ila_indy(1),ila_indz(:))
                        !** Lecture de salinité
                        rda_fieldvalue_S(il_jk,il_ji,:)=rlpa_valueS_3D(ila_indx(1),ila_indy(1),ila_indz(:))
-                       IF ( .NOT. ll_clim) THEN
+                       IF ( ld_convinsitu ) THEN
                        !** Conversion en temperature insitu
                          DO il_jl=1,id_ndepth
                             rl_temp=rda_fieldvalue_T(il_jk,il_ji,il_jl)

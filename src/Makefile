@@ -6,7 +6,7 @@
 # netcdf/netcdf-4.1_intel11_r4
 #type=orca12_allege
 type=orca025
-#type=orca12
+type=orca12
 #type=glorys2v4
 include ../macro/make_intel_$(type).macro
 ## Rules
@@ -35,9 +35,6 @@ OBJECTS3= ${SRCDIR2}/Inf_NaN_detection.o \
 OBJECTS2= $(SRCDIR2)/GSW_TEOS10.o \
           ${SRCDIR2}/table_CLASS4.o
 
-#all: $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE).exe \
-#	$(EXEDIR)/CLASS4_spatial_interpolation.exe \
-#	$(EXEDIR)/CLASS4_spatial_interpolation_GODAE_$(MODELE).exe
 all:  $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS.exe \
       $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE).exe \
       $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE)_aice.exe \
