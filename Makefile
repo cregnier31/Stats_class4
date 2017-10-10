@@ -23,7 +23,7 @@ DIR_MACRO=$(DIR_HOME)/macro
 
 all: 
 	@set -x; \
-        cd $(DIR_MACRO); ln -f -s make_intel_$(SYSTEM).macro make_intel.macro 2>&1; \
+        cd $(DIR_MACRO); ln -f -s make_intel_$(SYSTEM)_${MACHINE}.macro make_intel.macro 2>&1; \
         cd $(DIR_PRE); $(MAKE) 1> $(DIR_HOME)/compile_pretreatment.txt 2>&1; \
         cd $(DIR_POST); $(MAKE) 1> $(DIR_HOME)/compile_postreatement.txt 2>&1; \
 
@@ -31,7 +31,7 @@ all:
 clean: 
 	@set -x; \
 	/bin/rm -f compile_*.txt
-	cd $(DIR_MACRO); ln -f -s make_intel_$(SYSTEM).macro make_intel.macro 2>&1; \
+	cd $(DIR_MACRO); ln -f -s make_intel_$(SYSTEM)_${MACHINE}.macro make_intel.macro 2>&1; \
 	cd $(DIR_PRE); $(MAKE) clean ; \
         cd $(DIR_POST); $(MAKE) clean; \
 
