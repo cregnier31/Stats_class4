@@ -4,11 +4,7 @@
 # Makefile naviti
 # intel/intel-17
 # netcdf/netcdf-4.1_intel11_r4
-#type=orca12_allege
-type=orca025
-#type=orca12
-#type=glorys2v4
-include ../macro/make_intel_$(type).macro
+include ../macro/make_intel.macro
 ## Rules
 .SUFFIXES:.F90 .F .f90 .mod
 .F90.o:
