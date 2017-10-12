@@ -30,8 +30,33 @@ class Extractor(object) :
         if type == "ARMOR_CO" or type == "ARMOR_AR" or type == "AR_" : return Extract_ARMOR()
         if type == "GODAE" : return Extract_GODAE()
         if type == "ASCII" : return Extract_ASCII()
+        if type == "L3m" : return Extract_CHLORO()
 
 
+class Extract_CHLORO(Extractor): 
+
+    """ Extract Chloro Globcolour files """
+    def run_list(self,date1,date2,dirdata,dirwork):
+        logging.basicConfig(format='%(asctime)s %(message)s')
+        self.log = logging.getLogger("Extract Chloro")
+        self.log.setLevel(logging.INFO)
+        liste_tot=[]
+        valeurj=date1
+        while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
+            dateval=SyDate.__str__(valeurj)
+            liste_file=glob.glob(dirdata+'/*'+dateval+'*.nc')
+            for file in liste_file :
+                try :
+                    print file
+                    filename=os.path.basename(file)
+                    print filename
+                    shutil.copy(file,dirwork+filename)
+                    liste_tot.append(dirwork+filename)
+                except IOError as e:
+                    print "I/O error({0}): {1}".format(e.errno, e.strerror)
+            valeurj=valeurj.goforward(1)
+
+        return liste_tot
 
 class Extract_corio_raw(Extractor):
 
@@ -223,8 +248,10 @@ class Extract_GODAE(Extractor):
                         filename=re.sub('GL_h5',template,filename)
                     else:
                         #filename=re.sub('PSY4V2R2','PSY4V3R1',filename)
-                        filename=re.sub('GIOPS_CONCEPTS_2.1',template,filename)
-                    #    filename=re.sub('FOAM_orca025_12.0',template,filename)
+                        if typedata == "aice" :
+                            filename=re.sub('GIOPS_CONCEPTS_2.1',template,filename)
+                        else : 
+                            filename=re.sub('FOAM_orca025_12.0',template,filename)
                     ## Copy extracted value of GODAE file with nco module
                     #shutil.copy(new_file,dirtmp)
                     options = []
