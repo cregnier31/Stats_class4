@@ -27,6 +27,7 @@ class Loader(object):
         #return eval(type + "()")
         if type == "NC_CORIO": return LoaderNCcorio()
         if type == "NC_CORIO_ORIGIN": return LoaderNCcorio()
+        if type == "NC_CHLORO": return LoaderNCChloro()
         if type == "NC_GODAE": return LoaderNCgodae()
         if type == "ASCII": return AsciiLoader()
         if type == "LIST": return ListWriter()
@@ -35,6 +36,19 @@ class Loader(object):
         if type == "INPUT": return InputLoader()
         if type == "PGN_coords": return PGN_coords_Loader()
         assert 0, "Format not known: " + type
+
+
+class LoaderNCChloro(Loader):
+    def read_pos_and_value(self,filename):
+        nc = netCDF4.Dataset(filename,'r')        
+        variable = 'lon'
+        rla_lon = nc.variables[variable][:]
+        variable = 'lat'
+        rla_lat = nc.variables[variable][:]
+        rla_value = nc.variables['CHL1_mean'][:]
+        return rla_lon,rla_lat,rla_value
+
+
 
 
 class InputLoader(Loader): 
