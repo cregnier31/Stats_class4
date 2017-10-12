@@ -382,6 +382,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 ## Do the interp
                 interp_idw = np.sum(w * value_mod.flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)
                 interp_idw2D=interp_idw.reshape(X.shape)
+                interp_idw2D=np.where(obs_value ==-999,-999,interp_idw2D)
                # ind_values=np.where(obs_value == -999)
                 
                 log.info('Interp ok ')
