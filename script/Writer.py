@@ -104,7 +104,7 @@ class Writer():
 
     def write_GLOBCOLOR_files(self,filename,tab,dateval,model):
         nc_fid = Dataset(filename, 'r+', format='NETCDF3_CLASSIC')
-        nc_file = nc_fid.createVariable('best_estimate','f4',('lat','lon'),fill_value=9999.0)
+        nc_file = nc_fid.createVariable('best_estimate','f4',('lat','lon'),fill_value=-999)
         nc_file.setncatts({'long_name': u"Model best_estimate counterpart of obs. value"})
         nc_fid.variables['best_estimate'][:] = tab[:,:]
         ## Add global attributs
