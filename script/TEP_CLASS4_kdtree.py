@@ -382,9 +382,9 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 ## Do the interp
                 interp_idw = np.sum(w * value_mod.flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)
                 interp_idw2D=interp_idw.reshape(X.shape)
-                interp_idw2D=np.where(obs_value ==-999,-999,interp_idw2D)
+                ## Fill with gaps
+                interp_idw2D=np.where(np.array(obs_value)==-999,-999,np.array(interp_idw2D))
                # ind_values=np.where(obs_value == -999)
-                
                 log.info('Interp ok ')
                 #if  time == 'forecast' : 
                 #    fcst_tab[:,0,ind,0]=interp_idw[:]
@@ -398,7 +398,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         if not ll_miss : 
             log.info("Write file")
             filename=dirwork+file_out
-            #Writer().write_GODAE_files(filename,hdct_tab,fcst_tab,pers_tab,dateval,modele)
             Writer().write_GLOBCOLOR_files(filename,interp_idw2D,dateval,modele)
             log.info('----------------------------')
             log.info('Creation file ok %s' %(filename))
