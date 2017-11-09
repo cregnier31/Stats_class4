@@ -10,10 +10,10 @@ import os, sys
 import datetime as dt
 import netCDF4
 import toolkitStats
-sys.path.append('/home/cregnier/DEV_naviti/TEP_CLASS4_GODAE/postraitement/CL4_GODAE_LIB/TOOLS_py')
+sys.path.append('../module')
 import arithm
 from copy import deepcopy
-	
+
 def calculer_stats_MYO2(czoneFile,modele,tab_prof,\
 			tab_prof_model,tab_e3t,variable_name,\
 			liste_zone,filelist,cd_CL4type,\
