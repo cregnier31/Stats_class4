@@ -236,7 +236,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             if lon.ndim < 2 :
                 X, Y = np.meshgrid(lon,lat)
                 ny,nx=np.shape(X)
-                print nx,ny
                 ## Convert to cartesian
                 xt, yt, zt = lon_lat_to_cartesian(X.flatten(),Y.flatten())
             else :
@@ -292,7 +291,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         fcst_tab[:,:,:,:]=9999.
         hdct_tab[:,:,:]=9999.
         ll_miss=False
-        log.info("Colloc OK")
+        log.info("Coloc OK")
         # =============================================================================
         # PART-5 - Compute interpolation
         # =============================================================================
@@ -335,7 +334,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 log.info('directory %s' %(directory))
                 log.info('model %s' %(modele))
                 if directory == 'hdct' :
-                   # dirmodel_new=dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
                     dirmodel_new=dirmodel+"HINDCAST/7dAV/DATA/"
                 elif directory == 'fcst' :
                     dirmodel_new=dirmodel+"FORECAST/7dAV/DATA/"
@@ -346,22 +344,22 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 if daily_pref == '7dAV' : 
                     jdatemin=SyDate(str(date1))
                     daytogo=2-jdatemin.weekday()
-                    print daytogo
-                    if daytogo > 0 : 
-                        first_date=jdatemin.goforward(daytogo)
+                    if daytogo > 0 :
+                        nbdate=7 
+                        daytogo2 = nbdate+daytogo 
+                        first_date=jdatemin.goforward(daytogo2)
                     else :
-                        print "jours negatif"
                         nbdate=14
                         daytogo2=nbdate+daytogo
                         first_date=jdatemin.goforward(daytogo2)
                     daterun=first_date
-                    date1=daterun.gobackward(14)
-                    date2=daterun.gobackward(7)
-                    print daterun,date1,date2
-                    template=modele+'_'+daily_pref+'_'+str(date1)+'_'+str(date2)+'_gridCHL_R'+str(daterun)
-                    print dirmodel_new+template+"*.nc"
+                    d1=daterun.gobackward(14)
+                    d2=daterun.gobackward(7)
+                    if directory == 'hdct' :
+                        template=modele+'_'+daily_pref+'_'+str(d1)+'_'+str(d2)+'_gridCHL_R'+str(daterun)
+                    elif directory == 'fcst' :
+                        template=modele+'_'+daily_pref+'_'+str(d1)+'_'+str(d2)+'_gridCHL_R'+str(d1)
                     list_file=glob.glob(dirmodel_new+template+"*.nc")
-                    print list_file
                 else :
                     list_file=glob.glob(dirmodel_new+"/"+modele+"_"+daily_pref+"_"+dateval+"*_icemod*.nc")
                 if not list_file :
@@ -387,9 +385,10 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 ## Do the interp
                 interp_idw = np.sum(w * value_mod.flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)
                 interp_idw2D=interp_idw.reshape(X.shape)
-                ## Fill with gaps
-                interp_idw2D=np.where(np.array(obs_value)==-999,-999,np.array(interp_idw2D))
-               # ind_values=np.where(obs_value == -999)
+                if time == 'best_estimate' :
+                    interp_idw2D_hdct=np.where(obs_value.mask== True, -999, interp_idw2D)
+                elif time == 'forecast' :
+                    interp_idw2D_fcst=np.where(obs_value.mask== True, -999, interp_idw2D)
                 log.info('Interp ok ')
                 #if  time == 'forecast' : 
                 #    fcst_tab[:,0,ind,0]=interp_idw[:]
