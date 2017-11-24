@@ -29,6 +29,7 @@ class Loader(object):
         if type == "NC_CORIO_ORIGIN": return LoaderNCcorio()
         if type == "NC_CHLORO": return LoaderNCChloro()
         if type == "NC_GODAE": return LoaderNCgodae()
+        if type == "Microwat": return LoaderNCgodae()
         if type == "ASCII": return AsciiLoader()
         if type == "LIST": return ListWriter()
         if type == "NML": return NmlLoader()
