@@ -5,7 +5,7 @@ import netCDF4
 import geojson
 from geojson import MultiPoint
 import json
-from nco import Nco
+from nco.nco import Nco
 from Loader import Loader
 from QCcontrol import QCcontroller
 import logging
@@ -42,7 +42,7 @@ class Selector(object) :
         elif type == "IAOOS": 
             return QCEns()
         else :
-            print "Type not known %s " %(type)
+            print("Type not known %s " %(type))
 
 class SelectCorio(Selector) :
 
@@ -201,7 +201,7 @@ class SelectCorio(Selector) :
                 tab_fin=np.concatenate((tab_fin,tab_pos))
                 shelf[type_f] = tab_fin
             except:
-                print "Pb with concatenation store_pos"
+                print("Pb with concatenation store_pos")
                 sys.exit(1)
         ## Create global position
         type_var='GLO'
@@ -225,9 +225,8 @@ class SelectCorio(Selector) :
                 tab_fin=shelf[type_var]
                 tab_fin=np.concatenate((tab_fin,tab_pos_new))
                 shelf[type_var] = tab_fin
-                # print shelf[type_var]
             except : 
-                print "Pb with concatenation in GLO"
+                print("Pb with concatenation in GLO")
                 sys.exit(1)
         shelf.close()
 
@@ -283,6 +282,6 @@ class SelectCorio(Selector) :
                 else :
                     log.debug('Bad profiles')
             except:
-                print "Pb with concatenation single"
+                print("Pb with concatenation single")
                 sys.exit(1)
         shelf.close()
