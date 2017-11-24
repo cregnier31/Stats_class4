@@ -5,18 +5,21 @@
 #            Novembre 2014 :  Ajout différentes échéances pour l'interpolation + clims + gestion enchaînement des runs
 #            Decembre 2014 :  MAJ pour le cas particulier du zoom
 #            November 2016 :  New version with KDtree method for coloc and interp
+#            November 2017 :  Add modules in a generic lib for CLASS4 portability
 ## Description : 
 ## New CLASS4 launcher to compute CLASS4 with CLASS4 coming from GODAE, ARMOR, CORIOLIS
 #
 from __future__ import generators
 import os,sys,string,shutil,glob,re
-sys.path.append("/home/modules/versions/64/fc18/ipython/ipython-1.1/lib/python2.7/site-packages")
-sys.path.append("/home/modules/versions/64/fc18/netcdf4-python/netcdf4-python-1.0.7/lib64/python2.7/site-packages/")
-sys.path.append("/home/cregnier/python/module/")
-sys.path.append("/home/cregnier/python/module/geojson-1.0.7/")
-sys.path.append("/home/cregnier/python/module/lib/python2.6/site-packages/")
-sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/")
-sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/nco-0.0beta-py2.7.egg/")
+#sys.path.append("/home/modules/versions/64/fc18/ipython/ipython-1.1/lib/python2.7/site-packages")
+#sys.path.append("/home/modules/versions/64/fc18/netcdf4-python/netcdf4-python-1.0.7/lib64/python2.7/site-packages/")
+#sys.path.append("/home/cregnier/python/module/")
+#sys.path.append("/home/cregnier/python/module/geojson-1.0.7/")
+#sys.path.append("/home/cregnier/python/module/lib/python2.6/site-packages/")
+#sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/")
+#sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/nco-0.0beta-py2.7.egg/")
+sys.path.append('../python_modules/')
+#sys.path.append('../python_modules/netcdf4/')
 import logging
 import resource
 from Selector import Selector
@@ -44,13 +47,11 @@ from scipy.spatial import cKDTree
 from NetcdReader import *
 from netCDF4 import Dataset
 
+from Loader import *
+from sytoolkit.sydate import SyDate
+
 ## Set Stack unlimited
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
-
-#sys.path.append("/home/cregnier/DEV/Python/NEW_CL4/")
-from Loader import *
-from sytoolkit.sydate_origin import SyDateOrigin
-from sytoolkit.sydate import SyDate
 
 # ===============
 # LOGGER
@@ -180,6 +181,7 @@ if not list_files :
 else :
     log.info('List Files  %s ' % (list_files))
 
+log.info('List Files  %s ' % (list_files))
 # =============================================================================
 #  PART-3 - Area Selection and QC selection
 # =============================================================================
@@ -236,7 +238,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             if lon.ndim < 2 :
                 X, Y = np.meshgrid(lon,lat)
                 ny,nx=np.shape(X)
-                print nx,ny
+                print(nx,ny)
                 ## Convert to cartesian
                 xt, yt, zt = lon_lat_to_cartesian(X.flatten(),Y.flatten())
             else :
@@ -293,6 +295,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         hdct_tab[:,:,:]=9999.
         ll_miss=False
         log.info("Colloc OK")
+        sys.exit(1)
         # =============================================================================
         # PART-5 - Compute interpolation
         # =============================================================================
@@ -343,22 +346,17 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 if daily_pref == '7dAV' : 
                     jdatemin=SyDate(str(date1))
                     daytogo=2-jdatemin.weekday()
-                    print daytogo
                     if daytogo > 0 : 
                         first_date=jdatemin.goforward(daytogo)
                     else :
-                        print "jours negatif"
                         nbdate=14
                         daytogo2=nbdate+daytogo
                         first_date=jdatemin.goforward(daytogo2)
                     daterun=first_date
                     date1=daterun.gobackward(14)
                     date2=daterun.gobackward(7)
-                    print daterun,date1,date2
                     template=modele+'_'+daily_pref+'_'+str(date1)+'_'+str(date2)+'_gridCHL_R'+str(daterun)
-                    print dirmodel_new+template+"*.nc"
                     list_file=glob.glob(dirmodel_new+template+"*.nc")
-                    print list_file
                 else :
                     list_file=glob.glob(dirmodel_new+"/"+modele+"_"+daily_pref+"_"+dateval+"*_*.nc")
                 if not list_file :
@@ -448,7 +446,7 @@ if DAYMAX :
                  '  --date2='+cl_date2+' --src='+cl_src+'  --data='+data_type
         elif schedule == "WEEKLY" :
             cl_daterun=SyDate.__str__(date_next)
-            print 'Lancement du run %s ' %(cl_daterun)
+            print('Lancement du run %s ' %(cl_daterun))
             code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --daterun='+cl_daterun+ \
                     '  --nbdate=7 --delta=7 --src='+cl_src+'  --data='+data_type
         elif schedule == "DAILY" :
@@ -456,23 +454,22 @@ if DAYMAX :
             cl_daterun=SyDate.__str__(date_next)
             log.info('Launch run %s' %(cl_daterun))
             log.info('with parameters %s %s %s' %(cl_config,cl_daterun,str(nb_proc)))
-            print 'Lancement du run %s ' %(cl_daterun)
+            print('Lancement du run %s ' %(cl_daterun))
             code_lancement=homedir+'script/Launcher_NAVITI_cycle.ksh '+cl_config+'  '+cl_daterun+' '+str(nb_proc)
         elif schedule == "YEARLY" :
             cl_daterun=SyDate.__str__(date_next)
-            print 'Lancement du run %s ' %(cl_daterun)
+            print('Lancement du run %s ' %(cl_daterun))
             code_lancement='python '+homedir+'script/TEP_CLASS4.py --config=PSY4V3R1 --date1='+cl_daterun[0:4]+' --src=CORA4 --data=profile --typemod=allege'
         else : 
             log.error("Schedule not found %s" %(schedule))
-        print code_lancement
         try:
             os.system(code_lancement)
-            print "Lancement date run %s ok " % (cl_date)
+            print("Lancement date run %s ok " % (cl_date))
         except:
-            print 'Probleme execution'
+            print('Probleme execution')
             sys.exit(1)
     else :
-        print 'Dépassement de JMAX : %s ' % (SyDate.__str__(date_next))
+        print('Dépassement de JMAX : %s ' % (SyDate.__str__(date_next)))
         sys.exit(1)
             #Design().factory(data_origin).run(filename,dateval,contact,cl_config_d,model_type.lower(),inst,version,desc)
 

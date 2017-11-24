@@ -5,7 +5,7 @@ import numpy as np
 import logging
 import tarfile
 from sytoolkit.sydate import SyDate
-from nco import Nco
+from nco.nco import Nco
 from Logger import Logger                                                                                                   
 
 #######################################################################
@@ -105,7 +105,7 @@ class NmlCreator_GODAE(NmlCreator):
         obFichier.write('il_ncast         = '+str(len(listdir))+'\n')
         obFichier.write('il_nvar          = '+str(il_nvar)+'\n')
         obFichier.write('ll_mssh          = '+self.ll_mssh+'\n')
-        obFichier.write('ll_compute       = '+self.ll_compute+'\n')
+        #obFichier.write('ll_compute       = '+self.ll_compute+'\n')
         obFichier.write('rl_mssh_shift    = '+str(self.mssh_shift)+'\n')
         obFichier.write('il_nbfile        = '+str(nbfile)+'\n')
         obFichier.write('/'+'\n')

@@ -5,7 +5,7 @@ import logging
 import tarfile
 import netCDF4
 from sytoolkit.sydate import SyDate
-from nco import Nco
+from nco.nco import Nco
 from gz import ZipManipulator
 
 ##############################################################
@@ -30,15 +30,18 @@ class Extractor(object) :
         if type == "ARMOR_CO" or type == "ARMOR_AR" or type == "AR_" : return Extract_ARMOR()
         if type == "GODAE" : return Extract_GODAE()
         if type == "ASCII" : return Extract_ASCII()
-        if type == "L3m" : return Extract_CHLORO()
+        if type == "L3m" : return Extract_genericData()
+        if type == "Microwat_Lband_Orbite_1day_Lband" : return Extract_genericData()
 
 
-class Extract_CHLORO(Extractor): 
 
-    """ Extract Chloro Globcolour files """
+
+class Extract_genericData(Extractor): 
+
+    """ Extract files """
     def run_list(self,date1,date2,dirdata,dirwork):
         logging.basicConfig(format='%(asctime)s %(message)s')
-        self.log = logging.getLogger("Extract Chloro")
+        self.log = logging.getLogger("Extract Generic files")
         self.log.setLevel(logging.INFO)
         liste_tot=[]
         valeurj=date1
@@ -249,7 +252,7 @@ class Extract_GODAE(Extractor):
                     else:
                         #filename=re.sub('PSY4V2R2','PSY4V3R1',filename)
                         if typedata == "aice" :
-                            filename=re.sub('GIOPS_CONCEPTS_2.1',template,filename)
+                            filename=re.sub('GIOPS_CONCEPTS_2.3',template,filename)
                         else : 
                             filename=re.sub('FOAM_orca025_12.0',template,filename)
                     ## Copy extracted value of GODAE file with nco module

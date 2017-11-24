@@ -38,3 +38,9 @@ python TEP_CLASS4_optim.py --config=PRESAL36QV1R1 --date1=20140705 --date2=20140
 # Multi process
 python TEP_CLASS4_multiprocess.py --config=PSY4QV2R2 --date1=20150106 --date2=20150106 --src=GODAE --data=aice
 python TEP_CLASS4_multiprocess.py --config=PSY4QV2R2 --daterun=20150201 --nbdate=1 --delta=0 --src=GODAE --data=aice
+# BIO
+python TEP_CLASS4_kdtree.py --config=BIOMER4V1R2 --date1=20161201 --date2=20161202 --src=GLOBCOLOUR --data=chloro --typemod=pgn
+
+## Kdtree
+python TEP_CLASS4_kdtree.py --config=PSY4V3R1 --date1=20080101 --date2=20080102 --src=MICROWAT --data=sss --typemod=pgn
+#
