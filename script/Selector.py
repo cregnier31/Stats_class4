@@ -5,7 +5,7 @@ import netCDF4
 import geojson
 from geojson import MultiPoint
 import json
-from nco.nco import Nco
+from nco import Nco
 from Loader import Loader
 from QCcontrol import QCcontroller
 import logging

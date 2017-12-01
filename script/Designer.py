@@ -4,7 +4,7 @@ import numpy as np
 import logging
 import tarfile
 from sytoolkit.sydate import SyDate
-from nco.nco import Nco
+from nco import Nco
 import datetime as dt
 
 ##############################################################
