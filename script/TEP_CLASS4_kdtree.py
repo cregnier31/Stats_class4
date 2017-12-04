@@ -300,7 +300,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         hdct_tab[:,:,:]=9999.
         ll_miss=False
         log.info("Colloc OK")
-        sys.exit(1)
         # =============================================================================
         # PART-5 - Compute interpolation
         # =============================================================================
