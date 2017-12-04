@@ -5,7 +5,7 @@ import logging
 import tarfile
 import netCDF4
 from sytoolkit.sydate import SyDate
-from nco import Nco
+from nco.nco import Nco
 from gz import ZipManipulator
 
 ##############################################################
