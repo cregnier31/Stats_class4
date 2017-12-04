@@ -234,7 +234,10 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         else :
             # Case Global without qc
             log.info("GLOBAL MODE => SELECT ALL ") 
-            lon,lat,obs_value=Loader.factory(data_format).read_pos_and_value(fichier)
+            if data_origin == "Microwat":
+                lon,lat=Loader.factory(data_format).read_pos(fichier)
+            else :
+                lon,lat,obs_value=Loader.factory(data_format).read_pos_and_value(fichier)
             if lon.ndim < 2 :
                 X, Y = np.meshgrid(lon,lat)
                 ny,nx=np.shape(X)
@@ -381,8 +384,9 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 ## Do the interp
                 interp_idw = np.sum(w * value_mod.flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)
                 interp_idw2D=interp_idw.reshape(X.shape)
-                ## Fill with gaps
-                interp_idw2D=np.where(np.array(obs_value)==-999,-999,np.array(interp_idw2D))
+                if data_origin == "GLOBCOLOUR" :
+                    ## Fill with gaps
+                    interp_idw2D=np.where(np.array(obs_value)==-999,-999,np.array(interp_idw2D))
                # ind_values=np.where(obs_value == -999)
                 log.info('Interp ok ')
                 #if  time == 'forecast' : 
