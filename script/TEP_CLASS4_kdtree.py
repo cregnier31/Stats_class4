@@ -236,12 +236,14 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             log.info("GLOBAL MODE => SELECT ALL ") 
             if data_origin == "Microwat":
                 lon,lat=Loader.factory(data_format).read_pos(fichier)
+                print type(lon),type(lat),np.shape(lon)
             else :
                 lon,lat,obs_value=Loader.factory(data_format).read_pos_and_value(fichier)
             if lon.ndim < 2 :
-                X, Y = np.meshgrid(lon,lat)
-                ny,nx=np.shape(X)
-                print(nx,ny)
+                #X, Y = np.meshgrid(lon,lat)
+                X, Y = lon,lat
+                #ny,nx=np.shape(X)
+                #print(nx,ny)
                 ## Convert to cartesian
                 xt, yt, zt = lon_lat_to_cartesian(X.flatten(),Y.flatten())
             else :
