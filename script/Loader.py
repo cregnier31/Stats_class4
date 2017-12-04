@@ -29,7 +29,7 @@ class Loader(object):
         if type == "NC_CORIO_ORIGIN": return LoaderNCcorio()
         if type == "NC_CHLORO": return LoaderNCChloro()
         if type == "NC_GODAE": return LoaderNCgodae()
-        if type == "Microwat": return LoaderNCgodae()
+        if type == "Microwat": return LoaderSyntheticValue()
         if type == "ASCII": return AsciiLoader()
         if type == "LIST": return ListWriter()
         if type == "NML": return NmlLoader()
@@ -234,6 +234,24 @@ class LoaderNCcorio(Loader):
         #    il_val=il_val+1
         #np.set_printoptions(suppress=True)
         return position
+
+class LoaderSyntheticValue(Loader):
+
+    """Loader for synthetic dataset"""
+
+    def read_pos(self,filename):
+        nc = netCDF4.Dataset(filename,'r')        
+        variable = 'longitude'
+        rla_lon = nc.variables[variable][:]
+        variable = 'latitude'
+        rla_lat = nc.variables[variable][:]
+        n_profiles=len(rla_lon[:])
+        ## Optional Read juld
+        ##variable='juld'
+        ##rla_juld= nc.variables[variable][:]
+        return rla_lon,rla_lat
+
+
 
 class LoaderNCgodae(Loader):
 
