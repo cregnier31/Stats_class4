@@ -130,8 +130,10 @@ class Writer():
 
     def write_best(self,filename,tab1,dateval,model):
         nc_fid = Dataset(filename, 'r+', format='NETCDF3_CLASSIC')
-        nc_file = nc_fid.createVariable('best_estimate','f4',('numobs'),fill_value=-999.0)
+        nc_file = nc_fid.createVariable('best_estimate','f4',('numobs'),fill_value=np.nan)
         nc_file.setncatts({'long_name': u"Model best_estimate counterpart of obs. value"})
+        nc_file.setncatts({'minvalue':  np.nanmin(tab1)})
+        nc_file.setncatts({'maxvalue': np.nanmax(tab1)})
         nc_fid.variables['best_estimate'][:] = tab1[:]
         ## Add global attributs
         nc_fid.institution= 'MERCATOR OCEAN'

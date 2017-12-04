@@ -266,7 +266,8 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             ll_coloc=True
             log.info('coloc existe %s '  %(file_coloc))
             log.info('load existing tree')
-            f = file(file_coloc, 'r')
+            print type(file_coloc)
+            f = file(str(file_coloc), 'r')
             zip_var=cPickle.load(f)
             d,inds_idw=zip(*zip_var)
             d1=np.array(d)
@@ -282,7 +283,9 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             tree = cKDTree(zip(xs, ys, zs))
             log.info('query with IDW approach')
             d1, inds_idw1 = tree.query(zip(xt, yt, zt), k = 4)
-            f = file(file_coloc, 'wb')
+            log.info('File coloc %s ' %(file_coloc))
+            print type(file_coloc)
+            f = file(str(file_coloc), 'wb')
             cPickle.dump(zip(d1,inds_idw1),f,protocol=cPickle.HIGHEST_PROTOCOL)
             log.info('dump ok')
             f.close
@@ -292,12 +295,15 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         ## Create matrix
         nb_obs=int(np.shape(lat)[0])
         log.info('Number obs to coloc %i ' % (nb_obs)) 
-        hdct_tab=np.ndarray(shape=(nb_obs,1,1),dtype=float, order='F')
-        pers_tab=np.ndarray(shape=(nb_obs,1,10,1),dtype=float, order='F')
-        fcst_tab=np.ndarray(shape=(nb_obs,1,10,1),dtype=float, order='F')
-        pers_tab[:,:,:,:]=9999.
-        fcst_tab[:,:,:,:]=9999.
-        hdct_tab[:,:,:]=9999.
+        if data_origin == "Microwat":
+            hdct_tab=np.ndarray(shape=(nb_obs,),dtype=float, order='F')
+            hdct_tab[:]=9999.
+        else :
+            hdct_tab=np.ndarray(shape=(nb_obs,1,1),dtype=float, order='F')
+            pers_tab=np.ndarray(shape=(nb_obs,1,10,1),dtype=float, order='F')
+            fcst_tab=np.ndarray(shape=(nb_obs,1,10,1),dtype=float, order='F')
+            pers_tab[:,:,:,:]=9999.
+            fcst_tab[:,:,:,:]=9999.
         ll_miss=False
         log.info("Colloc OK")
         # =============================================================================
@@ -343,12 +349,13 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 log.info('model %s' %(modele))
                 if directory == 'hdct' :
                     dirmodel_new=dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
+                    dirmodel_new=dirmodel
                 else :
                     dirmodel_new=dirmodel+"DAILY/"+modele[:5]+"/"+modele.lower()+"/"
                # list_file=glob.glob(dirmodel_new+directory+"/"+modele+"_"+daily_pref+"_"+dateval+"*_icemod*.nc")
                 ## Compute date
                 if daily_pref == '7dAV' : 
-                    jdatemin=SyDate(str(date1))
+                    jdatemin=SyDate(str(dateval))
                     daytogo=2-jdatemin.weekday()
                     if daytogo > 0 : 
                         first_date=jdatemin.goforward(daytogo)
@@ -372,42 +379,53 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 ## Netcdf value
                 fichier=str(list_file[0])
                 fc = Dataset(fichier)
-                if data_type == 'aice' or data_type == 'SLA' :
+                if data_type == 'aice' or data_type == 'SLA'  or data_type == 'chloro' :
                     value_mod = fc.variables[str(varname)][0,:,:]
                     log.info("load dataset ok")
-                    #rla_var=NetcdReader().read_3D(fichier,varname)
-                elif data_type == 'chloro' :
-                    varname='CHL'
-                    value_mod = fc.variables[str(varname)][0,:,:]
-                    log.info("load dataset ok")
+                elif data_type == 'sss' : 
+                    log.info("SSS")
+                    value_mod = fc.variables[str(varname)][0,:,:,:]
                 else :
+                    log.info("read varname %s" %(varname))
                     value_mod = fc.variables[varname][:,:,:,:]
                 ## Do the interp
                 interp_idw = np.sum(w * value_mod.flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)
-                interp_idw2D=interp_idw.reshape(X.shape)
                 if data_origin == "GLOBCOLOUR" :
                     ## Fill with gaps
+                    interp_idw2D=interp_idw.reshape(X.shape)
                     interp_idw2D=np.where(np.array(obs_value)==-999,-999,np.array(interp_idw2D))
                # ind_values=np.where(obs_value == -999)
                 log.info('Interp ok ')
-                #if  time == 'forecast' : 
-                #    fcst_tab[:,0,ind,0]=interp_idw[:]
-                #elif time == 'persistence' :
-                #    pers_tab[:,0,ind,0]=interp_idw[:]
-                #elif time == 'best_estimate' :
-                #    hdct_tab[:,0,0]=interp_idw[:]
+                if  time == 'forecast' : 
+                    fcst_tab[:,0,ind,0]=interp_idw[:]
+                elif time == 'persistence' :
+                    pers_tab[:,0,ind,0]=interp_idw[:]
+                elif time == 'best_estimate' :
+                    if data_origin == "Microwat":
+                        hdct_tab[:]=interp_idw[:]
+                    else :
+                        hdct_tab[:,0,0]=interp_idw[:]
                 ind+=1
         log.info("Interp ok")
         ## Write in the file
         if not ll_miss : 
             log.info("Write file")
-            filename=dirwork+file_out
-            Writer().write_GODAE_files(filename,hdct_tab,fcst_tab,pers_tab,dateval,modele)
+            filename_new=dirwork+file_out
+            if data_origin == "Microwat" :
+                # Add missing value
+                print filename_new
+                hdct_tab=np.where(np.array(hdct_tab)==0,np.nan,np.array(hdct_tab))
+                Writer().write_best(filename_new,hdct_tab,dateval,modele)
+            elif data_origin == "GLOBCOLOUR" :
+                Writer().write_best_fcst(filename_new,hdct_tab,fcst_tab,dateval,modele)
+            else : 
+                Writer().write_GODAE_files(filename_new,hdct_tab,fcst_tab,pers_tab,dateval,modele)
             log.info('----------------------------')
-            log.info('Creation file ok %s' %(filename))
+            log.info('Creation file ok %s' %(filename_new))
             log.info('----------------------------')
             ## Zipped files and move in output directory 
-            ##for filename in glob.glob(dirwork+"*.nc") :
+            for fileout in glob.glob(dirwork+"*"+dateval+"*.nc") :
+                shutil.move(fileout,diroutput)
             ##    log.info('ZIP and move file %s' %(filename))
             ##    f_in=open(filename,'rb')
             ##    f_out=gzip.open(filename+'.gz','wb')
@@ -417,65 +435,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             ##    log.info('File ok %s' %(filename))
             ##    if os.path.exists(diroutput+os.path.basename(filename)+'.gz'):
             ##        os.remove(diroutput+os.path.basename(filename)+'.gz')
-            ##    shutil.move(filename+'.gz',diroutput)
             ##    os.remove(filename)
         else : 
             log.info('File missing')
-
-sys.exit(1)
-
-# Lancement du run d'après
-DAYMAX=param_dict.get('GLOBAL','DAY_MAX')
-## Clear stuck objects
-sys.exc_clear()
-sys.exc_traceback = sys.last_traceback = None
-if DAYMAX : 
-    dayvalmax=SyDate(DAYMAX)
-    schedule=param_dict.get('GLOBAL','SCHEDULE')
-    if schedule == "MONTHLY" : 
-        date_next=date1.goforward(31)
-        date_next=date1.goforward(31)
-    elif schedule == "WEEKLY" :
-        date_next=SyDate(daterun).goforward(7)
-    elif schedule == "YEARLY" :
-        date_next=date1.goforward(365)
-    elif schedule == "DAILY" :
-        date_next=SyDate(daterun).goforward(1)
-    else : 
-        log.error("Schedule not found %s" %(schedule))
-    if  date_next < dayvalmax :
-        if schedule == "MONTHLY" : 
-            cl_date=SyDate.__str__(date_next)[0:6]
-            cl_date2=SyDate.__str__(dayvalmax)[0:6]
-            code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --date1='+cl_date+ \
-                 '  --date2='+cl_date2+' --src='+cl_src+'  --data='+data_type
-        elif schedule == "WEEKLY" :
-            cl_daterun=SyDate.__str__(date_next)
-            print('Lancement du run %s ' %(cl_daterun))
-            code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --daterun='+cl_daterun+ \
-                    '  --nbdate=7 --delta=7 --src='+cl_src+'  --data='+data_type
-        elif schedule == "DAILY" :
-            nb_proc=1
-            cl_daterun=SyDate.__str__(date_next)
-            log.info('Launch run %s' %(cl_daterun))
-            log.info('with parameters %s %s %s' %(cl_config,cl_daterun,str(nb_proc)))
-            print('Lancement du run %s ' %(cl_daterun))
-            code_lancement=homedir+'script/Launcher_NAVITI_cycle.ksh '+cl_config+'  '+cl_daterun+' '+str(nb_proc)
-        elif schedule == "YEARLY" :
-            cl_daterun=SyDate.__str__(date_next)
-            print('Lancement du run %s ' %(cl_daterun))
-            code_lancement='python '+homedir+'script/TEP_CLASS4.py --config=PSY4V3R1 --date1='+cl_daterun[0:4]+' --src=CORA4 --data=profile --typemod=allege'
-        else : 
-            log.error("Schedule not found %s" %(schedule))
-        try:
-            os.system(code_lancement)
-            print("Lancement date run %s ok " % (cl_date))
-        except:
-            print('Probleme execution')
-            sys.exit(1)
-    else :
-        print('Dépassement de JMAX : %s ' % (SyDate.__str__(date_next)))
-        sys.exit(1)
-            #Design().factory(data_origin).run(filename,dateval,contact,cl_config_d,model_type.lower(),inst,version,desc)
-
-sys.exit(1)
