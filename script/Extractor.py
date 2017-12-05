@@ -31,7 +31,7 @@ class Extractor(object) :
         if type == "GODAE" : return Extract_GODAE()
         if type == "ASCII" : return Extract_ASCII()
         if type == "L3m" : return Extract_genericData()
-        if type == "Microwat_Lband_Orbite_1day_Lband" : return Extract_genericData()
+        if type == "Microwat_Lband_Orbite_1day_Lband" or type == "Microwat_6.9GHz_Orbite_1day" : return Extract_genericData()
 
 
 
