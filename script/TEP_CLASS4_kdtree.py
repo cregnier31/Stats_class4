@@ -69,7 +69,6 @@ log.error("Nombre de proc %i" %(nb_proc))
 log.info("Type des fichiers d'entree %s " %(cl_typemod))
 log.info("Schedule %s " %(cl_schedule))
 log.info("Dates %s %s " %(date1,date2))
-log.info("Daterun %s " %(daterun))
 log.info("Datatype %s " %(data_type))
 # ==================================
 #   Load db configuration file
@@ -109,8 +108,10 @@ dir_log=param_dict.get('GLOBAL','DIRLOG')
 gridtemp=param_dict.get('GLOBAL','gridtemp')
 gridsal=param_dict.get('GLOBAL','gridsal')
 type_run=param_dict.get('GLOBAL','TYPE_RUN')
+type_archi=param_dict.get('GLOBAL','TYPE_ARCHI')
 varname=param_dict.get('GLOBAL','variable')
 nb_points=int(param_dict.get('GLOBAL','nb_points_interp'))
+schedule=param_dict.get('GLOBAL','SCHEDULE')
 ## Create Output and tmp directory if doesn't exist
 if not os.path.exists(dirwork):
     log.info("Workdir %s" %(dirwork))
@@ -130,13 +131,13 @@ if write_geojson  :
     ## Clean old db
     if (os.path.isfile(file_db2)) :
         os.remove(file_db2)
+
 # =============================================================================
 # PART 1-bis : DO SORT if not available
 # =============================================================================
 if do_sort : 
     log.info('              Sort Values for interp               ') 
     sort_rep=param_dict.get('input_dir','DATA_SORT')
-    schedule=param_dict.get('GLOBAL','SCHEDULE')
     file_template=cl_config+'_'+daily_pref+'_'
     if schedule == "WEEKLY" :
         Sorter().run_weekly(lead_time,lead_int,date1,date2,daterun,file_template,gridtemp,gridsal,dirmodel,sort_rep)
@@ -198,7 +199,7 @@ if data_type.lower() == "sst" :
     gridtype="gridT"
 elif data_type.lower() == "sss" :
     gridtype="gridS"
-elif data_type.lower() == "sla" :
+elif data_type.lower() == "sla" or data_type.lower() == "ssthf" :
     gridtype="grid2D"
 elif data_type.lower() == "chloro" :
     gridtype="gridCHL"
@@ -240,7 +241,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             log.info("GLOBAL MODE => SELECT ALL ") 
             if data_origin == "Microwat":
                 lon,lat=Loader.factory(data_format).read_pos(fichier)
-                print type(lon),type(lat),np.shape(lon)
             else :
                 lon,lat,obs_value=Loader.factory(data_format).read_pos_and_value(fichier)
             if lon.ndim < 2 :
@@ -263,7 +263,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         ll_coloc=False
         file_coloc_tmp=os.path.basename(fichier)
         file_out=file_coloc_tmp
-        file_out=re.sub('.nc','_'+str(cl_config)+'.nc',file_out)
         file_coloc_tmp=re.sub('.nc','_Kdtree_PGN_idw'+str(nb_points)+'pt.p',file_coloc_tmp)
         file_coloc=coloc_rep+file_coloc_tmp
         log.info('File coloc %s ' %(file_coloc))
@@ -271,7 +270,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             ll_coloc=True
             log.info('coloc existe %s '  %(file_coloc))
             log.info('load existing tree')
-            print type(file_coloc)
             f = file(str(file_coloc), 'r')
             zip_var=cPickle.load(f)
             d,inds_idw=zip(*zip_var)
@@ -286,10 +284,9 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             xs, ys, zs = lon_lat_to_cartesian(lon_mod.flatten(), lat_mod.flatten())
             log.info('Create CKDTREE object')
             tree = cKDTree(zip(xs, ys, zs))
-            log.info('query with IDW approach')
+            log.info('query approach')
             d1, inds_idw1 = tree.query(zip(xt, yt, zt), k =  nb_points)
             log.info('File coloc %s ' %(file_coloc))
-            print type(file_coloc)
             f = file(str(file_coloc), 'wb')
             cPickle.dump(zip(d1,inds_idw1),f,protocol=cPickle.HIGHEST_PROTOCOL)
             log.info('dump ok')
@@ -385,11 +382,14 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 ## Netcdf value
                 fichier=str(list_file[0])
                 fc = Dataset(fichier)
-                if data_type == 'aice' or data_type == 'SLA'  or data_type == 'chloro' :
+                if data_type.lower() == 'aice' or data_type.lower() == 'sla'  or data_type.lower() == 'chloro' :
                     value_mod = fc.variables[str(varname)][0,:,:]
                     log.info("load dataset ok")
                 elif data_type == 'sss' or data_type == 'sst' : 
                     log.info("sss or sst variable")
+                    value_mod = fc.variables[str(varname)][0,:,:,:]
+                elif data_type.lower() == 'sst_hf' or data_type.lower() == 'sst_hf' : 
+                    log.info("sst_hf and selection")
                     value_mod = fc.variables[str(varname)][0,:,:,:]
                 else :
                     log.info("read varname %s" %(varname))
@@ -430,12 +430,14 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 Writer().write_best_fcst(filename_new,hdct_tab,fcst_tab,dateval,modele)
             else : 
                 Writer().write_GODAE_files(filename_new,hdct_tab,fcst_tab,pers_tab,dateval,modele)
-            log.info('----------------------------')
-            log.info('Creation file ok %s' %(filename_new))
-            log.info('----------------------------')
             ## Zipped files and move in output directory 
+            file_out2=os.path.basename(file_out)
+            file_out2=re.sub('.nc','_'+str(cl_config)+'.nc',file_out2)
             for fileout in glob.glob(dirwork+"*"+dateval+"*.nc") :
-                shutil.move(fileout,diroutput)
+                shutil.move(fileout,diroutput+file_out2)
+            log.info('----------------------------')
+            log.info('Creation file ok %s' %(diroutput+file_out2))
+            log.info('----------------------------')
             ##    log.info('ZIP and move file %s' %(filename))
             ##    f_in=open(filename,'rb')
             ##    f_out=gzip.open(filename+'.gz','wb')
