@@ -259,7 +259,8 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         ll_coloc=False
         file_coloc_tmp=os.path.basename(fichier)
         file_out=file_coloc_tmp
-        file_coloc_tmp=re.sub('.nc','_Kdtree_PGN_idw4pt.p',file_coloc_tmp)
+        nb_points=1
+        file_coloc_tmp=re.sub('.nc','_Kdtree_PGN_idw'+str(nb_points)+'pt.p',file_coloc_tmp)
         file_coloc=coloc_rep+file_coloc_tmp
         log.info('File coloc %s ' %(file_coloc))
         if os.path.isfile(file_coloc) : 
@@ -282,7 +283,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             log.info('Create CKDTREE object')
             tree = cKDTree(zip(xs, ys, zs))
             log.info('query with IDW approach')
-            d1, inds_idw1 = tree.query(zip(xt, yt, zt), k = 4)
+            d1, inds_idw1 = tree.query(zip(xt, yt, zt), k =  nb_points)
             log.info('File coloc %s ' %(file_coloc))
             print type(file_coloc)
             f = file(str(file_coloc), 'wb')
@@ -290,8 +291,9 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             log.info('dump ok')
             f.close
             ll_tree=True
-        ## Compute the weigths
-        w = 1.0 / d1**2 
+        if nb_points > 1 :
+            ## Compute the weigths
+            w = 1.0 / d1**2 
         ## Create matrix
         nb_obs=int(np.shape(lat)[0])
         log.info('Number obs to coloc %i ' % (nb_obs)) 
@@ -389,23 +391,27 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 else :
                     log.info("read varname %s" %(varname))
                     value_mod = fc.variables[varname][:,:,:,:]
-                ## Do the interp
-                interp_idw = np.sum(w * value_mod.flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)
+                if nb_points > 1 :
+                    ## Do the interp
+                    interp = np.sum(w * value_mod.flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)
+                else :
+                    ## Nearest neighbour interpolation
+                    interp = value_mod.flatten()[inds_idw1].reshape(lon.shape)
                 if data_origin == "GLOBCOLOUR" :
                     ## Fill with gaps
-                    interp_idw2D=interp_idw.reshape(X.shape)
-                    interp_idw2D=np.where(np.array(obs_value)==-999,-999,np.array(interp_idw2D))
+                    interp2D=interp.reshape(X.shape)
+                    interp2D=np.where(np.array(obs_value)==-999,-999,np.array(interp2D))
                # ind_values=np.where(obs_value == -999)
                 log.info('Interp ok ')
                 if  time == 'forecast' : 
-                    fcst_tab[:,0,ind,0]=interp_idw[:]
+                    fcst_tab[:,0,ind,0]=interp[:]
                 elif time == 'persistence' :
-                    pers_tab[:,0,ind,0]=interp_idw[:]
+                    pers_tab[:,0,ind,0]=interp[:]
                 elif time == 'best_estimate' :
                     if data_origin == "Microwat":
-                        hdct_tab[:]=interp_idw[:]
+                        hdct_tab[:]=interp[:]
                     else :
-                        hdct_tab[:,0,0]=interp_idw[:]
+                        hdct_tab[:,0,0]=interp[:]
                 ind+=1
         log.info("Interp ok")
         ## Write in the file
@@ -415,7 +421,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             if data_origin == "Microwat" :
                 # Add missing value
                 print filename_new
-                hdct_tab=np.where(np.array(hdct_tab)==0,np.nan,np.array(hdct_tab))
+                hdct_tab=np.where(np.array(hdct_tab)>9.e36,np.nan,np.array(hdct_tab))
                 Writer().write_best(filename_new,hdct_tab,dateval,modele)
             elif data_origin == "GLOBCOLOUR" :
                 Writer().write_best_fcst(filename_new,hdct_tab,fcst_tab,dateval,modele)
