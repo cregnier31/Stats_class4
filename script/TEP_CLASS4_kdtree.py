@@ -298,6 +298,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         if data_origin == "Microwat":
             hdct_tab=np.ndarray(shape=(nb_obs,),dtype=float, order='F')
             hdct_tab[:]=9999.
+            gridtype="gridS"
         else :
             hdct_tab=np.ndarray(shape=(nb_obs,1,1),dtype=float, order='F')
             pers_tab=np.ndarray(shape=(nb_obs,1,10,1),dtype=float, order='F')
@@ -369,7 +370,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                     template=modele+'_'+daily_pref+'_'+str(date1)+'_'+str(date2)+'_gridCHL_R'+str(daterun)
                     list_file=glob.glob(dirmodel_new+template+"*.nc")
                 else :
-                    list_file=glob.glob(dirmodel_new+"/"+modele+"_"+daily_pref+"_"+dateval+"*_*.nc")
+                    list_file=glob.glob(dirmodel_new+"/"+modele+"_"+daily_pref+"_"+dateval+"*_*"+gridtype+"*.nc")
                 if not list_file :
                     log.error("File missing for %s" %(directory))
                     ll_miss=True
