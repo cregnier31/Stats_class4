@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vim: set ts=4 sw=4 expandtab:
 # History  : Juillet 2014  : Creation C.REGNIER 
@@ -116,7 +115,7 @@ gridtemp=param_dict.get('GLOBAL','gridtemp')
 gridsal=param_dict.get('GLOBAL','gridsal')
 type_run=param_dict.get('GLOBAL','TYPE_RUN')
 varname=param_dict.get('GLOBAL','variable')
-
+nb_points=int(param_dict.get('GLOBAL','nb_points_interp'))
 ## Create Output and tmp directory if doesn't exist
 if not os.path.exists(dirwork):
     log.info("Workdir %s" %(dirwork))
@@ -259,7 +258,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         ll_coloc=False
         file_coloc_tmp=os.path.basename(fichier)
         file_out=file_coloc_tmp
-        nb_points=1
         file_coloc_tmp=re.sub('.nc','_Kdtree_PGN_idw'+str(nb_points)+'pt.p',file_coloc_tmp)
         file_coloc=coloc_rep+file_coloc_tmp
         log.info('File coloc %s ' %(file_coloc))
