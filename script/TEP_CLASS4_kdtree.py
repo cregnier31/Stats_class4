@@ -4,29 +4,25 @@
 #            Novembre 2014 :  Ajout différentes échéances pour l'interpolation + clims + gestion enchaînement des runs
 #            Decembre 2014 :  MAJ pour le cas particulier du zoom
 #            November 2016 :  New version with KDtree method for coloc and interp
-#            November 2017 :  Add modules in a generic lib for CLASS4 portability
+#            November/Dec 2017 :  Add modules in a generic lib for CLASS4 portability / Generic KDtree for SLA,SST,SSS
 ## Description : 
 ## New CLASS4 launcher to compute CLASS4 with CLASS4 coming from GODAE, ARMOR, CORIOLIS
 #
 from __future__ import generators
 import os,sys,string,shutil,glob,re
-#sys.path.append("/home/modules/versions/64/fc18/ipython/ipython-1.1/lib/python2.7/site-packages")
-#sys.path.append("/home/modules/versions/64/fc18/netcdf4-python/netcdf4-python-1.0.7/lib64/python2.7/site-packages/")
-#sys.path.append("/home/cregnier/python/module/")
-#sys.path.append("/home/cregnier/python/module/geojson-1.0.7/")
-#sys.path.append("/home/cregnier/python/module/lib/python2.6/site-packages/")
-#sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/")
-#sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/nco-0.0beta-py2.7.egg/")
+## Import specific python_modules
 sys.path.append('../python_modules/')
-#sys.path.append('../python_modules/netcdf4/')
 import logging
 import resource
+## Import local modules
 from Selector import Selector
 from Writer import Writer
 from Extractor import Extractor
 from NmlCreator import NmlCreator
+from Sorter import Sorter
 from array import array
 from Designer import Designer_file as Design
+
 import operator,getopt
 import shelve
 import subprocess,shlex
@@ -35,7 +31,6 @@ import datetime as dt
 from datetime import date
 from dateutil import relativedelta
 from  Logger import Logger
-from Sorter import Sorter
 import gzip
 from Utils import *
 #for serialization 
@@ -199,6 +194,16 @@ ll_file_ok=None
 ll_uniq=None
 valeurj=date1
 coordinates=param_dict.get('static','fic_coordinates')
+if data_type.lower() == "sst" : 
+    gridtype="gridT"
+elif data_type.lower() == "sss" :
+    gridtype="gridS"
+elif data_type.lower() == "sla" :
+    gridtype="grid2D"
+elif data_type.lower() == "chloro" :
+    gridtype="gridCHL"
+elif data_type.lower() == "aice" :
+    gridtype="icemod"
 
 while valeurj.__ge__(date1) and valeurj.__le__(date2) :
     log.info('Interp day  %s ' % (SyDate.__str__(valeurj))) 
@@ -258,6 +263,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         ll_coloc=False
         file_coloc_tmp=os.path.basename(fichier)
         file_out=file_coloc_tmp
+        file_out=re.sub('.nc','_'+str(cl_config)+'.nc',file_out)
         file_coloc_tmp=re.sub('.nc','_Kdtree_PGN_idw'+str(nb_points)+'pt.p',file_coloc_tmp)
         file_coloc=coloc_rep+file_coloc_tmp
         log.info('File coloc %s ' %(file_coloc))
@@ -298,7 +304,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         if data_origin == "Microwat":
             hdct_tab=np.ndarray(shape=(nb_obs,),dtype=float, order='F')
             hdct_tab[:]=9999.
-            gridtype="gridS"
         else :
             hdct_tab=np.ndarray(shape=(nb_obs,1,1),dtype=float, order='F')
             pers_tab=np.ndarray(shape=(nb_obs,1,10,1),dtype=float, order='F')
@@ -367,7 +372,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                     daterun=first_date
                     date1=daterun.gobackward(14)
                     date2=daterun.gobackward(7)
-                    template=modele+'_'+daily_pref+'_'+str(date1)+'_'+str(date2)+'_gridCHL_R'+str(daterun)
+                    template=modele+'_'+daily_pref+'_'+str(date1)+'_'+str(date2)+'_'+gridtype+'_R'+str(daterun)
                     list_file=glob.glob(dirmodel_new+template+"*.nc")
                 else :
                     list_file=glob.glob(dirmodel_new+"/"+modele+"_"+daily_pref+"_"+dateval+"*_*"+gridtype+"*.nc")
@@ -383,8 +388,8 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 if data_type == 'aice' or data_type == 'SLA'  or data_type == 'chloro' :
                     value_mod = fc.variables[str(varname)][0,:,:]
                     log.info("load dataset ok")
-                elif data_type == 'sss' : 
-                    log.info("SSS")
+                elif data_type == 'sss' or data_type == 'sst' : 
+                    log.info("sss or sst variable")
                     value_mod = fc.variables[str(varname)][0,:,:,:]
                 else :
                     log.info("read varname %s" %(varname))
