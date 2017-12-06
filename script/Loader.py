@@ -247,9 +247,9 @@ class LoaderSyntheticValue(Loader):
         rla_lat = nc.variables[variable][:]
         n_profiles=len(rla_lon[:])
         ## Optional Read juld
-        ##variable='juld'
-        ##rla_juld= nc.variables[variable][:]
-        return rla_lon,rla_lat
+        variable='juld'
+        rla_juld= nc.variables[variable][:]
+        return rla_lon,rla_lat,rla_juld
 
 
 

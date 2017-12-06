@@ -195,11 +195,11 @@ ll_file_ok=None
 ll_uniq=None
 valeurj=date1
 coordinates=param_dict.get('static','fic_coordinates')
-if data_type.lower() == "sst" : 
+if data_type.lower() == "sst" or data_type.lower() == "ssthf" : 
     gridtype="gridT"
 elif data_type.lower() == "sss" :
     gridtype="gridS"
-elif data_type.lower() == "sla" or data_type.lower() == "ssthf" :
+elif data_type.lower() == "sla" :
     gridtype="grid2D"
 elif data_type.lower() == "chloro" :
     gridtype="gridCHL"
@@ -240,7 +240,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             # Case Global without qc
             log.info("GLOBAL MODE => SELECT ALL ") 
             if data_origin == "Microwat":
-                lon,lat=Loader.factory(data_format).read_pos(fichier)
+                lon,lat,juld=Loader.factory(data_format).read_pos(fichier)
             else :
                 lon,lat,obs_value=Loader.factory(data_format).read_pos_and_value(fichier)
             if lon.ndim < 2 :
@@ -387,10 +387,11 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                     log.info("load dataset ok")
                 elif data_type == 'sss' or data_type == 'sst' : 
                     log.info("sss or sst variable")
-                    value_mod = fc.variables[str(varname)][0,:,:,:]
-                elif data_type.lower() == 'sst_hf' or data_type.lower() == 'sst_hf' : 
+                    value_mod = fc.variables[str(varname)][0,0,:,:]
+                elif data_type.lower() == 'ssthf' : 
                     log.info("sst_hf and selection")
-                    value_mod = fc.variables[str(varname)][0,:,:,:]
+                    value_mod = fc.variables[str(varname)][:,:,:]
+                    time_mod = fc.variables['time_counter'][:]
                 else :
                     log.info("read varname %s" %(varname))
                     value_mod = fc.variables[varname][:,:,:,:]
