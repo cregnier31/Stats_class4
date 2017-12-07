@@ -2059,12 +2059,13 @@ CONTAINS
 
              DO il_i=1,ig_nlevels
                 IF ( rga_DepthVal(il_i,ib_p) .NE. rg_DepthVal_Def &
-                  & .AND. rga_DepthVal(il_i,ib_p) .NE. rg_fillvalue .AND. rga_DepthVal(il_i,ib_p) .lt. rl_missvalue  ) THEN
+                  & .AND. rga_DepthVal(il_i,ib_p) .NE. rg_fillvalue .AND. rga_DepthVal(il_i,ib_p) .lt. rl_missvalue &
+                  .AND. rga_DepthVal(il_i,ib_p) .lt. 99000 ) THEN
                    rl_depth = rga_DepthVal(il_i,ib_p)
 #if defined key_debug
  WRITE(*,*) 'Fichier :',cd_file
  PRINT *,'profile,level : ',ib_p,il_i
- PRINT *,'rga_DepthVal(:,ib_p)',rga_DepthVal(:,ib_p)
+ !PRINT *,'rga_DepthVal(:,ib_p)',rga_DepthVal(:,ib_p)
  PRINT *,'Depth,il_i,lat : ',rl_depth,il_i,rl_lat
 #endif
                    CALL imm2pres(rl_depth,rl_lat,rl_pres)
@@ -2084,6 +2085,7 @@ CONTAINS
 
 #if defined key_debug
  PRINT *,'Correction ok'
+ if (ib_p == 387) STOP
 #endif
 
           rl_nbvaleur_1=0.
