@@ -239,10 +239,16 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         else :
             # Case Global without qc
             log.info("GLOBAL MODE => SELECT ALL ") 
+            selector=Selector(data_format,data_type).factory(data_origin)
             if data_origin == "Microwat":
+                print "OK"
                 lon,lat,juld=Loader.factory(data_format).read_pos(fichier)
             else :
                 lon,lat,obs_value=Loader.factory(data_format).read_pos_and_value(fichier)
+            nb_obs=int(np.shape(lat)[0])
+            new_position=np.ndarray(shape=(nb_obs,2),dtype=float, order='F')
+            new_position[:,0]=lon
+            new_position[:,1]=lat
             if lon.ndim < 2 :
                 #X, Y = np.meshgrid(lon,lat)
                 X, Y = lon,lat
@@ -253,7 +259,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             else :
                 xt, yt, zt = lon_lat_to_cartesian(lon, lat)
             log.info("Data origin %s" %(data_origin))
-            #selector=Selector(data_format,data_type).factory(data_origin)
         # =============================================================================
         # PART-4 - Colocations of positions
         # =============================================================================
@@ -296,7 +301,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             ## Compute the weigths
             w = 1.0 / d1**2 
         ## Create matrix
-        nb_obs=int(np.shape(lat)[0])
         log.info('Number obs to coloc %i ' % (nb_obs)) 
         if data_origin == "Microwat":
             hdct_tab=np.ndarray(shape=(nb_obs,),dtype=float, order='F')
@@ -309,6 +313,21 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             fcst_tab[:,:,:,:]=9999.
         ll_miss=False
         log.info("Colloc OK")
+        if write_geojson  :
+            # Store input position and coloc position to plot the results in a GIS like qGis 
+            # Input
+            ## Store only ext files for extract area
+            type_f=os.path.basename(fichier).split('_')[2]
+            length=new_position.size
+            file_json=dirtmp+'Positions_'+data_format+'_'+data_type+'_D'+dateval+'_'+SyDate.__str__(date2)+'.geojson'
+            log.info('File out geojson %s' %(file_json))
+            if length > 1 :
+                log.info("Write geojson positions %s " %(data_origin))
+                Writer().write_geojson(file_json,new_position)
+                #write_geojsonselector.store_pos(new_position,data_origin,file_db)
+            else :
+                print "No position to store %s " %(type_f)
+           # Writer().write_geojson_fromdb(data_type,file_out,file_db)
         # =============================================================================
         # PART-5 - Compute interpolation
         # =============================================================================
