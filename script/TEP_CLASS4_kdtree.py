@@ -47,6 +47,7 @@ from sytoolkit.sydate import SyDate
 ## Set Stack unlimited
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
+
 # ===============
 # LOGGER
 # ===============
@@ -241,7 +242,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             log.info("GLOBAL MODE => SELECT ALL ") 
             selector=Selector(data_format,data_type).factory(data_origin)
             if data_origin == "Microwat":
-                print "OK"
                 lon,lat,juld=Loader.factory(data_format).read_pos(fichier)
             else :
                 lon,lat,obs_value=Loader.factory(data_format).read_pos_and_value(fichier)
@@ -253,7 +253,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 #X, Y = np.meshgrid(lon,lat)
                 X, Y = lon,lat
                 #ny,nx=np.shape(X)
-                #print(nx,ny)
                 ## Convert to cartesian
                 xt, yt, zt = lon_lat_to_cartesian(X.flatten(),Y.flatten())
             else :
@@ -271,6 +270,9 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         file_coloc_tmp=re.sub('.nc','_Kdtree_PGN_idw'+str(nb_points)+'pt.p',file_coloc_tmp)
         file_coloc=coloc_rep+file_coloc_tmp
         log.info('File coloc %s ' %(file_coloc))
+        lon_mod,lat_mod=Loader.factory('PGN_coords').read_pos(coordinates)
+        lon_flat=lon_mod.flatten()
+        lat_flat=lat_mod.flatten()
         if os.path.isfile(file_coloc) : 
             ll_coloc=True
             log.info('coloc existe %s '  %(file_coloc))
@@ -284,9 +286,8 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             log.info('read tree ok')
         if not ll_coloc :
             log.info('Coordinates %s ' %(coordinates))
-            lon_mod,lat_mod=Loader.factory('PGN_coords').read_pos(coordinates)
             log.info('coloc don t exist => coloc with KDtree')
-            xs, ys, zs = lon_lat_to_cartesian(lon_mod.flatten(), lat_mod.flatten())
+            xs, ys, zs = lon_lat_to_cartesian(lon_flat, lat_flat)
             log.info('Create CKDTREE object')
             tree = cKDTree(zip(xs, ys, zs))
             log.info('query approach')
@@ -301,7 +302,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             ## Compute the weigths
             w = 1.0 / d1**2 
         ## Create matrix
-        log.info('Number obs to coloc %i ' % (nb_obs)) 
+        log.info('Number obs to coloc %i ' % (nb_obs))
         if data_origin == "Microwat":
             hdct_tab=np.ndarray(shape=(nb_obs,),dtype=float, order='F')
             hdct_tab[:]=9999.
@@ -326,8 +327,9 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 Writer().write_geojson(file_json,new_position)
                 #write_geojsonselector.store_pos(new_position,data_origin,file_db)
             else :
-                print "No position to store %s " %(type_f)
-           # Writer().write_geojson_fromdb(data_type,file_out,file_db)
+                log.info("No position to store %s " %(type_f))
+
+            # Writer().write_geojson_fromdb(data_type,file_out,file_db)
         # =============================================================================
         # PART-5 - Compute interpolation
         # =============================================================================
@@ -374,7 +376,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                     dirmodel_new=dirmodel
                 else :
                     dirmodel_new=dirmodel+"DAILY/"+modele[:5]+"/"+modele.lower()+"/"
-               # list_file=glob.glob(dirmodel_new+directory+"/"+modele+"_"+daily_pref+"_"+dateval+"*_icemod*.nc")
                 ## Compute date
                 if daily_pref == '7dAV' : 
                     jdatemin=SyDate(str(dateval))
@@ -411,6 +412,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                     log.info("sst_hf and selection")
                     value_mod = fc.variables[str(varname)][:,:,:]
                     time_mod = fc.variables['time_counter'][:]
+                    liste_date=get_julian_date_from_PGN_hrly(fichier)
                 else :
                     log.info("read varname %s" %(varname))
                     value_mod = fc.variables[varname][:,:,:,:]
@@ -418,8 +420,25 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                     ## Do the interp
                     interp = np.sum(w * value_mod.flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)
                 else :
-                    ## Nearest neighbour interpolation
-                    interp = value_mod.flatten()[inds_idw1].reshape(lon.shape)
+                    if data_type.lower() == 'ssthf' :
+                        ## High frequency case 
+                        ## Find the correct hourly value
+                        interp=np.ndarray(shape=(nb_obs,),dtype=float, order='F')
+                        for i in np.ndindex(juld.shape):
+                            ind=inds_idw1[i]
+                            lon_2=lon_flat[ind]
+                            lat_2=lat_flat[ind]
+                            indx = np.argmin(np.abs(lon_mod[0,:]-lon_2))
+                            indy = np.argmin(np.abs(lat_mod[:,0]-lat_2))
+                            julian=juld[i]
+                            index_time = np.argmin(np.abs(np.array(liste_date)-julian))
+                            if indy and indx :
+                                interp[i]=value_mod[index_time,indy,indx] 
+                            else : 
+                                interp[i]=np.nan
+                    else : 
+                        ## Nearest neighbour interpolation
+                        interp = value_mod.flatten()[inds_idw1].reshape(lon.shape)
                 if data_origin == "GLOBCOLOUR" :
                     ## Fill with gaps
                     interp2D=interp.reshape(X.shape)
@@ -443,7 +462,6 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             filename_new=dirwork+file_out
             if data_origin == "Microwat" :
                 # Add missing value
-                print filename_new
                 hdct_tab=np.where(np.array(hdct_tab)>9.e36,np.nan,np.array(hdct_tab))
                 Writer().write_best(filename_new,hdct_tab,dateval,modele)
             elif data_origin == "GLOBCOLOUR" :
@@ -458,15 +476,5 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             log.info('----------------------------')
             log.info('Creation file ok %s' %(diroutput+file_out2))
             log.info('----------------------------')
-            ##    log.info('ZIP and move file %s' %(filename))
-            ##    f_in=open(filename,'rb')
-            ##    f_out=gzip.open(filename+'.gz','wb')
-            ##    f_out.writelines(f_in)
-            ##    f_out.close()
-            ##    f_in.close()
-            ##    log.info('File ok %s' %(filename))
-            ##    if os.path.exists(diroutput+os.path.basename(filename)+'.gz'):
-            ##        os.remove(diroutput+os.path.basename(filename)+'.gz')
-            ##    os.remove(filename)
         else : 
             log.info('File missing')

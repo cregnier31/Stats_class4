@@ -42,5 +42,7 @@ python TEP_CLASS4_multiprocess.py --config=PSY4QV2R2 --daterun=20150201 --nbdate
 python TEP_CLASS4_kdtree.py --config=BIOMER4V1R2 --date1=20161201 --date2=20161202 --src=GLOBCOLOUR --data=chloro --typemod=pgn
 
 ## Kdtree
-python TEP_CLASS4_kdtree.py --config=PSY4V3R1 --date1=20080101 --date2=20080102 --src=MICROWAT --data=sss --typemod=pgn
+python TEP_CLASS4_kdtree.py --config=PSY4V3R1 --date1=20080102 --date2=20080102 --src=MICROWAT --data=sss --typemod=pgn
+python TEP_CLASS4_kdtree.py --config=PSY4V3R1 --date1=20080102 --date2=20080102 --src=MICROWAT --data=sst --typemod=pgn
+python TEP_CLASS4_kdtree.py --config=PSY4V3R1 --date1=20080102 --date2=20080102 --src=MICROWAT --data=ssthf --typemod=pgn
 #
