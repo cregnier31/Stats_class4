@@ -410,7 +410,12 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                     value_mod = fc.variables[str(varname)][0,0,:,:]
                 elif data_type.lower() == 'ssthf' : 
                     log.info("sst_hf and selection")
-                    value_mod = fc.variables[str(varname)][:,:,:]
+                    value_mod = fc.variables[str(varname)]
+                    nb_dim=len(np.shape(value_mod))
+                    if nb_dim == 3 :
+                        value_mod = value_mod[:,:,:]
+                    elif nb_dim == 4 : 
+                        value_mod = value_mod[:,0,:,:]
                     time_mod = fc.variables['time_counter'][:]
                     liste_date=get_julian_date_from_PGN_hrly(fichier)
                 else :
@@ -432,9 +437,10 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                             indy = np.argmin(np.abs(lat_mod[:,0]-lat_2))
                             julian=juld[i]
                             index_time = np.argmin(np.abs(np.array(liste_date)-julian))
-                            if indy and indx :
+                            if not np.isnan(indx) and not np.isnan(indy) and not np.isnan(index_time) :
                                 interp[i]=value_mod[index_time,indy,indx] 
                             else : 
+                                #print ('dans le else')
                                 interp[i]=np.nan
                     else : 
                         ## Nearest neighbour interpolation
