@@ -416,6 +416,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                         value_mod = value_mod[:,:,:]
                     elif nb_dim == 4 : 
                         value_mod = value_mod[:,0,:,:]
+                    timeindex,lonindex,latindex=np.shape(value_mod)
                     time_mod = fc.variables['time_counter'][:]
                     liste_date=get_julian_date_from_PGN_hrly(fichier)
                 else :
@@ -423,28 +424,60 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                     value_mod = fc.variables[varname][:,:,:,:]
                 if nb_points > 1 :
                     ## Do the interp
-                    interp = np.sum(w * value_mod.flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)
+                    if data_type.lower() == 'ssthf' :
+                        ## High frequency case 
+                        ## Find the correct hourly value
+                        interp=np.ndarray(shape=(nb_obs,),dtype=float, order='F')
+                        for index in range(timeindex):
+                            value_flat=value_mod[index,:,:].flatten()
+                            if index == 0 :
+                                nb_val=np.shape(value_flat)[0]
+                                value_flat_tab=np.ndarray(shape=(nb_val,timeindex),dtype=float, order='F')
+                                value_flat_tab[:,0]= value_flat  
+                            else :
+                                value_flat_tab[:,index]= value_flat  
+                        for i,ind in enumerate(inds_idw1) : #[0:10000] :
+                            julian=juld[i]
+                            index_time = np.argmin(np.abs(np.array(liste_date)-julian))
+                            #print  value_flat_tab[ind,index_time]
+                            #if np.nanmax(value_flat_tab[ind,index_time]) < 9.e36 :
+                            nb_val=np.count_nonzero(value_flat_tab[ind,index_time] < 9.e36)
+                            if nb_val >= 1  :
+                                sum_val=0
+                                sum_val2=0
+                                for pts in range(nb_points) :
+                                    val= value_flat_tab[ind[pts],index_time]
+                                    if val < 9.e36 :
+                                        sum_val+=val*w[i]
+                                        sum_val2+=w[i]
+                                #interp[i] = np.sum(w[i] * value_flat_tab[ind,index_time]) / np.sum(w[i])
+                                interp[i] = np.sum(sum_val)/np.sum(sum_val2)
+                                #print interp[i]
+                            else : 
+                                 interp[i] = np.nan
+                    else :
+                        interp = np.sum(w * value_mod.flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)
                 else :
                     if data_type.lower() == 'ssthf' :
                         ## High frequency case 
                         ## Find the correct hourly value
                         interp=np.ndarray(shape=(nb_obs,),dtype=float, order='F')
-                        for i in np.ndindex(juld.shape):
-                            ind=inds_idw1[i]
-                            lon_2=lon_flat[ind]
-                            lat_2=lat_flat[ind]
-                            indx = np.argmin(np.abs(lon_mod[0,:]-lon_2))
-                            indy = np.argmin(np.abs(lat_mod[:,0]-lat_2))
+                        for index in range(timeindex):
+                            value_flat=value_mod[index,:,:].flatten()
+                            if index == 0 :
+                                nb_val=np.shape(value_flat)[0]
+                                value_flat_tab=np.ndarray(shape=(nb_val,timeindex),dtype=float, order='F')
+                                value_flat_tab[:,0]= value_flat  
+                            else :
+                                value_flat_tab[:,index]= value_flat  
+                        for i,ind in enumerate(inds_idw1) : #[0:10000] :
                             julian=juld[i]
                             index_time = np.argmin(np.abs(np.array(liste_date)-julian))
-                            if not np.isnan(indx) and not np.isnan(indy) and not np.isnan(index_time) :
-                                interp[i]=value_mod[index_time,indy,indx] 
-                            else : 
-                                #print ('dans le else')
-                                interp[i]=np.nan
+                            interp[i]=value_flat_tab[ind,index_time]
                     else : 
                         ## Nearest neighbour interpolation
                         interp = value_mod.flatten()[inds_idw1].reshape(lon.shape)
+                    log.info("Max interp "+np.nanmax(interp))
                 if data_origin == "GLOBCOLOUR" :
                     ## Fill with gaps
                     interp2D=interp.reshape(X.shape)
