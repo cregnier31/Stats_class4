@@ -14,8 +14,6 @@ import numpy as np
 ## Definition des variable_names
 
 variable_nameT     = np.chararray(8,itemsize=25)
-#variable_nameT     = np.chararray(7,itemsize=25)
-#variable_nameT[0]  = 'TEMP'
 variable_nameT[0]  = 'BEST_TEMP'
 variable_nameT[1]  = 'FRCST1D_TEMP'
 variable_nameT[2]  = 'FRCST3D_TEMP'
@@ -26,8 +24,6 @@ variable_nameT[6]  = 'PERS5D_TEMP'
 variable_nameT[7]  = 'CLIM_TEMP'
 
 variable_nameT_new     = np.chararray(12,itemsize=25)
-#variable_nameT     = np.chararray(7,itemsize=25)
-#variable_nameT[0]  = 'TEMP'
 variable_nameT_new[0]  = 'BEST_TEMP'
 variable_nameT_new[1]  = 'FRCST1D_TEMP'
 variable_nameT_new[2]  = 'FRCST3D_TEMP'
@@ -41,14 +37,11 @@ variable_nameT_new[9]  = 'PERS7D_TEMP'
 variable_nameT_new[10]  = 'PERS9D_TEMP'
 variable_nameT_new[11]  = 'CLIM_TEMP'
 
-
 variable_nameSST_best=np.chararray(2,itemsize=25)
 variable_nameSST_best[0]  = 'BEST_TEMP'
 variable_nameSST_best[1]  = 'CLIM_TEMP'
 
 variable_nameSST     = np.chararray(8,itemsize=25)
-#variable_nameSST     = np.chararray(7,itemsize=25)
-#variable_nameSST[0]  = 'SST'
 variable_nameSST[0]  = 'BEST_SST'
 variable_nameSST[1]  = 'FRCST1D_SST'
 variable_nameSST[2]  = 'FRCST3D_SST'
@@ -73,8 +66,6 @@ variable_nameSST_new[10]  = 'PERS9D_SST'
 variable_nameSST_new[11]  = 'CLIM_SST'
 
 variable_nameSLA     = np.chararray(8,itemsize=25)
-#variable_nameSLA     = np.chararray(7,itemsize=25)
-#variable_nameSLA[0]  = 'SLA'
 variable_nameSLA[0]  = 'BEST_SLA'
 variable_nameSLA[1]  = 'FRCST1D_SLA'
 variable_nameSLA[2]  = 'FRCST3D_SLA'
@@ -98,8 +89,11 @@ variable_nameSLA_new[9]  = 'PERS7D_SLA'
 variable_nameSLA_new[10]  = 'PERS9D_SLA'
 variable_nameSLA_new[11]  = 'CLIM_SLA'
 
+variable_nameCHL= np.chararray(2,itemsize=25)
+variable_nameCHL[0]  = 'HDCT_CHL'
+variable_nameCHL[1]  = 'FCST_CHL'
+
 variable_nameS     = np.chararray(8,itemsize=25)
-#variable_nameS[0]  = 'PSAL'
 variable_nameS[0]  = 'BEST_PSAL'
 variable_nameS[1]  = 'FRCST1D_PSAL'
 variable_nameS[2]  = 'FRCST3D_PSAL'
@@ -284,6 +278,9 @@ profondeur3[2] ='100-500m'
 profondeur3[3] ='500-2000m'
 profondeur3[4] ='0-2000m'
 
+profondeur_surf  = np.chararray(1,itemsize=25)
+profondeur_surf[0] = '0-0m'
+
 ## Zones CLASS1
 liste_zone     = np.chararray(14,itemsize=25)
 liste_zone[0]  = 'ACC'
@@ -300,6 +297,27 @@ liste_zone[10] = 'TPA'
 liste_zone[11] = 'NORDSEA'
 liste_zone[12] = 'FACADE'
 liste_zone[13] = 'BALTIC'
+
+cla_areasattr = np.chararray(14,itemsize=25)
+cla_areasattr[0]  = 'Antarctic Circumpolar'
+cla_areasattr[1]  = 'Arctic Ocean'
+cla_areasattr[2]  = 'Iberian Biscay Irish'
+cla_areasattr[3]  = 'Full Domain'
+cla_areasattr[4]  = 'Indian Ocean'
+cla_areasattr[5]  = 'Mediterranean Sea'
+cla_areasattr[6]  = 'North Atlantic Ocean'
+cla_areasattr[7]  = 'North Sea'
+cla_areasattr[8]  = 'North Pacific Ocean'
+cla_areasattr[9]  = 'South Atlantic Ocean'
+cla_areasattr[10] = 'South Pacific Ocean'
+cla_areasattr[11] = 'Tropical Atlantic Ocean'
+cla_areasattr[12] = 'Tropical Pacific Ocean'
+cla_areasattr[13] = 'Baltic Sea'
+
+cla_areas2 = np.chararray(1,itemsize=25)
+cla_areas2[0]  = 'GLO'
+cla_areasattr2 = np.chararray(1,itemsize=25)
+cla_areasattr2[0]  = 'Full Domain'
 
 ## Zones CLASS1 GLO Myo
 liste_zone_GLOMyo    = np.chararray(8,itemsize=25)
@@ -320,8 +338,6 @@ liste_zone_PSY2[2] = 'TAT'
 liste_zone_PSY2[3] = 'NORDSEA'
 liste_zone_PSY2[4] = 'FACADE'
 liste_zone_PSY2[5] = 'ATL12'
-#liste_zone_PSY2[3] = 'BALTIC'
-
 
 ## Zones PSY2_SHOM
 liste_zone_PSY2_SHOM    = np.chararray(9,itemsize=25)
@@ -357,3 +373,11 @@ liste_zone_IND[2] = 'TAT'
 rg_EcartSalMax=1.
 rg_EcartTempMax=8.
 rg_EcartSLAMax=1.
+
+cla_metricname =  np.chararray(6,itemsize=25)
+cla_metricname[0] = 'number of data values'
+cla_metricname[1] = 'mean of reference'
+cla_metricname[2] = 'mean squared reference'
+cla_metricname[3] = 'mean of product'
+cla_metricname[4] = 'mean squared product'
+cla_metricname[5] = 'mean squared error'
