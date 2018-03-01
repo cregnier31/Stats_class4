@@ -12,24 +12,31 @@
  C.REGNIER  Janvier   2012 Ecriture des stats MyO2 avec les bons formats
  L.ZAWADZKI Avril     2013 conversion python, adaptation aux fichiers GODAE
  C.REGNIER  Nov       2017 Integration dans code general TEP_CLASS4 
-------------------------------------------------------------------------
+ C.SZCZPTA  Fevrier   2018 Modif input params 
 """
-import sys,os,glob
-import numpy as np
-import getopt,ConfigParser
-sys.path.append('../module/')
 
-## Definition des variables
+import sys,os,getopt,glob
+import ConfigParser
+sys.path.append('../module/')
+import numpy as np
+import netCDF4
+## modules perso
 import param.Def_param_bulletin as params
 import supobs
- 
-#~~~~ Input parameters settings ~~~~~~~~~~~~~~~~~~~~~
-letters = 's:e:c:'
-keywords = ['day1=', 'day2=', 'cfg=' ,'datatype=']
+from supobs import toolkitStats
+from supobs import Statslib
+
+
+#~~~~~~~~~~~~~~~~~~~~~ Input parameters settings ~~~~~~~~~~~~~~~~~~~~~
+
+letters = 's:e:c:t:' 
+keywords = ['day1=', 'day2=', 'cfg=', 'datatype=' ] 
 cla_opts = getopt.getopt(sys.argv[1:],letters,keywords)
 
 cl_dateMinZone  = 'YYYYMMDD'
 cl_dateMaxZone  = 'YYYYMMDD'
+
+_DBFILE_        = './environment.cfg'
 
 for o,p in cla_opts[0]:
   if o in ['-s','--day1']:
@@ -37,7 +44,7 @@ for o,p in cla_opts[0]:
   elif o in ['-e','--day2']:
      cl_dateMaxZone = p
   elif o in ['-t','--datatype']:
-     cl_CL4type  = p
+     cl_CL4type = p
   elif o in ['-c','--cfg']:
      _DBFILE_ = p.strip()
 
@@ -53,19 +60,22 @@ def load_db():
 
 db = load_db()
 #~
-modele       = eval(db.get('params','config')).upper()
-#cl_CL4type   = eval(db.get('ASCII','type'))
-file_boxmask = eval(db.get('ASCII','file_box'))
-dircl4in     = eval(db.get('ASCII','dircl4in'))
-dircl4out    = eval(db.get('ASCII','dircl4out'))
-#model_version=eval(db.get('ASCII','version'))
-grid_type=eval(db.get('NETCDF','grid'))
+config_model = db.get('PARAMS','CONFIGMDL').upper()
+config_obs   = db.get('PARAMS','CONFIGOBS').upper()
+file_boxmask = db.get('NETCDF','file_boxmask' )
+dircl4in     = db.get('output_dir','DIR_OUT' )
+dircl4out    = db.get('output_dir','DIR_CL4OUT' )
+prefix       = db.get('INPUT','PREFIX1' )
+lead_time    = db.get('input_dir','LEAD_TIME').split()
+grid_type    = db.get('NETCDF','grid')
+
 try : os.mkdir(dircl4out)
 except :
     if os.path.exists(dircl4out) : pass
-    else :
+    else : 
         print 'could not create %s' %dircl4out
         sys.exit(1)
+
 if cl_CL4type == 'TEMP' :
     #variable_name_type = params.variable_nameT 
     variable_name_type = params.variable_nameT_new 
@@ -91,18 +101,15 @@ elif cl_CL4type == 'SLA' :
     lookfor = 'SLA_sossheig'
     tab_prof_model = [0,0.5]
     tab_e3t = [1]
-elif cl_CL4type == 'chloro' :
-    #variable_name_type = params.variable_nameSLA 
-    variable_name_type = params.variable_nameChloro
+elif cl_CL4type == 'CHL' :
+    variable_name_type = params.variable_nameCHL
     tab_prof = [0,0]
-    lookfor = 'log10'
+    lookfor = 'LOG10_CHL'
     tab_prof_model = [0,0.5]
     tab_e3t = [1]
 elif cl_CL4type in ['SAL','PSAL'] :
-    #variable_name_type = params.variable_nameS 
     variable_name_type = params.variable_nameS_new 
     tab_prof = params.tab_prof
-#   tab_prof = params.tab_prof_2
     lookfor = 'profile_vosaline'
     tab_prof_model = params.tab_prof_model
     tab_e3t = params.tab_e3t
@@ -110,15 +117,16 @@ else :
     print 'unknown cl_CL4type'
     sys.exit(1)
 
+
 tab_e3t        = np.array(tab_e3t)
 tab_prof       = np.array(tab_prof)
 tab_prof_model = np.array(tab_prof_model)
 ## List input files
 filelist = []
 days     = []
+
 for cdate in cla_dates :
-        #cl_filetmplt = modele.upper()+'_'+grid_type+'_rms_diff_'+cdate+'*'+lookfor+'*nc'
-        cl_filetmplt = '*_rms_diff_'+cdate+'*nc'
+        cl_filetmplt = config_model.upper()+'_'+grid_type+'_rms_diff_'+cdate+'*'+lookfor+'*nc'
         print "lookfor %s " %(cl_filetmplt)
         filelist_tmp = glob.glob(os.path.join(dircl4in,cl_filetmplt)) 
         if len(filelist_tmp) >1 :
@@ -132,38 +140,41 @@ for cdate in cla_dates :
             days.append(cdate)
 
 
-if modele.upper() == 'PSY3V2R2' :
+if config_model.upper() == 'PSY3V2R2' :
         liste_region = np.chararray(11,itemsize=25)
         liste_region[:] = params.liste_zone[:11]
-elif modele.upper() in ['PSY3QV3R1','PSY3V3R2',\
+elif config_model.upper() in ['PSY3QV3R1','PSY3V3R2',\
                         'PSY4V1R3','PSY4V2R2','PSY4V3R1',\
-                        'PSY3V3R3','BIOMER4V1R2'] :
+                        'PSY3V3R3','BIOMER4'] :
+        liste_region = np.chararray(13,itemsize=25)
+        liste_region[:] = params.liste_zone[:13]
+elif config_model.upper() in ['BLK','FOAM','GIOPS_CONCEPTS','PSY3V3R1','HYCOM','HYCOM_RTOFS'] :
         liste_region = np.chararray(13,itemsize=25)
         liste_region[:] = params.liste_zone[:13]
        #liste_region = np.chararray(1,itemsize=25)
        #liste_region[0] =  'GLO'
-elif modele.upper() in ['BLK','FOAM','GIOPS_CONCEPTS','PSY3V3R1','HYCOM','HYCOM_RTOFS'] :
+elif config_model.upper() in ['BLK','FOAM','GIOPS_CONCEPTS','PSY3V3R1','HYCOM','HYCOM_RTOFS'] :
         liste_region = np.chararray(13,itemsize=25)
         liste_region[:] = params.liste_zone[:13]
-elif modele.upper() in ['PSY4V2R1'] :
+elif config_modele.upper() in ['PSY4V2R1'] :
         liste_region = np.chararray(1,itemsize=25)
         liste_region[0] =  'GLO'
-elif modele.upper() in ['PSY2V4R1','PSY2V4R2','PSY2V4R3','PSY2V4R4','PSY2QV4R2'] :
+elif config_model.upper() in ['PSY2V4R1','PSY2V4R2','PSY2V4R3','PSY2V4R4','PSY2QV4R2'] :
         liste_region = np.chararray(6,itemsize=25)
         liste_region[:] = params.liste_zone[:]
 
-
-#on cree des fichiers ascii avec les stats par zone et par jour :
-#date num_obs mean_obs mean_hind mse_hind mean_f1 mse_f1 mean_f3 mse_f3 mean_f5 mse_f5
+# On cree des fichiers ascii avec les stats par zone et par jour :
+# date num_obs mean_obs mean_hind mse_hind mean_f1 mse_f1 mean_f3 mse_f3 mean_f5 mse_f5
 # a partir des fichiers netcdf rms_diff qui comportent eux les moyennes,biais, RMS (!!),RMSE(!!)
 #attention : Les donnees dans les fichiers netcdf sont deja divisees par le nombre d'obs dans la boite
 
 
-supobs.Statslib.calculer_stats_MYO2(file_boxmask,modele.upper(),tab_prof,\
+supobs.Statslib.calculer_stats_MYO2(file_boxmask,config_model.upper(),tab_prof,\
                         tab_prof_model,tab_e3t,variable_name_type,\
                         liste_region,filelist,cl_CL4type,\
                         days, dircl4in ,dircl4out,cl_dateMinZone,cl_dateMaxZone  ) 
-supobs.Statslib.calculer_stats_all(file_boxmask,modele.upper(),tab_prof,\
+
+supobs.Statslib.calculer_stats_all(file_boxmask,config_model.upper(),tab_prof,\
                         tab_prof_model,tab_e3t,variable_name_type,\
                         liste_region,filelist,cl_CL4type,\
                         days, dircl4in ,dircl4out,cl_dateMinZone,cl_dateMaxZone  ) 
