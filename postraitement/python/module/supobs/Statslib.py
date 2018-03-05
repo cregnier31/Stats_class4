@@ -49,7 +49,7 @@ def calculer_stats_MYO2(czoneFile,modele,tab_prof,\
    nb_prof_model = np.size(tab_prof_model)-1
    range_values  = np.zeros((2,nb_prof))
    nb_variables  = np.size(variable_name)
-   missing_value= 999999.
+   missing_value= 9999.
    print nb_variables
    print variable_name
    dateCNESref   = dt.datetime.strptime('19500101','%Y%m%d').toordinal()
@@ -229,7 +229,9 @@ def calculer_stats_MYO2(czoneFile,modele,tab_prof,\
          tab_ASCII = tab_ASCII.transpose()
          tab_ASCII2 = tab_ASCII2.transpose()
          tab_ASCII=np.where(tab_ASCII == 0,missing_value,tab_ASCII)
+         tab_ASCII=np.where(tab_ASCII >= 999999.0,missing_value,tab_ASCII)
          tab_ASCII2=np.where(tab_ASCII2 == 0,missing_value,tab_ASCII2)
+         tab_ASCII2=np.where(tab_ASCII2 >= 999999.0,missing_value,tab_ASCII2)
          ## write ASCII file						
          file = os.path.join(
 			dirASCIIOut,\
