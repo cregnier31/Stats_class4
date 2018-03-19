@@ -282,21 +282,21 @@ profondeur_surf  = np.chararray(1,itemsize=25)
 profondeur_surf[0] = '0-0m'
 
 ## Zones CLASS1
-liste_zone     = np.chararray(14,itemsize=25)
-liste_zone[0]  = 'ACC'
-liste_zone[1]  = 'ARC'
-liste_zone[2]  = 'GLO'
-liste_zone[3]  = 'IND'
-liste_zone[4]  = 'MED'
-liste_zone[5]  = 'NAT'
-liste_zone[6]  = 'NPA'
-liste_zone[7]  = 'SAT'
-liste_zone[8]  = 'SPA'
-liste_zone[9]  = 'TAT'
-liste_zone[10] = 'TPA'
-liste_zone[11] = 'NORDSEA'
-liste_zone[12] = 'FACADE'
-liste_zone[13] = 'BALTIC'
+liste_zone      = np.chararray(14,itemsize=25)
+liste_zone[0]   = 'ACC'
+liste_zone[1]   = 'ARC'
+liste_zone[2]   = 'FACADE'
+liste_zone[3]   = 'GLO'
+liste_zone[4]   = 'IND'
+liste_zone[5]   = 'MED'
+liste_zone[6]   = 'NAT'
+liste_zone[7]   = 'NORDSEA'
+liste_zone[8]   = 'NPA'
+liste_zone[9]   = 'SAT'
+liste_zone[10]  = 'SPA'
+liste_zone[11]  = 'TAT'
+liste_zone[12 ] = 'TPA'
+liste_zone[13]  = 'BALTIC'
 
 cla_areasattr = np.chararray(14,itemsize=25)
 cla_areasattr[0]  = 'Antarctic Circumpolar'
