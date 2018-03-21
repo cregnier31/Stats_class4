@@ -77,25 +77,18 @@ except :
         sys.exit(1)
 
 if cl_CL4type == 'TEMP' :
-    #variable_name_type = params.variable_nameT 
     variable_name_type = params.variable_nameT_new 
     tab_prof = params.tab_prof
-    #tab_prof = params.tab_prof_2
     lookfor = 'profile_votemper'
     tab_prof_model = params.tab_prof_model
     tab_e3t = params.tab_e3t
 elif cl_CL4type == 'SST' :
-    #if modele.upper() == 'PSY4V3R1' :
-    #    variable_name_type = params.variable_nameSST_best 
-    #else :
-    #variable_name_type = params.variable_nameSST 
     variable_name_type = params.variable_nameSST_new
     tab_prof = [0,0]
     lookfor = 'SST_votemper'
     tab_prof_model = [0,0.5]
     tab_e3t = [1]
 elif cl_CL4type == 'SLA' :
-    #variable_name_type = params.variable_nameSLA 
     variable_name_type = params.variable_nameSLA_new
     tab_prof = [0,0]
     lookfor = 'SLA_sossheig'
@@ -104,7 +97,7 @@ elif cl_CL4type == 'SLA' :
 elif cl_CL4type == 'CHL' :
     variable_name_type = params.variable_nameCHL
     tab_prof = [0,0]
-    lookfor = 'LOG10_CHL'
+    lookfor = 'CHL'
     tab_prof_model = [0,0.5]
     tab_e3t = [1]
 elif cl_CL4type in ['SAL','PSAL'] :
@@ -126,19 +119,22 @@ filelist = []
 days     = []
 
 for cdate in cla_dates :
+    if cl_CL4type == 'CHL' :
+        cl_filetmplt = lookfor+'_'+config_obs.upper()+'_'+config_model.upper()+'_rms_diff_'+cdate+'*nc'
+    else :
         cl_filetmplt = config_model.upper()+'_'+grid_type+'_rms_diff_'+cdate+'*'+lookfor+'*nc'
-        print "lookfor %s " %(cl_filetmplt)
-        filelist_tmp = glob.glob(os.path.join(dircl4in,cl_filetmplt)) 
-        if len(filelist_tmp) >1 :
-            print 'too many files found at date %s' %cdate
-            sys.exit(1)
-        elif len(filelist_tmp) ==0:
-            print 'Warning : no file found at date %s ' %cdate
-            continue
-        else :
-            filelist.append(filelist_tmp[0])
-            days.append(cdate)
-
+    print "lookfor %s " %(cl_filetmplt)
+    filelist_tmp = glob.glob(os.path.join(dircl4in,cl_filetmplt)) 
+    if len(filelist_tmp) >1 :
+        print 'too many files found at date %s' %cdate
+        sys.exit(1)
+    elif len(filelist_tmp) ==0:
+        filelist_tmp = 'no_file.nc'
+        filelist.append(filelist_tmp[0])
+        days.append(cdate)            
+    else :
+        filelist.append(filelist_tmp[0])
+        days.append(cdate)
 
 if config_model.upper() == 'PSY3V2R2' :
         liste_region = np.chararray(11,itemsize=25)
@@ -146,17 +142,12 @@ if config_model.upper() == 'PSY3V2R2' :
 elif config_model.upper() in ['PSY3QV3R1','PSY3V3R2',\
                         'PSY4V1R3','PSY4V2R2','PSY4V3R1',\
                         'PSY3V3R3','BIOMER4'] :
-        liste_region = np.chararray(13,itemsize=25)
-        liste_region[:] = params.liste_zone[:13]
+        liste_region = np.chararray(14,itemsize=25)
+        liste_region[:] = params.liste_zone[:14]
 elif config_model.upper() in ['BLK','FOAM','GIOPS_CONCEPTS','PSY3V3R1','HYCOM','HYCOM_RTOFS'] :
         liste_region = np.chararray(13,itemsize=25)
         liste_region[:] = params.liste_zone[:13]
-       #liste_region = np.chararray(1,itemsize=25)
-       #liste_region[0] =  'GLO'
-elif config_model.upper() in ['BLK','FOAM','GIOPS_CONCEPTS','PSY3V3R1','HYCOM','HYCOM_RTOFS'] :
-        liste_region = np.chararray(13,itemsize=25)
-        liste_region[:] = params.liste_zone[:13]
-elif config_modele.upper() in ['PSY4V2R1'] :
+elif config_model.upper() in ['PSY4V2R1'] :
         liste_region = np.chararray(1,itemsize=25)
         liste_region[0] =  'GLO'
 elif config_model.upper() in ['PSY2V4R1','PSY2V4R2','PSY2V4R3','PSY2V4R4','PSY2QV4R2'] :

@@ -19,11 +19,12 @@ resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM
 #~~~~~~~~~~~~~~~~~~~~~ Input parameters settings ~~~~~~~~~~~~~~~~~~~~~
 
 letters = 's:e:c:t:' 
-keywords = ['day1=', 'day2=', 'cfg=', 'type=', 'year=' ] 
+keywords = ['day1=', 'day2=', 'cfg=', 'type=' ] 
 cla_opts = getopt.getopt(sys.argv[1:],letters,keywords)
-print cla_opts
+
 cl_dateMinZone  = 'YYYYMMDD'
 cl_dateMaxZone  = 'YYYYMMDD'
+
 _DBFILE_        = './environment.cfg'
 
 for o,p in cla_opts[0]:
