@@ -39,7 +39,37 @@ Routine permettant de lire les contenus de fichiers CLASS4 au format GODAE.
 
         return cla_varname,rla_lons,rla_lats,rla_depth
 
+
 #------------------------------------------------------------------------------------------------------------------------------------------
+def read_CL4obs_chloro(cl_fileIn) :
+
+        """
+Routine permettant de lire les contenus de fichiers CLASS4 au format GLOBCOLOUR.
+	"""
+
+	nc = netCDF4.Dataset(cl_fileIn,'r')
+        rla_lons  = nc.variables['lon'][:]
+        rla_lats  = nc.variables['lat'][:]
+        nc.close()
+	
+	if rla_lons.shape != rla_lats.shape :
+		lon2D = np.zeros((rla_lats.size, rla_lons.size))
+		lat2D = np.zeros((rla_lats.size, rla_lons.size))
+
+		for numl,l in enumerate(rla_lats) :
+			lat2D[numl,:] = l
+		for numL,L in enumerate(rla_lons) :
+			lon2D[:,numL] = L
+	
+	rla_lons_vect = np.reshape(lon2D,rla_lats.size*rla_lons.size)
+	rla_lats_vect = np.reshape(lat2D,rla_lats.size*rla_lons.size)
+	rla_depthobs = np.zeros((rla_lons_vect.size,1))
+	print rla_lons_vect.shape, rla_lons_vect.min(), rla_lons_vect.max(), rla_lats_vect.min(), rla_lats_vect.max()
+
+        return rla_lons_vect,rla_lats_vect, rla_depthobs
+
+#------------------------------------------------------------------------------------------------------------------------------------------
+
 def char_period(cdate1,cdate2) :
 	"""
 Returns a character-days list of the days contained in period given by the two input dates \n\
@@ -246,7 +276,8 @@ def find_indice(boite,zone) :
                 INDICE1=np.where(( boite == 3090 ) | ( boite == 3100 ))[0]
                 INDICE2=np.where(( boite >= 3180 ) & ( boite <= 3230 ))[0]
                 INDICE=np.concatenate((INDICE1,INDICE2))
-
+	elif zone ==        'CHILI':
+                INDICE=np.where((boite == 4610 ) | ( boite == 4680))[0]
         
         return INDICE
 

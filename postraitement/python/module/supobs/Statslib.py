@@ -13,6 +13,7 @@ import toolkitStats
 sys.path.append('../module')
 import arithm
 from copy import deepcopy
+from os.path import exists
 
 def calculer_stats_MYO2(czoneFile,modele,tab_prof,\
 			tab_prof_model,tab_e3t,variable_name,\
@@ -32,8 +33,6 @@ def calculer_stats_MYO2(czoneFile,modele,tab_prof,\
     author: C.REGNIER  Juin      2011 :: ajout des zones baltic, NordSea et Facade
     author: C.REGNIER  Janvier   2013 :: calcul des stats MyOcean2
     author: L.ZAWADZKI Avril     2013 :: conversion python, adaptation fichiers GODAE
-    author: C.SZCZYPTA Fevrier   2018 :: Ajout de la variance dans les fichiers 
-    author: C.REGNIER  Mars      2018 :: Ajout missing value =/ nan pour les fichiers ascii
 
    Dans ce code un poids plus grand est donne aux boites qui ont le plus de donnees
    et qui ont donc une representativite plus grande
@@ -49,7 +48,7 @@ def calculer_stats_MYO2(czoneFile,modele,tab_prof,\
    nb_prof_model = np.size(tab_prof_model)-1
    range_values  = np.zeros((2,nb_prof))
    nb_variables  = np.size(variable_name)
-   missing_value= 9999.
+   missing_value= 999999.
    print nb_variables
    print variable_name
    dateCNESref   = dt.datetime.strptime('19500101','%Y%m%d').toordinal()
@@ -102,28 +101,31 @@ def calculer_stats_MYO2(czoneFile,modele,tab_prof,\
       ms_tot      = np.nan*np.zeros((nb_prof_model,nb_variables+1,len(rla_maskvalues),nfichiers))
       mean_tot     = np.nan*np.zeros((nb_prof_model,nb_variables+1,len(rla_maskvalues),nfichiers))
       indice_tot   = np.nan*np.zeros((nb_prof_model,nb_variables+1,len(rla_maskvalues),nfichiers))
-
+      
       for i in range(nfichiers) :
          file  = filelist[i]
          dirin = dir_stats_MERC
-         nc    = netCDF4.Dataset(file,'r')
-         rms_diff   = nc.variables['rms_diff'][:]			
-	 rms_diff[(rms_diff>= 9999.)] = missing_value
-         ms_difftot[:,:,:,i]  = np.square(rms_diff)
-         mean_diff  = nc.variables['mean_diff'][:]			
-	 mean_diff[(mean_diff>= 9999.)] = missing_value
-         mean_difftot[:,:,:,i] = mean_diff
-         rms        = nc.variables['rms'][:]
-         rms[(rms>= 9999.)] = missing_value
-         ms_tot[:,:,:,i]      = np.square(rms)
-         mean       = nc.variables['mean'][:]			
-	 mean[(mean>= 9999.)] = missing_value
-         mean_tot[:,:,:,i]     = mean
-         indice_box = nc.variables['indice_box'][:]			
-         indice_tot[:,:,:,i]   = indice_box
-         nc.close()
+         if exists(file) == False :
+             ms_difftot[:,:,:,i]  = missing_value
+             mean_difftot[:,:,:,i] = missing_value
+             ms_tot[:,:,:,i]      = missing_value
+             mean_tot[:,:,:,i]     = missing_value
+             indice_tot[:,:,:,i]   = missing_value
+         else:
+             nc    = netCDF4.Dataset(file,'r')
+             rms_diff   = nc.variables['rms_diff'][:]
+             ms_difftot[:,:,:,i]  = np.square(rms_diff)
+             mean_diff  = nc.variables['mean_diff'][:]			
+             mean_difftot[:,:,:,i] = mean_diff
+             rms        = nc.variables['rms'][:]			
+             ms_tot[:,:,:,i]      = np.square(rms)
+             mean       = nc.variables['mean'][:]			
+             mean_tot[:,:,:,i]     = mean
+             indice_box = nc.variables['indice_box'][:]			
+             indice_tot[:,:,:,i]   = indice_box
+             nc.close()
 
-         del rms_diff,mean,indice_box,mean_diff
+             del rms_diff, rms, mean, indice_box, mean_diff
 
       # Normalisation par le nombre d'obs par boite
       # ii = np.where(indice_tot > 0)
@@ -229,9 +231,7 @@ def calculer_stats_MYO2(czoneFile,modele,tab_prof,\
          tab_ASCII = tab_ASCII.transpose()
          tab_ASCII2 = tab_ASCII2.transpose()
          tab_ASCII=np.where(tab_ASCII == 0,missing_value,tab_ASCII)
-         tab_ASCII=np.where(tab_ASCII >= 999999.0,missing_value,tab_ASCII)
          tab_ASCII2=np.where(tab_ASCII2 == 0,missing_value,tab_ASCII2)
-         tab_ASCII2=np.where(tab_ASCII2 >= 999999.0,missing_value,tab_ASCII2)
          ## write ASCII file						
          file = os.path.join(
 			dirASCIIOut,\
@@ -368,42 +368,29 @@ def calculer_stats_all(czoneFile,modele,tab_prof,\
       #  Allocate tab
       print nb_prof_model, nb_variables+1,len(rla_maskvalues),nfichiers
       ms_difftot  = np.nan*np.zeros((nb_prof_model,nb_variables+1,len(rla_maskvalues),nfichiers))
-      #mean_difftot = np.nan*np.zeros((nb_prof_model,nb_variables+1,len(rla_maskvalues),nfichiers))
-      #ms_tot      = np.nan*np.zeros((nb_prof_model,nb_variables+1,len(rla_maskvalues),nfichiers))
       mean_tot     = np.nan*np.zeros((nb_prof_model,nb_variables+1,len(rla_maskvalues),nfichiers))
       indice_tot   = np.nan*np.zeros((nb_prof_model,nb_variables+1,len(rla_maskvalues),nfichiers))
       
       for i in range(nfichiers) :
          file  = filelist[i]
          dirin = dir_stats_MERC
-         nc    = netCDF4.Dataset(file,'r')
-         rms_diff   = nc.variables['rms_diff'][:]			
-	 rms_diff[(rms_diff>= 9999.)] = missing_value
-         ms_difftot[:,:,:,i]  = np.square(rms_diff)
-         #mean_diff  = nc.variables['mean_diff'][:]			
-	 #mean_diff[(mean_diff>= 9999.)] = missing_value
-         #mean_difftot[:,:,:,i] = mean_diff
-         #rms        = nc.variables['rms'][:]			
-	 #rms[(rms>= 9999.)] = missing_value
-         #ms_tot[:,:,:,i]      = np.square(rms)
-         mean       = nc.variables['mean_diff'][:]			
-	 mean[(mean>= 9999.)] = missing_value
-         mean_tot[:,:,:,i]     = mean
-         indice_box = nc.variables['indice_box'][:]			
-	 #indice_box[(indice_box== 99999.)] = 0
-         indice_tot[:,:,:,i]   = indice_box
-         nc.close()
-         #del rms_diff,mean_diff,rms,mean,indice_box
-         del rms_diff,mean,indice_box
+         if exists(file) == False :
+             ms_difftot[:,:,:,i]  = missing_value
+             mean_tot[:,:,:,i]     = missing_value
+             indice_tot[:,:,:,i]   = missing_value
+         else:
+             nc = netCDF4.Dataset(file,'r')
+             rms_diff = nc.variables['rms_diff'][:]			
+	     rms_diff[(rms_diff>= 999999.)] = missing_value
+             ms_difftot[:,:,:,i]  = np.square(rms_diff)
+             mean = nc.variables['mean_diff'][:]			
+	     mean[(mean>= 999999.)] = missing_value
+             mean_tot[:,:,:,i]     = mean
+             indice_box = nc.variables['indice_box'][:]			
+             indice_tot[:,:,:,i]   = indice_box
+             nc.close()
+             del rms_diff,mean,indice_box
     
-      # Normalisation par le nombre d'obs par boite
-      # ii = np.where(indice_tot > 0)
-      # if np.size(ii) >0 :
-      #   ms_difftot[ii]  = np.divide(ms_difftot[ii],indice_tot[ii])
-      #   mean_difftot[ii] = np.divide(mean_difftot[ii],indice_tot[ii])
-      #   ms_tot[ii]      = np.divide(ms_tot[ii],indice_tot[ii])
-      #   mean_tot[ii]     = np.divide(mean_tot[ii],indice_tot[ii])
-      
       # Valeurs des jours en jours juliens
       ndays = len(days)
       if ndays != nfichiers	: 
@@ -492,7 +479,7 @@ def calculer_stats_all(czoneFile,modele,tab_prof,\
          # write ASCII file						
          file = os.path.join(
 			dirASCIIOut,\
-			'Global_stats'+modele+'_'+zone+'_'+cd_dateMinZone+'_'+cd_dateMaxZone+'_'+cd_CL4type+'_'+cprof+'.txt'
+			'Global_stats_'+modele+'_'+zone+'_'+cd_dateMinZone+'_'+cd_dateMaxZone+'_'+cd_CL4type+'_'+cprof+'.txt'
 			    )
 	 np.savetxt(file,np.column_stack(tab_ASCII),fmt='%10.7f')
          print 'save file %s ' %(file)
