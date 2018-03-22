@@ -3,10 +3,12 @@
 #-------------------------------------------------------------------------------------------------------------------------------------
 # .> Brief
 #  Program designed to create the quality product statistics (quaterly
-#  validation reports, MyOcean2)
+#  validation reports, Copernicus)
 #
 # .> history :
 #       22.01.13 creation (L.Zawadzki)
+#       18.02.18 Modifs (C.Szczypta)
+#
 #
 #-------------------------------------------------------------------------------------------------------------------------------------
 
@@ -189,9 +191,15 @@ cl_stats[w] = missing_value
 
 
 if cexp == 'BIO' :
-	writer_stat().write_BIO_files(cl_resultsFile, cl_contact, cl_confres, cl_fmt, cl_start_date, cl_end_date, cl_resultsFileName, cl_institution, cl_ref, cla_areasattr, cla_metricname, cl_start_jdate, cl_end_jdate, cla_areasattr, cla_metricname, rla_forecast, rla_surface, vector_time, cl_stats)
+	writer_stat().write_BIO_files(cl_resultsFile, cl_contact, cl_confres, cl_fmt, cl_start_date, cl_end_date,
+                                      cl_resultsFileName, cl_institution, cl_ref, cla_areasattr, cla_metricname, 
+                                      cl_start_jdate, cl_end_jdate, cla_areasattr, cla_metricname, rla_forecast, 
+                                      rla_surface, vector_time, cl_stats)
 elif cexp == 'PHYS' :
-	writer_stat().write_PHYS_files(cl_resultsFile, cl_contact, cl_confres, cl_fmt, cl_start_date, cl_end_date, cl_resultsFileName, cl_institution, cl_ref, cla_areasattr, cla_metricname, cl_start_jdate, cl_end_jdate, cla_areasattr, cla_metricname, rla_forecast, rla_layers, vector_time, cl_stats, rla_surface)
+	writer_stat().write_PHYS_files(cl_resultsFile, cl_contact, cl_confres, cl_fmt, cl_start_date, cl_end_date,
+                                       cl_resultsFileName, cl_institution, cl_ref, cla_areasattr, cla_metricname,
+                                       cl_start_jdate, cl_end_jdate, cla_areasattr, cla_metricname, rla_forecast,
+                                       rla_layers, vector_time, cl_stats, rla_surface)
 
 
 #----------  End of Script  --------------------------------------------------------------
