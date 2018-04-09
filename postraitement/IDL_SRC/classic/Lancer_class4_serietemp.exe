@@ -1,0 +1,5 @@
+#!/bin/ksh
+
+rep_idl=/home/mercator-px/bin/idl
+#$rep_idl exe_serietemp_class4_geo.pro
+$rep_idl exe_serietemp_class4_geo2.pro

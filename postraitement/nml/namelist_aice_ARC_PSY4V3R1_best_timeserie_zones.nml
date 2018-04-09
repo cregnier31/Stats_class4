@@ -1,0 +1,9 @@
+&Liste_aice
+il_nbfile        = 1
+cl_conf        = 'PSY4V3R1'
+cl_mask        = '/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/src/aice/BOITE/MaskBoite_SIC_stereo_ARC.nc'
+cl_file_boxes  = '/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/src/aice/BOITE/MacroBoiteArctic.txt'
+cl_file_out        = '/naviti/data5/cregnier/CLASS4_MERCATOR/PSY4V3R1/Stats/Stats_ARC_PSY4V3R1_JFM_2017_best_boxes.nc'
+cl_echeance        = 'best'
+/
+/naviti/data5/cregnier/CLASS4_MERCATOR/PSY4V3R1/Stats/Stats_contable_ARC_PSY4V3R1_2017_trim1_timeseries_aice_fcst.nc

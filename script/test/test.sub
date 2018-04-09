@@ -1,0 +1,10 @@
+#!/bin/ksh
+#PBS -N TEST_CLASS4_CORIO_PSY4V3R1_20150606
+#PBS -e /home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/script/log/Test_cl4.err
+#PBS -o /home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/script/log/Test_cl4.out
+#PBS -l nodes=1:ppn=1
+#PBS -q mono
+#PBS -l walltime=00:30:00
+
+/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/bin/CLASS4_spatial_interpolation_CORIOLIS.exe -r 20150606 -c /home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4//NAMELIST/interpolate_3D_PROFILE_PSY4V3R1_best_estimate_20150606_test.nml -m PSY4V3R1 -l /home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/log/
+

@@ -1,0 +1,52 @@
+#----------------------------------------------
+# Macro pour le choix des fichiers coriolis
+#----------------------------------------------
+# Lieu de dépôt des fichiers Class4
+#
+# Français
+dir='/homelocal2/MERSEA-CLASS4/PSY3V2/total/'
+
+# Anglais
+#dir='/homelocal2/MERSEA-CLASS4-FOAM/'
+
+# Italien
+#dir='/homelocal2/MERSEA-CLASS4-MFS/'
+
+# Norvegien
+#dir='/homelocal2/MERSEA-CLASS4-NERSC/'
+
+#-------------------------------------
+# Fichier temporaire
+#dirtmp='/data/rd_workdir/fhernandez/'
+#dirtmp='/data/rd_workdir/fhernandez/'
+dirtmp='/data/rd_exchange/cregnier/'
+#dirtmp='/home/cregnier/DEV/Dev_corio/CORIOLIS/Lecture_Class4/fichier/'
+
+#------------------------------------------------
+# Choix de la période d'étude 
+# Jour min et max en aaaammjj (par ex 20070316) 
+#------------------------------------------------
+Jour_min=20070418
+Jour_max=20070430
+#Jour_min=20070401
+#Jour_max=20070402
+#    Choix de la zone d'etude    "
+#       P :: Pacifique           "
+#       I :: Indien              "
+#       A :: Atlantique          "
+#       T :: Tout                "
+zone=A
+#------------------------------------------------
+# FHZ 29/08/2007: definition du fichier de profondeur 
+#------------------------------------------------
+ficprof='./utils/fic_tri_prof.in'
+\rm $ficprof
+cat << EOF > $ficprof
+5
+0 5
+5 100
+100 500
+500 2000
+2000 5000
+EOF
+
