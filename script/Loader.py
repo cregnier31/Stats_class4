@@ -29,7 +29,6 @@ class Loader(object):
         if type == "NC_CORIO_ORIGIN": return LoaderNCcorio()
         if type == "NC_CHLORO": return LoaderNCChloro()
         if type == "NC_GODAE": return LoaderNCgodae()
-        if type == "Microwat": return LoaderSyntheticValue()
         if type == "ASCII": return AsciiLoader()
         if type == "LIST": return ListWriter()
         if type == "NML": return NmlLoader()
@@ -46,17 +45,15 @@ class LoaderNCChloro(Loader):
         rla_lon = nc.variables[variable][:]
         variable = 'lat'
         rla_lat = nc.variables[variable][:]
-        rla_value = nc.variables['CHL1_mean'][:]
+        rla_value = nc.variables['CHL'][0,:,:]
         return rla_lon,rla_lat,rla_value
-
-
 
 
 class InputLoader(Loader): 
     def load(self,options,level):
         """Loader for input options"""
         keywords = ['date1=','date2=','delta=','nbdate=','daterun=','config=','data=','src=','nbproc=','typemod=',"schedule="]
-        cla_opts = getopt.getopt(options,'',keywords)
+	cla_opts = getopt.getopt(options,'',keywords)	
         log=Logger("InputLoader").run(level)
         ll_delta=None
         ll_date1=None
@@ -109,7 +106,7 @@ class InputLoader(Loader):
         list_var.append(ll_date1)
         list_var.append(ll_date2)
         list_var.append(ll_daterun)
-        list_var.append(ll_nbdate)
+        list_var.append(ll_nbdate)           
         if not ll_config :
             log.error("Config is missing : add --config= in the launcher")
             log.error("Type TEP_CLASS4.py --data=XXX --src=XXX --config=XXX --date1=XXXX --date2=XXXX or ")
@@ -172,6 +169,24 @@ class InputLoader(Loader):
             else : 
                 log.info("Date must be a year")
                 sys.exit(1)
+        elif not ll_date1 and not ll_date2:
+            log.info("No date: last month")
+            date_now = dt.datetime.now()
+            if date_now.month == 1 :
+                cl_start_date = str(date_now.year-1)+"1201"
+		cl_end_date = str(date_now.year)+"0101"
+            elif date_now.month < 10 :
+		cl_start_date = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+	        cl_end_date = str(date_now.year)+"0"+str(date_now.month)+"01"
+            elif date_now.month == 11 :
+		cl_start_date = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+	        cl_end_date = str(date_now.year)+str(date_now.month)+"01"
+            else : 
+		cl_start_date = str(date_now.year)+str(date_now.month-1)+"01"
+	        cl_end_date = str(date_now.year)+str(date_now.month)+"01"
+            print cl_start_date
+            date1=SyDate(cl_start_date)
+            date2=SyDate(cl_end_date)
         elif cl_daterun == "all" :
             log.info("Need to find dates in file")
             date1=None
@@ -187,10 +202,12 @@ class InputLoader(Loader):
             log.info("Date1 %s Date2 %s " %(date1,date2))
         confname='config_'+str(cl_config)+'_'+str(cl_src)+'_'+str(cl_data)+'.cfg'
         return date1,date2,confname,cl_data,cl_daterun,cl_schedule,cl_src,nb_proc,cl_typemod
+
     def find_date(self):
         date1="20150101"
         date2="20150231"
         return date1,date2
+
 class NmlLoader(Loader): 
     """Loader for namelists"""
     def load(self,filename,level):
@@ -234,24 +251,6 @@ class LoaderNCcorio(Loader):
         #    il_val=il_val+1
         #np.set_printoptions(suppress=True)
         return position
-
-class LoaderSyntheticValue(Loader):
-
-    """Loader for synthetic dataset"""
-
-    def read_pos(self,filename):
-        nc = netCDF4.Dataset(filename,'r')        
-        variable = 'longitude'
-        rla_lon = nc.variables[variable][:]
-        variable = 'latitude'
-        rla_lat = nc.variables[variable][:]
-        n_profiles=len(rla_lon[:])
-        ## Optional Read juld
-        variable='juld'
-        rla_juld= nc.variables[variable][:]
-        return rla_lon,rla_lat,rla_juld
-
-
 
 class LoaderNCgodae(Loader):
 
