@@ -27,7 +27,7 @@ import param.Def_param_bulletin as params
 from sytoolkit.sydate_origin import SyDateOrigin
 from sytoolkit.sydate_new import SyDatenew
 from sytoolkit.sydate import SyDate
-
+import datetime as dt
 
 # =============================================
 #                 CONFIGURATION
@@ -36,20 +36,40 @@ from sytoolkit.sydate import SyDate
 letters = 's:e:c:t:' 
 keywords = ['day1=', 'day2=', 'cfg=', 'type=' ] 
 cla_opts = getopt.getopt(sys.argv[1:],letters,keywords)
-print cla_opts
+
 cl_start_date  = 'YYYYMMDD'
 cl_end_date  = 'YYYYMMDD'
+ll_date1=None
+ll_date2=None
+
 _DBFILE_        = './environment.cfg'
 
 for o,p in cla_opts[0]:
   if o in ['-s','--day1']:
      cl_start_date = p
+     ll_date1 = True
   elif o in ['-e','--day2']:
      cl_end_date = p
+     ll_date2 = True
   elif o in ['-t','--type']:
      cexp=p
   elif o in ['-c','--cfg']:
      _DBFILE_ = p.strip()
+
+if not ll_date1 and not ll_date2:
+    date_now = dt.datetime.now()
+    if date_now.month == 1 :
+        cl_start_date = str(date_now.year-1)+"1201"
+        cl_end_date = str(date_now.year)+"0101"
+    elif date_now.month < 10 :
+	cl_start_date = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+	cl_end_date = str(date_now.year)+"0"+str(date_now.month)+"01"
+    elif date_now.month == 11 :
+	cl_start_date = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+	cl_end_date = str(date_now.year)+str(date_now.month)+"01"
+    else : 
+	cl_start_date = str(date_now.year)+str(date_now.month-1)+"01"
+	cl_end_date = str(date_now.year)+str(date_now.month)+"01"
 
 cl_start_jdate = str(SyDate(cl_start_date).tojulian())
 cl_end_jdate   = str(SyDate(cl_end_date).tojulian())

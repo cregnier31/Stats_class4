@@ -25,6 +25,7 @@ import param.Def_param_bulletin as params
 import supobs
 from supobs import toolkitStats
 from supobs import Statslib
+import datetime as dt
 
 
 #~~~~~~~~~~~~~~~~~~~~~ Input parameters settings ~~~~~~~~~~~~~~~~~~~~~
@@ -35,18 +36,38 @@ cla_opts = getopt.getopt(sys.argv[1:],letters,keywords)
 
 cl_dateMinZone  = 'YYYYMMDD'
 cl_dateMaxZone  = 'YYYYMMDD'
+ll_date1=None
+ll_date2=None
 
 _DBFILE_        = './environment.cfg'
 
 for o,p in cla_opts[0]:
   if o in ['-s','--day1']:
      cl_dateMinZone = p
+     ll_date1 = True
   elif o in ['-e','--day2']:
      cl_dateMaxZone = p
+     ll_date2 = True
   elif o in ['-t','--datatype']:
      cl_CL4type = p
   elif o in ['-c','--cfg']:
      _DBFILE_ = p.strip()
+
+if not ll_date1 and not ll_date2:
+    date_now = dt.datetime.now()
+    if date_now.month == 1 :
+        cl_dateMinZone = str(date_now.year-1)+"1201"
+        cl_dateMaxZone = str(date_now.year)+"0101"
+    elif date_now.month < 10 :
+	cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+	cl_dateMaxZone = str(date_now.year)+"0"+str(date_now.month)+"01"
+    elif date_now.month == 11 :
+	cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+	cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
+    else : 
+	cl_dateMinZone = str(date_now.year)+str(date_now.month-1)+"01"
+	cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
+
 
 cla_dates = supobs.toolkitStats.char_period(cl_dateMinZone,cl_dateMaxZone)
 

@@ -10,6 +10,7 @@ from supobs import toolkitStats
 import supobs
 import resource
 import geomlib
+import datetime as dt
 
 # Set Stack unlimited
 
@@ -24,18 +25,37 @@ cla_opts = getopt.getopt(sys.argv[1:],letters,keywords)
 
 cl_dateMinZone  = 'YYYYMMDD'
 cl_dateMaxZone  = 'YYYYMMDD'
+ll_date1=None
+ll_date2=None
 
 _DBFILE_        = './environment.cfg'
 
 for o,p in cla_opts[0]:
-  if o in ['-s','--day1']:
+  if o in ['-s','--day1']:  
      cl_dateMinZone = p
+     ll_date1 = True
   elif o in ['-e','--day2']:
      cl_dateMaxZone = p
+     ll_date2 = True
   elif o in ['-t','--type']:
      cvar=p
   elif o in ['-c','--cfg']:
      _DBFILE_ = p.strip()
+
+if not ll_date1 and not ll_date2:
+    date_now = dt.datetime.now()
+    if date_now.month == 1 :
+        cl_dateMinZone = str(date_now.year-1)+"1201"
+        cl_dateMaxZone = str(date_now.year)+"0101"
+    elif date_now.month < 10 :
+	cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+	cl_dateMaxZone = str(date_now.year)+"0"+str(date_now.month)+"01"
+    elif date_now.month == 11 :
+	cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+	cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
+    else : 
+	cl_dateMinZone = str(date_now.year)+str(date_now.month-1)+"01"
+	cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
 
 def load_db():
         db = ConfigParser.ConfigParser()
@@ -95,11 +115,11 @@ for cdate in cla_dates_tot :
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-print ' ------------------------------ '
-print '|        Lecture CLASS4        |'
-print ' ______________________________ '
-print '|   Date   |   Var   | Status  |'
-print ' ------------------------------ '
+#print ' ------------------------------ '
+#print '|        Lecture CLASS4        |'
+#print ' ______________________________ '
+#print '|   Date   |   Var   | Status  |'
+#print ' ------------------------------ '
 
 
 for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
@@ -134,7 +154,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
 		if var_type == 'CHL' :
    			rla_forecast_init[(rla_forecast_init == 0.)] = np.nan
 			rla_forecast_init = np.log10(rla_forecast_init)
-		print rla_forecast_init.shape
+#		print rla_forecast_init.shape
         if time == 'observation' and config_obs == 'GLOBCOLOUR' :
    		rla_observation_init = nc.variables[cvar][:]
 		rla_observation_init = rla_observation_init.data
@@ -142,7 +162,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
 		if var_type == 'CHL' :
 			rla_observation_init[(rla_observation_init == 0.)] = np.nan
 			rla_observation_init = np.log10(rla_observation_init)
-		print rla_observation_init.shape
+#		print rla_observation_init.shape
 	if time == 'observation' and config_obs != 'GLOBCOLOUR' :
    		rla_observation_init = nc.variables[time][:]
 		rla_observation_init = rla_observation_init.data
@@ -157,7 +177,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
 		if var_type == 'CHL' :
    			rla_best_estimate_init[(rla_best_estimate_init == 0.)] = np.nan
 			rla_best_estimate_init = np.log10(rla_best_estimate_init)
-		print rla_best_estimate_init.shape
+#		print rla_best_estimate_init.shape
 	if time == 'climatology' :
    		rla_climatology_init = nc.variables[time][:]
 		rla_climatology_init = rla_climatology_init.data
@@ -174,7 +194,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
 			rla_persistence_init = np.log10(rla_persistence_init)
 	if config_obs != 'GLOBCOLOUR' :
 		rla_qc_init=nc.variables['qc'][:]
-	print time
+#	print time
    nc.close()
 
 
@@ -317,7 +337,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
 
 #~~~~~~~~~~~~~~~~~~~~~~ Definition boite 2D ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	print imask
+#	print imask
 	i,j = np.where(rla_mask == maskval)
         boxlonmin = rla_lonmask[i,j].min()
         boxlonmax = rla_lonmask[i,j].max()
@@ -500,10 +520,10 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
 
    nc.close()
  
-   print '| %s | %s |  Done  |' %(cdate,cl_var)
+#   print '| %s | %s |  Done  |' %(cdate,cl_var)
 
-print ' ------------------------------ '
-print '              END               '
-print ' ------------------------------ '
+#print ' ------------------------------ '
+#print '              END               '
+#print ' ------------------------------ '
 	
 
