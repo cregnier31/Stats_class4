@@ -5,7 +5,8 @@ import logging
 import tarfile
 import netCDF4
 from sytoolkit.sydate import SyDate
-from nco.nco import Nco
+#from nco.nco import Nco
+from nco import Nco
 from gz import ZipManipulator
 
 ##############################################################
@@ -32,7 +33,69 @@ class Extractor(object) :
         if type == "ASCII" : return Extract_ASCII()
         if type == "L3m" : return Extract_genericData()
         if type == "Microwat_Lband_Orbite_1day_Lband" or type == "Microwat_6.9GHz_Orbite_1day" : return Extract_genericData()
+        if type == "sssdata_netcdf_good_FNAV" : return Extract_SSSData()
 
+
+class Extract_SSSData(Extractor): 
+
+    """ Extract files """
+    def __init__(self): 
+
+        # ===============
+        # LOGGER
+        # ===============
+        logging.basicConfig(format='%(asctime)s %(message)s')
+        self.log = logging.getLogger("Extract_SSS_data")
+        self.log.setLevel(logging.INFO)
+        self.date=SyDate('19500101')
+
+        self.dimension='TIME'
+
+    def run(self,date1,date2,dirdata,dirtmp,typedata,template,prefix):
+
+        logging.basicConfig(format='%(asctime)s %(message)s')
+        self.log = logging.getLogger("Extract Generic files")
+        self.log.setLevel(logging.INFO)
+        liste_tot=[]
+        valeurj=date1
+        options = []
+        options.extend(['-h'])
+        ## Nco constructor
+        nco = Nco()
+        while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
+            dateval=SyDate.__str__(valeurj)
+            print dateval
+            liste_file=glob.glob(dirdata+'/*nc')
+            for file in liste_file :
+                try :
+                    print file
+                    filename=os.path.basename(file)
+                    print filename
+                    nc   = netCDF4.Dataset(file,'r')
+                    variable=self.dimension
+                    v = nc.variables[variable][:]
+                    # Convert to date
+                    valeurtmp=valeurj
+                    date_all=[SyDate.__str__(self.date.setfromjulian(int(valeurtmp))) for valeurtmp in v]
+                    unique_date = reduce(lambda l, x: l+[x] if x not in l else l, date_all, [])
+                    for date in unique_date :
+                       # print str(date),str(dateval)
+                        if str(dateval) == str(date) :
+                            #print "date ok %s " %(str(date))
+                            indexes = [i for i,x in enumerate(date_all) if x == date]
+                            #print indexes
+                            file_out=typedata+'_'+str(date)+'.nc'
+                            nco.ncks(input=file,output=dirtmp+file_out,dimension=self.dimension+','+str(indexes[0])+','+str(indexes[-1]),options=options)              
+                            if dirtmp+file_out not in liste_tot : 
+                                print "Append to the list"
+                                liste_tot.append(dirtmp+file_out)
+                except IOError as e:
+                    print "I/O error({0}): {1}".format(e.errno, e.strerror)
+                    sys.exit(1)
+            valeurj=valeurj.goforward(1)
+            self.log.info('Go Forward %s %s ' % (str(valeurj),str(date2)))
+
+        return liste_tot
 
 
 
