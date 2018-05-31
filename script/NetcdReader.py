@@ -28,11 +28,12 @@ class NetcdReader():
     def read_2D(self,filename,namevar):
         nc = netCDF4.Dataset(filename,'r')        
         variable = namevar
-        v = nc.variables[variable][:,:]
+       # v = nc.variables[variable][:,:]
+        v = nc.variables[variable]
         type_var=v.dtype
-        ##if str(type_var) == "|S1":
-        ##    ## Bug correction for Char
-        ##    v.set_auto_maskandscale(False)
+        if str(type_var) == "|S1":
+            ## Bug correction for Char
+            v.set_auto_maskandscale(False)
         rla_var_2D = nc.variables[variable][:,:]
         return rla_var_2D
     def read_3D(self,filename,namevar):
