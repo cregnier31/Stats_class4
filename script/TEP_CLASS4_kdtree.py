@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vim: set ts=4 sw=4 expandtab:
 # History  : Juillet 2014  : Creation C.REGNIER 
@@ -10,7 +11,6 @@
 #
 from __future__ import generators
 import os,sys,string,shutil,glob,re
-## Import specific python_modules
 sys.path.append('../python_modules/')
 import logging
 import resource
@@ -65,11 +65,12 @@ log.info('========================================================')
 # ===========================================
 # Load options and compute date interval
 # ===========================================
-[date1,date2,confname,data_type,daterun,cl_schedule,cl_src,nb_proc,cl_typemod]=Loader().factory('INPUT').load(sys.argv[1:],level)
+[date1,date2,confname,data_type,daterun,cl_schedule,cl_src,nb_proc,cl_typemod,cl_data_id]=Loader().factory('INPUT').load(sys.argv[1:],level)
 log.error("Nombre de proc %i" %(nb_proc))
 log.info("Type des fichiers d'entree %s " %(cl_typemod))
 log.info("Schedule %s " %(cl_schedule))
 log.info("Dates %s %s " %(date1,date2))
+log.info("Daterun %s " %(daterun))
 log.info("Datatype %s " %(data_type))
 # ==================================
 #   Load db configuration file
@@ -87,10 +88,16 @@ do_sort=int(param_dict.get('GLOBAL','do_sort'))
 do_decomp=int(param_dict.get('GLOBAL','do_decomp'))
 model_type=param_dict.get('GLOBAL','MODELTYPE')
 dirdata=param_dict.get('input_dir', 'INPUTDATA')
+campaign=param_dict.get('input_dir','CAMPAIGN')
 dirmodel=param_dict.get('input_dir', 'DATA_IN')
 data_format=param_dict.get('input_dir', 'DATA_FMT')
 dirwork=param_dict.get('output_dir', 'DIRTMP')
 diroutput=param_dict.get('output_dir', 'DIROUTPUT')
+if cl_data_id : 
+    dirwork=dirwork+str(cl_data_id)+'/'
+    diroutput=diroutput+str(cl_data_id)+'/'
+    dirdata=dirdata+str(cl_data_id)+'/'
+print dirdata
 homedir=param_dict.get('GLOBAL','DIRHOME')
 dirtmp=dirwork+'ext-'
 prefix_data=param_dict.get('input_dir','PREFIX')
@@ -113,6 +120,7 @@ type_archi=param_dict.get('GLOBAL','TYPE_ARCHI')
 varname=param_dict.get('GLOBAL','variable')
 nb_points=int(param_dict.get('GLOBAL','nb_points_interp'))
 schedule=param_dict.get('GLOBAL','SCHEDULE')
+dimension=param_dict.get('input_dir','DIMENSION')
 ## Create Output and tmp directory if doesn't exist
 if not os.path.exists(dirwork):
     log.info("Workdir %s" %(dirwork))
@@ -215,7 +223,8 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
     matching = [s for s in list_files if dateval in s]
     if not matching :
         log.info('Matching  error')
-        sys.exit(1)
+        log.info('Go to next')
+        continue
     for fichier in matching: 
         log.info('Fichier  %s ' % (fichier)) 
         ll_file_interp=None
@@ -267,7 +276,10 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         ll_coloc=False
         file_coloc_tmp=os.path.basename(fichier)
         file_out=file_coloc_tmp
-        file_coloc_tmp=re.sub('.nc','_Kdtree_PGN_idw'+str(nb_points)+'pt.p',file_coloc_tmp)
+        if cl_data_id : 
+            file_coloc_tmp=re.sub('.nc','_Kdtree_'+str(cl_typemod).upper()+'_'+str(cl_data_id)+'_idw'+str(nb_points)+'pt.p',file_coloc_tmp)
+        else :
+            file_coloc_tmp=re.sub('.nc','_Kdtree_'+str(cl_typemod).upper()+'_idw'+str(nb_points)+'pt.p',file_coloc_tmp)
         file_coloc=coloc_rep+file_coloc_tmp
         log.info('File coloc %s ' %(file_coloc))
         lon_mod,lat_mod=Loader.factory('PGN_coords').read_pos(coordinates)
@@ -292,18 +304,18 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             tree = cKDTree(zip(xs, ys, zs))
             log.info('query approach')
             d1, inds_idw1 = tree.query(zip(xt, yt, zt), k =  nb_points)
+            print np.shape(inds_idw1)
             log.info('File coloc %s ' %(file_coloc))
             f = file(str(file_coloc), 'wb')
             cPickle.dump(zip(d1,inds_idw1),f,protocol=cPickle.HIGHEST_PROTOCOL)
             log.info('dump ok')
             f.close
             ll_tree=True
-        if nb_points > 1 :
-            ## Compute the weigths
-            w = 1.0 / d1**2 
+        ## Compute the weigths
+        w = 1.0 / d1**2 
         ## Create matrix
         log.info('Number obs to coloc %i ' % (nb_obs))
-        if data_origin == "Microwat":
+        if data_origin == "Microwat" or data_origin == "SSS_ship" :
             hdct_tab=np.ndarray(shape=(nb_obs,),dtype=float, order='F')
             hdct_tab[:]=9999.
         else :
@@ -342,6 +354,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             lead_new=lead_int
             sort_rep=dirmodel  
             cl_config_use = cl_config
+            ll_single=False
             if  time == 'forecast' :
                 if cl_config[0:6] == 'BIOMER' : 
                     lead_new=[time[0]+time[4]+time[6:8]]
@@ -360,6 +373,11 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                     cl_config_use = re.sub('Q','',cl_config)
                     lead_fin=['hdct']
                     log.info('Lead fin %s ' % (lead_fin)) 
+            elif time == 'best' :
+                    cl_config_use = re.sub('Q','',cl_config)
+                    lead_fin=['hdct_all']
+                    log.info('Lead fin %s ' % (lead_fin)) 
+                    ll_single=True
             elif time == 'best_weekly' :
                  lead_fin=['hdct','nwct']
             else : 
@@ -373,7 +391,8 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 log.info('model %s' %(modele))
                 if directory == 'hdct' :
                     dirmodel_new=dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
-                    dirmodel_new=dirmodel
+                elif directory == 'hdct_all' :
+                    dirmodel_new=dirmodel+"/"
                 else :
                     dirmodel_new=dirmodel+"DAILY/"+modele[:5]+"/"+modele.lower()+"/"
                 ## Compute date
@@ -405,7 +424,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 if data_type.lower() == 'aice' or data_type.lower() == 'sla'  or data_type.lower() == 'chloro' :
                     value_mod = fc.variables[str(varname)][0,:,:]
                     log.info("load dataset ok")
-                elif data_type == 'sss' or data_type == 'sst' : 
+                elif data_type.lower() == 'sss' or data_type.lower() == 'sst' : 
                     log.info("sss or sst variable")
                     value_mod = fc.variables[str(varname)][0,0,:,:]
                 elif data_type.lower() == 'ssthf' : 
@@ -488,8 +507,8 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                     fcst_tab[:,0,ind,0]=interp[:]
                 elif time == 'persistence' :
                     pers_tab[:,0,ind,0]=interp[:]
-                elif time == 'best_estimate' :
-                    if data_origin == "Microwat":
+                elif time == 'best_estimate' or time == 'best' :
+                    if data_origin == "Microwat" or data_origin == "SSS_ship" :
                         hdct_tab[:]=interp[:]
                     else :
                         hdct_tab[:,0,0]=interp[:]
@@ -497,18 +516,20 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         log.info("Interp ok")
         ## Write in the file
         if not ll_miss : 
-            log.info("Write file")
             filename_new=dirwork+file_out
-            if data_origin == "Microwat" :
+            log.info("Write file %s" %(filename_new))
+            if data_origin == "Microwat" or data_origin == "SSS_ship" :
                 # Add missing value
                 hdct_tab=np.where(np.array(hdct_tab)>9.e36,np.nan,np.array(hdct_tab))
-                Writer().write_best(filename_new,hdct_tab,dateval,modele)
+                Writer().write_best(filename_new,hdct_tab,dateval,modele,dimension)
             elif data_origin == "GLOBCOLOUR" :
                 Writer().write_best_fcst(filename_new,hdct_tab,fcst_tab,dateval,modele)
             else : 
                 Writer().write_GODAE_files(filename_new,hdct_tab,fcst_tab,pers_tab,dateval,modele)
             ## Zipped files and move in output directory 
             file_out2=os.path.basename(file_out)
+            if campaign : 
+                file_out2=re.sub('.nc','_'+cl_data_id+'.nc',file_out2)
             file_out2=re.sub('.nc','_'+str(cl_config)+'.nc',file_out2)
             for fileout in glob.glob(dirwork+"*"+dateval+"*.nc") :
                 shutil.move(fileout,diroutput+file_out2)
