@@ -5,29 +5,24 @@
 #            Novembre 2014 :  Ajout différentes échéances pour l'interpolation + clims + gestion enchaînement des runs
 #            Decembre 2014 :  MAJ pour le cas particulier du zoom
 #            November 2016 :  New version with KDtree method for coloc and interp
-#            November 2017 :  Add modules in a generic lib for CLASS4 portability
+#            November/Dec 2017 :  Add modules in a generic lib for CLASS4 portability / Generic KDtree for SLA,SST,SSS
 ## Description : 
 ## New CLASS4 launcher to compute CLASS4 with CLASS4 coming from GODAE, ARMOR, CORIOLIS
 #
 from __future__ import generators
 import os,sys,string,shutil,glob,re
-#sys.path.append("/home/modules/versions/64/fc18/ipython/ipython-1.1/lib/python2.7/site-packages")
-#sys.path.append("/home/modules/versions/64/fc18/netcdf4-python/netcdf4-python-1.0.7/lib64/python2.7/site-packages/")
-#sys.path.append("/home/cregnier/python/module/")
-#sys.path.append("/home/cregnier/python/module/geojson-1.0.7/")
-#sys.path.append("/home/cregnier/python/module/lib/python2.6/site-packages/")
-#sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/")
-#sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/nco-0.0beta-py2.7.egg/")
 sys.path.append('../python_modules/')
-#sys.path.append('../python_modules/netcdf4/')
 import logging
 import resource
+## Import local modules
 from Selector import Selector
 from Writer import Writer
 from Extractor import Extractor
 from NmlCreator import NmlCreator
+from Sorter import Sorter
 from array import array
 from Designer import Designer_file as Design
+
 import operator,getopt
 import shelve
 import subprocess,shlex
@@ -36,7 +31,6 @@ import datetime as dt
 from datetime import date
 from dateutil import relativedelta
 from  Logger import Logger
-from Sorter import Sorter
 import gzip
 from Utils import *
 #for serialization 
@@ -52,6 +46,7 @@ from sytoolkit.sydate import SyDate
 
 ## Set Stack unlimited
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
+
 
 # ===============
 # LOGGER
@@ -70,7 +65,7 @@ log.info('========================================================')
 # ===========================================
 # Load options and compute date interval
 # ===========================================
-[date1,date2,confname,data_type,daterun,cl_schedule,cl_src,nb_proc,cl_typemod]=Loader().factory('INPUT').load(sys.argv[1:],level)
+[date1,date2,confname,data_type,daterun,cl_schedule,cl_src,nb_proc,cl_typemod,cl_data_id]=Loader().factory('INPUT').load(sys.argv[1:],level)
 log.error("Nombre de proc %i" %(nb_proc))
 log.info("Type des fichiers d'entree %s " %(cl_typemod))
 log.info("Schedule %s " %(cl_schedule))
@@ -93,10 +88,16 @@ do_sort=int(param_dict.get('GLOBAL','do_sort'))
 do_decomp=int(param_dict.get('GLOBAL','do_decomp'))
 model_type=param_dict.get('GLOBAL','MODELTYPE')
 dirdata=param_dict.get('input_dir', 'INPUTDATA')
+campaign=param_dict.get('input_dir','CAMPAIGN')
 dirmodel=param_dict.get('input_dir', 'DATA_IN')
 data_format=param_dict.get('input_dir', 'DATA_FMT')
 dirwork=param_dict.get('output_dir', 'DIRTMP')
 diroutput=param_dict.get('output_dir', 'DIROUTPUT')
+if cl_data_id : 
+    dirwork=dirwork+str(cl_data_id)+'/'
+    diroutput=diroutput+str(cl_data_id)+'/'
+    dirdata=dirdata+str(cl_data_id)+'/'
+print dirdata
 homedir=param_dict.get('GLOBAL','DIRHOME')
 dirtmp=dirwork+'ext-'
 prefix_data=param_dict.get('input_dir','PREFIX')
@@ -115,7 +116,12 @@ dir_log=param_dict.get('GLOBAL','DIRLOG')
 gridtemp=param_dict.get('GLOBAL','gridtemp')
 gridsal=param_dict.get('GLOBAL','gridsal')
 type_run=param_dict.get('GLOBAL','TYPE_RUN')
+type_archi=param_dict.get('GLOBAL','TYPE_ARCHI')
 varname=param_dict.get('GLOBAL','variable')
+nb_points=int(param_dict.get('GLOBAL','nb_points_interp'))
+schedule=param_dict.get('GLOBAL','SCHEDULE')
+dimension=param_dict.get('input_dir','DIMENSION')
+type_file=param_dict.get('GLOBAL','TYPE_FILE')
 
 ## Create Output and tmp directory if doesn't exist
 if not os.path.exists(dirwork):
@@ -136,13 +142,13 @@ if write_geojson  :
     ## Clean old db
     if (os.path.isfile(file_db2)) :
         os.remove(file_db2)
+
 # =============================================================================
 # PART 1-bis : DO SORT if not available
 # =============================================================================
 if do_sort : 
     log.info('              Sort Values for interp               ') 
     sort_rep=param_dict.get('input_dir','DATA_SORT')
-    schedule=param_dict.get('GLOBAL','SCHEDULE')
     file_template=cl_config+'_'+daily_pref+'_'
     if schedule == "WEEKLY" :
         Sorter().run_weekly(lead_time,lead_int,date1,date2,daterun,file_template,gridtemp,gridsal,dirmodel,sort_rep)
@@ -200,6 +206,16 @@ ll_file_ok=None
 ll_uniq=None
 valeurj=date1
 coordinates=param_dict.get('static','fic_coordinates')
+if data_type.lower() == "sst" or data_type.lower() == "ssthf" : 
+    gridtype="gridT"
+elif data_type.lower() == "sss" :
+    gridtype="gridS"
+elif data_type.lower() == "sla" :
+    gridtype="grid2D"
+elif data_type.lower() == "chloro" :
+    gridtype="gridCHL"
+elif data_type.lower() == "aice" :
+    gridtype="icemod"
 
 while valeurj.__ge__(date1) and valeurj.__le__(date2) :
     log.info('Interp day  %s ' % (SyDate.__str__(valeurj))) 
@@ -209,7 +225,8 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
     matching = [s for s in list_files if dateval in s]
     if not matching :
         log.info('Matching  error')
-        sys.exit(1)
+        log.info('Go to next')
+        continue
     for fichier in matching: 
         log.info('Fichier  %s ' % (fichier)) 
         ll_file_interp=None
@@ -234,21 +251,24 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         else :
             # Case Global without qc
             log.info("GLOBAL MODE => SELECT ALL ") 
+            selector=Selector(data_format,data_type).factory(data_origin)
             if data_origin == "Microwat":
-                lon,lat=Loader.factory(data_format).read_pos(fichier)
+                lon,lat,juld=Loader.factory(data_format).read_pos(fichier)
             else :
                 lon,lat,obs_value=Loader.factory(data_format).read_pos_and_value(fichier)
-                print type(lon),type(lat)
+            nb_obs=int(np.shape(lat)[0])
+            new_position=np.ndarray(shape=(nb_obs,2),dtype=float, order='F')
+            new_position[:,0]=lon
+            new_position[:,1]=lat
             if lon.ndim < 2 :
-                X, Y = np.meshgrid(lon,lat)
-                ny,nx=np.shape(X)
-                print(nx,ny)
+                #X, Y = np.meshgrid(lon,lat)
+                X, Y = lon,lat
+                #ny,nx=np.shape(X)
                 ## Convert to cartesian
                 xt, yt, zt = lon_lat_to_cartesian(X.flatten(),Y.flatten())
             else :
                 xt, yt, zt = lon_lat_to_cartesian(lon, lat)
             log.info("Data origin %s" %(data_origin))
-            #selector=Selector(data_format,data_type).factory(data_origin)
         # =============================================================================
         # PART-4 - Colocations of positions
         # =============================================================================
@@ -258,14 +278,24 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         ll_coloc=False
         file_coloc_tmp=os.path.basename(fichier)
         file_out=file_coloc_tmp
-        file_coloc_tmp=re.sub('.nc','_Kdtree_PGN_idw4pt.p',file_coloc_tmp)
+        if cl_data_id : 
+            file_coloc_tmp=re.sub('.nc','_Kdtree_'+str(cl_typemod).upper()+'_'+str(cl_data_id)+'_idw'+str(nb_points)+'pt.p',file_coloc_tmp)
+        else :
+            file_coloc_tmp=re.sub('.nc','_Kdtree_'+str(cl_typemod).upper()+'_idw'+str(nb_points)+'pt.p',file_coloc_tmp)
         file_coloc=coloc_rep+file_coloc_tmp
         log.info('File coloc %s ' %(file_coloc))
+        if cl_typemod.lower() == "pgn" :
+            lon_mod,lat_mod=Loader.factory('PGN_coords').read_pos(coordinates)
+        elif cl_typemod.lower() == "allege" :
+            lon_mod,lat_mod=Loader.factory('alleges_coords').read_pos(coordinates)
+
+        lon_flat=lon_mod.flatten()
+        lat_flat=lat_mod.flatten()
         if os.path.isfile(file_coloc) : 
             ll_coloc=True
             log.info('coloc existe %s '  %(file_coloc))
             log.info('load existing tree')
-            f = file(file_coloc, 'r')
+            f = file(str(file_coloc), 'r')
             zip_var=cPickle.load(f)
             d,inds_idw=zip(*zip_var)
             d1=np.array(d)
@@ -274,14 +304,15 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             log.info('read tree ok')
         if not ll_coloc :
             log.info('Coordinates %s ' %(coordinates))
-            lon_mod,lat_mod=Loader.factory('PGN_coords').read_pos(coordinates)
             log.info('coloc don t exist => coloc with KDtree')
-            xs, ys, zs = lon_lat_to_cartesian(lon_mod.flatten(), lat_mod.flatten())
+            xs, ys, zs = lon_lat_to_cartesian(lon_flat, lat_flat)
             log.info('Create CKDTREE object')
             tree = cKDTree(zip(xs, ys, zs))
-            log.info('query with IDW approach')
-            d1, inds_idw1 = tree.query(zip(xt, yt, zt), k = 4)
-            f = file(file_coloc, 'wb')
+            log.info('query approach')
+            d1, inds_idw1 = tree.query(zip(xt, yt, zt), k =  nb_points)
+            print np.shape(inds_idw1)
+            log.info('File coloc %s ' %(file_coloc))
+            f = file(str(file_coloc), 'wb')
             cPickle.dump(zip(d1,inds_idw1),f,protocol=cPickle.HIGHEST_PROTOCOL)
             log.info('dump ok')
             f.close
@@ -289,16 +320,34 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
         ## Compute the weigths
         w = 1.0 / d1**2 
         ## Create matrix
-        nb_obs=int(np.shape(lat)[0])
-        log.info('Number obs to coloc %i ' % (nb_obs)) 
-        hdct_tab=np.ndarray(shape=(nb_obs,1,1),dtype=float, order='F')
-        pers_tab=np.ndarray(shape=(nb_obs,1,10,1),dtype=float, order='F')
-        fcst_tab=np.ndarray(shape=(nb_obs,1,10,1),dtype=float, order='F')
-        pers_tab[:,:,:,:]=9999.
-        fcst_tab[:,:,:,:]=9999.
-        hdct_tab[:,:,:]=9999.
+        log.info('Number obs to coloc %i ' % (nb_obs))
+        if data_origin == "Microwat" or data_origin == "SSS_ship" :
+            hdct_tab=np.ndarray(shape=(nb_obs,),dtype=float, order='F')
+            hdct_tab[:]=9999.
+        else :
+            hdct_tab=np.ndarray(shape=(nb_obs,1,1),dtype=float, order='F')
+            pers_tab=np.ndarray(shape=(nb_obs,1,10,1),dtype=float, order='F')
+            fcst_tab=np.ndarray(shape=(nb_obs,1,10,1),dtype=float, order='F')
+            pers_tab[:,:,:,:]=9999.
+            fcst_tab[:,:,:,:]=9999.
         ll_miss=False
         log.info("Colloc OK")
+        if write_geojson  :
+            # Store input position and coloc position to plot the results in a GIS like qGis 
+            # Input
+            ## Store only ext files for extract area
+            type_f=os.path.basename(fichier).split('_')[2]
+            length=new_position.size
+            file_json=dirtmp+'Positions_'+data_format+'_'+data_type+'_D'+dateval+'_'+SyDate.__str__(date2)+'.geojson'
+            log.info('File out geojson %s' %(file_json))
+            if length > 1 :
+                log.info("Write geojson positions %s " %(data_origin))
+                Writer().write_geojson(file_json,new_position)
+                #write_geojsonselector.store_pos(new_position,data_origin,file_db)
+            else :
+                log.info("No position to store %s " %(type_f))
+
+            # Writer().write_geojson_fromdb(data_type,file_out,file_db)
         # =============================================================================
         # PART-5 - Compute interpolation
         # =============================================================================
@@ -311,6 +360,7 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
             lead_new=lead_int
             sort_rep=dirmodel  
             cl_config_use = cl_config
+            ll_single=False
             if  time == 'forecast' :
                 if cl_config[0:6] == 'BIOMER' : 
                     lead_new=[time[0]+time[4]+time[6:8]]
@@ -329,6 +379,11 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                     cl_config_use = re.sub('Q','',cl_config)
                     lead_fin=['hdct']
                     log.info('Lead fin %s ' % (lead_fin)) 
+            elif time == 'best' :
+                    cl_config_use = re.sub('Q','',cl_config)
+                    lead_fin=['hdct_all']
+                    log.info('Lead fin %s ' % (lead_fin)) 
+                    ll_single=True
             elif time == 'best_weekly' :
                  lead_fin=['hdct','nwct']
             else : 
@@ -342,12 +397,13 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 log.info('model %s' %(modele))
                 if directory == 'hdct' :
                     dirmodel_new=dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
+                elif directory == 'hdct_all' :
+                    dirmodel_new=dirmodel+"/"
                 else :
                     dirmodel_new=dirmodel+"DAILY/"+modele[:5]+"/"+modele.lower()+"/"
-               # list_file=glob.glob(dirmodel_new+directory+"/"+modele+"_"+daily_pref+"_"+dateval+"*_icemod*.nc")
                 ## Compute date
                 if daily_pref == '7dAV' : 
-                    jdatemin=SyDate(str(date1))
+                    jdatemin=SyDate(str(dateval))
                     daytogo=2-jdatemin.weekday()
                     if daytogo > 0 : 
                         first_date=jdatemin.goforward(daytogo)
@@ -358,10 +414,10 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                     daterun=first_date
                     date1=daterun.gobackward(14)
                     date2=daterun.gobackward(7)
-                    template=modele+'_'+daily_pref+'_'+str(date1)+'_'+str(date2)+'_gridCHL_R'+str(daterun)
+                    template=modele+'_'+daily_pref+'_'+str(date1)+'_'+str(date2)+'_'+gridtype+'_R'+str(daterun)
                     list_file=glob.glob(dirmodel_new+template+"*.nc")
                 else :
-                    list_file=glob.glob(dirmodel_new+"/"+modele+"_"+daily_pref+"_"+dateval+"*_*.nc")
+                    list_file=glob.glob(dirmodel_new+"/"+modele+"_"+daily_pref+"_"+dateval+"*_*"+gridtype+"*.nc")
                 if not list_file :
                     log.error("File missing for %s" %(directory))
                     ll_miss=True
@@ -371,110 +427,120 @@ while valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 ## Netcdf value
                 fichier=str(list_file[0])
                 fc = Dataset(fichier)
-                if data_type == 'aice' or data_type == 'SLA' :
+                if data_type.lower() == 'aice' or data_type.lower() == 'sla'  or data_type.lower() == 'chloro' :
                     value_mod = fc.variables[str(varname)][0,:,:]
                     log.info("load dataset ok")
-                    #rla_var=NetcdReader().read_3D(fichier,varname)
-                elif data_type == 'chloro' :
-                    varname='CHL'
-                    value_mod = fc.variables[str(varname)][0,:,:]
-                    log.info("load dataset ok")
+                elif data_type.lower() == 'sss' or data_type.lower() == 'sst' : 
+                    log.info("sss or sst variable")
+                    value_mod = fc.variables[str(varname)][0,0,:,:]
+                elif data_type.lower() == 'ssthf' : 
+                    log.info("sst_hf and selection")
+                    value_mod = fc.variables[str(varname)]
+                    nb_dim=len(np.shape(value_mod))
+                    if nb_dim == 3 :
+                        value_mod = value_mod[:,:,:]
+                    elif nb_dim == 4 : 
+                        value_mod = value_mod[:,0,:,:]
+                    timeindex,lonindex,latindex=np.shape(value_mod)
+                    time_mod = fc.variables['time_counter'][:]
+                    liste_date=get_julian_date_from_PGN_hrly(fichier)
                 else :
+                    log.info("read varname %s" %(varname))
                     value_mod = fc.variables[varname][:,:,:,:]
-                ## Do the interp
-                interp_idw = np.sum(w * value_mod.flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)
-                interp_idw2D=interp_idw.reshape(X.shape)
+                if nb_points > 1 :
+                    ## Do the interp
+                    if data_type.lower() == 'ssthf' :
+                        ## High frequency case 
+                        ## Find the correct hourly value
+                        interp=np.ndarray(shape=(nb_obs,),dtype=float, order='F')
+                        for index in range(timeindex):
+                            value_flat=value_mod[index,:,:].flatten()
+                            if index == 0 :
+                                nb_val=np.shape(value_flat)[0]
+                                value_flat_tab=np.ndarray(shape=(nb_val,timeindex),dtype=float, order='F')
+                                value_flat_tab[:,0]= value_flat  
+                            else :
+                                value_flat_tab[:,index]= value_flat  
+                        for i,ind in enumerate(inds_idw1) : #[0:10000] :
+                            julian=juld[i]
+                            index_time = np.argmin(np.abs(np.array(liste_date)-julian))
+                            #print  value_flat_tab[ind,index_time]
+                            #if np.nanmax(value_flat_tab[ind,index_time]) < 9.e36 :
+                            nb_val=np.count_nonzero(value_flat_tab[ind,index_time] < 9.e36)
+                            if nb_val >= 1  :
+                                sum_val=0
+                                sum_val2=0
+                                for pts in range(nb_points) :
+                                    val= value_flat_tab[ind[pts],index_time]
+                                    if val < 9.e36 :
+                                        sum_val+=val*w[i]
+                                        sum_val2+=w[i]
+                                #interp[i] = np.sum(w[i] * value_flat_tab[ind,index_time]) / np.sum(w[i])
+                                interp[i] = np.sum(sum_val)/np.sum(sum_val2)
+                                #print interp[i]
+                            else : 
+                                 interp[i] = np.nan
+                    else :
+                        interp = np.sum(w * value_mod.flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)
+                else :
+                    if data_type.lower() == 'ssthf' :
+                        ## High frequency case 
+                        ## Find the correct hourly value
+                        interp=np.ndarray(shape=(nb_obs,),dtype=float, order='F')
+                        for index in range(timeindex):
+                            value_flat=value_mod[index,:,:].flatten()
+                            if index == 0 :
+                                nb_val=np.shape(value_flat)[0]
+                                value_flat_tab=np.ndarray(shape=(nb_val,timeindex),dtype=float, order='F')
+                                value_flat_tab[:,0]= value_flat  
+                            else :
+                                value_flat_tab[:,index]= value_flat  
+                        for i,ind in enumerate(inds_idw1) : #[0:10000] :
+                            julian=juld[i]
+                            index_time = np.argmin(np.abs(np.array(liste_date)-julian))
+                            interp[i]=value_flat_tab[ind,index_time]
+                    else : 
+                        ## Nearest neighbour interpolation
+                        interp = value_mod.flatten()[inds_idw1].reshape(lon.shape)
+                    log.info("Max interp "+np.nanmax(interp))
                 if data_origin == "GLOBCOLOUR" :
                     ## Fill with gaps
-                    interp_idw2D=np.where(np.array(obs_value)==-999,-999,np.array(interp_idw2D))
+                    interp2D=interp.reshape(X.shape)
+                    interp2D=np.where(np.array(obs_value)==-999,-999,np.array(interp2D))
                # ind_values=np.where(obs_value == -999)
                 log.info('Interp ok ')
-                #if  time == 'forecast' : 
-                #    fcst_tab[:,0,ind,0]=interp_idw[:]
-                #elif time == 'persistence' :
-                #    pers_tab[:,0,ind,0]=interp_idw[:]
-                #elif time == 'best_estimate' :
-                #    hdct_tab[:,0,0]=interp_idw[:]
+                if  time == 'forecast' : 
+                    fcst_tab[:,0,ind,0]=interp[:]
+                elif time == 'persistence' :
+                    pers_tab[:,0,ind,0]=interp[:]
+                elif time == 'best_estimate' or time == 'best' :
+                    if data_origin == "Microwat" or data_origin == "SSS_ship" :
+                        hdct_tab[:]=interp[:]
+                    else :
+                        hdct_tab[:,0,0]=interp[:]
                 ind+=1
         log.info("Interp ok")
         ## Write in the file
         if not ll_miss : 
-            log.info("Write file")
-            filename=dirwork+file_out
-            Writer().write_GODAE_files(filename,hdct_tab,fcst_tab,pers_tab,dateval,modele)
-            log.info('----------------------------')
-            log.info('Creation file ok %s' %(filename))
-            log.info('----------------------------')
+            filename_new=dirwork+file_out
+            log.info("Write file %s" %(filename_new))
+            if data_origin == "Microwat" or data_origin == "SSS_ship" :
+                # Add missing value
+                hdct_tab=np.where(np.array(hdct_tab)>9.e36,np.nan,np.array(hdct_tab))
+                Writer().write_best(filename_new,hdct_tab,dateval,modele,dimension)
+            elif data_origin == "GLOBCOLOUR" :
+                Writer().write_best_fcst(filename_new,hdct_tab,fcst_tab,dateval,modele)
+            else : 
+                Writer().write_GODAE_files(filename_new,hdct_tab,fcst_tab,pers_tab,dateval,modele)
             ## Zipped files and move in output directory 
-            ##for filename in glob.glob(dirwork+"*.nc") :
-            ##    log.info('ZIP and move file %s' %(filename))
-            ##    f_in=open(filename,'rb')
-            ##    f_out=gzip.open(filename+'.gz','wb')
-            ##    f_out.writelines(f_in)
-            ##    f_out.close()
-            ##    f_in.close()
-            ##    log.info('File ok %s' %(filename))
-            ##    if os.path.exists(diroutput+os.path.basename(filename)+'.gz'):
-            ##        os.remove(diroutput+os.path.basename(filename)+'.gz')
-            ##    shutil.move(filename+'.gz',diroutput)
-            ##    os.remove(filename)
+            file_out2=os.path.basename(file_out)
+            if campaign : 
+                file_out2=re.sub('.nc','_'+cl_data_id+'.nc',file_out2)
+            file_out2=re.sub('.nc','_'+str(cl_config)+'.nc',file_out2)
+            for fileout in glob.glob(dirwork+"*"+dateval+"*.nc") :
+                shutil.move(fileout,diroutput+file_out2)
+            log.info('----------------------------')
+            log.info('Creation file ok %s' %(diroutput+file_out2))
+            log.info('----------------------------')
         else : 
             log.info('File missing')
-
-sys.exit(1)
-
-# Lancement du run d'après
-DAYMAX=param_dict.get('GLOBAL','DAY_MAX')
-## Clear stuck objects
-sys.exc_clear()
-sys.exc_traceback = sys.last_traceback = None
-if DAYMAX : 
-    dayvalmax=SyDate(DAYMAX)
-    schedule=param_dict.get('GLOBAL','SCHEDULE')
-    if schedule == "MONTHLY" : 
-        date_next=date1.goforward(31)
-        date_next=date1.goforward(31)
-    elif schedule == "WEEKLY" :
-        date_next=SyDate(daterun).goforward(7)
-    elif schedule == "YEARLY" :
-        date_next=date1.goforward(365)
-    elif schedule == "DAILY" :
-        date_next=SyDate(daterun).goforward(1)
-    else : 
-        log.error("Schedule not found %s" %(schedule))
-    if  date_next < dayvalmax :
-        if schedule == "MONTHLY" : 
-            cl_date=SyDate.__str__(date_next)[0:6]
-            cl_date2=SyDate.__str__(dayvalmax)[0:6]
-            code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --date1='+cl_date+ \
-                 '  --date2='+cl_date2+' --src='+cl_src+'  --data='+data_type
-        elif schedule == "WEEKLY" :
-            cl_daterun=SyDate.__str__(date_next)
-            print('Lancement du run %s ' %(cl_daterun))
-            code_lancement='python '+homedir+'script/TEP_CLASS4.py --config='+cl_config+'  --daterun='+cl_daterun+ \
-                    '  --nbdate=7 --delta=7 --src='+cl_src+'  --data='+data_type
-        elif schedule == "DAILY" :
-            nb_proc=1
-            cl_daterun=SyDate.__str__(date_next)
-            log.info('Launch run %s' %(cl_daterun))
-            log.info('with parameters %s %s %s' %(cl_config,cl_daterun,str(nb_proc)))
-            print('Lancement du run %s ' %(cl_daterun))
-            code_lancement=homedir+'script/Launcher_NAVITI_cycle.ksh '+cl_config+'  '+cl_daterun+' '+str(nb_proc)
-        elif schedule == "YEARLY" :
-            cl_daterun=SyDate.__str__(date_next)
-            print('Lancement du run %s ' %(cl_daterun))
-            code_lancement='python '+homedir+'script/TEP_CLASS4.py --config=PSY4V3R1 --date1='+cl_daterun[0:4]+' --src=CORA4 --data=profile --typemod=allege'
-        else : 
-            log.error("Schedule not found %s" %(schedule))
-        try:
-            os.system(code_lancement)
-            print("Lancement date run %s ok " % (cl_date))
-        except:
-            print('Probleme execution')
-            sys.exit(1)
-    else :
-        print('Dépassement de JMAX : %s ' % (SyDate.__str__(date_next)))
-        sys.exit(1)
-            #Design().factory(data_origin).run(filename,dateval,contact,cl_config_d,model_type.lower(),inst,version,desc)
-
-sys.exit(1)
