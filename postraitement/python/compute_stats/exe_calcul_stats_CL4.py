@@ -59,14 +59,14 @@ if not ll_date1 and not ll_date2:
         cl_dateMinZone = str(date_now.year-1)+"1201"
         cl_dateMaxZone = str(date_now.year)+"0101"
     elif date_now.month < 10 :
-	cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
-	cl_dateMaxZone = str(date_now.year)+"0"+str(date_now.month)+"01"
+        cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+        cl_dateMaxZone = str(date_now.year)+"0"+str(date_now.month)+"01"
     elif date_now.month == 11 :
-	cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
-	cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
+        cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+        cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
     else : 
-	cl_dateMinZone = str(date_now.year)+str(date_now.month-1)+"01"
-	cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
+        cl_dateMinZone = str(date_now.year)+str(date_now.month-1)+"01"
+        cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
 
 
 cla_dates = supobs.toolkitStats.char_period(cl_dateMinZone,cl_dateMaxZone)
@@ -75,7 +75,7 @@ def load_db():
         db = ConfigParser.ConfigParser()
         db.read(os.path.expanduser(_DBFILE_))
         if not db.sections():
-                print "Error reading configuration file %s" %_DBFILE_
+                print ("Error reading configuration file %s" %(_DBFILE_))
                 sys.exit(1)
         return db
 
@@ -94,23 +94,32 @@ try : os.mkdir(dircl4out)
 except :
     if os.path.exists(dircl4out) : pass
     else : 
-        print 'could not create %s' %dircl4out
+        print ('could not create %s' %(dircl4out))
         sys.exit(1)
 
 if cl_CL4type == 'TEMP' :
-    variable_name_type = params.variable_nameT_new 
+    if config_model.upper() == 'PSY4V2R2' :
+        variable_name_type = params.variable_nameT
+    else :
+        variable_name_type = params.variable_nameT_new 
     tab_prof = params.tab_prof
     lookfor = 'profile_votemper'
     tab_prof_model = params.tab_prof_model
     tab_e3t = params.tab_e3t
 elif cl_CL4type == 'SST' :
-    variable_name_type = params.variable_nameSST_new
+    if config_model.upper() == 'PSY4V2R2' :
+        variable_name_type = params.variable_nameSST
+    else :
+        variable_name_type = params.variable_nameSST_new
     tab_prof = [0,0]
     lookfor = 'SST_votemper'
     tab_prof_model = [0,0.5]
     tab_e3t = [1]
 elif cl_CL4type == 'SLA' :
-    variable_name_type = params.variable_nameSLA_new
+    if config_model.upper() == 'PSY4V2R2' :
+        variable_name_type = params.variable_nameSLA
+    else :
+        variable_name_type = params.variable_nameSLA_new
     tab_prof = [0,0]
     lookfor = 'SLA_sossheig'
     tab_prof_model = [0,0.5]
@@ -128,7 +137,7 @@ elif cl_CL4type in ['SAL','PSAL'] :
     tab_prof_model = params.tab_prof_model
     tab_e3t = params.tab_e3t
 else :
-    print 'unknown cl_CL4type'
+    print ('unknown cl_CL4type')
     sys.exit(1)
 
 
@@ -144,10 +153,10 @@ for cdate in cla_dates :
         cl_filetmplt = lookfor+'_'+config_obs.upper()+'_'+config_model.upper()+'_rms_diff_'+cdate+'*nc'
     else :
         cl_filetmplt = config_model.upper()+'_'+grid_type+'_rms_diff_'+cdate+'*'+lookfor+'*nc'
-    print "lookfor %s " %(cl_filetmplt)
+    print ("lookfor %s " %(cl_filetmplt))
     filelist_tmp = glob.glob(os.path.join(dircl4in,cl_filetmplt)) 
     if len(filelist_tmp) >1 :
-        print 'too many files found at date %s' %cdate
+        print ('too many files found at date %s' %(cdate))
         sys.exit(1)
     elif len(filelist_tmp) ==0:
         filelist_tmp = 'no_file.nc'
