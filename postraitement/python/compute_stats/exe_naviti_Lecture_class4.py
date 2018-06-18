@@ -25,7 +25,7 @@ _NPROCS_=32
 #~~~~ Environment ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 os.chdir(pbsworkdir)
 
-EXE = os.path.join(pbsworkdir,'exe_Lecture_class4_new.py')
+EXE = os.path.join(pbsworkdir,'../exe_Lecture_class4_multiprocess.py')
 try : os.remove(os.path.join(pbsworkdir,"OK.flag")) 
 except : pass
 #command_line ="module load ipython"
