@@ -28,4 +28,42 @@ La compilation se fait avec le script Launcher.ksh qui a comme paramètre le sys
 La figure ci dessous décrit l'architecture du code
 ![GitHub Logo](/images/TEP_CLASS4_NEW_structure.png)
 
+### Lancement du code
 
+# Exemple de launcher
+## Launch for a period
+python TEP_CLASS4.py --config=PSY3QV3R3 --date1=20140701 --date2=20140701 --src=GODAE --data=SST
+## Launch 1 Day in delayed time 15 days before today
+python TEP_CLASS4.py --config=PSY3QV3R3 --delta=15 --src=GODAE --data=SST
+## Launch 1 week in delayed time depending on a a rundate
+python TEP_CLASS4.py --config=PSY3V3R3 --daterun=20140730 --nbdate=7 --delta=14 --src=CORIO --data=profile
+python TEP_CLASS4.py --config=MED12 --daterun=20101027 --nbdate=7 --delta=7 --src=CORA4 --data=profile
+## Launch MONTHLY version 
+python TEP_CLASS4.py --config=GLORYS2V3 --date1=200501 --date2=201212 --src=CORA4 --data=profile
+## Launch MONTHLY version multiprocess
+python TEP_CLASS4_multiprocess_naviti.py --typemod=pgn --config=PSY4V3R1 --daterun=20160921 --src=CORIO --nbdate=7 --delta=14 --data=profile --nbproc=10
+## New version with raw CORIO dataset 
+python TEP_CLASS4.py --config=GLORYS2V4 --daterun=all --src=CORIO_RAW --data=profile --nbproc=1 --typemod=pgn --schedule=m
+##  Version Multiprocess monthly
+python TEP_CLASS4_multiprocess_naviti.py --typemod=pgn --config=GLORYS2V4 --date1=199001 --date2=199002 --src=CORA4 --data=profile --nbproc=10
+
+## Launch new version with allege
+python TEP_CLASS4.py --config=PSY4V3R1 --daterun=20101027 --nbdate=7 --delta=7 --src=CORA4 --data=profile --typemod=allege
+python TEP_CLASS4.py --config=PSY4V3R1 --date1=200701 --date2=201312 --src=CORA4 --data=profile --typemod=allege
+python TEP_CLASS4.py --config=PSY4V3R1 --date1=20070101 --date2=20070102 --src=CORA4 --data=profile --typemod=allege
+python TEP_CLASS4.py --config=PSY4V3R1 --date1=2007 --src=CORA4 --data=profile --typemod=allege
+python TEP_CLASS4.py --config=PSY4V3R1 --date1=20150101 --date2=20150916 --src=CORIO --data=profile --typemod=allege
+## Lancement de CORA4 avec les alleges de GLORYS12V1
+python TEP_CLASS4_multiprocess_naviti.py --typemod=allege --config=GLORYS12V1 --date1=199301 --date2=201401 --src=CORA4 --data=profile --nbproc=10
+
+## Run optim Launch 1 week in delayed time depending on a a rundate
+python TEP_CLASS4_optim.py --config=PSY3V3R3 --daterun=20140730 --nbdate=7 --delta=14 --src=CORIO --data=profile
+## Run optim  with GODAE DATASET
+python TEP_CLASS4_optim.py --config=PSY3QV3R3 --date1=20140701 --date2=20140701 --src=GODAE --data=SST
+# Multi process
+python TEP_CLASS4_multiprocess.py --config=PSY4QV2R2 --daterun=20150201 --nbdate=1 --delta=0 --src=GODAE --data=aice
+# BIO
+python TEP_CLASS4_kdtree.py --config=BIOMER4V1R2 --date1=20161201 --date2=20161202 --src=GLOBCOLOUR --data=chloro --typemod=pgn
+
+## Kdtree
+python TEP_CLASS4_kdtree.py --config=PSY4V3R1 --date1=20080101 --date2=20080102 --src=MICROWAT --data=sss --typemod=pgn
