@@ -1,7 +1,6 @@
 from __future__ import generators
 import os,sys,string,shutil,glob,re
 import numpy as np
-import netCDF4
 import geojson
 from geojson import MultiPoint
 import json
@@ -42,7 +41,6 @@ class Selector(object) :
         elif type == "IAOOS": 
             return QCEns()
         elif type == "Microwat": 
-	    print "inside Microwat"
             return Select(self.data_format,self.data_type)
         else :
             print("Type not known %s " %(type))
