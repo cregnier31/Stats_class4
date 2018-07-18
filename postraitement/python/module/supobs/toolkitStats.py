@@ -22,18 +22,21 @@ Routine permettant de lire les contenus de fichiers CLASS4 au format GODAE.
         """
 
         nc   = netCDF4.Dataset(cl_fileIn,'r')
-
 	cla_varname_read = nc.variables['varname'][:]
         rla_lons  = nc.variables['longitude'][:]
         rla_lats  = nc.variables['latitude'][:]
         rla_depth = nc.variables['depth'][:]
-
+        if np.shape(rla_depth)[1] > 1:
+            rla_depth = rla_depth.data
         nc.close()
 
-        rla_lons  = np.ma.filled(np.ma.masked_array(rla_lons,(rla_lons > 9999.)),fill_value=np.nan)
-        rla_lats  = np.ma.filled(np.ma.masked_array(rla_lats,(rla_lats > 9999.)),fill_value=np.nan)
-        rla_depth = np.ma.filled(np.ma.masked_array(rla_depth,(rla_depth > 9999.)),fill_value=np.nan)
+#if type(rla_observation_init) != np.ndarray:
+#                rla_observation_init = rla_observation_init.data
 
+        rla_lons  = np.ma.filled(np.ma.masked_array(rla_lons,(rla_lons >= 99999.)),fill_value=np.nan)
+        rla_lats  = np.ma.filled(np.ma.masked_array(rla_lats,(rla_lats >= 99999.)),fill_value=np.nan)
+        rla_depth = np.ma.filled(np.ma.masked_array(rla_depth,(rla_depth >= 99999.)),fill_value=np.nan)
+   
         cla_varname = []
         for cvarn in cla_varname_read : cla_varname.append(''.join(cvarn))
 
@@ -64,7 +67,6 @@ Routine permettant de lire les contenus de fichiers CLASS4 au format GLOBCOLOUR.
 	rla_lons_vect = np.reshape(lon2D,rla_lats.size*rla_lons.size)
 	rla_lats_vect = np.reshape(lat2D,rla_lats.size*rla_lons.size)
 	rla_depthobs = np.zeros((rla_lons_vect.size,1))
-	print rla_lons_vect.shape, rla_lons_vect.min(), rla_lons_vect.max(), rla_lats_vect.min(), rla_lats_vect.max()
 
         return rla_lons_vect,rla_lats_vect, rla_depthobs
 

@@ -42,6 +42,7 @@ cl_end_date  = 'YYYYMMDD'
 ll_date1=None
 ll_date2=None
 
+
 _DBFILE_        = './environment.cfg'
 
 for o,p in cla_opts[0]:
@@ -190,14 +191,17 @@ for a,cl_area in enumerate(cla_areas) :
             cl_depthdown = "%s"  %int(rla_lay[ij+1])
             cl_depthup   = "%s"  %int(rl_layers)      
             cl_filename  = cl_prefix+'_'+cl_conf+'_'+cl_area+'_'+cl_start_date+'_'+cl_end_date+'_'+cl_var+'_'+cl_depthup+'-'+cl_depthdown+'m.txt'
+            print cl_filename
+            print dirFileIn
 	    cl_file = np.loadtxt(os.path.join(dirFileIn,cl_filename))
 	    vector_time[:] = cl_file[:,0]*24.
 
 	    for f,rlfcst in enumerate(rla_forecast) : 
 	        cl_stats[:,f,ij,0:3,a,num_var] = cl_file[:,1:4]
-		cl_stats[:,f,ij,3,a,num_var] = cl_file[:,4+f*3]
-		cl_stats[:,f,ij,4,a,num_var] = cl_file[:,5+f*3]
-		cl_stats[:,f,ij,5,a,num_var] = cl_file[:,6+f*3]
+		cl_stats[:,f,ij,3,a,num_var] = cl_file[:,4+f*4]
+		cl_stats[:,f,ij,4,a,num_var] = cl_file[:,5+f*4]
+		cl_stats[:,f,ij,5,a,num_var] = cl_file[:,6+f*4]
+		cl_stats[:,f,ij,6,a,num_var] = cl_file[:,7+f*4]
 
 w = np.where(np.isnan(cl_stats) == True)
 cl_stats[w] = missing_value
@@ -212,14 +216,15 @@ cl_stats[w] = missing_value
 
 if cexp == 'BIO' :
 	writer_stat().write_BIO_files(cl_resultsFile, cl_contact, cl_confres, cl_fmt, cl_start_date, cl_end_date,
-                                      cl_resultsFileName, cl_institution, cl_ref, cla_areasattr, cla_metricname, 
+                                      cl_resultsFileName, cl_institution, cl_ref, cla_areasattr, 
                                       cl_start_jdate, cl_end_jdate, cla_areasattr, cla_metricname, rla_forecast, 
                                       rla_surface, vector_time, cl_stats)
 elif cexp == 'PHYS' :
 	writer_stat().write_PHYS_files(cl_resultsFile, cl_contact, cl_confres, cl_fmt, cl_start_date, cl_end_date,
-                                       cl_resultsFileName, cl_institution, cl_ref, cla_areasattr, cla_metricname,
+                                       cl_resultsFileName, cl_institution, cl_ref, cla_areasattr,
                                        cl_start_jdate, cl_end_jdate, cla_areasattr, cla_metricname, rla_forecast,
                                        rla_layers, vector_time, cl_stats, rla_surface)
+
 
 
 #----------  End of Script  --------------------------------------------------------------

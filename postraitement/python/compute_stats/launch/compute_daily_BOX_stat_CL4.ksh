@@ -63,11 +63,12 @@ esac
 
 export PYTHONPATH=$PYTHONPATH:../../module/
 
-dir=../
+dir=..
 workdir=${dir}/log
 cfgfile=${dir}/environment_${config}.cfg
 logfile=${workdir}/CLASS4_${config}_${day1}-${day2}.log
 
 #  3. Calcul des statistiques regionales, fichiers ascii
-module load ipython
+#module load ipython
+
 ../exe_Lecture_class4.py --day1=$day1 --day2=$day2 --cfg=$cfgfile --type=$typedata

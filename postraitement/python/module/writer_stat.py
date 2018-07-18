@@ -15,7 +15,7 @@ class writer_stat():
     """ Class to write different type of file """
 
     def write_BIO_files(self,filename,contact, product, fmt, dstart, dend, resultsFileName,
-                        institution, ref, areas, metric,start_jdate, end_jdate,
+                        institution, ref, areas, start_jdate, end_jdate,
                         cla_areasattr, cla_metricname,fcst, layer,vtime, stat):
         
         nc_fid = netCDF4.Dataset(filename, 'w')
@@ -24,7 +24,7 @@ class writer_stat():
         # ----------------
         nc_fid.createDimension('string_length', 25)
         nc_fid.createDimension('areas', len(areas))
-        nc_fid.createDimension('metrics', len(metric))
+        nc_fid.createDimension('metrics', len(cla_metricname))
         nc_fid.createDimension('forecasts', len(fcst))
         nc_fid.createDimension('depths', len(layer[0:-1]))
         nc_fid.createDimension('surface', 1)
@@ -79,7 +79,7 @@ class writer_stat():
 
 
     def write_PHYS_files(self,filename,contact, product, fmt, dstart, dend, resultsFileName, institution,
-                         ref, areas, metric,start_jdate, end_jdate, cla_areasattr, cla_metricname,
+                         ref, areas, start_jdate, end_jdate, cla_areasattr, cla_metricname,
                          fcst, layer, vtime, stat, surf_layer):
 
 
@@ -89,7 +89,7 @@ class writer_stat():
         # ----------------
         nc_fid.createDimension('string_length', 25)
         nc_fid.createDimension('areas', len(areas))
-        nc_fid.createDimension('metrics', len(metric))
+        nc_fid.createDimension('metrics', len(cla_metricname))
         nc_fid.createDimension('forecasts', len(fcst))
         nc_fid.createDimension('depths', len(layer[0:-1]))
         nc_fid.createDimension('surface', len(surf_layer[0:-1]))

@@ -58,6 +58,6 @@ cfgfile=${dir}/environment_${config}.cfg
 logfile=${workdir}/CLASS4_${config}_${day1}-${day2}.log
 
 #  3. Calcul des statistiques regionales, fichiers netCDF
-module load ipython
+#module load ipython
 ../create_ProdQualStats.py --day1=$day1 --day2=$day2 --cfg=$cfgfile --type=$type
 

@@ -374,10 +374,11 @@ rg_EcartSalMax=1.
 rg_EcartTempMax=8.
 rg_EcartSLAMax=1.
 
-cla_metricname =  np.chararray(6,itemsize=25)
+cla_metricname =  np.chararray(7,itemsize=25)
 cla_metricname[0] = 'number of data values'
 cla_metricname[1] = 'mean of reference'
 cla_metricname[2] = 'mean squared reference'
 cla_metricname[3] = 'mean of product'
 cla_metricname[4] = 'mean squared product'
 cla_metricname[5] = 'mean squared error'
+cla_metricname[6] = 'anomaly correlation'
