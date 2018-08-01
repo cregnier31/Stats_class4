@@ -511,7 +511,6 @@ Returns mean, RMS, Bias (/observations), RMSE (/observations), number of observa
    
    n_layers = len(rda_depth_layers)-1
    if len(np.shape(rda_val)) == 2 : n_obs = np.shape(rda_val)[0]
-   elif len(np.shape(rda_val)) == 1 : n_obs = 1
    else: 
        print 'problem with shape of rda_val'
        sys.exit(1)
@@ -542,10 +541,11 @@ Returns mean, RMS, Bias (/observations), RMSE (/observations), number of observa
                    obs_box_depth[nobs] = rda_observations[iobs,ind]            
                    clim_box_depth[nobs] = rda_climatology[iobs,ind]
                    nobs += 1
-           else:
-               val_box_depth[iobs] = rda_val[iobs]
-               obs_box_depth[iobs] = rda_observations[iobs]
-               clim_box_depth[iobs] = rda_observations[iobs]
+           elif len(ila_inds[0]) > 0 and len(np.shape(rda_val)) < 2:
+                val_box_depth[nobs] = rda_val[iobs]
+                obs_box_depth[nobs] = rda_observations[iobs]
+                clim_box_depth[nobs] = rda_observations[iobs]
+                nobs += 1
 
        ila_nobs[ilayer] = np.size(np.where(~ np.isnan(val_box_depth[:]))[0])
        if ila_nobs[ilayer] > 0 :
