@@ -47,20 +47,20 @@ if not ll_date1 and not ll_date2:
         cl_dateMinZone = str(date_now.year-1)+"1201"
         cl_dateMaxZone = str(date_now.year)+"0101"
     elif date_now.month < 10 :
-	cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
-	cl_dateMaxZone = str(date_now.year)+"0"+str(date_now.month)+"01"
+        cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+        cl_dateMaxZone = str(date_now.year)+"0"+str(date_now.month)+"01"
     elif date_now.month == 11 :
-	cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
-	cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
-    else : 
-	cl_dateMinZone = str(date_now.year)+str(date_now.month-1)+"01"
-	cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
+        cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+        cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
+    else :
+        cl_dateMinZone = str(date_now.year)+str(date_now.month-1)+"01"
+        cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
 
 def load_db():
     db = ConfigParser.ConfigParser()
     db.read(os.path.expanduser(_DBFILE_))
     if not db.sections():
-        print "Error reading configuration file %s" %_DBFILE_
+        print ("Error reading configuration file %s" %_DBFILE_)
         sys.exit(1)
     return db
 
@@ -96,7 +96,6 @@ cla_dates_tot = toolkitStats.char_period(cl_dateMinZone,cl_dateMaxZone)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~ Listing fichiers CLASS4 ~~~~~~~~~~~~~~~~~~~~~~~
-
 cla_cl4files = []
 for cdate in cla_dates_tot :
     if cvar == 'CHL':
@@ -105,23 +104,23 @@ for cdate in cla_dates_tot :
         cl_file = prefix+'_'+cdate+'_'+config_model+'_'+cgrid+'_'+cvar+'.nc' 	   
     cla_filechck = glob.glob(os.path.join(dirNCin,cl_file))
     if len(cla_filechck) != 1 :
-        print ' Problem while checking for CLASS4 files at date %s \n\
-(%i files corresponding)' %(cdate,len(cla_filechck))
-        print 'file %s : ' %(dirNCin+cl_file)
+        print (' Problem while checking for CLASS4 files at date %s \n\
+(%i files corresponding)' %(cdate,len(cla_filechck)))
+        print ('file %s : ' %(dirNCin+cl_file))
         continue
     cla_cl4files.append(cla_filechck[0])
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#print ' ------------------------------ '
-#print '|        Lecture CLASS4        |'
-#print ' ______________________________ '
-#print '|   Date   |   Var   | Status  |'
-#print ' ------------------------------ '
-
+print (' ------------------------------ ')
+print ('|        Lecture CLASS4        |')
+print (' ------------------------------ ')
+print ('|   Variable   : %s   ' %(cvar)   )
 
 for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
-   	
+
+    print ('|   DATE : %s ' %(cdate))
+
 #~~~~~~~~~~~~~~~~~ Recuperation positions observations ~~~~~~~~~~~~~~~~
 
     if cvar == 'CHL' :
@@ -136,7 +135,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
         tab_prof   = np.array([-0.5,0.5])
     else :
         ll_surface = False
-   	tab_prof = params.tab_prof_model
+        tab_prof = params.tab_prof_model
 
 
 #~~~~~~~~~~~~~ Recuperation valeurs observations et modele ~~~~~~~~~~~~
@@ -199,7 +198,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
                 rla_persistence_init = np.log10(rla_persistence_init)
         if config_obs != 'GLOBCOLOUR' :
             rla_qc_init=nc.variables['qc'][:]
-    
+
     nc.close()
 
 
@@ -225,7 +224,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
                 rg_EcartMax = params.rg_EcartSalMax
                 cl_var='vosaline'
                 cl_var_out='PSAL'
-      	    elif cl_var in ['votemper' ,'temp    '] :
+            elif cl_var in ['votemper' ,'temp    '] :
                 rg_EcartMax = params.rg_EcartTempMax
                 cl_var='votemper'
                 cl_var_out='TEMP'
@@ -233,18 +232,18 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
                     bad_qc=1
         else :
             cl_var_out = cvar
-      	    if cl_var in ['sossheig' , 'eta_t   '] :
+            if cl_var in ['sossheig' , 'eta_t   '] :
                 rg_EcartMax = params.rg_EcartSLAMax
                 cl_var='sossheig'
                 bad_qc=9
-      	    elif cl_var in ['votemper' ,'temp    '] :
+            elif cl_var in ['votemper' ,'temp    '] :
                 rg_EcartMax = params.rg_EcartTempMax
                 cl_var='votemper'
                 bad_qc=9
             elif cl_var in ['chloro'] :
                 bad_qc=np.nan
             else :
-                print 'Unexpected varname %s ' %(cl_var)
+                print ('Unexpected varname %s ' %(cl_var))
                 sys.exit(1)
 
         if config_obs == 'GLOBCOLOUR' :
@@ -263,12 +262,11 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
             rla_best_estimate_var = rla_best_estimate_init[:,ivar,:]
             if clim == True:
                 rla_climatology_var = rla_climatology_init[:,ivar,:]
-      	
             nb_fcst = rla_forecast_var[0,:,0].size
             nb_pers = rla_persistence_var[0,:,0].size
-	
-	# Passe au jour suivant si on n'a pas pas de best analyse)
-      	# if np.isnan(rla_best_estimate_var).all() : continue
+
+        # Passe au jour suivant si on n'a pas pas de best analyse)
+        # if np.isnan(rla_best_estimate_var).all() : continue
         if np.isnan(rla_forecast_var).all() : continue
 
         if doQC and config_obs != 'GLOBCOLOUR':
@@ -301,10 +299,10 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
                 rla_forecast_tmp[(np.isnan(rla_observation_var))] = np.nan
                 rla_persistence_tmp[(np.isnan(rla_observation_var))] = np.nan
                 del rla_forecast_tmp,rla_persistence_tmp
-      
+
 
 #~~~~~~~~~~~~~~~~~~~~ Initialisation variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   
+ 
         rla_mean = np.nan*np.zeros((len(tab_prof) -1,\
                                    yout,\
                                    len(rla_maskvalues)\
@@ -336,9 +334,8 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
 
         boxind_save = []
 
-        for imask,maskval in enumerate(rla_maskvalues[200:220]) :
+        for imask,maskval in enumerate(rla_maskvalues) :
 
-            print imask
 
 #~~~~~~~~~~~~~~~~~~~~~~ Definition boite 2D ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -347,7 +344,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
             boxlonmax = rla_lonmask[i,j].max()
             boxlatmin = rla_latmask[i,j].min()
             boxlatmax = rla_latmask[i,j].max()
-          
+ 
             pos   = np.array(zip(rla_lonmask[i,j], rla_latmask[i,j]))
             if np.isnan(pos).any() : 
                 ISNA = np.where(np.isnan(pos))
@@ -366,15 +363,15 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
 
             iobs = ibox[iboxobs]
             iobs_alreadyused = []
+            ## Slow down the algo
+            ###for jiobs in iobs : 
+            ###    if jiobs in boxind_save :
+            ###        iobs_alreadyused = np.where(iobs == jiobs)[0]
+            ###        iobs = np.delete(iobs,iobs_alreadyused,0)
 
-            for jiobs in iobs : 
-                if jiobs in boxind_save :
-                    iobs_alreadyused = np.where(iobs == jiobs)[0]
-                    iobs = np.delete(iobs,iobs_alreadyused,0)
+            ###boxind_save.extend(iobs)
 
-            boxind_save.extend(iobs)
-
-        
+ 
 #~~~~~~~~~~~~~~~~~~~~~~~ Calculs Stats avec 3e dimension ~~~~~~~~~~~~~~~~~~~~~
 
             if np.size(iobs) == 0 : continue
@@ -385,7 +382,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
             rla_fcstrmse = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_persrmse = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
             rla_fcstcorano = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_perscorano = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
             ila_fcstnobs = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; ila_persnobs = np.nan*np.zeros((len(tab_prof)-1, nb_pers))	
-	
+
             for time in lead_time :
                 if len(np.shape(rla_observation_var)) == 2:
                     rla_obs = rla_observation_var[iobs,:]
@@ -422,7 +419,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
 
                 if time == 'persistence' :
                     for numP in range(0,nb_pers) :
-		        if nb_pers == 1 and len(np.shape(rla_persistence_var)) == 2:
+                        if nb_pers == 1 and len(np.shape(rla_persistence_var)) == 2:
                             rla_var = rla_persistence_var[iobs,:]
                         elif nb_pers == 1 and len(np.shape(rla_persistence_var)) == 1:
                             rla_var = rla_persistence_var[iobs]
@@ -438,7 +435,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
                                                          rla_clim,\
                                                          rla_depthobs[iobs,:],\
                                                          tab_prof)
-      
+
                 if time == 'observation' :
                     if len(np.shape(rla_forecast_var)) == 2:
                         rla_var = rla_observation_var[iobs,:]
@@ -471,7 +468,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
                         rla_var = rla_climatology_var[iobs,:]   
                     else : 
                         rla_var = rla_climatology_var[iobs]
-			
+
                     rla_climmean,rla_climrms,rla_climbias,rla_climrmse,rla_climcorano, ila_climnobs =\
                     supobs.Statslib.statlayer_CL4var(
                                                      rla_var,\
@@ -482,7 +479,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Sauvegarde resultats ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	
+
             num_col = 0
             if 'observation' in lead_time :
                 rla_mean[:,num_col,imask] = rla_obsmean ; ila_indice_box[:,num_col,imask] = ila_obsnobs ; rla_rms[:,num_col,imask] = rla_obsrms
@@ -493,19 +490,29 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
                 rla_rms_diff[:,num_col,imask] = rla_bestrmse ; rla_mean_diff[:,num_col,imask] = rla_bestbias; rla_cor_ano[:,num_col,imask] = rla_bestcorano
                 num_col = num_col + 1       
             if 'forecast' in lead_time :
-                for numF in range(0,nb_fcst/2) :
-                    rla_mean[:,num_col,imask] = rla_fcstmean[:,numF*2] ; ila_indice_box[:,num_col,imask] = ila_fcstnobs[:,numF*2] ; rla_rms[:,num_col,imask] = rla_fcstrms[:,numF*2]
-                    rla_rms_diff[:,num_col,imask] = rla_fcstrmse[:,numF*2] ; rla_mean_diff[:,num_col,imask] = rla_fcstbias[:,numF*2] ; rla_cor_ano[:,num_col,imask] = rla_fcstcorano[:,numF*2]
-                    num_col = num_col + 1  
+                if nb_fcst == 1:
+                    rla_mean[:,num_col,imask] = rla_fcstmean[:,0] ;ila_indice_box[:,num_col,imask] = ila_fcstnobs[:,0] ; rla_rms[:,num_col,imask] = rla_fcstrms[:,0]
+                    rla_rms_diff[:,num_col,imask] = rla_fcstrmse[:,0] ; rla_mean_diff[:,num_col,imask] = rla_fcstbias[:,0] ; rla_cor_ano[:,num_col,imask] = rla_fcstcorano[:,0]
+                    num_col = num_col + 1
+                else : 
+                    for numF in range(0,nb_fcst/2) :
+                        rla_mean[:,num_col,imask] = rla_fcstmean[:,numF*2] ; ila_indice_box[:,num_col,imask] = ila_fcstnobs[:,numF*2] ; rla_rms[:,num_col,imask] = rla_fcstrms[:,numF*2]
+                        rla_rms_diff[:,num_col,imask] = rla_fcstrmse[:,numF*2] ; rla_mean_diff[:,num_col,imask] = rla_fcstbias[:,numF*2] ; rla_cor_ano[:,num_col,imask] = rla_fcstcorano[:,numF*2]
+                        num_col = num_col + 1
             if 'persistence' in lead_time :
-                for numP in range(0,nb_pers/2) :
-                    rla_mean[:,num_col,imask] = rla_persmean[:,numP*2]; ila_indice_box[:,num_col,imask] = ila_persnobs[:,numP*2] ; rla_rms[:,num_col,imask] = rla_persrms[:,numP*2]
-                    rla_rms_diff[:,num_col,imask] = rla_persrmse[:,numP*2] ; rla_mean_diff[:,num_col,imask] = rla_persbias[:,numP*2] ; rla_cor_ano[:,num_col,imask] = rla_perscorano[:,numP*2]
-                    num_col = num_col + 1 
+                if nb_pers == 1:
+                    rla_mean[:,num_col,imask] = rla_persmean[:,0];ila_indice_box[:,num_col,imask] = ila_persnobs[:,0] ;rla_rms[:,num_col,imask] = rla_persrms[:,0]
+                    rla_rms_diff[:,num_col,imask] = rla_persrmse[:,0] ; rla_mean_diff[:,num_col,imask] = rla_persbias[:,0] ; rla_cor_ano[:,num_col,imask] = rla_perscorano[:,0]
+                    num_col = num_col + 1
+                else : 
+                    for numP in range(0,nb_pers/2) :
+                        rla_mean[:,num_col,imask] = rla_persmean[:,numP*2]; ila_indice_box[:,num_col,imask] = ila_persnobs[:,numP*2] ; rla_rms[:,num_col,imask] = rla_persrms[:,numP*2]
+                        rla_rms_diff[:,num_col,imask] = rla_persrmse[:,numP*2] ; rla_mean_diff[:,num_col,imask] = rla_persbias[:,numP*2] ; rla_cor_ano[:,num_col,imask] = rla_perscorano[:,numP*2]
+                        num_col = num_col + 1 
             if 'climatology' in lead_time :
                 rla_mean[:,num_col,imask] = rla_climmean ; ila_indice_box[:,num_col,imask] = ila_climnobs ; rla_rms[:,num_col,imask] = rla_climrms
                 rla_rms_diff[:,num_col,imask] = rla_climrmse ; rla_mean_diff[:,num_col,imask] = rla_climbias ; rla_cor_ano[:,num_col,imask] = rla_climcorano
-        
+ 
             rla_box[imask] = maskval
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Ecriture NetCDF ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -547,11 +554,10 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
         ncbox[:]  = rla_box
 
         nc.close()
- 
-#   print '| %s | %s |  Done  |' %(cdate,cl_var)
 
-#print ' ------------------------------ '
-#print '              END               '
-#print ' ------------------------------ '
-	
+    print ('| %s | %s |  Done  |' %(cdate,cl_var))
+
+print (' ------------------------------ ') 
+print ('              END               ')
+print (' ------------------------------ ')
 
