@@ -10,8 +10,8 @@ import param.Def_param_bulletin as params
 from supobs import toolkitStats
 import supobs
 import resource
-import matplotlib.nxutils as nx
 import geomlib
+import datetime as dt
 
 # Set Stack unlimited
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
@@ -48,21 +48,20 @@ if not ll_date1 and not ll_date2:
         cl_dateMinZone = str(date_now.year-1)+"1201"
         cl_dateMaxZone = str(date_now.year)+"0101"
     elif date_now.month < 10 :
-	cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
-	cl_dateMaxZone = str(date_now.year)+"0"+str(date_now.month)+"01"
+        cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+        cl_dateMaxZone = str(date_now.year)+"0"+str(date_now.month)+"01"
     elif date_now.month == 11 :
-	cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
-	cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
-    else : 
-	cl_dateMinZone = str(date_now.year)+str(date_now.month-1)+"01"
-	cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
-
+        cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+        cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
+    else :
+        cl_dateMinZone = str(date_now.year)+str(date_now.month-1)+"01"
+        cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
 
 def load_db():
     db = ConfigParser.ConfigParser()
     db.read(os.path.expanduser(_DBFILE_))
     if not db.sections():
-        print "Error reading configuration file %s" %_DBFILE_
+        print ("Error reading configuration file %s" %_DBFILE_)
         sys.exit(1)
     return db
 
@@ -110,10 +109,10 @@ iend_tot = ntask*comm.size-1
 if irest > 0 and comm.rank < irest : 
     cla_dates.append(cla_dates_tot[iend_tot+comm.rank+1])
 
-#~~~~ Listing fichiers CLASS4 ~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~ Listing fichiers CLASS4 ~~~~~~~~~~~~~~~~~~~~~~~
 cla_cl4files = []
 for cdate in cla_dates :
-    if var_type == 'CHL' :
+    if cvar == 'CHL' :
         cl_filetmplt = prefix+'_'+cdate+'_'+config_obs+'_'+config_model+'_'+cvar+'.nc'
     else :
         cl_filetmplt = prefix+'_'+cdate+'_'+config_model+'_'+cgrid+'_'+cvar+'.nc'
@@ -122,27 +121,28 @@ for cdate in cla_dates :
                     dirNCin,
                     cl_filetmplt))
     if len(cla_filechck) != 1 :
-        print ' Problem while checking for CLASS4 files at date %s \n\
-(%i   files corresponding)' %(cdate,len(cla_filechck))
-        print 'file %s : ' %(dirNCin+cl_filetmplt)
+        print (' Problem while checking for CLASS4 files at date %s \n\
+(%i   files corresponding)' %(cdate,len(cla_filechck)))
+        print ('file %s : ' %(dirNCin+cl_filetmplt))
         continue
     cla_cl4files.append(cla_filechck[0])
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if comm.rank == 0 :
-    print ' ------------------------------ '
-    print '|        Lecture CLASS4        |'
-    print ' ______________________________ '
-    print '|   Date   |   Var   | Status  |'
-    print ' ------------------------------ '
+    print (' ------------------------------ ') 
+    print ('|        Lecture CLASS4        |')
+    print (' ______________________________ ')
+    print ("Cvar %s " %cvar)
+    print (' ------------------------------ ')
 
 for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
 
+    print ('| DATE %s |' %(cdate))
 #~~~~~~~~~~~~~~~~~ Recuperation positions observations ~~~~~~~~~~~~~~~~
 
-    if var_type == 'CHL' :
+    if cvar == 'CHL' :
         rla_lonobs,rla_latobs, rla_depthobs = \
-             supobs.toolkitStats.read_CL4obs_chloro(cl_cl4file)
+        supobs.toolkitStats.read_CL4obs_chloro(cl_cl4file)
     else :
         cla_varname,rla_lonobs,rla_latobs,rla_depthobs = \
              supobs.toolkitStats.read_CL4obs(cl_cl4file)
@@ -154,8 +154,9 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
         ll_surface = False
         tab_prof = params.tab_prof_model
 
-#~~~~~~~~~~~~~ Recuperation valeurs observations et modele ~~~~~~~~~~~~~~~~
 
+#~~~~~~~~~~~~~ Recuperation valeurs observations et modele ~~~~~~~~~~~~
+  
     nc = netCDF4.Dataset(cl_cl4file,'r')
     nb_lead_time = 0
     clim = False
@@ -214,7 +215,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                 rla_persistence_init = np.log10(rla_persistence_init)
         if config_obs != 'GLOBCOLOUR' :
             rla_qc_init=nc.variables['qc'][:]
-    
+
     nc.close()
 
 
@@ -232,7 +233,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
         exp_name[6] = 'forecast9' ; exp_name[7] = 'persistence1' ; exp_name[8] = 'persistence3'
         exp_name[9] = 'persistence5' ; exp_name[10] = 'persistence7' ; exp_name[11] = 'persistence9'
         exp_name[12] = 'climatology'
-
+    
     for ivar,cl_var in enumerate(cla_varname) :
         if cvar == 'profile':
             bad_qc=9
@@ -240,7 +241,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                 rg_EcartMax = params.rg_EcartSalMax
                 cl_var='vosaline'
                 cl_var_out='PSAL'
-      	    elif cl_var in ['votemper' ,'temp    '] :
+            elif cl_var in ['votemper' ,'temp    '] :
                 rg_EcartMax = params.rg_EcartTempMax
                 cl_var='votemper'
                 cl_var_out='TEMP'
@@ -248,18 +249,18 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                     bad_qc=1
         else :
             cl_var_out = cvar
-      	    if cl_var in ['sossheig' , 'eta_t   '] :
+            if cl_var in ['sossheig' , 'eta_t   '] :
                 rg_EcartMax = params.rg_EcartSLAMax
                 cl_var='sossheig'
                 bad_qc=9
-      	    elif cl_var in ['votemper' ,'temp    '] :
+            elif cl_var in ['votemper' ,'temp    '] :
                 rg_EcartMax = params.rg_EcartTempMax
                 cl_var='votemper'
                 bad_qc=9
             elif cl_var in ['chloro'] :
                 bad_qc=np.nan
             else :
-                print 'Unexpected varname %s ' %(cl_var)
+                print ('Unexpected varname %s ' %(cl_var))
                 sys.exit(1)
 
         if config_obs == 'GLOBCOLOUR' :
@@ -278,16 +279,15 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
             rla_best_estimate_var = rla_best_estimate_init[:,ivar,:]
             if clim == True:
                 rla_climatology_var = rla_climatology_init[:,ivar,:]
-      	
             nb_fcst = rla_forecast_var[0,:,0].size
             nb_pers = rla_persistence_var[0,:,0].size
 
-        ## Passe au jour suivant si on n'a pas pas de best analyse)
-        #if np.isnan(rla_best_estimate_var).all() : continue
+        # Passe au jour suivant si on n'a pas pas de best analyse)
+        # if np.isnan(rla_best_estimate_var).all() : continue
         if np.isnan(rla_forecast_var).all() : continue
 
         if doQC and config_obs != 'GLOBCOLOUR':
-            #Test sur la coherence des valeurs et des observations par rapport a la climatologie
+            # Test sur la coherence des valeurs et des observations par rapport a la climatologie
             rla_diffclim2obs = np.absolute(rla_climatology_var-rla_observation_var)
             if np.isnan(rla_best_estimate_var).all() :
                 rla_diffbest2obs = np.absolute(rla_forecast_var[:,0,:]-rla_observation_var)
@@ -295,16 +295,16 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                 rla_diffbest2obs = np.absolute(rla_best_estimate_var-rla_observation_var)
             if ~np.isnan(rla_climatology_var).any() :
                 qcs = np.where(
-                    (rla_diffbest2obs > rg_EcartMax) &\
-                    (rla_diffclim2obs > rg_EcartMax))
+                (rla_diffbest2obs > rg_EcartMax) &\
+                (rla_diffclim2obs > rg_EcartMax)) 
             else :
                 qcs = np.where(
-                    (rla_diffbest2obs > rg_EcartMax))
+                (rla_diffbest2obs > rg_EcartMax)) 
             if len(qcs[0]) > 0 : 
-                rla_observation_var[qcs]= np.nan
+                rla_observation_var[qcs] = np.nan
             ## print 'bad qc %s ' %(bad_qc)
             ## Prise en compte du qc dans les fichiers
-            qc_file= np.where(rla_qc_var==bad_qc)
+            qc_file= np.where(rla_qc_var==bad_qc)	 
             if len(qc_file[0]) > 0 : 
                 rla_observation_var[qc_file] = np.nan
             #Harmonisation des obs ignorees
@@ -319,7 +319,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
 
 
 #~~~~~~~~~~~~~~~~~~~~ Initialisation variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+ 
         rla_mean = np.nan*np.zeros((len(tab_prof) -1,\
                                    yout,\
                                    len(rla_maskvalues)\
@@ -353,7 +353,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
 
         for imask,maskval in enumerate(rla_maskvalues) :
 
-            print imask
+
 #~~~~~~~~~~~~~~~~~~~~~~ Definition boite 2D ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             i,j = np.where(rla_mask == maskval)
@@ -361,29 +361,29 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
             boxlonmax = rla_lonmask[i,j].max()
             boxlatmin = rla_latmask[i,j].min()
             boxlatmax = rla_latmask[i,j].max()
+ 
             pos   = np.array(zip(rla_lonmask[i,j], rla_latmask[i,j]))
             if np.isnan(pos).any() : 
                 ISNA = np.where(np.isnan(pos))
                 pos = np.delete(pos,ISNA[0],0)
-	
+
             Hull = geomlib.cloudHull(pos)
 
             ibox = np.where((rla_lonobs >= boxlonmin) & (rla_lonobs <  boxlonmax) &\
                             (rla_latobs >= boxlatmin) & (rla_latobs <  boxlatmax))[0]	
 
             if np.size(ibox) == 0 : continue 
+
             iboxobs = np.where(geomlib.point_inside_polygon2(rla_lonobs[ibox],rla_latobs[ibox],Hull))[0]	
 
             if np.size(iboxobs) == 0 : continue
+
             iobs = ibox[iboxobs]
             iobs_alreadyused = []
-      
-            for jiobs in iobs : 
-                if jiobs in boxind_save :
-                    iobs_alreadyused = np.where(iobs == jiobs)[0]
-                    iobs = np.delete(iobs,iobs_alreadyused,0)
-            boxind_save.extend(iobs)
 
+            ###boxind_save.extend(iobs)
+
+ 
 #~~~~~~~~~~~~~~~~~~~~~~~ Calculs Stats avec 3e dimension ~~~~~~~~~~~~~~~~~~~~~
 
             if np.size(iobs) == 0 : continue
@@ -394,7 +394,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
             rla_fcstrmse = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_persrmse = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
             rla_fcstcorano = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_perscorano = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
             ila_fcstnobs = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; ila_persnobs = np.nan*np.zeros((len(tab_prof)-1, nb_pers))	
-	
+
             for time in lead_time :
                 if len(np.shape(rla_observation_var)) == 2:
                     rla_obs = rla_observation_var[iobs,:]
@@ -410,6 +410,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                         rla_clim = np.nan*np.zeros((np.size(rla_obs)))
 
                 if time == 'forecast' :
+
                     for numF in range(0,nb_fcst) :
                         if nb_fcst == 1 and len(np.shape(rla_forecast_var)) == 2:
                             rla_var = rla_forecast_var[iobs,:]
@@ -430,7 +431,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
 
                 if time == 'persistence' :
                     for numP in range(0,nb_pers) :
-		        if nb_pers == 1 and len(np.shape(rla_persistence_var)) == 2:
+                        if nb_pers == 1 and len(np.shape(rla_persistence_var)) == 2:
                             rla_var = rla_persistence_var[iobs,:]
                         elif nb_pers == 1 and len(np.shape(rla_persistence_var)) == 1:
                             rla_var = rla_persistence_var[iobs]
@@ -446,7 +447,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                                                          rla_clim,\
                                                          rla_depthobs[iobs,:],\
                                                          tab_prof)
-      
+
                 if time == 'observation' :
                     if len(np.shape(rla_forecast_var)) == 2:
                         rla_var = rla_observation_var[iobs,:]
@@ -479,7 +480,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                         rla_var = rla_climatology_var[iobs,:]   
                     else : 
                         rla_var = rla_climatology_var[iobs]
-			
+
                     rla_climmean,rla_climrms,rla_climbias,rla_climrmse,rla_climcorano, ila_climnobs =\
                     supobs.Statslib.statlayer_CL4var(
                                                      rla_var,\
@@ -501,19 +502,29 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                 rla_rms_diff[:,num_col,imask] = rla_bestrmse ; rla_mean_diff[:,num_col,imask] = rla_bestbias; rla_cor_ano[:,num_col,imask] = rla_bestcorano
                 num_col = num_col + 1       
             if 'forecast' in lead_time :
-                for numF in range(0,nb_fcst/2) :
-                    rla_mean[:,num_col,imask] = rla_fcstmean[:,numF*2] ; ila_indice_box[:,num_col,imask] = ila_fcstnobs[:,numF*2] ; rla_rms[:,num_col,imask] = rla_fcstrms[:,numF*2]
-                    rla_rms_diff[:,num_col,imask] = rla_fcstrmse[:,numF*2] ; rla_mean_diff[:,num_col,imask] = rla_fcstbias[:,numF*2] ; rla_cor_ano[:,num_col,imask] = rla_fcstcorano[:,numF*2]
-                    num_col = num_col + 1  
+                if nb_fcst == 1:
+                    rla_mean[:,num_col,imask] = rla_fcstmean[:,0] ;ila_indice_box[:,num_col,imask] = ila_fcstnobs[:,0] ; rla_rms[:,num_col,imask] = rla_fcstrms[:,0]
+                    rla_rms_diff[:,num_col,imask] = rla_fcstrmse[:,0] ; rla_mean_diff[:,num_col,imask] = rla_fcstbias[:,0] ; rla_cor_ano[:,num_col,imask] = rla_fcstcorano[:,0]
+                    num_col = num_col + 1
+                else : 
+                    for numF in range(0,nb_fcst/2) :
+                        rla_mean[:,num_col,imask] = rla_fcstmean[:,numF*2] ; ila_indice_box[:,num_col,imask] = ila_fcstnobs[:,numF*2] ; rla_rms[:,num_col,imask] = rla_fcstrms[:,numF*2]
+                        rla_rms_diff[:,num_col,imask] = rla_fcstrmse[:,numF*2] ; rla_mean_diff[:,num_col,imask] = rla_fcstbias[:,numF*2] ; rla_cor_ano[:,num_col,imask] = rla_fcstcorano[:,numF*2]
+                        num_col = num_col + 1
             if 'persistence' in lead_time :
-                for numP in range(0,nb_pers/2) :
-                    rla_mean[:,num_col,imask] = rla_persmean[:,numP*2]; ila_indice_box[:,num_col,imask] = ila_persnobs[:,numP*2] ; rla_rms[:,num_col,imask] = rla_persrms[:,numP*2]
-                    rla_rms_diff[:,num_col,imask] = rla_persrmse[:,numP*2] ; rla_mean_diff[:,num_col,imask] = rla_persbias[:,numP*2] ; rla_cor_ano[:,num_col,imask] = rla_perscorano[:,numP*2]
-                    num_col = num_col + 1 
+                if nb_pers == 1:
+                    rla_mean[:,num_col,imask] = rla_persmean[:,0];ila_indice_box[:,num_col,imask] = ila_persnobs[:,0] ;rla_rms[:,num_col,imask] = rla_persrms[:,0]
+                    rla_rms_diff[:,num_col,imask] = rla_persrmse[:,0] ; rla_mean_diff[:,num_col,imask] = rla_persbias[:,0] ; rla_cor_ano[:,num_col,imask] = rla_perscorano[:,0]
+                    num_col = num_col + 1
+                else : 
+                    for numP in range(0,nb_pers/2) :
+                        rla_mean[:,num_col,imask] = rla_persmean[:,numP*2]; ila_indice_box[:,num_col,imask] = ila_persnobs[:,numP*2] ; rla_rms[:,num_col,imask] = rla_persrms[:,numP*2]
+                        rla_rms_diff[:,num_col,imask] = rla_persrmse[:,numP*2] ; rla_mean_diff[:,num_col,imask] = rla_persbias[:,numP*2] ; rla_cor_ano[:,num_col,imask] = rla_perscorano[:,numP*2]
+                        num_col = num_col + 1 
             if 'climatology' in lead_time :
                 rla_mean[:,num_col,imask] = rla_climmean ; ila_indice_box[:,num_col,imask] = ila_climnobs ; rla_rms[:,num_col,imask] = rla_climrms
                 rla_rms_diff[:,num_col,imask] = rla_climrmse ; rla_mean_diff[:,num_col,imask] = rla_climbias ; rla_cor_ano[:,num_col,imask] = rla_climcorano
-        
+ 
             rla_box[imask] = maskval
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Ecriture NetCDF ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -556,12 +567,12 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
 
         nc.close()
 
-    print '| %s | %s |  Done  |' %(cdate,cl_var)
-    print ' ------------------------------ '
-    print '              END               '
-    print ' ------------------------------ '
+    print ('| %s | %s |  Done  |' %(cdate,cl_var))
+    print (' ------------------------------ ')
+    print ('              END               ')
+    print (' ------------------------------ ')
 
 comm.Barrier()
 if comm.rank == 0 :
-   print '        END '
-   print ' ------------------------------ '
+   print ('        END                     ')
+   print (' ------------------------------ ')
