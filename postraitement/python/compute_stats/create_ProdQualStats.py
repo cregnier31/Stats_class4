@@ -201,7 +201,7 @@ for a,cl_area in enumerate(cla_areas) :
 		cl_stats[:,f,ij,3,a,num_var] = cl_file[:,4+f*4]
 		cl_stats[:,f,ij,4,a,num_var] = cl_file[:,5+f*4]
 		cl_stats[:,f,ij,5,a,num_var] = cl_file[:,6+f*4]
-		cl_stats[:,f,ij,6,a,num_var] = cl_file[:,7+f*4]
+#		cl_stats[:,f,ij,6,a,num_var] = cl_file[:,7+f*4]
 
 w = np.where(np.isnan(cl_stats) == True)
 cl_stats[w] = missing_value

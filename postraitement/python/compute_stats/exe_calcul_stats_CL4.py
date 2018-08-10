@@ -115,10 +115,16 @@ elif cl_CL4type == 'SLA' :
     lookfor = 'SLA'
     tab_prof_model = [0,0.5]
     tab_e3t = [1]
-elif cl_CL4type == 'CHL' :
+elif cl_CL4type == 'CHL':
     variable_name_type = params.variable_nameCHL
     tab_prof = [0,0]
-    lookfor = 'CHL'
+    lookfor = cl_CL4type
+    tab_prof_model = [0,0.5]
+    tab_e3t = [1]
+elif cl_CL4type == 'chl':
+    variable_name_type = params.variable_namechl
+    tab_prof = [0,0]
+    lookfor = cl_CL4type
     tab_prof_model = [0,0.5]
     tab_e3t = [1]
 elif cl_CL4type in ['SAL','PSAL'] :
@@ -161,7 +167,7 @@ if config_model.upper() == 'PSY3V2R2' :
         liste_region[:] = params.liste_zone[:11]
 elif config_model.upper() in ['PSY3QV3R1','PSY3V3R2',\
                         'PSY4V1R3','PSY4V2R2','PSY4V3R1',\
-                        'PSY3V3R3','BIOMER4'] :
+                        'PSY3V3R3','BIOMER4', 'FREEBIORYS2'] :
         liste_region = np.chararray(14,itemsize=25)
         liste_region[:] = params.liste_zone[:14]
 elif config_model.upper() in ['BLK','FOAM','GIOPS_CONCEPTS','PSY3V3R1','HYCOM','HYCOM_RTOFS'] :
@@ -185,8 +191,8 @@ supobs.Statslib.calculer_stats_MYO2(file_boxmask,config_model.upper(),tab_prof,\
                         liste_region,filelist,cl_CL4type,\
                         days, dircl4in ,dircl4out,cl_dateMinZone,cl_dateMaxZone  ) 
 
-#supobs.Statslib.calculer_stats_all(file_boxmask,config_model.upper(),tab_prof,\
-#                        tab_prof_model,tab_e3t,variable_name_type,\
-#                        liste_region,filelist,cl_CL4type,\
-#                        days, dircl4in ,dircl4out,cl_dateMinZone,cl_dateMaxZone  ) 
+supobs.Statslib.calculer_stats_all(file_boxmask,config_model.upper(),tab_prof,\
+                        tab_prof_model,tab_e3t,variable_name_type,\
+                        liste_region,filelist,cl_CL4type,\
+                        days, dircl4in ,dircl4out,cl_dateMinZone,cl_dateMaxZone  ) 
 

@@ -53,10 +53,10 @@ if [ $# -ne 4 ] ;then
     usage
 fi
 case "${config}" in
-        PSY3V3R1|PSY3V3R3|GIOPS|PSY4V2R2|PSY4V3R1|PSY2V4R4|HYCOM|FOAM|BLK|BIOMER4)
+        PSY3V3R1|PSY3V3R3|GIOPS|PSY4V2R2|PSY4V3R1|PSY2V4R4|HYCOM|FOAM|BLK|BIOMER4|FREEBIORYS2)
                 ;;
         *)
-        usage
+        echo "config not found"
                 ;;
 esac
 

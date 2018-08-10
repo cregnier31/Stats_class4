@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys,os,getopt,glob
-sys.path.append('../../module/')
+sys.path.append('../module/')
 import numpy as np
 import ConfigParser
 import netCDF4
@@ -110,22 +110,21 @@ if irest > 0 and comm.rank < irest :
     cla_dates.append(cla_dates_tot[iend_tot+comm.rank+1])
 
 #~~~~~~~~~~~~~~~~~~~~~~ Listing fichiers CLASS4 ~~~~~~~~~~~~~~~~~~~~~~~
+
 cla_cl4files = []
-for cdate in cla_dates :
-    if cvar == 'CHL' :
-        cl_filetmplt = prefix+'_'+cdate+'_'+config_obs+'_'+config_model+'_'+cvar+'.nc'
-    else :
-        cl_filetmplt = prefix+'_'+cdate+'_'+config_model+'_'+cgrid+'_'+cvar+'.nc'
-    cla_filechck = glob.glob(
-                    os.path.join(
-                    dirNCin,
-                    cl_filetmplt))
+for cdate in cla_dates_tot :
+    if cvar == 'CHL' or cvar == 'chl':
+        cl_file = prefix+'_'+cdate+'_'+config_obs+'_'+config_model+'_'+cvar+'.nc'
+    else:
+        cl_file = prefix+'_'+cdate+'_'+config_model+'_'+cgrid+'_'+cvar+'.nc'
+    cla_filechck = glob.glob(os.path.join(dirNCin,cl_file))
     if len(cla_filechck) != 1 :
         print (' Problem while checking for CLASS4 files at date %s \n\
 (%i   files corresponding)' %(cdate,len(cla_filechck)))
         print ('file %s : ' %(dirNCin+cl_filetmplt))
         continue
     cla_cl4files.append(cla_filechck[0])
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if comm.rank == 0 :
@@ -138,14 +137,15 @@ if comm.rank == 0 :
 for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
 
     print ('| DATE %s |' %(cdate))
+
 #~~~~~~~~~~~~~~~~~ Recuperation positions observations ~~~~~~~~~~~~~~~~
 
-    if cvar == 'CHL' :
+    if cvar == 'CHL' or cvar =='chl':
         rla_lonobs,rla_latobs, rla_depthobs = \
         supobs.toolkitStats.read_CL4obs_chloro(cl_cl4file)
     else :
         cla_varname,rla_lonobs,rla_latobs,rla_depthobs = \
-             supobs.toolkitStats.read_CL4obs(cl_cl4file)
+        supobs.toolkitStats.read_CL4obs(cl_cl4file)
 
     if rla_depthobs.shape[1] == 1 and (rla_depthobs[:,0]==0).all() : 
         ll_surface = True
@@ -168,11 +168,11 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                 rla_forecast_init = rla_forecast_init.data
             rla_forecast_init[(rla_forecast_init == -999.)] = np.nan
             rla_forecast_init[(rla_forecast_init>=9999.)] = np.nan
-            if cvar == 'CHL' :
+            if cvar == 'CHL' or cvar == 'chl':
                 rla_forecast_init[(rla_forecast_init == 0.)] = np.nan
                 rla_forecast_init = np.log10(rla_forecast_init)
         if time == 'observation' and config_obs == 'GLOBCOLOUR' :
-            rla_observation_init = nc.variables[cvar][:]
+            rla_observation_init = nc.variables[cvar.upper()][:]
             if type(rla_observation_init) != np.ndarray:
                 rla_observation_init = rla_observation_init.data
             rla_observation_init[(rla_observation_init == -999.)] = np.nan
@@ -191,7 +191,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                 rla_best_estimate_init = rla_best_estimate_init.data
             rla_best_estimate_init[(rla_best_estimate_init>=9999.)] = np.nan
             rla_best_estimate_init[(rla_best_estimate_init == -999.)] = np.nan
-            if cvar == 'CHL' :
+            if cvar == 'CHL' or cvar == 'chl':
                 rla_best_estimate_init[(rla_best_estimate_init == 0.)] = np.nan
                 rla_best_estimate_init = np.log10(rla_best_estimate_init)
         if time == 'climatology' :
@@ -201,7 +201,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                 rla_climatology_init = rla_climatology_init.data
             rla_climatology_init[(rla_climatology_init == -999.)] = np.nan
             rla_climatology_init[(rla_climatology_init >= 9999.)] = np.nan
-            if cvar == 'CHL' :
+            if cvar == 'CHL' or cvar == 'chl':
                 rla_climatology_init[(rla_climatology_init == 0.)] = np.nan
                 rla_climatology_init = np.log10(rla_climatology_init)
         if time == 'persistence' :
@@ -210,7 +210,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                 rla_persistence_init = rla_persistence_init.data
             rla_persistence_init[(rla_persistence_init>=9999.)] = np.nan
             rla_persistence_init[(rla_persistence_init == -999.)] = np.nan
-            if cvar == 'CHL' :
+            if cvar == 'CHL' or cvar == 'chl':
                 rla_persistence_init[(rla_persistence_init == 0.)] = np.nan
                 rla_persistence_init = np.log10(rla_persistence_init)
         if config_obs != 'GLOBCOLOUR' :
@@ -220,7 +220,12 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
 
 
 #~~~~~~~~~~~~~~~~~ Travail sur chaque variable (sst,sla,votemper,..) ~~~~~~~
-    if config_obs == 'GLOBCOLOUR' :
+    if config_model == 'FREEBIORYS2' :
+        cla_varname = ['chloro']
+        yout = 2 # obs,best
+        exp_name =  np.chararray(yout,itemsize=11)
+        exp_name[0] = 'observation' ; exp_name[1] = 'hindcast'
+    elif config_model == 'BIOMER4' :
         cla_varname = ['chloro']
         yout = 3 # obs,best,fcst
         exp_name =  np.chararray(yout,itemsize=11)
@@ -263,7 +268,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                 print ('Unexpected varname %s ' %(cl_var))
                 sys.exit(1)
 
-        if config_obs == 'GLOBCOLOUR' :
+        if config_model == 'BIOMER4' :
             rla_observation_var   = np.reshape(rla_observation_init,rla_lonobs.size)
             rla_forecast_var      = np.reshape(rla_forecast_init,rla_lonobs.size)
             rla_best_estimate_var = np.reshape(rla_best_estimate_init,rla_lonobs.size)
@@ -271,6 +276,11 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                 rla_climatology_var = np.reshape(rla_climatology_init,rla_lonobs.size)
             nb_fcst = 1
             nb_pers = 1
+        elif config_model == 'FREEBIORYS2' :
+            rla_observation_var   = np.reshape(rla_observation_init,rla_lonobs.size)
+            rla_best_estimate_var = np.reshape(rla_best_estimate_init,rla_lonobs.size)
+            if clim == True:
+                rla_climatology_var = np.reshape(rla_climatology_init,rla_lonobs.size)
         else :
             rla_qc_var = rla_qc_init[:,ivar,:]
             rla_observation_var = rla_observation_init[:,ivar,:]
@@ -279,12 +289,13 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
             rla_best_estimate_var = rla_best_estimate_init[:,ivar,:]
             if clim == True:
                 rla_climatology_var = rla_climatology_init[:,ivar,:]
+      	
             nb_fcst = rla_forecast_var[0,:,0].size
             nb_pers = rla_persistence_var[0,:,0].size
 
         # Passe au jour suivant si on n'a pas pas de best analyse)
         # if np.isnan(rla_best_estimate_var).all() : continue
-        if np.isnan(rla_forecast_var).all() : continue
+        if np.isnan(rla_best_estimate_var).all() : continue
 
         if doQC and config_obs != 'GLOBCOLOUR':
             # Test sur la coherence des valeurs et des observations par rapport a la climatologie
@@ -381,19 +392,18 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
             iobs = ibox[iboxobs]
             iobs_alreadyused = []
 
-            ###boxind_save.extend(iobs)
-
  
 #~~~~~~~~~~~~~~~~~~~~~~~ Calculs Stats avec 3e dimension ~~~~~~~~~~~~~~~~~~~~~
 
             if np.size(iobs) == 0 : continue
 
-            rla_fcstmean = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_persmean = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
-            rla_fcstrms = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_persrms = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
-            rla_fcstbias = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_persbias = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
-            rla_fcstrmse = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_persrmse = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
-            rla_fcstcorano = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_perscorano = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
-            ila_fcstnobs = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; ila_persnobs = np.nan*np.zeros((len(tab_prof)-1, nb_pers))	
+            if config_model != 'FREEBIORYS2':
+                rla_fcstmean = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_persmean = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
+                rla_fcstrms = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_persrms = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
+                rla_fcstbias = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_persbias = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
+                rla_fcstrmse = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_persrmse = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
+                rla_fcstcorano = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; rla_perscorano = np.nan*np.zeros((len(tab_prof)-1, nb_pers))
+                ila_fcstnobs = np.nan*np.zeros((len(tab_prof)-1, nb_fcst)) ; ila_persnobs = np.nan*np.zeros((len(tab_prof)-1, nb_pers))	
 
             for time in lead_time :
                 if len(np.shape(rla_observation_var)) == 2:
@@ -449,7 +459,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                                                          tab_prof)
 
                 if time == 'observation' :
-                    if len(np.shape(rla_forecast_var)) == 2:
+                    if len(np.shape(rla_observation_var)) == 2:
                         rla_var = rla_observation_var[iobs,:]
                     else :
                         rla_var = rla_observation_var[iobs]
@@ -503,20 +513,20 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
                 num_col = num_col + 1       
             if 'forecast' in lead_time :
                 if nb_fcst == 1:
-                    rla_mean[:,num_col,imask] = rla_fcstmean[:,0] ;ila_indice_box[:,num_col,imask] = ila_fcstnobs[:,0] ; rla_rms[:,num_col,imask] = rla_fcstrms[:,0]
+                    rla_mean[:,num_col,imask] = rla_fcstmean[:,0] ; ila_indice_box[:,num_col,imask] = ila_fcstnobs[:,0] ; rla_rms[:,num_col,imask] = rla_fcstrms[:,0]
                     rla_rms_diff[:,num_col,imask] = rla_fcstrmse[:,0] ; rla_mean_diff[:,num_col,imask] = rla_fcstbias[:,0] ; rla_cor_ano[:,num_col,imask] = rla_fcstcorano[:,0]
                     num_col = num_col + 1
-                else : 
+                else :
                     for numF in range(0,nb_fcst/2) :
                         rla_mean[:,num_col,imask] = rla_fcstmean[:,numF*2] ; ila_indice_box[:,num_col,imask] = ila_fcstnobs[:,numF*2] ; rla_rms[:,num_col,imask] = rla_fcstrms[:,numF*2]
                         rla_rms_diff[:,num_col,imask] = rla_fcstrmse[:,numF*2] ; rla_mean_diff[:,num_col,imask] = rla_fcstbias[:,numF*2] ; rla_cor_ano[:,num_col,imask] = rla_fcstcorano[:,numF*2]
                         num_col = num_col + 1
             if 'persistence' in lead_time :
                 if nb_pers == 1:
-                    rla_mean[:,num_col,imask] = rla_persmean[:,0];ila_indice_box[:,num_col,imask] = ila_persnobs[:,0] ;rla_rms[:,num_col,imask] = rla_persrms[:,0]
+                    rla_mean[:,num_col,imask] = rla_persmean[:,0]; ila_indice_box[:,num_col,imask] = ila_persnobs[:,0] ; rla_rms[:,num_col,imask] = rla_persrms[:,0]
                     rla_rms_diff[:,num_col,imask] = rla_persrmse[:,0] ; rla_mean_diff[:,num_col,imask] = rla_persbias[:,0] ; rla_cor_ano[:,num_col,imask] = rla_perscorano[:,0]
                     num_col = num_col + 1
-                else : 
+                else:
                     for numP in range(0,nb_pers/2) :
                         rla_mean[:,num_col,imask] = rla_persmean[:,numP*2]; ila_indice_box[:,num_col,imask] = ila_persnobs[:,numP*2] ; rla_rms[:,num_col,imask] = rla_persrms[:,numP*2]
                         rla_rms_diff[:,num_col,imask] = rla_persrmse[:,numP*2] ; rla_mean_diff[:,num_col,imask] = rla_persbias[:,numP*2] ; rla_cor_ano[:,num_col,imask] = rla_perscorano[:,numP*2]
