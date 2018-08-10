@@ -35,40 +35,53 @@ day1=$2 #'20130101'
 day2=$3 #'20130331'
 typegrid=$4
 typedata=$5
+typejob=$6
 
 usage ()
 {
     echo "Nb d'argument incorrects :: "
-    echo "Necessite 5 arguments :: "
+    echo "Necessite 6 arguments :: "
     echo " Valeur1 = Config "
     echo " Valeur2 = Jour min "
     echo " Valeur3 = Jour max "
     echo " Valeur4 = Resolution grille stats "
     echo " Valeur5 = Type de donnee "
+    echo " Valeur6 = Type de job lancé : mono ou multi "
     exit 1
 }
 
 if [ -z "${config}" ]; then
     usage
 fi
-if [ $# -ne 5 ] ;then
+if [ $# -ne 6 ] ;then
     echo $#
     usage
 fi
 case "${config}" in
-        PSY3V3R1|PSY3V3R1_2|PSY3V3R1_3|GIOPS_CONCEPTS|PSY3V3R3|PSY4V2R2|PSY4V3R1|PSY2V4R4|HYCOM|FOAM|BLK|BLK2)
+        PSY3V3R1|PSY3V3R1_2|PSY3V3R1_3|GIOPS_CONCEPTS|PSY3V3R3|PSY4V2R2|PSY4V3R1|PSY2V4R4|HYCOM|FOAM|BLK|BLK2|BIOMER4|FREEBIORYS2)
                 ;;
         *)
-        usage
+        echo "Bad config type "
+        exit 1
                 ;;
 esac
 case "${typedata}" in 
-      SLA|SST|profile)
+      SLA|SST|profile|CHL)
                 ;;
       *)
-        usage
+        echo "Bad typedata => SLA|SST|profile|CHL"
+        exit 1
                 ;;
 esac
+case "${typejob}" in 
+      mono|multi)
+                ;;
+      *)
+        echo "Bad job queue => mono|multi"
+        exit 1
+                ;;
+esac
+
 
 module load openmpi/openmpi-1.8.5
 module load intel/intel-18
@@ -83,7 +96,11 @@ echo $logfile
 if [ "${typegrid}" -eq "0" ] ; then 
   ## Stats bins
   echo "---- Gridtype ${typegrid} ---"
-  exe="../exe_kara_Lecture_class4.py"
+  if [ "${typejob}" -eq "mono" ] ; then 
+      exe="../exe_kara_Lecture_class4_mono.py"
+  elif [ "${typejob}" -eq "multi" ] ; then
+      exe="../exe_kara_Lecture_class4_multi.py"
+  fi
   echo "Launch qsub"
   echo qsub -v day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata} $PWD/${exe}
   qsub -v day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata} $PWD/${exe}  >> $logfile
