@@ -510,7 +510,8 @@ Returns mean, RMS, Bias (/observations), RMSE (/observations), number of observa
    """
    
    n_layers = len(rda_depth_layers)-1
-   if len(np.shape(rda_val)) == 2 : n_obs = np.shape(rda_val)[0]
+   if len(np.shape(rda_val)) > 0 : n_obs = np.shape(rda_val)[0]
+#   elif len(np.shape(rda_val)) == 1 : n_obs = 1
    else: 
        print 'problem with shape of rda_val'
        sys.exit(1)
@@ -524,14 +525,14 @@ Returns mean, RMS, Bias (/observations), RMSE (/observations), number of observa
    ilayer   = 0
    for depthmin,depthmax in zip(rda_depth_layers[:-1],rda_depth_layers[1:]) :  
        nobs = 0
-       for iobs in range(n_obs) :
+       for iobs in range(n_obs):
            ila_inds = np.where((rda_depthobs[iobs,:] >= depthmin) & (rda_depthobs[iobs,:] < depthmax))  
            nobs = nobs + len(ila_inds[0])
-       
+
        val_box_depth = np.nan*np.zeros((nobs))
        obs_box_depth = np.nan*np.zeros((nobs))
        clim_box_depth = np.nan*np.zeros((nobs))
-      
+       
        nobs = 0
        for iobs in range(n_obs) :
            ila_inds = np.where((rda_depthobs[iobs,:] >= depthmin) & (rda_depthobs[iobs,:] < depthmax))
@@ -541,11 +542,11 @@ Returns mean, RMS, Bias (/observations), RMSE (/observations), number of observa
                    obs_box_depth[nobs] = rda_observations[iobs,ind]            
                    clim_box_depth[nobs] = rda_climatology[iobs,ind]
                    nobs += 1
-           elif len(ila_inds[0]) > 0 and len(np.shape(rda_val)) < 2:
-                val_box_depth[nobs] = rda_val[iobs]
-                obs_box_depth[nobs] = rda_observations[iobs]
-                clim_box_depth[nobs] = rda_observations[iobs]
-                nobs += 1
+           elif len(ila_inds[0]) > 0 and len(np.shape(rda_val)) != 2:
+               val_box_depth[nobs] = rda_val[iobs]
+               obs_box_depth[nobs] = rda_observations[iobs]
+               clim_box_depth[nobs] = rda_observations[iobs]
+               nobs += 1
 
        ila_nobs[ilayer] = np.size(np.where(~ np.isnan(val_box_depth[:]))[0])
        if ila_nobs[ilayer] > 0 :
