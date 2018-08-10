@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys,os,getopt,glob
-sys.path.append('../module/')
+sys.path.append('../../module/')
 import numpy as np
 import ConfigParser
 import netCDF4
@@ -76,8 +76,6 @@ dirNCout     = db.get('output_dir','DIR_OUT' )
 prefix       = db.get('INPUT','PREFIX1' )
 lead_time    = eval(db.get('input_dir','LEAD_TIME')).split()
 
-if not os.path.exists(dirNCout):
-    os.makedirs(dirNCout)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -110,14 +108,16 @@ if irest > 0 and comm.rank < irest :
     cla_dates.append(cla_dates_tot[iend_tot+comm.rank+1])
 
 #~~~~~~~~~~~~~~~~~~~~~~ Listing fichiers CLASS4 ~~~~~~~~~~~~~~~~~~~~~~~
-
 cla_cl4files = []
-for cdate in cla_dates_tot :
+for cdate in cla_dates :
     if cvar == 'CHL' or cvar == 'chl':
-        cl_file = prefix+'_'+cdate+'_'+config_obs+'_'+config_model+'_'+cvar+'.nc'
-    else:
-        cl_file = prefix+'_'+cdate+'_'+config_model+'_'+cgrid+'_'+cvar+'.nc'
-    cla_filechck = glob.glob(os.path.join(dirNCin,cl_file))
+        cl_filetmplt = prefix+'_'+cdate+'_'+config_obs+'_'+config_model+'_'+cvar+'.nc'
+    else :
+        cl_filetmplt = prefix+'_'+cdate+'_'+config_model+'_'+cgrid+'_'+cvar+'.nc'
+    cla_filechck = glob.glob(
+                    os.path.join(
+                    dirNCin,
+                    cl_filetmplt))
     if len(cla_filechck) != 1 :
         print (' Problem while checking for CLASS4 files at date %s \n\
 (%i   files corresponding)' %(cdate,len(cla_filechck)))
@@ -133,6 +133,8 @@ if comm.rank == 0 :
     print (' ______________________________ ')
     print ("Cvar %s " %cvar)
     print (' ------------------------------ ')
+    if not os.path.exists(dirNCout):
+        os.makedirs(dirNCout)
 
 for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
 
