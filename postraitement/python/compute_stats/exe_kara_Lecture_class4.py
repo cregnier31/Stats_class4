@@ -1,11 +1,13 @@
 #!/usr/bin/env python
-#PBS -N CLASS4
+#SBATCH -J CLASS4
 #SBATCH -p multi
 #SBATCH -N 4
+#SBATCH -e CLASS4_job%j.e
+#SBATCH -j CLASS4_job%j.o
 #SBATCH -q qosmulti
 #SBATCH --exclusive
 #SBATCH --ntasks-per-node=4
-#SBATCH --time=01:00:00
+#SBATCH --time=06:00:00
 
 #---------------------------------------------------
 import shlex,subprocess
@@ -19,10 +21,8 @@ resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM
 pbsworkdir  = os.getenv('pbsworkdir')
 cl_dateMinZone = os.getenv('day1')
 cl_dateMaxZone = os.getenv('day2')
-_DBFILE_ = os.getenv('cfg')
 datatype = os.getenv('type')
-_NPROCS_=32
-#_NPROCS_ = 16
+_DBFILE_ = os.getenv('cfg')
 
 #~~~~ Environment ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 os.chdir(pbsworkdir)
@@ -32,5 +32,7 @@ try : os.remove(os.path.join(pbsworkdir,"OK.flag"))
 except : pass
 dir_bin="/kara/data1/cregnier/env_kara_py27/bin/"
 print ("Debut mpirun")
-os.system(dir_bin+"mpirun -np 32 "+dir_bin+"ipython --verbose_crash=True -- %s --day1=%s --day2=%s --cfg=%s --type=%s" %(EXE,cl_dateMinZone,cl_dateMaxZone,_DBFILE_,datatype))
-open(os.path.join(pbsworkdir,"OK.flag"), "a") 
+## Ipython launcher
+os.system(dir_bin+"mpirun -np 16 "+dir_bin+"ipython --verbose_crash=True -- %s --day1=%s --day2=%s --cfg=%s --type=%s" %(EXE,cl_dateMinZone,cl_dateMaxZone,_DBFILE_,datatype))
+## Python launcher
+#os.system(dir_bin+"mpirun -np 16 "+dir_bin+"python %s --day1=%s --day2=%s --cfg=%s --type=%s" %(EXE,cl_dateMinZone,cl_dateMaxZone,_DBFILE_,datatype))
