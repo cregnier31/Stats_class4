@@ -12,7 +12,7 @@ import supobs
 import resource
 import geomlib
 import datetime as dt
-
+import time 
 # Set Stack unlimited
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
@@ -76,6 +76,9 @@ dirNCout     = db.get('output_dir','DIR_OUT' )
 prefix       = db.get('INPUT','PREFIX1' )
 lead_time    = eval(db.get('input_dir','LEAD_TIME')).split()
 
+
+#~~~~~~~~~~~ Add a timer ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+beginning = time.time() 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -586,5 +589,8 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
 
 comm.Barrier()
 if comm.rank == 0 :
+   endval = time.time()
+   countval=endval-beginning
+   print("It took: ", countval, " seconds")
    print ('        END                     ')
    print (' ------------------------------ ')
