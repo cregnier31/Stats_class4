@@ -66,7 +66,7 @@ case "${config}" in
                 ;;
 esac
 case "${typedata}" in 
-      SLA|SST|profile|CHL)
+      SLA|SST|profile|CHL|chl)
                 ;;
       *)
         echo "Bad typedata => SLA|SST|profile|CHL"
@@ -96,9 +96,10 @@ echo $logfile
 if [ "${typegrid}" -eq "0" ] ; then 
   ## Stats bins
   echo "---- Gridtype ${typegrid} ---"
-  if [ "${typejob}" -eq "mono" ] ; then 
+  if [ "${typejob}" == "mono" ] ; then 
       exe="../exe_kara_Lecture_class4_mono.py"
-  elif [ "${typejob}" -eq "multi" ] ; then
+  elif [ "${typejob}" == "multi" ] ; then
+      echo "job multi"
       exe="../exe_kara_Lecture_class4_multi.py"
   fi
   echo "Launch qsub"
