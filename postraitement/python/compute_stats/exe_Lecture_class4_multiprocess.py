@@ -12,7 +12,9 @@ import supobs
 import resource
 import geomlib
 import datetime as dt
-import time 
+import time
+from timeit import default_timer as timer
+
 # Set Stack unlimited
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
@@ -78,7 +80,7 @@ lead_time    = eval(db.get('input_dir','LEAD_TIME')).split()
 
 
 #~~~~~~~~~~~ Add a timer ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-beginning = time.time() 
+start = timer()
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -134,7 +136,7 @@ if comm.rank == 0 :
     print (' ------------------------------ ') 
     print ('|        Lecture CLASS4        |')
     print (' ______________________________ ')
-    print ("Cvar %s " %cvar)
+    print ("Variable : %s " %cvar)
     print (' ------------------------------ ')
     if not os.path.exists(dirNCout):
         os.makedirs(dirNCout)
@@ -589,8 +591,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
 
 comm.Barrier()
 if comm.rank == 0 :
-   endval = time.time()
-   countval=endval-beginning
-   print("It took: ", countval, " seconds")
+   end = timer()
+   print ("Running time : ",end - start, " seconds")
    print ('        END                     ')
    print (' ------------------------------ ')
