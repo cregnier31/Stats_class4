@@ -114,6 +114,7 @@ if irest > 0 and comm.rank < irest :
 
 #~~~~~~~~~~~~~~~~~~~~~~ Listing fichiers CLASS4 ~~~~~~~~~~~~~~~~~~~~~~~
 cla_cl4files = []
+cla_dates_exist = []
 for cdate in cla_dates :
     if cvar == 'CHL' or cvar == 'chl':
         cl_filetmplt = prefix+'_'+cdate+'_'+config_obs+'_'+config_model+'_'+cvar+'.nc'
@@ -129,6 +130,7 @@ for cdate in cla_dates :
         print ('file %s : ' %(dirNCin+cl_filetmplt))
         continue
     cla_cl4files.append(cla_filechck[0])
+    cla_dates_exist.append(cdate)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -138,10 +140,11 @@ if comm.rank == 0 :
     print (' ______________________________ ')
     print ("Variable : %s " %cvar)
     print (' ------------------------------ ')
-    if not os.path.exists(dirNCout):
-        os.makedirs(dirNCout)
 
-for cl_cl4file,cdate in zip(cla_cl4files,cla_dates) :
+if not os.path.exists(dirNCout):
+    os.makedirs(dirNCout)
+
+for cl_cl4file,cdate in zip(cla_cl4files, cla_dates_exist) :
 
     print ('| DATE %s |' %(cdate))
 
