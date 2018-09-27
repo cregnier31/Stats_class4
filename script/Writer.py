@@ -101,3 +101,54 @@ class Writer():
         print 'Creation OK %s '
         print '-------------------------------'
         nc_fid.close()  # close the new file
+
+    def write_best_fcst(self,filename,tab1,tab2,dateval,model):
+        nc_fid = Dataset(filename, 'r+', format='NETCDF3_CLASSIC')
+        nc_file = nc_fid.createVariable('best_estimate','f4',('lat','lon'),fill_value=-999.0)
+        nc_file2 = nc_fid.createVariable('forecast','f4',('lat','lon'),fill_value=-999.0)
+        nc_file.setncatts({'long_name': u"Model best_estimate counterpart of obs. value"})
+        nc_file2.setncatts({'long_name': u"Model forecast counterpart of obs. value"})
+        nc_fid.variables['best_estimate'][:] = tab1[:,:]
+        nc_fid.variables['forecast'][:] = tab2[:,:]
+        ## Add global attributs
+        nc_fid.institution= 'MERCATOR OCEAN'
+        nc_fid.contact= 'qualif@mercator-ocean.fr'
+        today=date.today() 
+        yyyy=str(today)[0:4]
+        yyyy2=dateval[0:4]
+        month=str(today)[5:7]
+        month2=dateval[4:6]
+        day=str(today)[8:10]
+        day2=dateval[7:9]
+        nc_fid.validity_time =yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.creation_date=yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.system=model
+        print '-------------------------------'
+        print 'Creation OK %s '
+        print '-------------------------------'
+        nc_fid.close()  # close the new file
+
+    def write_best(self,filename,tab1,dateval,model,dimension):
+        nc_fid = Dataset(filename, 'r+', format='NETCDF3_CLASSIC')
+        nc_file = nc_fid.createVariable('best_estimate','f4',(dimension),fill_value=np.nan)
+        nc_file.setncatts({'long_name': u"Model "+model+" best_estimate counterpart of obs. value"})
+        nc_file.setncatts({'minvalue':  np.nanmin(tab1)})
+        nc_file.setncatts({'maxvalue': np.nanmax(tab1)})
+        nc_fid.variables['best_estimate'][:] = tab1[:]
+        ## Add global attributs
+        nc_fid.institution= 'MERCATOR OCEAN'
+        nc_fid.contact= 'qualif@mercator-ocean.fr'
+        today=date.today() 
+        yyyy=str(today)[0:4]
+        yyyy2=dateval[0:4]
+        month=str(today)[5:7]
+        month2=dateval[4:6]
+        day=str(today)[8:10]
+        day2=dateval[7:9]
+        nc_fid.validity_time =yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.creation_date=yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.system=model
+        print '-------------------------------'
+        print 'Creation OK %s '
+        print '-------------------------------'
+        nc_fid.close()  # close the new file

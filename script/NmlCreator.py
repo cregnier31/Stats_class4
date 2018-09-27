@@ -5,7 +5,7 @@ import numpy as np
 import logging
 import tarfile
 from sytoolkit.sydate import SyDate
-from nco import Nco
+from nco.nco import Nco
 from Logger import Logger                                                                                                   
 
 #######################################################################
@@ -18,30 +18,28 @@ class NmlCreator(object) :
     """ Factory for the creation of different namelists """
 
     def __init__(self,mssh_file,\
-        ll_mssh,ll_convinsitu,ll_compute,mssh_shift,**kwargs):
+        ll_mssh,ll_compute,mssh_shift,**kwargs):
         self.mssh_file=mssh_file
         self.ll_mssh=ll_mssh
-        self.ll_convinsitu=ll_convinsitu
 	self.ll_compute=ll_compute
         self.mssh_shift=mssh_shift
 
     def factory(self,type):
-        if type == "CORIOLIS": return NmlCreator_CORIOLIS(self.mssh_file,self.ll_mssh,self.ll_compute,self.ll_convinsitu,self.mssh_shift)
-        if type == "CORIOLIS_RAW": return NmlCreator_CORIOLIS(self.mssh_file,self.ll_mssh,self.ll_compute,self.ll_convinsitu,self.mssh_shift)
-        if type == "IAOOS": return NmlCreator_IAOOS(self.mssh_file,self.ll_mssh,self.ll_convinsitu,self.mssh_shift)
-        if type == "GODAE" : return NmlCreator_GODAE(self.mssh_file,self.ll_mssh,self.ll_compute,self.ll_convinsitu,self.mssh_shift)
+        if type == "CORIOLIS": return NmlCreator_CORIOLIS(self.mssh_file,self.ll_mssh,self.ll_compute,self.mssh_shift)
+        if type == "CORIOLIS_RAW": return NmlCreator_CORIOLIS(self.mssh_file,self.ll_mssh,self.ll_compute,self.mssh_shift)
+        if type == "IAOOS": return NmlCreator_IAOOS(self.mssh_file,self.ll_mssh,self.mssh_shift)
+        if type == "GODAE" : return NmlCreator_GODAE(self.mssh_file,self.ll_mssh,self.ll_compute,self.mssh_shift)
 
 class NmlCreator_GODAE(NmlCreator):
 
     """ Class for GODAE namelists """
 
-    def __init__(self,mssh_file,ll_mssh,ll_compute,ll_convinsitu,mssh_shift,**kwargs):
+    def __init__(self,mssh_file,ll_mssh,ll_compute,mssh_shift,**kwargs):
         super(NmlCreator,self).__init__(**kwargs)
         self.mssh_file=mssh_file
         self.ll_mssh=ll_mssh
         self.ll_compute=ll_compute
         self.mssh_shift=mssh_shift
-        self.ll_convinsitu=ll_convinsitu
 
     def run(self,nml,modele,mean_type,type_data,outputVarname,\
         dirmodel,dircoloc,filename,listdir,dateval,gridtemp,gridsal):
@@ -107,7 +105,7 @@ class NmlCreator_GODAE(NmlCreator):
         obFichier.write('il_ncast         = '+str(len(listdir))+'\n')
         obFichier.write('il_nvar          = '+str(il_nvar)+'\n')
         obFichier.write('ll_mssh          = '+self.ll_mssh+'\n')
-        obFichier.write('ll_compute       = '+self.ll_compute+'\n')
+        #obFichier.write('ll_compute       = '+self.ll_compute+'\n')
         obFichier.write('rl_mssh_shift    = '+str(self.mssh_shift)+'\n')
         obFichier.write('il_nbfile        = '+str(nbfile)+'\n')
         obFichier.write('/'+'\n')
@@ -120,12 +118,11 @@ class NmlCreator_IAOOS(NmlCreator):
 
     """ Class for IAOOS dataset """
 
-    def __init__(self,mssh_file,ll_mssh,ll_convinsitu,mssh_shift,**kwargs):
+    def __init__(self,mssh_file,ll_mssh,mssh_shift,**kwargs):
         super(NmlCreator,self).__init__(**kwargs)
         self.mssh_file=mssh_file
         self.ll_mssh=ll_mssh
         self.mssh_shift=mssh_shift
-        self.ll_convinsitu=ll_convinsitu
     def run(self,nml,modele,mean_type,type_data,outputVarname, \
           dirmodel,dircoloc,output,listdir,dateval,gridtemp,gridsal,schedule,type_run):
         # =============== 
@@ -252,12 +249,11 @@ class NmlCreator_CORIOLIS(NmlCreator):
 
     """ Class for CORIOLIS dataset """
 
-    def __init__(self,mssh_file,ll_mssh,ll_compute,ll_convinsitu,mssh_shift,**kwargs):
+    def __init__(self,mssh_file,ll_mssh,ll_compute,mssh_shift,**kwargs):
         super(NmlCreator,self).__init__(**kwargs)
         self.mssh_file=mssh_file
         self.ll_mssh=ll_mssh
         self.mssh_shift=mssh_shift
-        self.ll_convinsitu=ll_convinsitu
    # def search_lighout(self,date,dirin,type_run,listdir):
 
     def run(self,nml,modele,mean_type,type_data,outputVarname, \
@@ -366,10 +362,8 @@ class NmlCreator_CORIOLIS(NmlCreator):
             else : 
                 #template=dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
                 template=dirmodel+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
-        if  self.ll_convinsitu == '.true' :
-            output_varname_T=prefix_var+'_'+input_varname_T
-        else : 
-            output_varname_T=prefix_var+'_'+input_varname_T+"_POT"
+
+        output_varname_T=prefix_var+'_'+input_varname_T
         output_varname_S=prefix_var+'_'+input_varname_S
         log.info('listdir %s '%(listdir[0:4])) 
         if listdir[0:4] == 'CLIM' :
@@ -455,7 +449,6 @@ class NmlCreator_CORIOLIS(NmlCreator):
         obFichier.write('cl_modelVarname_S = '+"'"+model_varname_S+"'"+'\n')
         obFichier.write('cl_outputVarname_T = '+"'"+output_varname_T+"'"+'\n')
         obFichier.write('cl_outputVarname_S = '+"'"+output_varname_S+"'"+'\n')
-        obFichier.write('ll_convinsitu = '+"'"+self.ll_convinsitu+"'"+'\n')
         obFichier.write('il_nbfile = '+str(nbfile)+'\n')
         obFichier.write("cl_input_type = 'NETCDF'"+'\n')
         if  ll_lightout : 

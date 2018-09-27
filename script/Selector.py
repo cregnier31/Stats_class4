@@ -1,11 +1,10 @@
 from __future__ import generators
 import os,sys,string,shutil,glob,re
 import numpy as np
-import netCDF4
 import geojson
 from geojson import MultiPoint
 import json
-from nco import Nco
+from nco.nco import Nco
 from Loader import Loader
 from QCcontrol import QCcontroller
 import logging
@@ -41,8 +40,46 @@ class Selector(object) :
             return QCEns()
         elif type == "IAOOS": 
             return QCEns()
+        elif type == "Microwat": 
+            return Select(self.data_format,self.data_type)
         else :
-            print "Type not known %s " %(type)
+            print("Type not known %s " %(type))
+
+class Select(Selector): 
+    def __init__(self,data_format,data_type,**kwargs):
+        super(Selector,self).__init__(**kwargs)
+        self.data_format=data_format
+        self.data_type=data_type
+    def store_pos(self,tab_pos,type_f,file_db):
+        logging.basicConfig(format='%(asctime)s %(message)s')
+        log = logging.getLogger("store_pos")
+        ## Level of logging output
+        log.setLevel(logging.INFO)
+        # Open a shelve file if not exist
+        if not(os.path.isfile(file_db)) :
+            log.debug("Create persistent file")
+            shelf = shelve.open(file_db, 'c')
+        else: 
+            log.debug("File exist %s " %(file_db))
+            shelf = shelve.open(file_db)
+        # Add position values in the serialized dictionnary 
+        try : 
+            ll_exist = shelf[type_f]
+        except : 
+            log.debug("Create %s" %(type_f))
+            shelf[type_f] = tab_pos
+            ll_exist=[]
+        if len(ll_exist) > 0 : 
+            try :
+                log.debug("Tab_fin")
+                tab_fin=shelf[type_f]
+                log.debug("concatenation")
+                tab_fin=np.concatenate((tab_fin,tab_pos))
+                shelf[type_f] = tab_fin
+            except:
+                print("Pb with concatenation store_pos")
+                sys.exit(1)
+        shelf.close()
 
 class SelectCorio(Selector) :
 
@@ -201,7 +238,7 @@ class SelectCorio(Selector) :
                 tab_fin=np.concatenate((tab_fin,tab_pos))
                 shelf[type_f] = tab_fin
             except:
-                print "Pb with concatenation store_pos"
+                print("Pb with concatenation store_pos")
                 sys.exit(1)
         ## Create global position
         type_var='GLO'
@@ -225,9 +262,8 @@ class SelectCorio(Selector) :
                 tab_fin=shelf[type_var]
                 tab_fin=np.concatenate((tab_fin,tab_pos_new))
                 shelf[type_var] = tab_fin
-                # print shelf[type_var]
             except : 
-                print "Pb with concatenation in GLO"
+                print("Pb with concatenation in GLO")
                 sys.exit(1)
         shelf.close()
 
@@ -283,6 +319,6 @@ class SelectCorio(Selector) :
                 else :
                     log.debug('Bad profiles')
             except:
-                print "Pb with concatenation single"
+                print("Pb with concatenation single")
                 sys.exit(1)
         shelf.close()

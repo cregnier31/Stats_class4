@@ -1,10 +1,6 @@
 # Makefile for Fortran program Class 4
 # Modifs C.REGNIER Janvier 2010
-type=glorys2v4
-type=orca12_allege
-#type=cglors
-include ../../macro/make_intel_$(type).macro
-#include ../../macro/make_intel.macro
+include ../../macro/make_intel.macro
 #include ../../macro/make_intel_orca12_allege.macro
 
 # Rules
