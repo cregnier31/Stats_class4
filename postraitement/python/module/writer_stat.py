@@ -268,8 +268,6 @@ class writer_stat():
         # ----------------------
         nc_fid.contact = contact
         nc_fid.product = product
-        nc_fid.start_date = dstart
-        nc_fid.end_date = dend
         nc_fid.filename = resultsFileName
         nc_fid.institution = institution
         nc_fid.references = ref
