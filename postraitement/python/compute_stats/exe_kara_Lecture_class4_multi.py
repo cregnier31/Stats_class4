@@ -3,7 +3,7 @@
 #SBATCH -p multi
 #SBATCH -N 4
 #SBATCH -e CLASS4_job%j.e
-#SBATCH -j CLASS4_job%j.o
+#SBATCH -o CLASS4_job%j.o
 #SBATCH -q qosmulti
 #SBATCH --exclusive
 #SBATCH --ntasks-per-node=4
@@ -30,9 +30,10 @@ os.chdir(pbsworkdir)
 EXE = os.path.join(pbsworkdir,'../exe_Lecture_class4_multiprocess.py')
 try : os.remove(os.path.join(pbsworkdir,"OK.flag")) 
 except : pass
-dir_bin="/kara/data1/cregnier/env_kara_py27/bin/"
+dir_bin="/home/cszczypta/anaconda3/envs/env_py27/bin/"
+#dir_bin="/kara/data1/cregnier/env_kara_py27/bin/"
 print ("Debut mpirun")
 ## Ipython launcher
-os.system(dir_bin+"mpirun -np 16 "+dir_bin+"ipython --verbose_crash=True -- %s --day1=%s --day2=%s --cfg=%s --type=%s" %(EXE,cl_dateMinZone,cl_dateMaxZone,_DBFILE_,datatype))
+#os.system(dir_bin+"mpirun -np 16 "+dir_bin+"ipython --verbose_crash=True -- %s --day1=%s --day2=%s --cfg=%s --type=%s" %(EXE,cl_dateMinZone,cl_dateMaxZone,_DBFILE_,datatype))
 ## Python launcher
-#os.system(dir_bin+"mpirun -np 16 "+dir_bin+"python %s --day1=%s --day2=%s --cfg=%s --type=%s" %(EXE,cl_dateMinZone,cl_dateMaxZone,_DBFILE_,datatype))
+os.system(dir_bin+"mpirun -np 16 "+dir_bin+"python %s --day1=%s --day2=%s --cfg=%s --type=%s" %(EXE,cl_dateMinZone,cl_dateMaxZone,_DBFILE_,datatype))

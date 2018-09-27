@@ -98,6 +98,7 @@ cla_dates_tot = toolkitStats.char_period(cl_dateMinZone,cl_dateMaxZone)
 #~~~~~~~~~~~~~~~~~~~~~~ Listing fichiers CLASS4 ~~~~~~~~~~~~~~~~~~~~~~~
 
 cla_cl4files = []
+cla_dates_exist = []
 for cdate in cla_dates_tot :
     if cvar == 'CHL' or cvar == 'chl':
         cl_file = prefix+'_'+cdate+'_'+config_obs+'_'+config_model+'_'+cvar+'.nc'
@@ -110,6 +111,7 @@ for cdate in cla_dates_tot :
         print ('file %s : ' %(dirNCin+cl_file))
         continue
     cla_cl4files.append(cla_filechck[0])
+    cla_dates_exist.append(cdate)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -120,7 +122,7 @@ for cdate in cla_dates_tot :
     print (' ------------------------------ ')
 
 
-for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
+for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_exist) :
 
     print ('|   DATE : %s ' %(cdate))
 
@@ -213,9 +215,9 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_tot) :
         exp_name[0] = 'observation' ; exp_name[1] = 'hindcast'
     elif config_model == 'BIOMER4' :
         cla_varname = ['chloro']
-        yout = 3 # obs,best,fcst
+        yout = 4 # obs,best,fcst, clim
         exp_name =  np.chararray(yout,itemsize=11)
-        exp_name[0] = 'observation' ; exp_name[1] = 'hindcast' ; exp_name[2] = 'forecast'
+        exp_name[0] = 'observation' ; exp_name[1] = 'hindcast' ; exp_name[2] = 'forecast' ; exp_name[3] = 'climatology' 
     else :
         yout = 13   # obs,best,fcst1,fcst3,fcst5,fcst7,fcst9,pers1,pers3,pers5,pers7,pers9,clim
         exp_name =  np.chararray(yout,itemsize=11)

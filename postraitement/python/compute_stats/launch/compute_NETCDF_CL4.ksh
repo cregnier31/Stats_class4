@@ -22,6 +22,8 @@ config=$1
 day1=$2
 day2=$3
 type=$4
+all_tsp=$5
+bilan=$6
 
 usage ()
 {
@@ -37,18 +39,27 @@ usage ()
 if [ -z "${config}" ]; then
     usage
 fi
-if [ $# -ne 4 ] ;then
+if [ $# -lt 4 ] ;then
     echo $#
     usage
 fi
+if [ $# -eq 4 ] ;then
+    echo "Calcul sans ecriture dans netCDF"
+fi
+if [ $# -eq 5 ] ;then
+    echo "Ecriture statistiques journaliere dans netCDF"
+fi
+if [ $# -eq 6 ] ;then
+    echo "Ecriture statistiques journaliere + statistiques sur l'ensemble de la serie, dans netCDF"
+fi 
+
 case "${config}" in
-        PSY3V3R1|PSY3V3R3|GIOPS|PSY4V2R2|PSY4V3R1|PSY2V4R4|HYCOM|FOAM|BLK|BIOMER4)
+        PSY3V3R1|PSY3V3R3|GIOPS|PSY4V2R2|PSY4V3R1|PSY2V4R4|HYCOM|FOAM|BLK|BIOMER4|FREEBIORYS2)
                 ;;
         *)
         usage
                 ;;
 esac
-
 
 export PYTHONPATH=$PYTHONPATH:../../module/
 
@@ -59,5 +70,13 @@ logfile=${workdir}/CLASS4_${config}_${day1}-${day2}.log
 
 #  3. Calcul des statistiques regionales, fichiers netCDF
 #module load ipython
-../create_ProdQualStats.py --day1=$day1 --day2=$day2 --cfg=$cfgfile --type=$type
+if [ $# -eq 4 ] ;then 
+    ../create_ProdQualStats.py --day1=$day1 --day2=$day2 --cfg=$cfgfile --type=$type 
+fi
+if [ $# -eq 5 ] ;then 
+    ../create_ProdQualStats.py --day1=$day1 --day2=$day2 --cfg=$cfgfile --type=$type --all_tsp=$all_tsp
+fi
+if [ $# -eq 6 ] ;then 
+    ../create_ProdQualStats.py --day1=$day1 --day2=$day2 --cfg=$cfgfile --type=$type --bilan=$bilan --all_tsp=$all_tsp
+fi
 

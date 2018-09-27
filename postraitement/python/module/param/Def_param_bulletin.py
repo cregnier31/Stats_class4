@@ -89,9 +89,10 @@ variable_nameSLA_new[9]  = 'PERS7D_SLA'
 variable_nameSLA_new[10]  = 'PERS9D_SLA'
 variable_nameSLA_new[11]  = 'CLIM_SLA'
 
-variable_nameCHL= np.chararray(2,itemsize=25)
+variable_nameCHL= np.chararray(3,itemsize=25)
 variable_nameCHL[0]  = 'HDCT_CHL'
 variable_nameCHL[1]  = 'FCST_CHL'
+variable_nameCHL[1]  = 'CLIM_CHL'
 
 variable_namechl= np.chararray(1,itemsize=25)
 variable_namechl[0]  = 'HDCT_CHL'
@@ -377,12 +378,11 @@ rg_EcartSalMax=1.
 rg_EcartTempMax=8.
 rg_EcartSLAMax=1.
 
-#cla_metricname =  np.chararray(7,itemsize=25)
-cla_metricname =  np.chararray(6,itemsize=25)
+cla_metricname =  np.chararray(7,itemsize=25)
 cla_metricname[0] = 'number of data values'
 cla_metricname[1] = 'mean of reference'
 cla_metricname[2] = 'mean squared reference'
 cla_metricname[3] = 'mean of product'
 cla_metricname[4] = 'mean squared product'
 cla_metricname[5] = 'mean squared error'
-#cla_metricname[6] = 'anomaly correlation'
+cla_metricname[6] = 'anomaly correlation'

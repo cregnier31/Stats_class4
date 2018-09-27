@@ -80,9 +80,9 @@ lead_time    = eval(db.get('input_dir','LEAD_TIME')).split()
 
 
 #~~~~~~~~~~~ Add a timer ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 start = timer()
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #~~~~~~~~~~~~~~~~~~ Recuperation definition boites ~~~~~~~~~~~~~~~~~~~~
 
@@ -113,6 +113,7 @@ if irest > 0 and comm.rank < irest :
     cla_dates.append(cla_dates_tot[iend_tot+comm.rank+1])
 
 #~~~~~~~~~~~~~~~~~~~~~~ Listing fichiers CLASS4 ~~~~~~~~~~~~~~~~~~~~~~~
+
 cla_cl4files = []
 cla_dates_exist = []
 for cdate in cla_dates :

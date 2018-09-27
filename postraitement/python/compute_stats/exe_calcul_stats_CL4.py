@@ -191,8 +191,3 @@ supobs.Statslib.calculer_stats_MYO2(file_boxmask,config_model.upper(),tab_prof,\
                         liste_region,filelist,cl_CL4type,\
                         days, dircl4in ,dircl4out,cl_dateMinZone,cl_dateMaxZone  ) 
 
-supobs.Statslib.calculer_stats_all(file_boxmask,config_model.upper(),tab_prof,\
-                        tab_prof_model,tab_e3t,variable_name_type,\
-                        liste_region,filelist,cl_CL4type,\
-                        days, dircl4in ,dircl4out,cl_dateMinZone,cl_dateMaxZone  ) 
-

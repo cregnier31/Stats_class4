@@ -85,7 +85,7 @@ esac
 
 module load openmpi/openmpi-1.8.5
 module load intel/intel-18
-workdir=/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/python/compute_stats/log
+workdir=/home/cszczypta/TEP_CLASS4/V4/postraitement/python/compute_stats/log
 cfgfile=../environment_${config}.cfg
 logfile=${workdir}/CLASS4_${config}_${day1}-${day2}.log
 
@@ -96,7 +96,7 @@ echo $logfile
 if [ "${typegrid}" -eq "0" ] ; then 
   ## Stats bins
   echo "---- Gridtype ${typegrid} ---"
-  if [ "${typejob}" == "mono" ] ; then 
+  if [ "${typejob}" == "mono" ] ; then
       exe="../exe_kara_Lecture_class4_mono.py"
   elif [ "${typejob}" == "multi" ] ; then
       echo "job multi"
