@@ -37,8 +37,8 @@ class Designer_GODAE(Designer_file):
         # Change global attribute
         list_varname=['validity_time','creation_date','contact','system','configuration','institution','version','best_estimate_description']
         il_ind=0
-        print list_value
-        print list_varname
+        print( list_value)
+        print( list_varname)
         for varname in list_varname: 
             value=list_value[il_ind]
             options=[]

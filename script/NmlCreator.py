@@ -21,7 +21,7 @@ class NmlCreator(object) :
         ll_mssh,ll_compute,mssh_shift,**kwargs):
         self.mssh_file=mssh_file
         self.ll_mssh=ll_mssh
-	self.ll_compute=ll_compute
+        self.ll_compute=ll_compute
         self.mssh_shift=mssh_shift
 
     def factory(self,type):
@@ -49,7 +49,7 @@ class NmlCreator_GODAE(NmlCreator):
         log=Logger("NmlCreator_GODAE").run(2)
         # ===============
         if type_data != "SLA" and  type_data != "SST" and type_data != "profile" and type_data != "aice" and type_data != "AMSR" :
-            print "Data %s not known %s !!! "
+            print ("Data %s not known %s !!! ")
             sys.exit(1)
         if type_data == "profile" :
             il_nvar=2
@@ -75,7 +75,6 @@ class NmlCreator_GODAE(NmlCreator):
                     list_file.append(str(file))
             elif type_data == 'SST' :
                 for file in glob.glob(dirmodel+directory+"/"+modele+"_"+mean_type+"_"+dateval+"*_"+gridtemp+"*.nc"):
-                    print file
                     list_file.append(str(file))
             elif type_data == 'profile' :
                 for file in glob.glob(dirmodel+directory+"/"+modele+"_"+mean_type+"_"+dateval+"*_"+gridtemp+"*.nc") : 
@@ -154,7 +153,7 @@ class NmlCreator_IAOOS(NmlCreator):
             prefix_var=listdir
         if schedule == 'm' : 
             searchdir="MONTHLY_"+yearval 	
-            print "monthly values"
+            print( "monthly values")
             daterun=dateval[0:6]
             template=dirmodel+searchdir+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
         elif type_run == 'free' :
@@ -200,7 +199,6 @@ class NmlCreator_IAOOS(NmlCreator):
         #for file in glob.glob(dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc') : 
         log.info('Template %s' %(template)) 
         for filename in glob.glob(template) : 
-            print filename
             if listdir[0:4] != 'CLIM' :
                 fic_temp=filename
                 template_temp=template
@@ -288,19 +286,19 @@ class NmlCreator_CORIOLIS(NmlCreator):
             prefix_var=listdir
         if schedule == 'm' : 
             searchdir="MONTHLY_"+yearval 	
-            print "monthly values"
+            print ("monthly values")
             daterun=dateval[0:6]
             if type_file == 'ALLEGE' :
                 type_out='END'
-                print "lightout type"
+                print ("lightout type")
                 ## Find next daterun
-                print dateval
+                print (dateval)
                 jdatemin=SyDate(dateval)
                 daytogo=2-jdatemin.weekday()
                 if daytogo > 0 : 
                     first_date=jdatemin.goforward(daytogo)
                 else : 
-                    print "jours negatif"
+                    print ("jours negatif")
                     if type_run == 'RTR' or type_run == 'REA' :
                         nbdate=7
                     elif type_run == 'HINDCAST' :
@@ -308,7 +306,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
                     daytogo2=nbdate+daytogo
                     first_date=jdatemin.goforward(daytogo2)
                    # first_date=jdatemin.gobackward(-daytogo)
-                print first_date
+                print (first_date)
                 daterun=first_date
                 if type_run == 'RTR' or type_run == 'REA' :
                     date1=daterun.gobackward(7)
@@ -316,30 +314,30 @@ class NmlCreator_CORIOLIS(NmlCreator):
                 elif type_run == 'HINDCAST' :
                     date1=daterun.gobackward(14)
                     date2=daterun.gobackward(7)
-                print date1,date2,dateval
+                print (date1,date2,dateval)
                 template=dirmodel+'ALLEGES_'+type_run.lower()+'_'+str(date1)+'_'+str(date2)+'_R'+str(daterun)+'/'+type_out+'/'+gridtemp+'N.B.d*.50.0'
-                print template
+                print (template)
                 ll_lightout=True
             else : 
                 #template=dirmodel+searchdir+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
                 template=dirmodel+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
         elif type_run == 'free' :
-            print modele,daterun,gridtemp
+            print (modele,daterun,gridtemp)
             template=dirmodel+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
         else :
-            print "schedule daily"
-            print type_file
+            print ("schedule daily")
+            print (type_file)
             if type_file == 'ALLEGE' :
                 type_out='END'
-                print "lightout type"
+                print ("lightout type")
                 ## Find next daterun
-                print dateval
+                print (dateval)
                 jdatemin=SyDate(dateval)
                 daytogo=2-jdatemin.weekday()
                 if daytogo > 0 : 
                     first_date=jdatemin.goforward(daytogo)
                 else : 
-                    print "jours negatif"
+                    print ("jours negatif")
                     if type_run == 'RTR' or type_run == 'REA' :
                         nbdate=7
                     elif type_run == 'HINDCAST' :
@@ -347,7 +345,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
                     daytogo2=nbdate+daytogo
                     first_date=jdatemin.goforward(daytogo2)
                    # first_date=jdatemin.gobackward(-daytogo)
-                print first_date
+                print (first_date)
                 daterun=first_date
                 if type_run == 'RTR' or  type_run == 'REA' :
                     date1=daterun.gobackward(7)
@@ -355,9 +353,9 @@ class NmlCreator_CORIOLIS(NmlCreator):
                 elif type_run == 'HINDCAST' :
                     date1=daterun.gobackward(14)
                     date2=daterun.gobackward(7)
-                print date1,date2,dateval
+                print (date1,date2,dateval)
                 template=dirmodel+'ALLEGES_'+type_run.lower()+'_'+str(date1)+'_'+str(date2)+'_R'+str(daterun)+'/'+type_out+'/'+gridtemp+'N.B.d*.50.0'
-                print template
+                print (template)
                 ll_lightout=True
             else : 
                 #template=dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
@@ -414,8 +412,8 @@ class NmlCreator_CORIOLIS(NmlCreator):
                 else :
                     fic_psal=fic_temp
         if not fic_temp or not fic_psal : 
-            print "Files doesn't exist "
-            print template
+            print ("Files doesn't exist ")
+            print (template)
             sys.exit(1)
         log.info('Fichier temp %s' %(fic_temp)) 
         log.info('Fichier psal %s' %(fic_psal)) 

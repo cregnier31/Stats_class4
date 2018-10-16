@@ -59,12 +59,12 @@ class Sorter():
                 for rep in lead_fin :	
                     cl_rep=dirsort+rep
                     if os.path.isdir(cl_rep) : 
-                        print "rep existant %s" %(cl_rep)
+                        print ("rep existant %s" %(cl_rep))
                     else : 
                         try:
                             os.mkdir(cl_rep)
                         except OSError as e:
-                            print "Creation error : %s" %(e.strerror)
+                            log.info("Creation error : %s" %(e.strerror))
                     log.info('Interp day  %s ' % (sy.__str__(valeurj)))
                     dateval=sy.__str__(valeurj)
                     nametype=config+dateval
@@ -84,7 +84,7 @@ class Sorter():
                                 self.symlink(fic_temp_hindcast,file_out_temp)
                                 self.symlink(fic_psal_hindcast,file_out_psal)
                             except OSError as e:
-                                print "Link Error : %s" %(e.strerror)
+                                log.info("Link Error : %s" %(e.strerror))
                         elif rep == 'nwct' and Time().isNowcast(fic_bis) :
                             fic_temp_nowcast=fic
                             fic_psal_nowcast=re.sub(gridtemp,gridsal,fic)
@@ -96,7 +96,7 @@ class Sorter():
                                 self.symlink(fic_temp_nowcast,file_out_temp)
                                 self.symlink(fic_psal_nowcast,file_out_psal)
                             except OSError as e:
-                                print "Link Error : %s" %(e.strerror)
+                                log.info("Link Error : %s" %(e.strerror))
                     # Find Forecast
                     JBUDATET0=valeurj.goforward(1)
                     BUDATET0=sy.__str__(JBUDATET0)
@@ -121,7 +121,7 @@ class Sorter():
                                         self.symlink(fic_temp_f3t0,filenameT)
                                         self.symlink(fic_psal_f3t0,filenameS)
                                     except OSError as e:
-                                        print "Link Error : %s" %(e.strerror)
+                                        log.error("Link Error : %s" %(e.strerror))
                                     log.info(": %s " %fic_temp_f3t0)
                         if rep == "fcst6" and Time().isForecast1(fic_bis) :
                             RUNDATET0=fic_bis.split('_')[5].split('.')[0].split('R')[1]
@@ -141,7 +141,7 @@ class Sorter():
                                         self.symlink(fic_temp_f6t0,filenameT)
                                         self.symlink(fic_psal_f6t0,filenameS)
                                     except OSError as e:
-                                        print "Link Error : %s" %(e.strerror)
+                                        log.error("Link Error : %s" %(e.strerror))
                                     log.info(": Forecast 6D %s %s" %(fic_temp_f6t0,nametype))
                     #find Persistence
                     RUNDATET0=SyDate(daterun).gobackward(14)
@@ -151,7 +151,7 @@ class Sorter():
                         fic_bis=os.path.basename(fic)
                         if rep == "pers" and Time().isPersistence(fic_bis) :
                             fic_temp_persistence=fic
-                            print "Fichier  %s" %(fic)
+                            log.info("Fichier  %s" %(fic))
                             fic_psal_persistence=re.sub(gridtemp,gridsal,fic)
                             filenameT=cl_rep+'/'+nametype0+'_'+gridtemp+'.nc'
                             filenameS=re.sub(gridtemp,gridsal,filenameT)
@@ -159,8 +159,8 @@ class Sorter():
                                 self.symlink(fic_temp_persistence,filenameT)
                                 self.symlink(fic_psal_persistence,filenameS)
                             except OSError as e:
-                                print "Link Error : %s" %(e.strerror)
+                                log.error("Link Error : %s" %(e.strerror))
                 valeurj=valeurj.goforward(1)
     ## TODO : add sort for weekly system => for the moment the work is done by the soft WIND
     def run_daily(self,lead_time,lead_val,date1,date2,config,dirmodel,dirsort):
-	    print lead_time,lead_val,date1,date2,config,dirmodel,dirsort 
+	    print (lead_time,lead_val,date1,date2,config,dirmodel,dirsort)

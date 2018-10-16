@@ -16,20 +16,20 @@ def lon_lat_to_cartesian(lon, lat, R = 1):
     z = R * np.sin(lat_r)
     return x,y,z
 
-def get_date_from_PGN(fileName):                                                                                                                                                                                
+def get_date_from_PGN(fileName):
+
     nc_file=netCDF4.Dataset(str(fileName),'r')
     try : 
-    	time_origin=nc_file.variables['time_counter'].getncattr('time_origin')
+        time_origin=nc_file.variables['time_counter'].getncattr('time_origin')
     except: 
-	print "not time origin"
-	## READ units and find date origin
-    	time_origin=nc_file.variables['time_counter'].getncattr('units').split('since')[1][1::]
-    	print time_origin
+        print ("not time origin")
+        ## READ units and find date origin
+        time_origin=nc_file.variables['time_counter'].getncattr('units').split('since')[1][1::]
     dateorigin=convertodate(time_origin)
-    print dateorigin
+    print (dateorigin)
     time_counter=nc_file.variables['time_counter'][:]
-    print time_counter
-    print len(time_counter)
+    print (time_counter)
+    print (len(time_counter))
     list_date=[]
     for time in time_counter:
         datej=time/86400
@@ -38,46 +38,46 @@ def get_date_from_PGN(fileName):
     nc_file.close()
     return list_date
 
-def get_julian_date_from_PGN_hrly(fileName):                                                                                                                                                                                
+def get_julian_date_from_PGN_hrly(fileName):
+
     nc_file=netCDF4.Dataset(str(fileName),'r')
     try : 
-    	time_origin=nc_file.variables['time_counter'].getncattr('time_origin')
+        time_origin=nc_file.variables['time_counter'].getncattr('time_origin')
     except: 
-	print "not time origin"
-	## READ units and find date origin
-    	time_origin=nc_file.variables['time_counter'].getncattr('units').split('since')[1][1::]
-	schedule=nc_file.variables['time_counter'].getncattr('units').split('since')[0]
-    	print time_origin
-	print schedule
+        print ("not time origin")
+        ## READ units and find date origin
+        time_origin=nc_file.variables['time_counter'].getncattr('units').split('since')[1][1::]
+        schedule=nc_file.variables['time_counter'].getncattr('units').split('since')[0]
+        print (time_origin)
+        print (schedule)
     dateorigin=convertodate(time_origin)
-    print dateorigin
+    print (dateorigin)
     time_counter=nc_file.variables['time_counter'][:]
-    print time_counter
-    print len(time_counter)
+    print (time_counter)
+    print (len(time_counter))
     list_date=[]
     if schedule.strip() == "hours" :
-	pas=24.0
+        pas=24.0
     elif schedule.strip() == "seconds" :
-	pas=86400.0
+        pas=86400.0
     else :
-	print ("Schedule not known")
-	sys.exit(1)
+        print ("Schedule not known")
+        sys.exit(1)
 
     for time in time_counter:
         datej=time/pas
-	print datej
         date_str=SyDatenew.fromjulian(int(datej),dateorigin)
-	datej_end=SyDate(str(date_str)).tojulian()+datej
+        datej_end=SyDate(str(date_str)).tojulian()+datej
         list_date.append(float(datej_end))
     nc_file.close()
     return list_date
 
-def convertodate(dateval):    
+def convertodate(dateval):
     year=dateval.split('-')[0]
     month=dateval.split('-')[1]
     day=dateval.split('-')[2].split(' ')[0]
     if len(day) < 2 :
-	day='0'+day 
+        day='0'+day 
     if month == 'JAN' or month =='1' :
         month='01'
     elif month == 'FEB' or month =='2' :

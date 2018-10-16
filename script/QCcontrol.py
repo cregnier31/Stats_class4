@@ -27,7 +27,8 @@ class QCcontroller(object):
         elif self.data_src == "GODAE":
             return QC_GODAE(self.data_type,self.data_src)
         else :
-            print "Type %s not known " %(type)
+            print ("Type %s not known " %(type))
+            sys.exit(1)
 
 class QCArgo(QCcontroller):
 
@@ -57,7 +58,9 @@ class QC_GODAE(QCcontroller):
         self.data_type=data_type
         self.data_src = data_source
     def QCrun(self,filename,qc_level):
-        print "Class to compute au qc on GODAE CLASS4 files"
+        """
+          Class to compute au qc on GODAE CLASS4 files
+        """
         nc = netCDF4.Dataset(filename)
         ll_depth=None
         ll_qc=None
@@ -147,7 +150,7 @@ class QCCorio(QCcontroller):
             elif var == 'PSAL':
                 ll_psal=1 
         if not ll_temp and ll_psal : 
-            print 'PROF not valid with no TEMP and no PSAL'
+            print ('PROF not valid with no TEMP and no PSAL')
         # Read N_PROFS
         n_prof = len(nc.dimensions["N_PROF"])
         # Read Position QC
@@ -176,7 +179,7 @@ class QCCorio(QCcontroller):
             namevar='PRES'
             rla_depth=NetcdReader().read_2D(filename,namevar)
         else :
-            print 'Not pres and depth'
+            print ('Not pres and depth')
             sys.exit(1)
         ## Read LATITUDE
         namevar='LATITUDE'
