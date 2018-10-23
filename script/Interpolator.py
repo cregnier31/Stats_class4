@@ -26,9 +26,12 @@ class Interpolator(object):
     def check_dimensions(self, list_input_file):
         """
         Check the existence and the dimensions of different lead times
-        Parameters
+        Arguments
         --------------------
         list_input_file : dictionnary with all the files to interp
+        Returns
+        --------------------
+        len(best), len(fcst), len(pers), len(clim): len of different lead time files
         """
         best = {k for k, v in list_input_file.iteritems() if "hdct" in k}
         clim = {k for k, v in list_input_file.iteritems() if "clim" in k}
@@ -40,11 +43,15 @@ class Interpolator(object):
         """
         Read and Interp data files
         Read input file, compute coloc value and interp with KDtree
-        Parameters
+        Arguments
         --------------------
         data_file : input data file
         list_input_file : list of input files to interp
         param_dict : dictionnary with all the parameters
+        Returns
+        --------------------
+        tab_results : dictionnary with interpolated arrays
+        file_out : name of output file
         """
         # Initialisation
         ll_clim = False
@@ -181,7 +188,7 @@ class Interpolator(object):
         Coloc 2D
         Compute weight file with KDTree Method and store it in
         a pickle file
-        Parameters
+        Arguments
         --------------------
         lon_in : input longitude array
         lon_out : output longitude array
@@ -192,7 +199,10 @@ class Interpolator(object):
             =>  1 = nearest
             =>  >1 IDW method
         log : logger object
-        return WEIGHT, inds_idw1
+        Returns
+        --------------------
+        WEIGHT : weight values
+        inds_idw1 : index values in the grid
         """
         # Compute or not weight file
         if os.path.exists(weight_file):
@@ -257,7 +267,7 @@ class Interpolator(object):
         """
         -------------------
         2D interpolator
-        Parameters
+        Arguments
         --------------------
         weight_file : weight values
         inds : index values
@@ -265,7 +275,9 @@ class Interpolator(object):
             =>  1 = nearest
             =>  >1 IDW method
         variable :  input_variable
-        return interp tab
+        Returns
+        --------------------
+        interp tab : interpolated array
         """
         self.log.info('Read input file : %s' % (file))
         self.log.info('Variable : %s' % (variable))
