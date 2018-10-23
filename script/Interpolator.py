@@ -25,7 +25,10 @@ class Interpolator(object):
 
     def check_dimensions(self, list_input_file):
         """
-           Check the existence and the dimensions of different lead times
+        Check the existence and the dimensions of different lead times
+        Parameters
+        --------------------
+        list_input_file : dictionnary with all the files to interp
         """
         best = {k for k, v in list_input_file.iteritems() if "hdct" in k}
         clim = {k for k, v in list_input_file.iteritems() if "clim" in k}
@@ -35,8 +38,13 @@ class Interpolator(object):
 
     def read_and_interp(self, data_file, list_input_file, param_dict):
         """
-           Read and Interp data files
-           Read input file, compute coloc value and interp with KDtree
+        Read and Interp data files
+        Read input file, compute coloc value and interp with KDtree
+        Parameters
+        --------------------
+        data_file : input data file
+        list_input_file : list of input files to interp
+        param_dict : dictionnary with all the parameters
         """
         # Initialisation
         ll_clim = False
@@ -171,20 +179,20 @@ class Interpolator(object):
         """
         -------------------
         Coloc 2D
+        Compute weight file with KDTree Method and store it in
+        a pickle file
         Parameters
         --------------------
-        x1 : name of input longitude array
-        x2 : name of output longitude array
-        y1 : name of input latitude array
-        y2 : name of output latitude array
-        input_file : input file
-        output_grid : output fie
+        lon_in : input longitude array
+        lon_out : output longitude array
+        lat_in : input latitude array
+        lat_out : output latitude array
         weight_file : weight file
         nbpts_interp : number points for interpolation
             =>  1 = nearest
             =>  >1 IDW method
-        tab_in : input variable array
-        return interp tab
+        log : logger object
+        return WEIGHT, inds_idw1
         """
         # Compute or not weight file
         if os.path.exists(weight_file):
