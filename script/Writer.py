@@ -3,7 +3,7 @@ import os
 import sys
 import string
 import shutil
-import glob
+from glob import glob
 import re
 import numpy as np
 import netCDF4
@@ -118,6 +118,71 @@ class Writer():
         print ('-------------------------------')
         nc_fid.close()  # close the new file
 
+    def write_GLOBCOLOR_files(self, filename, tab1, tab2, tab3, dateval, model):
+        nc_fid = Dataset(filename, 'r+', format='NETCDF3_CLASSIC')
+        nc_file = nc_fid.createVariable(
+            'best_estimate', 'f4', ('lat', 'lon'), fill_value=-999.0)
+        nc_file2 = nc_fid.createVariable(
+            'forecast', 'f4', ('lat', 'lon'), fill_value=-999.0)
+        nc_file3 = nc_fid.createVariable(
+            'climatology', 'f4', ('lat', 'lon'), fill_value=-999.0)
+        nc_file.setncatts(
+            {'long_name': u"Model best_estimate counterpart of obs. value"})
+        nc_file2.setncatts(
+            {'long_name': u"Model forecast counterpart of obs. value"})
+        nc_file3.setncatts(
+            {'long_name': u"Satellite L4 climatology counterpart of obs. value"})
+        nc_fid.variables['best_estimate'][:] = tab1
+        nc_fid.variables['forecast'][:] = tab2
+        nc_fid.variables['climatology'][:] = tab3
+        # Add global attributs
+        nc_fid.institution = 'MERCATOR OCEAN'
+        nc_fid.contact = 'qualif@mercator-ocean.fr'
+        today = date.today()
+        yyyy = str(today)[0:4]
+        yyyy2 = dateval[0:4]
+        month = str(today)[5:7]
+        month2 = dateval[4:6]
+        day = str(today)[8:10]
+        day2 = dateval[7:9]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.system = model
+        print '-------------------------------'
+        print 'Creation OK %s '
+        print '-------------------------------'
+        nc_fid.close()  # close the new file
+
+    def write_GLOBCOLOR_files2(self, filename, tab, tab2, dateval, model):
+        nc_fid = Dataset(filename, 'r+', format='NETCDF3_CLASSIC')
+        nc_file = nc_fid.createVariable(
+            'best_estimate', 'f4', ('lat', 'lon'), fill_value=-999.0)
+        nc_file2 = nc_fid.createVariable(
+            'climatology', 'f4', ('lat', 'lon'), fill_value=-999.0)
+        nc_file.setncatts(
+            {'long_name': u"Model best_estimate counterpart of obs. value"})
+        nc_file2.setncatts(
+            {'long_name': u"Satellite L4 climatology counterpart of obs. value"})
+        nc_fid.variables['best_estimate'][:] = tab
+        nc_fid.variables['climatology'][:] = tab2
+        # Add global attributs
+        nc_fid.institution = 'MERCATOR OCEAN'
+        nc_fid.contact = 'qualif@mercator-ocean.fr'
+        today = date.today()
+        yyyy = str(today)[0:4]
+        yyyy2 = dateval[0:4]
+        month = str(today)[5:7]
+        month2 = dateval[4:6]
+        day = str(today)[8:10]
+        day2 = dateval[7:9]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.system = model
+        print '-------------------------------'
+        print 'Creation OK %s '
+        print '-------------------------------'
+        nc_fid.close()  # close the new file
+
     def write_best_fcst(self, filename, tab1, tab2, dateval, model):
         nc_fid = Dataset(filename, 'r+', format='NETCDF3_CLASSIC')
         nc_file = nc_fid.createVariable(
@@ -181,23 +246,34 @@ class Writer():
             self.write_GODAE_files(
                 filename, tab_results['best'], tab_results['forecast'],
                 tab_results['persistence'], dateval, param_dict['modele'])
-            self.log.info('----------------------------')
-            self.log.info('Creation file %s' % (filename))
-            self.log.info('----------------------------')
-            # Zipped files and move in output directory
-            for filename in glob.glob(param_dict['dirwork']+"*.nc"):
-                self.log.info('ZIP and move file %s' % (filename))
-                f_in = open(filename, 'rb')
-                f_out = gzip.open(filename+'.gz', 'wb')
-                f_out.writelines(f_in)
-                f_out.close()
-                f_in.close()
-                if os.path.exists(param_dict['diroutput'] +
-                                  os.path.basename(filename)+'.gz'):
-                    os.remove(param_dict['diroutput'] +
-                              os.path.basename(filename)+'.gz')
-                shutil.move(filename+'.gz', param_dict['diroutput'])
-                os.remove(filename)
-                self.log.info('File ok %s' % (filename))
+        elif dataorigin == "GLOBCOLOUR" and param_dict['daily_pref'] == '7dAV':
+            self.log.info("Write inside GLOBCOLOUR files")
+            self.write_GLOBCOLOR_files(filename, tab_results['best'],
+                                       tab_results['forecast'], tab_results['clim'],
+                                       dateval, param_dict['cl_config'])
+        elif dataorigin == "GLOBCOLOUR" and param_dict['daily_pref'] == '1dAV':
+            self.log.info("Write inside GLOBCOLOUR files")
+            self.write_GLOBCOLOR_files2(filename, tab_results['best'],
+                                        tab_results['clim'],
+                                        dateval, param_dict['cl_config'])
         else:
-            self.log.error("Origin Not Known")
+            self.log.error("Origin Not Known : %s :" % (dataorigin))
+        self.log.info('----------------------------')
+        self.log.info('Creation file %s' % (filename))
+        self.log.info('----------------------------')
+        # Zipped files and move in output directory
+        for filename in glob(param_dict['dirwork']+"*"+param_dict['cl_conf']+
+            "*"+param_dict['varname']+"*.nc"):
+            self.log.info('ZIP and move file %s' % (filename))
+            f_in = open(filename, 'rb')
+            f_out = gzip.open(filename+'.gz', 'wb')
+            f_out.writelines(f_in)
+            f_out.close()
+            f_in.close()
+            if os.path.exists(param_dict['diroutput'] +
+                              os.path.basename(filename)+'.gz'):
+                os.remove(param_dict['diroutput'] +
+                          os.path.basename(filename)+'.gz')
+            shutil.move(filename+'.gz', param_dict['diroutput'])
+            os.remove(filename)
+            self.log.info('File ok %s' % (filename))

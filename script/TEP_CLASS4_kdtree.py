@@ -70,12 +70,14 @@ def main(level=1):
             factory("GLOBAL_INPUT_MODEL_DATA").run(param_dict, dateval, log)
         log.info(input_model_file)
         # Interpolation of the data
-        tab_results, file_out = Interpolator(log).read_and_interp(
-            input_list_files, input_model_file, param_dict)
-        # Write output file
-        filename = param_dict['dirwork']+file_out
-        log.info('Write interp file  %s ' % (str(dateval)))
-        Writer(log).write_output(filename, tab_results, param_dict, dateval)
+        for file in input_list_files:
+            tab_results, file_out = Interpolator(log).read_and_interp(
+                file, input_model_file, param_dict)
+            # Write output file
+            filename = param_dict['dirwork']+file_out
+            log.info('Write interp file  %s ' % (str(dateval)))
+            Writer(log).write_output(
+                filename, tab_results, param_dict, dateval)
         valeurj = valeurj.goforward(1)
 
 

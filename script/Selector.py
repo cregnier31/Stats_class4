@@ -80,6 +80,7 @@ class SelectListModelData(Selector):
             if  time == 'forecast':
                 if param_dict['cl_config'][0:6] == 'BIOMER':
                     lead_new = [time[0]+time[4]+time[6:8]]
+                    log.info("Config biomer")
                 else:
                     lead_new = [time[0]+time[4]+time[6:8]+element for element in lead_new ]
                 lead_fin = lead_new
@@ -102,6 +103,8 @@ class SelectListModelData(Selector):
                 ll_single = True
             elif time == 'best_weekly':
                 lead_fin = ['hdct', 'nwct']
+            elif time == 'climatology':
+                lead_fin = ['clim']
             else:
                 log.error('Lead time %s not expected ' %(time))
             config_d = re.sub("V", "QV", param_dict['cl_config'])
@@ -110,11 +113,18 @@ class SelectListModelData(Selector):
             for directory in lead_fin:
                 modele = cl_config_use
                 param_dict['modele'] = modele
-                log.info('model %s' %(modele))
                 if directory == 'hdct':
-                    dirmodel_new = param_dict['dirmodel']+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
+                    if param_dict['daily_pref'] == '7dAV':
+                        dirmodel_new = param_dict['dirmodel']+"HINDCAST/"
+                    else:
+                        dirmodel_new = param_dict['dirmodel']+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
                 elif directory == 'hdct_all':
                     dirmodel_new = dirmodel+"/"
+                elif directory == 'fcst' :
+                    if param_dict['daily_pref'] == '7dAV':
+                        dirmodel_new = param_dict['dirmodel']+"FORECAST/"
+                    else:
+                        dirmodel_new = param_dict['dirmodel']+"DAILY/"+modele[:5]+"/"+modele.lower()+"/"
                 else :
                     dirmodel_new = param_dict['dirmodel']+"DAILY/"+modele[:5]+"/"+modele.lower()+"/"
                 ## Compute date
@@ -130,8 +140,24 @@ class SelectListModelData(Selector):
                     daterun = first_date
                     date1 = daterun.gobackward(14)
                     date2 = daterun.gobackward(7)
-                    template = modele+'_'+param_dict['daily_pref']+'_'+ \
-                    str(date1)+'_'+ str(date2)+'_' + gridtype+'_R'+str(daterun)
+                    if directory == 'hdct':
+                        template = modele+'_'+param_dict['daily_pref']+'_'+ \
+                        str(date1)+'_'+ str(date2)+'_' + gridtype+'_R'+str(daterun)
+                    elif directory == 'fcst':
+                        template = modele+'_'+param_dict['daily_pref']+'_'+ \
+                        str(date1)+'_'+ str(date2)+'_' + gridtype+'_R'+str(date1)
+                    elif directory == 'clim' and param_dict['data_type'].lower() == 'chloro':
+                        print("climatology")
+                        dirmodel_new = param_dict['dirclim']
+                        datev = SyDate(str(dateval))
+                        if int(datev.month) < 10 and int(datev.day) < 10:
+                            template = '19980'+str(datev.month)+'0'+str(datev.day)
+                        elif datev.month < 10 and datev.day > 9:
+                            template = '19980'+str(datev.month)+str(datev.day)
+                        elif datev.month > 9 and datev.day < 10:
+                            template = '1998'+str(datev.month)+'0'+str(datev.day)
+                        else:
+                            template = '1998'+str(datev.month)+str(datev.day)
                     list_file = glob(dirmodel_new+template+"*.nc")
                 else:
                     log.info('directory %s' % (dirmodel_new+directory))
@@ -144,7 +170,6 @@ class SelectListModelData(Selector):
                     sys.exit(1)
                 log.info('dirmodel  %s ' % (param_dict['dirmodel']))
                 log.info('directory and file  %s %s ' % (directory, list_file[0]))
-                log.info("load dataset ok")
                 list[directory] = list_file
         return list
 

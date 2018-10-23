@@ -3,7 +3,7 @@ import os
 import sys
 import string
 import shutil
-import glob
+from glob import glob
 import re
 import numpy as np
 import netCDF4
@@ -42,6 +42,7 @@ class Loader(object):
         if type == "NC_CORIO": return LoaderNCcorio()
         if type == "NC_CORIO_ORIGIN": return LoaderNCcorio()
         if type == "NC_CHLORO": return LoaderNCChloro()
+        if type == "NC_CLIM": return LoaderNCClim()
         if type == "NC_GODAE": return LoaderNCgodae()
         if type == "Microwat": return LoaderSyntheticValue()
         if type == "SSS_ship": return LoaderSSSVessel()
@@ -54,6 +55,22 @@ class Loader(object):
         if type == "PGN_coords": return PGN_coords_Loader()
         if type == "alleges_coords": return alleges_coords()
         assert 0, "Format not known: " + type
+
+    def generic_read_pos_and_value(self,filename, var_lon, var_lat, varname):
+        rla_lon, rla_lat, nc = self.generic_read_pos(filename, var_lon, var_lat)
+        _FillValue = nc.variables[varname]._FillValue
+        #rla_value = nc.variables[varname][0, :, :]
+        #nb_obs = int(np.shape(rla_value.flatten())[0])
+        #print len(np.shape(rla_value))
+        #sys.exit(1)
+        #return rla_lon, rla_lat, rla_value, nb_obs, _FillValue
+        return rla_lon, rla_lat, _FillValue, nc
+
+    def generic_read_pos(self, filename, var_lon, var_lat):
+        nc = netCDF4.Dataset(filename, 'r')
+        rla_lon = nc.variables[var_lon][:]
+        rla_lat = nc.variables[var_lat][:]
+        return rla_lon, rla_lat, nc
 
 
 class InputDataLoader(Loader):
@@ -107,15 +124,33 @@ class InputDataLoader(Loader):
 
 
 class LoaderNCChloro(Loader):
-    def read_pos_and_value(self, filename):
-        nc = netCDF4.Dataset(filename, 'r')
-        variable = 'lon'
-        rla_lon = nc.variables[variable][:]
-        variable = 'lat'
-        rla_lat = nc.variables[variable][:]
-        rla_value = nc.variables['CHL'][0, :, :]
-        return rla_lon, rla_lat, rla_value
+    def __init__(self):
+        self.lon = 'lon'
+        self.lat = 'lat'
+        self.varname = 'CHL'
+    def read_pos_and_value(self,filename):
+        rla_lon, rla_lat, _FillValue, nc = \
+          self.generic_read_pos_and_value(filename, self.lon, self.lat, self.varname)
+        rla_value = nc.variables[self.varname][0, :, :]
+        nb_obs = int(np.shape(rla_value.flatten())[0])
+        return rla_lon, rla_lat, rla_value, nb_obs, _FillValue
 
+class LoaderNCClim(Loader):
+    def __init__(self):
+        self.lon = 'longitude'
+        self.lat = 'latitude'
+        self.varname = 'CHL_MEAN'
+
+    def read_pos_and_value(self,filename):
+        rla_lon, rla_lat, nb_obs, _FillValue = \
+         self.generic_read_pos_and_value(filename, self.lon, self.lat, self.varname)
+        rla_value = nc.variables[self.varname][0, :, :]
+        nb_obs = int(np.shape(rla_value.flatten())[0])
+        return rla_lon, rla_lat, rla_value, nb_obs, _FillValue
+
+    def read_pos(self, filename):
+        rla_lon, rla_lat, nc = self.generic_read_pos(filename, self.lon, self.lat)
+        return rla_lon, rla_lat
 
 class InputLoader(Loader):
     def load(self, options, level, log):
@@ -365,6 +400,8 @@ class NmlLoader(Loader):
         param_dict['dirwork'] = db.get('output_dir', 'DIRTMP')
         param_dict['diroutput'] = db.get('output_dir', 'DIROUTPUT')
         param_dict['homedir'] = db.get('GLOBAL', 'DIRHOME')
+        param_dict['dirclim'] = db.get('climato', 'DIRCLIM')
+        param_dict['coord_clim'] = glob(param_dict['dirclim'] + "*.nc")[0]
         param_dict['dirtmp'] = param_dict['dirwork'] + 'ext-'
         param_dict['prefix_data'] = db.get('input_dir', 'PREFIX')
         param_dict['nml_dir'] = db.get('GLOBAL', 'NAMELIST_DIR')
@@ -404,7 +441,8 @@ class NmlLoader(Loader):
             param_dict['dirdata'] = param_dict['dirdata']
         # Create Output and tmp directory if doesn't exist
         if not os.path.exists(param_dict['dirwork']):
-            os.makedirs(['dirwork'])
+            log.info("Create dirwork : %s" % (param_dict['dirwork']))
+            os.makedirs(param_dict['dirwork'])
         if not os.path.exists(param_dict['diroutput']):
             os.makedirs(param_dict['diroutput'])
         if not os.path.exists(param_dict['coloc_rep']):
@@ -471,7 +509,9 @@ class LoaderSSSVessel(Loader):
         rla_lat = nc.variables[variable][:]
         n_profiles=len(rla_lon[:])
         rla_value = nc.variables['SSS'][:]
-        return rla_lon,rla_lat,rla_value
+        _FillValue = nc.variables['SSS']._FillValue
+        nb_obs = len(rla_lon)
+        return rla_lon, rla_lat, rla_value, nb_obs, _FillValue
         # Optional Read juld
         # variable='juld'
         # rla_juld= nc.variables[variable][:]
@@ -479,6 +519,11 @@ class LoaderSSSVessel(Loader):
 class LoaderNCgodae(Loader):
 
     """Loader for GODAE dataset"""
+
+    def __init__(self):
+        self.lon = 'longitude'
+        self.lat = 'latitude'
+        self.varname = 'observation'
 
     def read_pos(self,filename):
         nc = netCDF4.Dataset(filename,'r')
@@ -520,14 +565,11 @@ class LoaderNCgodae(Loader):
         return position
 
     def read_pos_and_value(self,filename):
-        nc = netCDF4.Dataset(filename,'r')
-        variable = 'longitude'
-        rla_lon = nc.variables[variable][:]
-        variable = 'latitude'
-        rla_lat = nc.variables[variable][:]
-        rla_value = nc.variables['observation'][:]
-        return rla_lon,rla_lat,rla_value
-
+        rla_lon, rla_lat, _FillValue, nc = \
+         self.generic_read_pos_and_value(filename, self.lon, self.lat, self.varname)
+        rla_value = nc.variables[self.varname][:]
+        nb_obs = len(rla_value)
+        return rla_lon, rla_lat, rla_value, nb_obs, _FillValue
 
 class PGN_coords_Loader(Loader):
 
