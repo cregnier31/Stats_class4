@@ -20,7 +20,7 @@ Les fichiers de configurations sont là : `script/cfg/config_...`
 
 Les modules qui servent au code principal sont rangés dans le répertoire `module`
 
-J'ai codé une série de tests unitaires pour les différents cas dans le répertoire 'script/test/'
+J'ai codé une série de tests unitaires pour les différents cas dans le répertoire `script/test/`
 
 
 # Exemple de launcher
