@@ -13,16 +13,6 @@ from Interp_kdtree import interp_KDtree
 from interpolate import search_orca, search_orca_4pts
 from scipy.interpolate import InterpolatedUnivariateSpline, interp1d
 
-#try:
-#    from pykdtree.kdtree import KDTree
-#    kd_tree_name = 'pykdtree'
-#except ImportError:
-#    try:
-#        from scipy.spatial import cKDTree
-#        kd_tree_name = 'scipy.spatial'
-#    except ImportError:
-#        raise ImportError('Either pykdtree or scipy must be available')
-
 if sys.version_info[0] >= 3:
     import pickle
 else:

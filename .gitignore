@@ -1,0 +1,9 @@
+/.idea/
+/data/dump
+/data/maps
+/.env
+/back-end/.cache/
+/back-end/moniqua/local_settings.py
+.pyc
+.o
+.svn
