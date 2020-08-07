@@ -608,7 +608,7 @@ ENDIF
        SPAWN,'convert -density 600 -rotate -90 -background white -flatten -resize 15% '+dirname_out+name_out+'.ps '+dirname_out+name_out+'.gif'
        SPAWN,'rm '+dirname_out+name_out+'.ps'
        IF Keyword_Set(month) THEN BEGIN
-	  SPAWN,'scp '+dirname_out+name_out+'.gif qualif@kara:/home/qualif/squal_images/COMPARAISON_OBS/GLOBAL/'+year+'/'
+	  SPAWN,'scp '+dirname_out+name_out+'.gif squal@bali:/home/squal/images/COMPARAISON_OBS/GLOBAL/'+year+'/'
        ENDIF	
 	
       clear,longitude2,latitude2
@@ -777,7 +777,7 @@ ENDIF
        SPAWN,'rm '+dirname_out+name_out+'.ps'
        clear,longitude2,latitude2
        IF Keyword_Set(month) THEN BEGIN
-	  SPAWN,'scp '+dirname_out+name_out+'.gif qualif@kara:/home/qualif/squal_images/COMPARAISON_OBS/GLOBAL/'+year+'/'
+	  SPAWN,'scp '+dirname_out+name_out+'.gif squal@bali:/home/squal/images/COMPARAISON_OBS/GLOBAL/'+year+'/'
        ENDIF	
     label:
     ENDFOR

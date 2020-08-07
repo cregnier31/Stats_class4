@@ -25,6 +25,7 @@ import param.Def_param_bulletin as params
 import supobs
 from supobs import toolkitStats
 from supobs import Statslib
+import datetime as dt
 
 
 #~~~~~~~~~~~~~~~~~~~~~ Input parameters settings ~~~~~~~~~~~~~~~~~~~~~
@@ -35,18 +36,38 @@ cla_opts = getopt.getopt(sys.argv[1:],letters,keywords)
 
 cl_dateMinZone  = 'YYYYMMDD'
 cl_dateMaxZone  = 'YYYYMMDD'
+ll_date1=None
+ll_date2=None
 
 _DBFILE_        = './environment.cfg'
 
 for o,p in cla_opts[0]:
   if o in ['-s','--day1']:
      cl_dateMinZone = p
+     ll_date1 = True
   elif o in ['-e','--day2']:
      cl_dateMaxZone = p
+     ll_date2 = True
   elif o in ['-t','--datatype']:
      cl_CL4type = p
   elif o in ['-c','--cfg']:
      _DBFILE_ = p.strip()
+
+if not ll_date1 and not ll_date2:
+    date_now = dt.datetime.now()
+    if date_now.month == 1 :
+        cl_dateMinZone = str(date_now.year-1)+"1201"
+        cl_dateMaxZone = str(date_now.year)+"0101"
+    elif date_now.month < 10 :
+	cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+	cl_dateMaxZone = str(date_now.year)+"0"+str(date_now.month)+"01"
+    elif date_now.month == 11 :
+	cl_dateMinZone = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+	cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
+    else : 
+	cl_dateMinZone = str(date_now.year)+str(date_now.month-1)+"01"
+	cl_dateMaxZone = str(date_now.year)+str(date_now.month)+"01"
+
 
 cla_dates = supobs.toolkitStats.char_period(cl_dateMinZone,cl_dateMaxZone)
 
@@ -77,60 +98,39 @@ except :
         sys.exit(1)
 
 if cl_CL4type == 'TEMP' :
-<<<<<<< .mine
-    if config_model.upper() == 'PSY4V2R2' :
-        variable_name_type = params.variable_nameT
-    else :
-        variable_name_type = params.variable_nameT_new
-=======
     variable_name_type = params.variable_nameT_new 
->>>>>>> .r15074
     tab_prof = params.tab_prof
-    lookfor = 'profile_votemper'
+    lookfor = 'TEMP'
     tab_prof_model = params.tab_prof_model
     tab_e3t = params.tab_e3t
 elif cl_CL4type == 'SST' :
-<<<<<<< .mine
-    #if modele.upper() == 'PSY4V3R1' :
-    #    variable_name_type = params.variable_nameSST_best 
-    #else :
-    if config_model.upper() == 'PSY4V2R2' :
-        variable_name_type = params.variable_nameSST
-    else :
-        variable_name_type = params.variable_nameSST_new
-=======
     variable_name_type = params.variable_nameSST_new
->>>>>>> .r15074
     tab_prof = [0,0]
-    lookfor = 'SST_votemper'
+    lookfor = 'SST'
     tab_prof_model = [0,0.5]
     tab_e3t = [1]
 elif cl_CL4type == 'SLA' :
-<<<<<<< .mine
-    if config_model.upper() == 'PSY4V2R2' :
-        variable_name_type = params.variable_nameSLA
-    else :
-        variable_name_type = params.variable_nameSLA_new
-=======
     variable_name_type = params.variable_nameSLA_new
->>>>>>> .r15074
     tab_prof = [0,0]
-    lookfor = 'SLA_sossheig'
+    lookfor = 'SLA'
     tab_prof_model = [0,0.5]
     tab_e3t = [1]
-elif cl_CL4type == 'CHL' :
+elif cl_CL4type == 'CHL':
     variable_name_type = params.variable_nameCHL
     tab_prof = [0,0]
-    lookfor = 'CHL'
+    lookfor = cl_CL4type
+    tab_prof_model = [0,0.5]
+    tab_e3t = [1]
+elif cl_CL4type == 'chl':
+    variable_name_type = params.variable_namechl
+    tab_prof = [0,0]
+    lookfor = cl_CL4type
     tab_prof_model = [0,0.5]
     tab_e3t = [1]
 elif cl_CL4type in ['SAL','PSAL'] :
-    if config_model.upper() == 'PSY4V2R2' :
-        variable_name_type = params.variable_nameS
-    else :
-        variable_name_type = params.variable_nameS_new
+    variable_name_type = params.variable_nameS_new 
     tab_prof = params.tab_prof
-    lookfor = 'profile_vosaline'
+    lookfor = 'PSAL'
     tab_prof_model = params.tab_prof_model
     tab_e3t = params.tab_e3t
 else :
@@ -146,24 +146,9 @@ filelist = []
 days     = []
 
 for cdate in cla_dates :
-    if cl_CL4type == 'CHL' :
-        cl_filetmplt = lookfor+'_'+config_obs.upper()+'_'+config_model.upper()+'_rms_diff_'+cdate+'*nc'
-    else :
-        cl_filetmplt = config_model.upper()+'_'+grid_type+'_rms_diff_'+cdate+'*'+lookfor+'*nc'
-<<<<<<< .mine
-        print "lookfor %s " %(cl_filetmplt)
-        filelist_tmp = glob.glob(os.path.join(dircl4in,cl_filetmplt)) 
-        if len(filelist_tmp) >1 :
-            print 'too many files found at date %s' %cdate
-            sys.exit(1)
-        elif len(filelist_tmp) ==0:
-            filelist_tmp = 'no_file.nc'
-            filelist.append(filelist_tmp[0])
-            days.append(cdate)
-        else :
-            filelist.append(filelist_tmp[0])
-            days.append(cdate)
-=======
+
+    cl_filetmplt = lookfor+'_'+config_obs.upper()+'_'+config_model.upper()+'_rms_diff_'+cdate+'.nc'
+
     print "lookfor %s " %(cl_filetmplt)
     filelist_tmp = glob.glob(os.path.join(dircl4in,cl_filetmplt)) 
     if len(filelist_tmp) >1 :
@@ -176,14 +161,13 @@ for cdate in cla_dates :
     else :
         filelist.append(filelist_tmp[0])
         days.append(cdate)
->>>>>>> .r15074
 
 if config_model.upper() == 'PSY3V2R2' :
         liste_region = np.chararray(11,itemsize=25)
         liste_region[:] = params.liste_zone[:11]
 elif config_model.upper() in ['PSY3QV3R1','PSY3V3R2',\
                         'PSY4V1R3','PSY4V2R2','PSY4V3R1',\
-                        'PSY3V3R3','BIOMER4'] :
+                        'PSY3V3R3','BIOMER4', 'FREEBIORYS2'] :
         liste_region = np.chararray(14,itemsize=25)
         liste_region[:] = params.liste_zone[:14]
 elif config_model.upper() in ['BLK','FOAM','GIOPS_CONCEPTS','PSY3V3R1','HYCOM','HYCOM_RTOFS'] :
@@ -203,11 +187,6 @@ elif config_model.upper() in ['PSY2V4R1','PSY2V4R2','PSY2V4R3','PSY2V4R4','PSY2Q
 
 
 supobs.Statslib.calculer_stats_MYO2(file_boxmask,config_model.upper(),tab_prof,\
-                        tab_prof_model,tab_e3t,variable_name_type,\
-                        liste_region,filelist,cl_CL4type,\
-                        days, dircl4in ,dircl4out,cl_dateMinZone,cl_dateMaxZone  ) 
-
-supobs.Statslib.calculer_stats_all(file_boxmask,config_model.upper(),tab_prof,\
                         tab_prof_model,tab_e3t,variable_name_type,\
                         liste_region,filelist,cl_CL4type,\
                         days, dircl4in ,dircl4out,cl_dateMinZone,cl_dateMaxZone  ) 

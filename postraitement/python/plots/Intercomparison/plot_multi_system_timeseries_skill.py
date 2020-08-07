@@ -1,0 +1,235 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Nov 28 09:13:09 2017
+
+@author: cszczypta
+"""
+
+#!/usr/bin/python
+#========================================== 
+
+import matplotlib
+matplotlib.use('TkAgg')
+import numpy as np
+import numpy.ma as ma
+from netCDF4 import Dataset
+import datetime as d
+import sys, os
+from glob import glob
+sys.path.append("../../module")
+sys.path.append("/home/cregnier/SVN/mo/LIB/LIB_PYT/")
+
+import matplotlib.pyplot as plt
+import param.Def_param_bulletin as params
+import timeseries_plot as tsp
+import scipy as sp
+from scipy import signal
+from utils import pull_names, echeance
+
+# ************************************************************************
+#                           FONCTIONS
+# ************************************************************************
+
+
+
+
+# ***************************************************************************
+#
+#    Ce programme permet de tracer les series temporelles sur une periode
+#   donnee des differentes statistiques (RMSD et BIAIS) pour les differents 
+#          jeux de donnees (HYCOM, PSY3, PSY4, GIOPS, BLK et FOAM)
+#
+# ***************************************************************************
+
+
+# Configuration du plot
+# ~~~~~~~~~~~~~~~~~~~~~~
+
+SINGLE_PLOT = False
+MULTI_PLOT = True
+GLO_AREA = False
+CMEMS_AREA = True
+dt_start_plot = '20130101'
+dt_start_plot_ini = '20130101'
+dt_end_plot_ini = '20190131'
+dt_end_plot = '20190131'
+list_color = ['y','deeppink','dodgerblue','mediumpurple','pink','turquoise','darkorange']
+#list_color = ['deeppink','y','mediumpurple','pink','turquoise']
+window = 30
+nf = 60 # Hincast: 0 ; Forecast: nbre heures echeance (12, 60, etc.)
+
+
+# Definition des chemins, des systemes, des variables et de la periode
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PATH_IN = '/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V5/postraitement/python/plots/Intercomparison/'
+PATH_OUT = PATH_IN+'img/0-500m/'
+DATA_IN = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'
+#SYSTEM = ['FOAM','PSY4V3R1','HYCOM_RTOFS','BLK','GIOPS','NERSC']
+SYSTEM = ['FOAM','PSY4V3R1','ENSMEAN','HYCOM_RTOFS','BLK','GIOPS']
+#VAR = ['seaice-concentration','salinity', 'temperature', 'sla', 'sst']
+VAR = ['salinity', 'temperature', 'sla', 'sst']
+level_sla_stt = 0
+level_t_s = 0
+cla_areaini = params.liste_zone
+cla_depth = params.profondeur4
+print cla_depth
+# ~~~~~~~~~~~ Definition des dates ~~~~~~~~~~~~~~~~~
+
+dateCNESref   = d.datetime.strptime('19500101','%Y%m%d').toordinal()
+dtst = d.datetime.strptime(dt_start_plot,'%Y%m%d')
+dted = d.datetime.strptime(dt_end_plot,'%Y%m%d')
+
+
+# Lecture des stats pour les differents systemes 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+dict={}
+dict_tmp = {}
+
+for v, varname in enumerate(VAR):
+ 
+    dict_tmp[varname] = {} ; dict[varname] = {}
+
+    if varname in ['sla','sst']: level = level_sla_stt
+    elif varname in ['temperature','salinity']: level = level_t_s
+    else: print 'level not define'
+    for s, prod in enumerate(SYSTEM):
+        if prod == "PSY4V3R1" or prod == "PSY3V3R3":
+            dt_start_plot = "20130501"
+        elif prod == "NERSC":
+            dt_start_plot = "20140101"
+        else:
+            dt_start_plot = dt_start_plot_ini
+        if prod == "NERSC":
+            dt_end_plot = "20181115"
+        else:
+            dt_end_plot = dt_end_plot_ini
+
+        print DATA_IN +prod+'/Stats_GODAE/NETCDF/0-500m/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_'+\
+                                prod+'_'+dt_start_plot+"_"+dt_end_plot+'_skill.nc'
+        filename = glob(os.path.join(DATA_IN +prod+'/Stats_GODAE/NETCDF/0-500m/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_'+\
+                        prod+'_'+dt_start_plot+"_"+dt_end_plot+'_skill.nc'))[0]
+        if not filename:
+            print "file not known"
+            sys.exit(1)
+        print filename
+        f1 = Dataset(filename, 'r', format='NETCDF4')
+        if 'skill_'+varname in f1.variables:
+            stat_var = f1.variables['skill_'+varname][:]
+            stat_var = np.where(stat_var.mask, np.nan, stat_var)
+            ll_stat = True
+        else:
+            ll_stat = False
+
+        rla_name = f1.variables['area_names'][:]
+        area_name = pull_names(rla_name)
+        if GLO_AREA:
+            area_name = ['Full Domain']
+        rla_metric = f1.variables['metric_names'][:]
+        metric_name = pull_names(rla_metric)
+        vtime = (f1.variables['time'][:])/24 + dateCNESref
+        fcst = f1.variables['forecasts'][:]
+        f1.close()
+        print fcst
+        num_ech, name_ech = echeance(fcst, nf)
+
+        PSS = np.where(np.array(metric_name) == 'PSS_skill_score')[0][0]
+        CSS = np.where(np.array(metric_name) == 'PSS_skill_score')[0][0]     
+        ini = False
+
+        if prod == "PSY4V3R1": prod = "PSY4"
+        if prod == "PSY3V3R3": prod = "PSY3"
+        dict[varname][prod] = {} ; dict_tmp[varname][prod] = {}
+        print prod
+
+        for a, area in enumerate(area_name):
+         # if area == "Full Domain":
+            dict[varname][prod][area] = {}
+            dict_tmp[varname][prod][area] = {}
+            if ll_stat:
+                dict_tmp[varname][prod][area]['PSS'] = stat_var[:, num_ech, level,PSS, a]
+                dict_tmp[varname][prod][area]['CSS'] = stat_var[:, num_ech, level,CSS, a]
+
+            TIME = []
+            for t in range(len(vtime)):
+                TIME.append(d.date.fromordinal(int(vtime[t])))
+
+            if ll_stat:
+                dict[varname][prod][area]['time'] = TIME[int(window/2):-int(window/2)]
+    # ~~ On lisse la courbe en faisant une moyenne glissante des stats sur n jours ~~~
+
+    for s, prod in enumerate(SYSTEM):
+        if prod == "PSY4V3R1": prod = "PSY4"
+        if prod == "PSY3V3R3": prod = "PSY3"
+        if 'time' not in dict[varname][prod][area]: continue
+        v_time = np.array(dict[varname][prod][area]['time'])
+        for a, area in enumerate(area_name):
+          #if area == "Full Domain":
+            MAT_TMP = np.zeros((len(v_time), 4))
+            for t in range(len(v_time)):
+                MAT_TMP[t,0] = np.nanmedian(np.array(dict_tmp[varname][prod][area]['PSS'])[t:t+int(window)])
+                MAT_TMP[t,1] = np.nanmedian(np.array(dict_tmp[varname][prod][area]['CSS'])[t:t+int(window)])       
+            dict[varname][prod][area]['PSS'] = MAT_TMP[:,0]
+            dict[varname][prod][area]['CSS'] = MAT_TMP[:,1]
+
+
+
+# ************************************************************************
+#             Test pour tracer plusieurs plots simples
+# ************************************************************************
+
+#SYSTEM = ['FOAM','PSY4','PSY3','HYCOM_RTOFS','BLK','GIOPS','NERSC']
+SYSTEM = ['FOAM','PSY4','ENSMEAN','HYCOM_RTOFS','BLK','GIOPS']
+if SINGLE_PLOT:
+    if GLO_AREA:
+        area_ini = ['Full Domain']
+    elif CMEMS_AREA:
+        area_ini = area_name
+    for area in area_ini:
+        a = np.where(np.array(area_name) == area)[0][0]
+        for v, varname in enumerate(VAR):
+            if varname in ['sla','sst']: prof = cla_depth[level_sla_stt]
+            elif varname in ['temperature','salinity']: prof = cla_depth[level_t_s]
+            fig, splot, nb_var = tsp.fmtFig(area, name_ech)
+            leg = True
+            ax_fig = plt.subplot(1,1,1)
+            if cla_areaini[a] == 'ARC':
+                f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof, dtst, dted, leg, list_color, splot, nb_var)
+            else:
+                f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM[:-1], prof, dtst, dted, leg, list_color, splot, nb_var)
+
+            plt.savefig(PATH_OUT+cla_areaini[a]+'_rmsd_bias_'+varname+'_'+dt_start_plot+'-'+dt_end_plot+'.png',dpi=200)
+            plt.close()
+
+
+# ************************************************************************
+#                Test pour tracer des multiplots
+# ************************************************************************
+print "Multiplot"
+skill = 1
+if MULTI_PLOT == True:
+    if GLO_AREA:
+        area_ini = ['Full Domain']
+    elif CMEMS_AREA:
+        area_ini = area_name
+    for area in area_ini:
+        a = np.where(np.array(area_name) == area)[0][0]
+        fig, splot, nb_var = tsp.fmtFig(area, name_ech, splot='multi', nb_var=len(VAR))
+        leg = False
+        for v, varname in enumerate(VAR):
+            #if varname in ['sla','sst']: prof = cla_depth[level_sla_stt]
+            if varname in ['sla','sst']: prof = "" # cla_depth[level_sla_stt]
+            elif varname in ['temperature','salinity']: prof = cla_depth[level_t_s]
+            ax_fig = plt.subplot(len(VAR),1,v+1) 
+            if (v+1) == len(VAR):
+                leg = True
+            if cla_areaini[a] == 'ARC':
+                f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof, dtst, dted, leg, list_color, splot, nb_var, skill)           
+            else:
+                f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM[:-1], prof, dtst, dted, leg, list_color, splot, nb_var, skill)           
+
+        plt.savefig(PATH_OUT+cla_areaini[a]+'_skill_scores_'+dt_start_plot+'-'+dt_end_plot+'.png',dpi=200)
+        plt.close()
+
+

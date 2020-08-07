@@ -12,8 +12,7 @@
 #
 #
 #####################################################################
-#include ../make_intel.macro
-include /home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/macro/make_intel_orca12_stereo.macro
+include ../make_intel.macro
 .SUFFIXES:.F90 .F .f90 .mod
 .F90.o:
 	$(F90) -c $(FFLAGS) ${INCLUDE} $< -o $@  $(CPP_KEYS)

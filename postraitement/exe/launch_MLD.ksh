@@ -1,2 +1,0 @@
-#!/bin/ksh
-/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement//../bin_local/Lecture_class4_MLD.exe /home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement//NAMELIST/namelist_liste_corio_19930101_20041231_CGLORS.txt CGLORS /homelocal/cregnier/tmp/Stats_CL4/ 19930101_20041231 2 /home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement//log/ 1 /home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement//utils/

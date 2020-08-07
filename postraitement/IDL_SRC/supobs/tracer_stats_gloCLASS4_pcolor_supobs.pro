@@ -1,6 +1,6 @@
 PRO tracer_stats_gloCLASS4_pcolor_supobs,modele,fic_mask, $
 			         filelist,var1,var2,$
-                                  zone,kind,dir_stats,OPER,date_title,tab_prof
+                                  zone,kind,dir_stats,OPER,date_title,tab_prof,tab_cmax,NETCDF=ind_netcdf,TYPE_OBS=type_data
 				  
 ;==========================================================================
 ;##  Trace des statistiques pour les fichers class4
@@ -31,6 +31,13 @@ file2=fic_mask
 file=fichier1
 print,file
 nb_prof=N_ELEMENTS(tab_prof)
+ind_plot_nc=0
+IF Keyword_Set(ind_netcdf) THEN BEGIN
+    ind_plot_nc=ind_netcdf
+ENDIF
+IF (ind_plot_nc EQ 1) THEN BEGIN
+    print,'Save fichier netcdf'
+ENDIF
 
 ;; Reconstitution profondeur
 print,nb_prof
@@ -45,6 +52,7 @@ range_values=fltarr(2,nb_prof)
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; Lecture des boites
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+;dir_mask='/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/static/'
 x1=ncdf_lec(file2,iodir=dir_mask,var='longitude', /nostruct) & x1=transpose(x1)
 x2=ncdf_lec(file2,iodir=dir_mask,var='latitude', /nostruct) & x2=transpose(x2)
 boite=ncdf_lec(file,iodir=dirin,var='box', /nostruct) & boite=transpose(boite)
@@ -65,11 +73,22 @@ CASE zone OF
       dom='zoom NATL12 1/12 mercator'
       typezone='A'
    ENDCASE
+   'ARC':BEGIN
+      print,'Zone Artic'
+      dom='zoom Subarctic 1/12 '
+      typezone='ARC'
+   ENDCASE
+   'ANT':BEGIN
+      print,'Zone Antarctic'
+      dom='zoom Subantarctic 1/12 '
+      typezone='A'
+   ENDCASE
    'P':BEGIN
       dom='zoom  Pacific 1/12 mercator'
    ENDCASE
    'I':BEGIN
       dom='zoom Indian 1/12 mercator'
+      typezone='Indian'
    ENDCASE
    'MED':BEGIN
       zone='A'
@@ -79,9 +98,10 @@ CASE zone OF
    'gulf stream':BEGIN
       dom='zoom NATL12 1/12 mercator'
    ENDCASE
-   'JAP': BEGIN
-     dom='zoom BIG_JAPAN 1/4 mercator'
-      typezone='Japan'
+   'West_Africa': BEGIN
+     zone='WESTAF'
+     dom='zoom West_Africa 1/4 mercator'
+     typezone='West_Africa'
    ENDCASE
    'GUI': BEGIN
       zone='N'
@@ -96,10 +116,10 @@ CASE zone OF
    'N':BEGIN
 	 dom='zoom AZORES 1/4 mercator'
    ENDCASE
-;   'C': BEGIN
-;        dom='zoom Chine_domain 1/4 mercator'
-;        typezone='Chinese_domain'
-;   ENDCASE
+   'C': BEGIN
+        dom='zoom South_China_Sea2 1/12 mercator'
+        typezone='SCS_domain'
+   ENDCASE
    ELSE:
 ENDCASE
 
@@ -437,13 +457,41 @@ prof=0L
 ;;-------------------------------------------------------------------------------------
 ;;      Tracé des images
 ;;------------------------------------------------------------------------------------
+;;     Ecriture du resultat sous forme netcdf
+       IF (ind_plot_nc EQ 1) THEN BEGIN
+          ;; Ecriture fichier
+          file=dirname_out+'stats_rms_'+modele+'_'+nom_var+'_'+profondeur(prof)+'_'+date_title+'.nc'
+          TAB=val1
+          XGRID=lon
+          YGRID=lat
+          ZGRID=0
+          choice='rms_'+nom_var
+          write_ncdf,file,TAB,XGRID,YGRID,ZGRID,1,choice
+          file=dirname_out+'stats_mean_'+modele+'_'+nom_var+'_'+profondeur(prof)+'_'+date_title+'.nc'
+          clear,choice
+          TAB2=-val2
+          XGRID=lon
+          YGRID=lat
+          ZGRID=0
+          choice='mean_'+nom_var
+          write_ncdf,file,TAB2,XGRID,YGRID,ZGRID,1,choice
+          ;;
+          file=dirname_out+'nb_data_'+modele+'_'+nom_var+'_'+profondeur(prof)+'_'+date_title+'.nc'
+          clear,choice
+          TAB2=val_ind
+          XGRID=lon
+          YGRID=lat
+          ZGRID=0
+          choice='nb_data_'+nom_var
+          write_ncdf,file,TAB2,XGRID,YGRID,ZGRID,1,choice
+       ENDIF
        clear,dc,output,cmin,cmax,fmin,fmax,field,kindchoice,v,palette
        clear,ymin,ymax,xmin,xmax ;,strmin,strmax
        output='gif'
        output='A3 ps'
        domain=dom
        clear,titre,units
-       titre='('+type_obs+'-obs) RMS '+varname+' : '+ profondeur(prof)+' '+date_title
+       titre='('+type_obs+'-obs '+type_data+') RMS '+varname+' : '+ profondeur(prof)+' '+date_title
        units='Rms misfit'
        ii=WHERE( val1 EQ 0 ) 
        IF (ii(0) NE -1) THEN val1(ii)=!values.f_nan
@@ -453,10 +501,15 @@ prof=0L
        if ( indice_var EQ  1 ) THEN BEGIN 
          ;kindchoice=kind 
 	 cmin=0. & cmax=0.5 & dc=0.01
+       ;  cmin=0 & cmax=tab_cmax(1,prof) &  dc=0.01
+	; cmin=0. & cmax=0.25 & dc=0.01
        endif
        if ( indice_var EQ  0 ) THEN BEGIN 
        ;  kindchoice=kind
          cmin=0. & cmax=2 & dc=0.05
+     ;    cmin=0. & cmax=2 & dc=0.05
+       ;  cmin=0 & cmax=tab_cmax(0,prof) &  dc=0.05
+      ;   cmin=0. & cmax=1.5 & dc=0.025
        endif
       kindchoice='no_iso stddev UserLevels publi'
       palette='stddev'
@@ -472,6 +525,7 @@ prof=0L
       nb_val2=nb_val(ii)
       p25=nb_val2( (SORT(nb_val2) ) (25 * N_ELEMENTS(nb_val2) / 100) ) 
       p75=nb_val2( (SORT(nb_val2) ) (75 * N_ELEMENTS(nb_val2) / 100) ) 
+      p75=nb_val2( (SORT(nb_val2) ) (50 * N_ELEMENTS(nb_val2) / 100) ) 
       il_indice1=WHERE(nb_val GT p25 ) ;; 1
       rms_diff1(il_indice1)=!values.f_nan
       il_indice2=WHERE(nb_val LT p25 OR nb_val GT p75 )
@@ -514,6 +568,27 @@ prof=0L
          !P.font=1
          le_sign='!9'+ STRING("308B)
          XYOUTS,0.08,0.02,le_sign, /norm, alignment=1.0, CHARSIZE=0.75, COLOR=black,FONT=1
+       ENDCASE
+        'ARC':BEGIN
+         COLORBAR, bottom=2,NCOLORS=ncolors, color=black, Range=[cmin, cmax], Format='(F5.2)',CHARSIZE=1.8 , Position=[0.30,0.06,0.90,0.08]
+	 XYOUTS,0.6,0.1,xxl, /norm, alignment=0.5, CHARSIZE=1.5, COLOR=black
+         XYOUTS,0.24,0.08,'nb_data >='+string(p75, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
+         DEVICE, SET_FONT='Symbol', /TT_FONT
+         !P.font=1
+         le_sign='!9'+ STRING("308B)
+         XYOUTS,0.06,0.08,le_sign, /norm, alignment=1.0, CHARSIZE=1.75, COLOR=black ;,FONT=1
+         !P.font=0
+         XYOUTS,0.24,0.05,'nb_data >='+string(p25, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
+         DEVICE, SET_FONT='Symbol', /TT_FONT
+         !P.font=1
+         le_sign='!9'+ STRING("308B)
+         XYOUTS,0.06,0.05,le_sign, /norm, alignment=1.0, CHARSIZE=1.25, COLOR=black,FONT=1
+         !P.font=0
+         XYOUTS,0.24,0.02,'nb_data <='+string(p25, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
+         DEVICE, SET_FONT='Symbol', /TT_FONT
+         !P.font=1
+         le_sign='!9'+ STRING("308B)
+         XYOUTS,0.06,0.02,le_sign, /norm, alignment=1.0, CHARSIZE=0.75, COLOR=black,FONT=1
        ENDCASE
         'T':BEGIN
          ;COLORBAR, bottom=1, color=black, Range=[cmin, cmax], Format='(F5.2)', Position=[0.3, 0.08,0.7,0.11]
@@ -559,22 +634,22 @@ prof=0L
          le_sign='!9'+ STRING("308B)
          XYOUTS,0.05,0.02,le_sign, /norm, alignment=1.0, CHARSIZE=0.75, COLOR=black,FONT=1
 	ENDCASE 
-        'JAP': BEGIN   ;; C
+        'C': BEGIN   ;; C
 	 COLORBAR, bottom=2,NCOLORS=ncolors, color=black, Range=[cmin, cmax], Format='(F5.2)',CHARSIZE=1.8, Position=[0.30,0.05,0.90,0.07]
          XYOUTS,0.6,0.08,xxl, /norm, alignment=0.5, CHARSIZE=1.5, COLOR=black
-         XYOUTS,0.22,0.08,'nb_data >='+string(p75, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
+         XYOUTS,0.24,0.08,'nb_data >='+string(p75, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
          DEVICE, SET_FONT='Symbol', /TT_FONT
          !P.font=1
          le_sign='!9'+ STRING("308B)
          XYOUTS,0.05,0.08,le_sign, /norm, alignment=1.0, CHARSIZE=1.75, COLOR=black ;,FONT=1
          !P.font=0
-         XYOUTS,0.22,0.05,'nb_data >='+string(p25, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
+         XYOUTS,0.24,0.05,'nb_data >='+string(p25, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
          DEVICE, SET_FONT='Symbol', /TT_FONT
          !P.font=1
          le_sign='!9'+ STRING("308B)
          XYOUTS,0.05,0.05,le_sign, /norm, alignment=1.0, CHARSIZE=1.25, COLOR=black,FONT=1
          !P.font=0
-         XYOUTS,0.22,0.02,'nb_data <='+string(p25, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
+         XYOUTS,0.24,0.02,'nb_data <='+string(p25, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
          DEVICE, SET_FONT='Symbol', /TT_FONT
          !P.font=1
          le_sign='!9'+ STRING("308B)
@@ -601,37 +676,33 @@ prof=0L
       domain=dom
       clear,titre,units
       ;titre='('+type_obs+'-obs) MEAN '+varname+' : ' +modele+' '+ profondeur(prof)+' '+date_title
-      titre='( obs - '+type_obs+') MEAN '+varname+' : ' +modele+' '+ profondeur(prof)+' '+date_title
+      ;; Matrice originelle en modele-obs : on passe en Obs -modele 
+      titre='( obs '+type_data+' - '+type_obs+') MEAN '+varname+' : ' +modele+' '+ profondeur(prof)+' '+date_title
       units='Mean Diff'
       ii=WHERE( val2 EQ 0 )
       IF (ii(0) NE -1) THEN val2(ii)=!values.f_nan
-      field=val2
-      ;; to be changed
       field=-val2
       valcmax=MAX(field,/NaN)
       valcmin=MIN(field,/NaN)
       if ( indice_var EQ  1 ) THEN BEGIN
         cmin=-0.5 & cmax=0.5 & dc=0.01
+        ; cmin=-tab_cmax(1,prof) & cmax=tab_cmax(1,prof) &  dc=0.01
+    ;    cmin=-0.25 & cmax=0.25 & dc=0.005
       endif
       if ( indice_var EQ  0 ) THEN BEGIN
-       ;; to be changed
-       ; cmin=-2 & cmax=2 & dc=0.05
-        cmin=-1 & cmax=1 & dc=0.025
+        ;cmin=-1 & cmax=1 & dc=0.025
+        cmin=-2 & cmax=2 & dc=0.05
+       ;  cmin=-tab_cmax(0,prof) & cmax=tab_cmax(0,prof) &  dc=0.05
+       ; cmin=-1 & cmax=1 & dc=0.025
       endif
       kindchoice='unknown difference no_iso UserLevels publi' 
       palette='sla'
       units='Deg C'
       x1=lon
       x2=lat
-      ;; to be changed
       mean_diff1 =-val2
       mean_diff2 =-val2
       mean_diff3 =-val2
-
-      ;mean_diff1 =val2
-      ;mean_diff2 =val2
-      ;mean_diff3 =val2
-
       ii=WHERE( val_ind EQ 0 )
       IF (ii(0) NE -1) THEN val_ind(ii)=!values.f_nan
       nb_val=val_ind
@@ -639,6 +710,7 @@ prof=0L
       nb_val2=nb_val(ii)
       p25=nb_val2( (SORT(nb_val2) ) (25 * N_ELEMENTS(nb_val2) / 100) )
       p75=nb_val2( (SORT(nb_val2) ) (75 * N_ELEMENTS(nb_val2) / 100) )
+      p75=nb_val2( (SORT(nb_val2) ) (50 * N_ELEMENTS(nb_val2) / 100) )
       il_indice1=WHERE(nb_val GT p25 ) ;; 1
       mean_diff1(il_indice1)=!values.f_nan
       il_indice2=WHERE(nb_val LT p25 OR nb_val GT p75 )
@@ -681,6 +753,27 @@ prof=0L
           !P.font=1
           le_sign='!9'+ STRING("308B)
           XYOUTS,0.08,0.02,le_sign, /norm, alignment=1.0, CHARSIZE=0.75, COLOR=black,FONT=1
+       ENDCASE
+        'ARC':BEGIN
+          COLORBAR, bottom=2,NCOLORS=ncolors, color=black, Range=[cmin, cmax], Format='(F5.2)',CHARSIZE=1.8 , Position=[0.30,0.06,0.90,0.08]
+	  XYOUTS,0.6,0.1,xxl, /norm, alignment=0.5, CHARSIZE=1.5, COLOR=black
+          XYOUTS,0.24,0.08,'nb_data >='+string(p75, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
+          DEVICE, SET_FONT='Symbol', /TT_FONT
+          !P.font=1
+          le_sign='!9'+ STRING("308B)
+          XYOUTS,0.06,0.08,le_sign, /norm, alignment=1.0, CHARSIZE=1.75, COLOR=black ;,FONT=1
+          !P.font=0
+          XYOUTS,0.24,0.05,'nb_data >='+string(p25, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
+          DEVICE, SET_FONT='Symbol', /TT_FONT
+          !P.font=1
+          le_sign='!9'+ STRING("308B)
+          XYOUTS,0.06,0.05,le_sign, /norm, alignment=1.0, CHARSIZE=1.25, COLOR=black,FONT=1
+          !P.font=0
+          XYOUTS,0.24,0.02,'nb_data <='+string(p25, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
+          DEVICE, SET_FONT='Symbol', /TT_FONT
+          !P.font=1
+          le_sign='!9'+ STRING("308B)
+          XYOUTS,0.06,0.02,le_sign, /norm, alignment=1.0, CHARSIZE=0.75, COLOR=black,FONT=1
        ENDCASE
         'T':BEGIN
          ;COLORBAR, bottom=1, color=black, Range=[cmin, cmax], Format='(F5.2)',CHARSIZE=1.8, Position=[0.3, 0.08,0.7,0.11]
@@ -726,22 +819,22 @@ prof=0L
           le_sign='!9'+ STRING("308B)
           XYOUTS,0.05,0.02,le_sign, /norm, alignment=1.0, CHARSIZE=0.75, COLOR=black,FONT=1
         ENDCASE
-       'JAP':BEGIN    ;; C
+       'C':BEGIN    ;; C
 	  COLORBAR, bottom=2,NCOLORS=ncolors, color=black, Range=[cmin, cmax], Format='(F5.2)',CHARSIZE=1.8, Position=[0.30,0.05,0.90,0.07]
           XYOUTS,0.6,0.08,xxl, /norm, alignment=0.5, CHARSIZE=1.5, COLOR=black
-          XYOUTS,0.22,0.08,'nb_data >='+string(p75, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
+          XYOUTS,0.24,0.08,'nb_data >='+string(p75, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
           DEVICE, SET_FONT='Symbol', /TT_FONT
           !P.font=1
           le_sign='!9'+ STRING("308B)
           XYOUTS,0.05,0.08,le_sign, /norm, alignment=1.0, CHARSIZE=1.75, COLOR=black ;,FONT=1
           !P.font=0
-          XYOUTS,0.22,0.05,'nb_data >='+string(p25, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
+          XYOUTS,0.24,0.05,'nb_data >='+string(p25, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
           DEVICE, SET_FONT='Symbol', /TT_FONT
           !P.font=1
           le_sign='!9'+ STRING("308B)
           XYOUTS,0.05,0.05,le_sign, /norm, alignment=1.0, CHARSIZE=1.25, COLOR=black,FONT=1
           !P.font=0
-          XYOUTS,0.22,0.02,'nb_data <='+string(p25, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
+          XYOUTS,0.24,0.02,'nb_data <='+string(p25, FORMAT='(F9.2)'), /norm, alignment=1.0, CHARSIZE=1.2, COLOR=black,FONT=0
           DEVICE, SET_FONT='Symbol', /TT_FONT
           !P.font=1
           le_sign='!9'+ STRING("308B)

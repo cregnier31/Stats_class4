@@ -1,3 +1,0 @@
-#PBS -l nodes=1:ppn=__NBPROC__
-#PBS -q mono
-#PBS -l walltime=6:00:00

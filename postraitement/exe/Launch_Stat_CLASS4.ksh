@@ -29,7 +29,7 @@ if [ $# -ne 3 ] ;then
     usage
 fi
 case "${CONFIG}" in
-        GLORYS2V4|FOAM|CGLORS|ORAS5|ENSEMBLE|PSY2V4R3|PSY2V4R2|PSY3V3R3|PSY3V3R1|PSY4V2R1|PSY4V3R1|PSY4V2R2|PSY2V4R4)
+        PSY2V4R3|PSY2V4R2|PSY3V3R3|PSY3V3R1|PSY4V2R1|PSY4V2R2|PSY2V4R4)
                 ;;
         *)
         usage
@@ -43,7 +43,7 @@ TYPE=`echo ${CONFIG} | cut -c-4`
 file_tmp=${PROGDIR}'/tmp/'${TYPE}'/'
 julrun=`d2j ${JRUN}`
 GRID_TYPE=${TYPE_GRID}
-DIR_LOG='/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/log_'${TYPE}'/'
+DIR_LOG='/home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_trunk/postraitement/log_'${TYPE}'/'
 job_script="${file_tmp}/Launch_STATS_${JRUN}_${CONFIG}.pbs"
 SBATCH_HEADER=${PROGDIR}/envelope_CLASS4_STATS.txt
 mkdir -p ${file_tmp}

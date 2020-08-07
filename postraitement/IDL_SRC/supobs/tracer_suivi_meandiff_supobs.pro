@@ -46,8 +46,8 @@ x2=ncdf_lec(file3,iodir=dir_mask,var='latitude', /nostruct) & x2=transpose(x2)
 boite=ncdf_lec(file,iodir=dirin,var='box', /nostruct) & boite=transpose(boite)
 variable_name=ncdf_lec(file,iodir=dirin,var='param_stats', /nostruct) & variable_name=STRING(variable_name)
 tab_prof_model=ncdf_lec(file,iodir=dirin,var='deptht', /nostruct) & tab_prof_model=transpose(tab_prof_model)
-tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t_0', /nostruct) & tab_e3t=transpose(tab_e3t)
-;tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t', /nostruct) & tab_e3t=transpose(tab_e3t)
+;tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t_0', /nostruct) & tab_e3t=transpose(tab_e3t)
+tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t', /nostruct) & tab_e3t=transpose(tab_e3t)
 
 nb_prof_model=N_ELEMENTS(tab_prof_model)
 nb_variables=N_ELEMENTS(variable_name)
@@ -216,7 +216,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
       c9=gold
       
       
-      ;output='logo gif'
+      output='logo gif'
       output='gif'
       prof=0L 
       ;IF ( OPER eq "NO" )  THEN BEGIN
@@ -227,7 +227,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
       ;tab_ASCII_2=fltarr(8)
       ;tab_var=strarr(7)
       ;tab_ASCII=fltarr(nb_variables-1,nfichiers)
-      tab_ASCII=fltarr(nb_variables/2+1,nfichiers)
+      tab_ASCII=fltarr(nb_variables/2,nfichiers)
       tab_ASCII_2=fltarr(nb_variables/2)
       tab_ASCII_2(*)=0L
       tab_var=strarr(nb_variables)
@@ -332,7 +332,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
                       ;  tab_ASCII(il_nelem-2,*)= nb_cumul
 		      ;ENDIF
 		      nb_val_tot=TOTAL(nb_data(prof,il_ind,*))
-		      tab_ASCII(nb_variables/2,*)=nb_data(prof,il_ind,*)
+		      tab_ASCII(nb_variables/2-1,*)=nb_data(prof,il_ind,*)
 
                   ENDIF
                 ENDIF ELSE BEGIN
@@ -399,9 +399,6 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
 	    ;        PRINTF, iof, tab_ASCII, FORMAT='(F10.1, 1X ,F12.8,1X ,F12.8,1X ,F12.8,1X,F10.1)'
             ;  ENDIF ELSE BEGIN
 		CASE nb_variables/2 OF
-                  3:BEGIN
-                     PRINTF, iof, tab_ASCII, FORMAT='(F10.1,1X,F12.8,1X,F12.8,1X,F10.1)'
-                  ENDCASE
                   4:BEGIN
                      PRINTF, iof, tab_ASCII, FORMAT='(F10.1,1X,F12.8,1X,F12.8,1X,F10.1)'
                   ENDCASE

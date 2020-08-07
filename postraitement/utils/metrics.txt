@@ -1,4 +1,0 @@
-number of data values
-mean of reference
-mean of product
-mean squared error

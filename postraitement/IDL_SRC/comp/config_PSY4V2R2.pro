@@ -11,7 +11,7 @@ year='2011'
 zone='T'
 ;zone='N'
 ;; Definition des path
-dir_mask='/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/static/'
+dir_mask='/home/qualif/CLASS4/Lecture_Class4_V2.0/static/'
 fic_dir='/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'+modele+'/Class4_pics/'
 fic_out=fic_dir+'/suivi_rms/all/'
 dir_stats_MERC='/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'+modele+'/stats/all/'

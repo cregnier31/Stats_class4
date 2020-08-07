@@ -197,11 +197,10 @@ IF STRPOS(output,'none') EQ -1 THEN BEGIN
                 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 ;;date_time=TIMEGEN(UNITS='Days',STEP_SIZE=7,START= JULDAY(1, 1, 1950)+numx1(0),  FINAL=JULDAY(1, 1, 1950)+numx1(N_ELEMENTS(numx1)-1))
                 date_time=TIMEGEN(N_ELEMENTS(numx1)-1,UNITS='Days',START= JULDAY(01, 01, 1950))
-                ;numx1=numx1(*)+date_time(0)
-                numx1=numx1(*)
+                numx1=numx1(*)+date_time(0)
                 tmax=MAX(numx1)
                 tmin=MIN(numx1)
-		dummy = LABEL_DATE(DATE_FORMAT=['%N','%Y'])
+		dummy = LABEL_DATE(DATE_FORMAT=['%D/%N','%Y'])
                 IF (KEYWORD_SET(xrange)) THEN BEGIN
                    absc_range=xrange 
                 ENDIF ELSE BEGIN

@@ -189,7 +189,6 @@ CONTAINS
     lg_DEPH=.FALSE.
     lg_PSAL=.FALSE.
     lg_PRES=.FALSE.
-    lg_PRES_adjusted=.FALSE.
     lg_PERS3D_PSAL=.FALSE.
     lg_PERS3D_TEMP=.FALSE.
     lg_PERS6D_TEMP=.FALSE.
@@ -666,7 +665,6 @@ CONTAINS
        CALL MIOL_read_field_NC(cd_filename,cg_temp_qc,cgpa_TEMP_QC,il_taille)
        CALL MIOL_inquire_type_NC(cd_filename,cg_temp_adjusted,il_type,il_nbdim,ll_exist)
        IF ( ll_exist ) THEN
-          lg_TEMP_adjusted=.TRUE.
           CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted,rgpa_TEMP_ADJUSTED)
           CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_qc,cgpa_TEMP_ADJUSTED_QC,il_taille)
           !CALL MIOL_read_field_NC(cd_filename,cg_temp_adjusted_error,rgpa_TEMP_ADJUSTED
@@ -723,7 +721,6 @@ CONTAINS
        il_taille=1
        CALL MIOL_read_field_NC(cd_filename,cg_pres_qc,cgpa_PRES_QC,il_taille)
        IF ( ll_exist ) THEN
-          lg_PRES_adjusted=.TRUE.
           CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted,rgpa_PRES_ADJUSTED)
           CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_qc,cgpa_PRES_ADJUSTED_QC,il_taille)
           !CALL MIOL_read_field_NC(cd_filename,cg_pres_adjusted_error,rgpa_PRES_ADJUSTED_ERROR)
@@ -1027,9 +1024,7 @@ CONTAINS
     lg_POSITION_QC=.FALSE.
     lg_DATA_MODE=.FALSE.
     lg_DEPH=.FALSE.
-    lg_DEPH_adjusted=.FALSE.
     lg_PSAL=.FALSE.
-    lg_PSAL_adjusted=.FALSE.
     lg_PRES=.FALSE.
     lg_PERS3D_PSAL=.FALSE.
     lg_PERS3D_TEMP=.FALSE.
@@ -1038,7 +1033,6 @@ CONTAINS
     lg_PERS_PSAL=.FALSE.
     lg_PERS_TEMP=.FALSE.
     lg_TEMP=.FALSE.
-    lg_TEMP_adjusted=.FALSE.
     lg_LON=.FALSE.
     lg_LAT=.FALSE.
     lg_JULD=.FALSE.
@@ -1478,7 +1472,6 @@ CONTAINS
 #endif 
        CALL MIOL_inquire_type_NC(cd_filename,cg_psal_adjusted,il_type,il_nbdim,ll_exist)
        IF ( ll_exist ) THEN
-          lg_PSAL_adjusted=.TRUE.
           CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted_qc,cgpa_PSAL_ADJUSTED_QC,il_taille)
           CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted,rgpa_PSAL_ADJUSTED)
           !CALL MIOL_read_field_NC(cd_filename,cg_psal_adjusted_error,rgpa_PSAL_ADJUSTED_ERROR)
@@ -1544,7 +1537,6 @@ CONTAINS
        CALL MIOL_read_field_NC(cd_filename,cg_deph_qc,cgpa_DEPH_QC,il_taille)
        CALL MIOL_inquire_type_NC(cd_filename,cg_deph_adjusted,il_type,il_nbdim,ll_exist)
        IF ( ll_exist ) THEN
-          lg_DEPH_adjusted=.TRUE.
           CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted,rgpa_DEPH_ADJUSTED)
           CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_qc,cgpa_DEPH_ADJUSTED_QC,il_taille)
           !CALL MIOL_read_field_NC(cd_filename,cg_deph_adjusted_error,rgpa_DEPH_ADJUSTED_ERROR)
@@ -2501,26 +2493,21 @@ CONTAINS
     IF (lg_PRES) THEN
       DEALLOCATE (rgpa_PRES)
       DEALLOCATE (cgpa_PRES_QC)
-      IF (lg_PRES_adjusted) THEN
-        DEALLOCATE (rgpa_PRES_ADJUSTED)
-        DEALLOCATE (cgpa_PRES_ADJUSTED_QC)
-      ENDIF
+      DEALLOCATE (rgpa_PRES_ADJUSTED)
+      DEALLOCATE (cgpa_PRES_ADJUSTED_QC)
     ENDIF
     IF (lg_DEPH)  THEN
       DEALLOCATE (rgpa_DEPH)
       DEALLOCATE (cgpa_DEPH_QC)
-      IF (lg_DEPH_adjusted) THEN 
-         DEALLOCATE (rgpa_DEPH_ADJUSTED)
-         DEALLOCATE (cgpa_DEPH_ADJUSTED_QC)
-      ENDIF
+      DEALLOCATE (rgpa_DEPH_ADJUSTED)
+      DEALLOCATE (cgpa_DEPH_ADJUSTED_QC)
+
     ENDIF
     IF (lg_TEMP) THEN 
       DEALLOCATE (rgpa_TEMP)
       DEALLOCATE (cgpa_TEMP_QC)
-      IF (lg_TEMP_adjusted) THEN 
-        DEALLOCATE (rgpa_TEMP_ADJUSTED)
-        DEALLOCATE (cgpa_TEMP_ADJUSTED_QC)
-      ENDIF
+      DEALLOCATE (rgpa_TEMP_ADJUSTED)
+      DEALLOCATE (cgpa_TEMP_ADJUSTED_QC)
       IF ( lg_TMARV) DEALLOCATE (rgpa_TMARV)
       IF ( lg_TMARV11) DEALLOCATE (rgpa_TMARV11)
       IF ( lg_TMLEV09) DEALLOCATE (rgpa_TMLEV09)
@@ -2538,10 +2525,9 @@ CONTAINS
     IF (lg_PSAL) THEN 
       DEALLOCATE (rgpa_PSAL)
       DEALLOCATE (cgpa_PSAL_QC)
-      IF (lg_PSAL_adjusted) THEN
-        DEALLOCATE (rgpa_PSAL_ADJUSTED)
-        DEALLOCATE (cgpa_PSAL_ADJUSTED_QC)
-      ENDIF
+      DEALLOCATE (rgpa_PSAL_ADJUSTED)
+      DEALLOCATE (cgpa_PSAL_ADJUSTED_QC)
+
       IF ( lg_HDCT_PSAL )DEALLOCATE (rgpa_HDCST_PSAL)
       IF ( lg_ANA_PSAL ) DEALLOCATE (rgpa_ANA_PSAL)
       IF ( lg_FCST1D_PSAL ) DEALLOCATE (rgpa_FRCST1D_PSAL)

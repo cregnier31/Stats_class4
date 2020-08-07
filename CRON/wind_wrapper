@@ -1,0 +1,55 @@
+#!/bin/ksh
+
+#set -x
+PROGNAME=${0##*/}
+PROGDIR=${0%/*}; [ "${PROGDIR}" = "." ] && PROGDIR=${PWD}
+LOCK_DIR=${PROGDIR}
+DATERUN=$( /bin/date +%Y%m%d )
+#DATERUN=$( /bin/date +%Y%m%d --date='yesterday')
+if [[ $# -lt 3 ]]
+then
+  echo $USAGE
+  echo "option1 type_var date "
+exit 1
+fi
+
+
+export PYTHONPATH="/home/smer/smer883/Sytoolkit"
+export PATH="/usr/bin/python2.3:${PATH}"
+if [  "$2" == "PRESAL36QV1R1-PGN" ]
+  then
+   CONFIG=`echo $2 | cut -c-13`
+else
+   CONFIG=`echo $2 | cut -c-9`
+fi
+echo $CONFIG
+WIND="/home/smer/smer883/WIND/wind/wind"
+OPTIONS="--force $*"
+
+ulimit -t unlimited
+flag_ok=${PROGDIR}/log/Tri-CLASS4-${CONFIG}-${DATERUN}-OK
+flag_ok_rappat=${PROGDIR}/log/Rappat-${CONFIG}-${DATERUN}-grid2D-OK
+echo ${flag_ok}
+[ -f ${flag_ok} ] && exit 0
+if [ -f ${flag_ok_rappat} ]
+ then
+    lock=${LOCK_DIR}/.${PROGNAME}.pid
+    pid=$( /bin/cat ${lock} 2>/dev/null )
+    if [ ! -z "${pid}" ]; then
+            /bin/kill -0 ${pid} 2>/dev/null && exit 0
+    fi
+    echo -n $$ > ${lock} # -n: no line feed/carriage re
+    cd ${WIND%/*}
+    echo $OPTIONS
+    /home/smer/smer859/versions/compilateurs/python/2.6.5/bin/python ${WIND} ${OPTIONS}
+     
+    if [ $? == 0 ]; then
+      /bin/touch ${flag_ok}
+      rm -f ${lock}
+      echo "Tri ${CONFIG} OK ${DATERUN} "
+    fi
+else
+  echo "Flag Rappat ${CONFIG} manquant : ${flag_ok_rappat}"
+  exit 1
+fi
+exit $?

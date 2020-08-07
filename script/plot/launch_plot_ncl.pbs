@@ -1,0 +1,19 @@
+#!/bin/ksh
+#SBATCH -A cmems
+#SBATCH -J NCL_plot
+#SBATCH -e /home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_V4/log/ncl_plot_diff_cl4.err
+#SBATCH -o /home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_V4/log/ncl_plot_diff_cl4.out
+#SBATCH -N 1
+#SBATCH -p normal64
+#SBATCH --mem 32768
+#SBATCH --ntasks-per-node=1
+#SBATCH -t 05:00:00
+module load intel
+module load netcdf
+module load nco
+module load ncl 
+#/opt/softs/ncl/6.3.0/bin/ncl /home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_V4/script/plot/plot_cl4_ice_amsr.ncl
+#/opt/softs/ncl/6.3.0/bin/ncl /home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_V4/script/plot/plot_cl4_ice.ncl
+/opt/softs/ncl/6.3.0/bin/ncl /home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_V4/script/plot/plot_cl4_ice_amsr_diff.ncl
+#/opt/softs/ncl/6.3.0/bin/ncl /home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_V4/script/plot/plot_cl4_ice_diff.ncl
+
