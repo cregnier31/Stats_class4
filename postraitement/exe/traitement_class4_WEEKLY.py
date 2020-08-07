@@ -45,7 +45,6 @@ else:
 
 #_DBFILE_ = ['/home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_trunk/postraitement/exe/config_'+MODELE_TYPE+'.cfg']
 _DBFILE_ = ['/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/exe/config_'+MODELE_TYPE+'.cfg']
-#_DBFILE_ = ['/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/exe/config_'+MODELE_TYPE+'_local.cfg']
 # =========
 # FUNCTIONS
 # =========

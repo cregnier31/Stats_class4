@@ -13,7 +13,7 @@ profondeur,profondeur2,liste_zone,liste_zone_PSY2,$
 liste_TEST,listemodele,liste_zone_GLOMyo,profondeur3,$
 profondeur4,liste_zone_PSY2_SHOM,tab_prof,tab_model,$
 tab_e3t,tab_prof_2,variable_name_2,variable_name_3,$
-variable_name_4,tab_prof_3,profondeur5,file_mask,file_save,tab_prof_4,tab_prof_5
+variable_name_4,tab_prof_3,profondeur5,file_mask,file_save,tab_prof_4
 
 ;; Definition des variable_names
 variable_name=strarr(26)
@@ -99,49 +99,38 @@ file_mask=''
 file_save=''
 
 ;; Range values
-valeurs_cmax=fltarr(2,8)
-valeurs_cmax_sal=fltarr(2,8)
+valeurs_cmax=fltarr(2,6)
+valeurs_cmax_sal=fltarr(2,6)
 
 ;; Temperature
-valeurs_cmax(0,0)=1.0 ;; 1.8
-valeurs_cmax(0,1)=0.8
-valeurs_cmax(0,2)=0.6  ;; 1.5
-valeurs_cmax(0,3)=0.5  ;; 1
-valeurs_cmax(0,4)=0.5
-valeurs_cmax(0,5)=0.4
-valeurs_cmax(0,6)=0.3
-valeurs_cmax(0,7)=0.6
+valeurs_cmax(1,0)=2.0 ;; 1.8
+valeurs_cmax(1,1)=2.2
+valeurs_cmax(1,2)=1.8  ;; 1.5
+valeurs_cmax(1,3)=1.5  ;; 1
+valeurs_cmax(1,4)=0.3
+valeurs_cmax(1,5)=1.5
 
-
-
-
-valeurs_cmax(1,0)=0.25  ;; 0.5  
-valeurs_cmax(1,1)=0.20  ;; 0.8
-valeurs_cmax(1,2)=0.20  ;; 0.6
-valeurs_cmax(1,3)=0.15  ;; 0.2  
-valeurs_cmax(1,4)=0.15 ;; 0.1 
-valeurs_cmax(1,5)=0.15 ;; 0.5 
-valeurs_cmax(1,6)=0.1
-valeurs_cmax(1,7)=0.20
+valeurs_cmax(0,0)=0.0  ;; 0.5  
+valeurs_cmax(0,1)=0.5  ;; 0.8
+valeurs_cmax(0,2)=0.0  ;; 0.6
+valeurs_cmax(0,3)=0.0  ;; 0.2  
+valeurs_cmax(0,4)=0.0  ;; 0.1 
+valeurs_cmax(0,5)=0.0  ;; 0.5 
 
 ;; Salinité
-valeurs_cmax_sal(1,0)=0.25
-valeurs_cmax_sal(1,1)=0.25
-valeurs_cmax_sal(1,2)=0.25
+valeurs_cmax_sal(1,0)=1.6
+valeurs_cmax_sal(1,1)=1.0
+valeurs_cmax_sal(1,2)=0.6
 valeurs_cmax_sal(1,3)=0.15
-valeurs_cmax_sal(1,4)=0.15
-valeurs_cmax_sal(1,5)=0.15
-valeurs_cmax_sal(1,6)=0.1
-valeurs_cmax_sal(1,7)=0.25
+valeurs_cmax_sal(1,4)=0.1
+valeurs_cmax_sal(1,5)=1.2
 
-valeurs_cmax_sal(0,0)=0.25 ;; 0.2
-valeurs_cmax_sal(0,1)=0.25 ;; 0.2
-valeurs_cmax_sal(0,2)=0.25
-valeurs_cmax_sal(0,3)=0.15
-valeurs_cmax_sal(0,4)=0.15
-valeurs_cmax_sal(0,5)=0.15
-valeurs_cmax_sal(0,6)=0.1 
-valeurs_cmax_sal(0,7)=0.25
+valeurs_cmax_sal(0,0)=0.0 ;; 0.2
+valeurs_cmax_sal(0,1)=0.0 ;; 0.2
+valeurs_cmax_sal(0,2)=0.0
+valeurs_cmax_sal(0,3)=0.0
+valeurs_cmax_sal(0,4)=0.0
+valeurs_cmax_sal(0,5)=0.0
 
 valeurs_cmax2=fltarr(2,11)
 valeurs_cmax2_sal=fltarr(2,11)  
@@ -228,11 +217,7 @@ tab_prof_4(0)=0
 tab_prof_4(1)=700
 tab_prof_4(2)=2000
 
-tab_prof_5=fltarr(4)
-tab_prof_5(0)=0
-tab_prof_5(1)=300
-tab_prof_5(2)=500
-tab_prof_5(3)=2000
+
 
 tab_model=fltarr(51)
 tab_model(0)=0.4940254
@@ -397,8 +382,7 @@ liste_zone(9)='TAT'
 liste_zone(10)='TPA'
 liste_zone(11)='NORDSEA'
 liste_zone(12)='FACADE'
-;liste_zone(13)='BALTIC'
-liste_zone(13)='SCS'
+liste_zone(13)='BALTIC'
 
 ;; Zones CLASS1 GLO Myo
 liste_zone_GLOMyo=strarr(8)

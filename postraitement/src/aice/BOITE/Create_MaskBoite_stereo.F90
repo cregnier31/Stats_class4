@@ -38,17 +38,16 @@ integer :: id_macro_region_num
 character(len=80), dimension(il_macro_region_num_max) :: cda_macro_region_name
 integer(kind=4), dimension(il_macro_region_num_max) :: ida_subregion_count
 integer(kind=4), dimension(il_macro_region_num_max,il_nb_max+1) :: ida_macro_region_def
-CHARACTER(LEN=26),DIMENSION(16)                     :: cla_var1D
 !
 !---------------------------------------------------------------------------------------
 !                          ---  code  --- 
 !---------------------------------------------------------------------------------------
 ! read input data
 !----------------------------------------
-cl_filename_mask_in = '/homelocal-px/px-137/cregnier/DATA/static/Poles/low_res/Stereopolar_ARC_msk.nc'
-cl_filename_boite_in = '/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/src/aice/BOITE/Region_boite_global.txt'
-cl_filename_maskboite_out = '/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/src/aice/BOITE/MaskBoite_stereo_ARC_new.nc'
-cd_macro_filename=  '/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/src/aice/BOITE/MacroBoiteArctic.txt'
+cl_filename_mask_in = '/scratch/work/smer883/static/old_stereo/Stereopolar_ARC_msk.nc'
+cl_filename_boite_in = '/home/ext/mr/smer/regnierc/SAVE/DEV/Stats_aice/src/BOITE/Region_boite_global.txt'
+cl_filename_maskboite_out = '/home/ext/mr/smer/regnierc/SAVE/DEV/Stats_aice/src/BOITE/MaskBoite_SIC_stereo_ARC.nc'
+cd_macro_filename= '/home/ext/mr/smer/regnierc/SAVE/DEV/Stats_aice/src/BOITE/MacroBoiteArctic.txt'
 !
 ! read cersat sea ice mask sea (1) /land (0) 
       call miol_openr_file_nc(trim(cl_filename_mask_in), il_file_id1)
@@ -121,36 +120,13 @@ cd_macro_filename=  '/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitem
 !
 ! write output file
 ! -------------------------------------------------
-      cla_var1D(1)='North_pole_Fosse_oceanique'
-      cla_var1D(2)='Queen_Elisabeth_Islands'
-      cla_var1D(3)='Beaufort_Sea'
-      cla_var1D(4)='Chuckchi_Sea'
-      cla_var1D(5)='Siberian_Sea'
-      cla_var1D(6)='Laptev_Sea'
-      cla_var1D(7)='Kara_Sea'
-      cla_var1D(8)='Barents_Sea'
-      cla_var1D(9)='Greenland_Basin'
-      cla_var1D(10)='Southeast_Greenland'
-      cla_var1D(11)='Bafin_Bay'
-      cla_var1D(12)='Hudson_Bay'
-      cla_var1D(13)='Labrador_Sea'
-      cla_var1D(14)='Bering_Sea'
-      cla_var1D(15)='Okhotsk_Sea'
-      cla_var1D(16)='Baltic_Sea'
-
-
-      il_nbdim = 4
+      il_nbdim = 2
       allocate(cla_dimname(il_nbdim))
       cla_dimname(1) = 'x'
       cla_dimname(2) = 'y'
-      cla_dimname(3) = 'regions'
-      cla_dimname(4)=  'string_length'
-
-      !
+!
       ila_dimlen2(1) = ila_dimlen(1)
       ila_dimlen2(2) = ila_dimlen(2)
-      ila_dimlen2(3) = 16
-      ila_dimlen2(4) = 26
       call miol_create_file_nc(trim(cl_filename_maskboite_out), il_nbdim, cla_dimname, ila_dimlen2)
 ! 
       call miol_openw_file_nc(trim(cl_filename_maskboite_out), il_file_id2)
@@ -163,13 +139,7 @@ cd_macro_filename=  '/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitem
 !
       cl_varname = 'longitude'
       call miol_write_field_nc(il_file_id2, cl_varname, 'XY', rla_longitude)
-      call MIOL_write_field_NC (il_file_id2,&
-                                'Regions',&
-                                'SM',&
-                                 cla_var1D(:),&
-                                 ila_dimlen2(3))
-
-      !
+!
       cl_varname='global'
       cla_attname(1)='CONVENTIONS'
       cla_attname(2)='LONG_NAME'

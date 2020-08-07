@@ -27,34 +27,59 @@ import param.Def_param_bulletin as params
 from sytoolkit.sydate_origin import SyDateOrigin
 from sytoolkit.sydate_new import SyDatenew
 from sytoolkit.sydate import SyDate
-
+import datetime as dt
 
 # =============================================
 #                 CONFIGURATION
 # =============================================
 
-letters = 's:e:c:t:' 
-keywords = ['day1=', 'day2=', 'cfg=', 'type=' ] 
+letters = 's:e:c:t:a:b' 
+keywords = ['day1=', 'day2=', 'cfg=', 'type=', 'all_tsp=','bilan=' ] 
 cla_opts = getopt.getopt(sys.argv[1:],letters,keywords)
-print cla_opts
+
 cl_start_date  = 'YYYYMMDD'
 cl_end_date  = 'YYYYMMDD'
+ll_date1=None
+ll_date2=None
+all_tsp = 0 ; bilan = 0
+
 _DBFILE_        = './environment.cfg'
 
 for o,p in cla_opts[0]:
   if o in ['-s','--day1']:
      cl_start_date = p
+     ll_date1 = True
   elif o in ['-e','--day2']:
      cl_end_date = p
+     ll_date2 = True
   elif o in ['-t','--type']:
      cexp=p
   elif o in ['-c','--cfg']:
      _DBFILE_ = p.strip()
+  elif o in ['-a','--all_tsp']:
+     all_tsp = int(p)
+  elif o in ['-b','--bilan']:
+     bilan = int(p)
+
+if not ll_date1 and not ll_date2:
+    date_now = dt.datetime.now()
+    if date_now.month == 1 :
+        cl_start_date = str(date_now.year-1)+"1201"
+        cl_end_date = str(date_now.year)+"0101"
+    elif date_now.month < 10 :
+	cl_start_date = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+	cl_end_date = str(date_now.year)+"0"+str(date_now.month)+"01"
+    elif date_now.month == 11 :
+	cl_start_date = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+	cl_end_date = str(date_now.year)+str(date_now.month)+"01"
+    else : 
+	cl_start_date = str(date_now.year)+str(date_now.month-1)+"01"
+	cl_end_date = str(date_now.year)+str(date_now.month)+"01"
 
 cl_start_jdate = str(SyDate(cl_start_date).tojulian())
 cl_end_jdate   = str(SyDate(cl_end_date).tojulian())
 
-missing_value = 999999.
+missing_value = 1.e35
 
 def load_db():
         db = ConfigParser.ConfigParser()
@@ -77,6 +102,7 @@ dirFileIn      = db.get('output_dir','DIR_CL4OUT')
 dirFileOut     = db.get('output_dir','DIR_CL4OUT_NC')
 cl_layerFile   = db.get('LAYER','layerFile')
 cl_prefix      = db.get('INPUT','PREFIX2')
+cl_prefix2      = db.get('INPUT','PREFIX3')
 il_ivar        = db.get('INPUT','IVAR')
 il_iarea       = db.get('INPUT','IZONE')
 cl_conf        = db.get('PARAMS','CONFIGMDL').upper()
@@ -94,12 +120,15 @@ cl_institution = db.get('NETCDF','INSTITUTION')
 cl_ref         = db.get('NETCDF','REF')
 cl_fmt         = db.get('NETCDF','FMT')
 
-if cexp == 'BIO' :
+if cl_conf == 'BIOMER4' :
 	cla_vars = ['CHL']
   	rla_forecast = [0., 336.]
+if cl_conf == 'FREEBIORYS2' :
+	cla_vars = ['chl']
+  	rla_forecast = [0.]
 elif cexp == 'PHYS' :
 	cla_vars = ['PSAL','TEMP','SLA','SST'] 
-	rla_forecast = [-240.,12.,36.,84.,132.]
+	rla_forecast = [-240.,12.,60.,108.,156.,204.]
 
 # ------------------------------------------------
 #             Lecture fichier couches
@@ -122,11 +151,15 @@ if cexp == 'BIO' :
 cl_resultsFileName = 'product_quality_stats_'+cl_confres+'_'+cl_start_date+'_'+cl_end_date+'.nc'
 cl_resultsFile = os.path.join(dirFileOut,cl_resultsFileName)
 
+cl_resultsFileName_bilan = 'glob_prod_quality_stats_'+cl_confres+'_'+cl_start_date+'_'+cl_end_date+'.nc'
+cl_resultsFile_bilan = os.path.join(dirFileOut,cl_resultsFileName_bilan)
+
 
 #  Collecting input Files
 # ------------------------
 
-cla_fileList = []	
+cla_fileList = []
+cla_fileList2 = []	
 for cl_area in cla_areas :
     print cl_area
     for num_var,cl_var in enumerate(cla_vars) :
@@ -138,9 +171,12 @@ for cl_area in cla_areas :
             cl_depthdown = "%s"  %int(rla_lay[ij+1])
             cl_depthup   = "%s"  %int(rl_layers)
             cl_filetmplt = cl_prefix+'_'+cl_conf+'_'+cl_area+'_'+cl_start_date+'_'+cl_end_date+'_'+cl_var+'_'+cl_depthup+'-'+cl_depthdown+'m.txt'
+            cl_filetmplt2 = cl_prefix2+'_'+cl_conf+'_'+cl_area+'_'+cl_start_date+'_'+cl_end_date+'_'+cl_var+'_'+cl_depthup+'-'+cl_depthdown+'m.txt'
             print cl_filetmplt
             if os.path.exists(os.path.join(dirFileIn,cl_filetmplt)) : 
                 cla_fileList.append(cl_filetmplt)
+            if os.path.exists(os.path.join(dirFileIn,cl_filetmplt2)) : 
+                cla_fileList2.append(cl_filetmplt2)
 
 for file in cla_fileList : print os.path.basename(file)
 if len(cla_fileList) == 0 :
@@ -170,14 +206,17 @@ for a,cl_area in enumerate(cla_areas) :
             cl_depthdown = "%s"  %int(rla_lay[ij+1])
             cl_depthup   = "%s"  %int(rl_layers)      
             cl_filename  = cl_prefix+'_'+cl_conf+'_'+cl_area+'_'+cl_start_date+'_'+cl_end_date+'_'+cl_var+'_'+cl_depthup+'-'+cl_depthdown+'m.txt'
+            print cl_filename
+            print dirFileIn
 	    cl_file = np.loadtxt(os.path.join(dirFileIn,cl_filename))
 	    vector_time[:] = cl_file[:,0]*24.
 
 	    for f,rlfcst in enumerate(rla_forecast) : 
 	        cl_stats[:,f,ij,0:3,a,num_var] = cl_file[:,1:4]
-		cl_stats[:,f,ij,3,a,num_var] = cl_file[:,4+f*3]
-		cl_stats[:,f,ij,4,a,num_var] = cl_file[:,5+f*3]
-		cl_stats[:,f,ij,5,a,num_var] = cl_file[:,6+f*3]
+		cl_stats[:,f,ij,3,a,num_var] = cl_file[:,4+f*4]
+		cl_stats[:,f,ij,4,a,num_var] = cl_file[:,5+f*4]
+		cl_stats[:,f,ij,5,a,num_var] = np.square(cl_file[:,6+f*4])
+		cl_stats[:,f,ij,6,a,num_var] = cl_file[:,7+f*4]
 
 w = np.where(np.isnan(cl_stats) == True)
 cl_stats[w] = missing_value
@@ -190,17 +229,74 @@ cl_stats[w] = missing_value
 # ---------------------------------------------------------------------------------------
 
 
-if cexp == 'BIO' :
-	writer_stat().write_BIO_files(cl_resultsFile, cl_contact, cl_confres, cl_fmt, cl_start_date, cl_end_date,
-                                      cl_resultsFileName, cl_institution, cl_ref, cla_areasattr, cla_metricname, 
-                                      cl_start_jdate, cl_end_jdate, cla_areasattr, cla_metricname, rla_forecast, 
-                                      rla_surface, vector_time, cl_stats)
-elif cexp == 'PHYS' :
-	writer_stat().write_PHYS_files(cl_resultsFile, cl_contact, cl_confres, cl_fmt, cl_start_date, cl_end_date,
-                                       cl_resultsFileName, cl_institution, cl_ref, cla_areasattr, cla_metricname,
-                                       cl_start_jdate, cl_end_jdate, cla_areasattr, cla_metricname, rla_forecast,
-                                       rla_layers, vector_time, cl_stats, rla_surface)
+if cexp == 'BIO' and all_tsp == 1:
+    writer_stat().write_BIO_files(cl_resultsFile, cl_contact, cl_confres, cl_fmt, cl_start_date, cl_end_date,
+                                  cl_resultsFileName, cl_institution, cl_ref, cla_areasattr, 
+                                  cl_start_jdate, cl_end_jdate, cla_areasattr, cla_metricname, rla_forecast, 
+                                  rla_surface, vector_time, cl_stats)
+elif cexp == 'PHYS' and all_tsp == 1:
+    writer_stat().write_PHYS_files(cl_resultsFile, cl_contact, cl_confres, cl_fmt, cl_start_date, cl_end_date,
+                                   cl_resultsFileName, cl_institution, cl_ref, cla_areasattr,
+                                   cl_start_jdate, cl_end_jdate, cla_areasattr, cla_metricname, rla_forecast,
+                                   rla_layers, vector_time, cl_stats, rla_surface)
 
 
-#----------  End of Script  --------------------------------------------------------------
+
+
+#  Reading Synthetic Statistics in ASCII files / time (Global_stats)
+# ------------------------------------------------------------------
+
+cl_filename1 = os.path.join(dirFileIn,cla_fileList2[0])
+cl_file1 = np.loadtxt(cl_filename1)
+nts = np.shape(cl_file1)[0]
+
+cl_stats = np.nan*np.zeros((len(rla_forecast),len(rla_layers)-1,len(cla_metricname[1:]),len(cla_areas),len(cla_vars)))
+
+for a,cl_area in enumerate(cla_areas) :
+    for num_var,cl_var in enumerate(cla_vars) :
+        if cl_var == 'PSAL' or cl_var == 'TEMP':
+            rla_lay = rla_layers
+        else :  
+            rla_lay = rla_surface   
+        for ij,rl_layers in enumerate(rla_lay[0:-1]) :
+            cl_depthdown = "%s"  %int(rla_lay[ij+1])
+            cl_depthup   = "%s"  %int(rl_layers)      
+            cl_filename  = cl_prefix2+'_'+cl_conf+'_'+cl_area+'_'+cl_start_date+'_'+cl_end_date+'_'+cl_var+'_'+cl_depthup+'-'+cl_depthdown+'m.txt'
+	    cl_file = np.loadtxt(os.path.join(dirFileIn,cl_filename))
+
+	    for f,rlfcst in enumerate(rla_forecast) : 
+	        cl_stats[f,ij,0:2,a,num_var] = cl_file[0:2]
+		cl_stats[f,ij,2,a,num_var] = cl_file[2+f*4]
+		cl_stats[f,ij,3,a,num_var] = cl_file[3+f*4]
+		cl_stats[f,ij,4,a,num_var] = np.square(cl_file[4+f*4])
+		cl_stats[f,ij,5,a,num_var] = cl_file[5+f*4]
+
+
+w = np.where(np.isnan(cl_stats) == True)
+cl_stats[w] = missing_value
+w = np.where(cl_stats > missing_value)
+cl_stats[w] = missing_value
+                         
+
+# ---------------------------------------------------------------------------------------
+#               Write and save the corresponding netCDF file 
+# ---------------------------------------------------------------------------------------
+
+
+if cexp == 'BIO' and bilan == 1:
+    writer_stat().write_BIO_bilan(cl_resultsFile_bilan, cl_contact, cl_confres, cl_fmt,
+                                  cl_resultsFileName_bilan, cl_institution, cl_ref, cla_areasattr, 
+                                  cla_areasattr, cla_metricname[1:], rla_forecast, 
+                                  rla_surface, cl_stats)
+
+if cexp == 'PHYS' and bilan == 1:
+    writer_stat().write_PHYS_bilan(cl_resultsFile_bilan, cl_contact, cl_confres, cl_fmt,
+                                   cl_resultsFileName_bilan, cl_institution, cl_ref, cla_areasattr, 
+                                   cla_areasattr, cla_metricname[1:], rla_forecast, 
+                                   rla_layers, cl_stats, rla_surface)
+
+
+#-------------------------------------  End of Script  -------------------------------------
+
+
 

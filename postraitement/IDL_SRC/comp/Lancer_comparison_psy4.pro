@@ -18,7 +18,7 @@ NB_VALEURS=2
 NB_VALEURS2=2
 lissage='yes'
 ;lissage='no'
-output_dir='/sortref/calval/DATA_COLOCATIONS/T_S_data_new/Comparaison_systemes/PSY4V3R1/'
+output_dir='/sortref/calval/DATA_COLOCATIONS/T_S_data_new/Comparaison_systemes/PSY4V2R2/'
 .compile Def_param_bulletin
 .compile comparaison_model_PSY4
 .compile Def_colors

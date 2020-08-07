@@ -339,7 +339,8 @@ prof=0L
 ;;      Tracé des images
 ;;------------------------------------------------------------------------------------
 ;;if ( nom_var eq "HDCST_SLA" or nom_var eq "HDCST_SST" )  THEN BEGIN
-if ( nom_var eq "FRCST1D_SLA" or nom_var eq "FRCST1D_SST" )  THEN BEGIN
+if ( nom_var eq "FRCST1D_SLA" or nom_var eq "FRCST1D_SST" or nom_var eq "HDCST_SLA" or nom_var eq "HDCST_SST" or nom_var eq "FRCST3D_SLA" or nom_var eq "FRCST3D_SST" or nom_var eq "FRCST5D_SST" or nom_var eq "FRCST5D_SLA" )  THEN BEGIN
+;;if ( nom_var eq "FRCST1D_SLA" or nom_var eq "FRCST1D_SST" or nom_var eq "HDCST_SLA" or nom_var eq "HDCST_SST" )  THEN BEGIN
        ;; Ecriture fichier
        file=dirname_out+'stats_rms_'+modele+'_'+nom_var+'_'+date_title+'.nc'
        TAB=val1
@@ -350,7 +351,7 @@ if ( nom_var eq "FRCST1D_SLA" or nom_var eq "FRCST1D_SST" )  THEN BEGIN
        write_ncdf,file,TAB,XGRID,YGRID,ZGRID,1,choice
        file=dirname_out+'stats_mean_'+modele+'_'+nom_var+'_'+date_title+'.nc'
        clear,choice
-       TAB2=-val2
+       TAB2=val2
        XGRID=lon
        YGRID=lat
        ZGRID=0
@@ -592,7 +593,7 @@ ENDIF
        SPAWN,'rm '+dirname_out+name_out+'.ps'
        IF Keyword_Set(month) THEN BEGIN
 	  print,'Passe la '
-	  SPAWN,'scp '+dirname_out+name_out+'.gif qualif@kara:/home/qualif/squal_images/COMPARAISON_OBS/GLOBAL/'+year+'/'
+	  SPAWN,'scp '+dirname_out+name_out+'.gif squal@bali:/home/squal/images/COMPARAISON_OBS/GLOBAL/'+year+'/'
 	  print,'OK '
        ENDIF	
 	
@@ -606,13 +607,11 @@ ENDIF
        domain=dom
        clear,titre,units
        ;titre='Class4 Mean Diff '+ nom_var+' '+modele+' '+ ' '+date_title
-       ;titre='('+type_obs+'-obs) MEAN '+varname+' : ' +modele+' '+date_title
-       titre='(obs-'+type_obs+') MEAN '+varname+' : ' +modele+' '+date_title
+       titre='('+type_obs+'-obs) MEAN '+varname+' : ' +modele+' '+date_title
        units='Mean Diff'
        ii=WHERE( val2 EQ 0 )
        IF (ii(0) NE -1) THEN val2(ii)=!values.f_nan
-       ;; on passe en obs - modele !!
-       field=-val2
+       field=val2
        valcmax=MAX(field,/NaN)
        valcmin=MIN(field,/NaN)
        if ( indice_var EQ  1 ) THEN BEGIN
@@ -629,9 +628,9 @@ ENDIF
        units='Deg C'
        x1=lon
        x2=lat
-       mean_diff1 =-val2
-       mean_diff2 =-val2
-       mean_diff3 =-val2
+       mean_diff1 =val2
+       mean_diff2 =val2
+       mean_diff3 =val2
        ii=WHERE( val_ind EQ 0 )
        IF (ii(0) NE -1) THEN val_ind(ii)=!values.f_nan
        nb_val=val_ind
@@ -780,7 +779,7 @@ ENDIF
         SPAWN,'rm '+dirname_out+name_out+'.ps'
         clear,longitude2,latitude2
        IF Keyword_Set(month) THEN BEGIN
-	  SPAWN,'scp '+dirname_out+name_out+'.gif qualif@kara:/home/qualif/squal_images/COMPARAISON_OBS/GLOBAL/'+year+'/'
+	  SPAWN,'scp '+dirname_out+name_out+'.gif squal@bali:/home/squal/images/COMPARAISON_OBS/GLOBAL/'+year+'/'
        ENDIF	
     label:
     ENDFOR

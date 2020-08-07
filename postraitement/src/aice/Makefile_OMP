@@ -1,9 +1,8 @@
 #include make_intel.macro
-include /home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/macro/make_intel_orca12_stereo_naviti.macro
+include /home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/macro/make_intel_orca12_stereo.macro
 zone=ARC
-zone=ANT
+#zone=ANT
 
-machine=naviti
 # Rules
 .SUFFIXES:.F90 .F .f90 .mod
 .f90.o:
@@ -28,17 +27,13 @@ OBJ = $(SRCDIR2)/table_boite.o \
 
 all: $(EXEDIR)/Stats_CL4_aice_openmp_$(zone).exe $(EXEDIR)/Stats_CL4_aice_openmp_contable_$(zone).exe \
 	 $(EXEDIR)/Stats_CL4_aice_openmp_contable_time_$(zone).exe \
-	 $(EXEDIR)/Compute_seaice_stats_$(zone)_$(machine).exe
 	 $(EXEDIR)/Stats_CL4_aice_openmp_contable_time_$(zone)_best_AMSR.exe 
 	 #$(EXEDIR)/Stats_CL4_aice_openmp_contable_$(zone)_AMSR.exe \
 amsr: $(EXEDIR)/Stats_CL4_aice_openmp_contable_$(zone)_AMSR.exe \
 	$(EXEDIR)/Stats_CL4_aice_openmp_contable_time_$(zone)_best_AMSR.exe 
 omp: $(EXEDIR)/Stats_CL4_aice_openmp_$(zone).exe $(EXEDIR)/Stats_CL4_aice_openmp_contable_$(zone).exe \
 	$(EXEDIR)/Stats_CL4_aice_openmp_contable_time_$(zone).exe
-time: $(EXEDIR)/Stats_CL4_aice_openmp_contable_time_$(zone).exe $(EXEDIR)/Compute_seaice_stats_$(zone)_$(machine).exe
-time2: $(EXEDIR)/Compute_seaice_stats_$(zone)_$(machine).exe
-time3: $(EXEDIR)/Compute_seaice_stats_$(zone)_$(machine)_leadtime.exe 
-time4: $(EXEDIR)/Compute_seaice_stats_$(zone)_$(machine)_leadtime_best.exe
+time: $(EXEDIR)/Stats_CL4_aice_openmp_contable_time_$(zone).exe
 contab: $(EXEDIR)/Stats_CL4_aice_openmp_contable_$(zone).exe 
 test : $(EXEDIR)/test_$(zone).exe
 
@@ -51,46 +46,37 @@ meantime: $(EXEDIR)/compute_meantime.exe $(EXEDIR)/compute_meantime_hdct.exe \
 
 
 $(EXEDIR)/MCAL_SEAICE_STATS.exe: ${SRCDIR5}/MCAL_SEAICE_STATS.o
-	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
+		$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
 
 $(EXEDIR)/MCAL_SEAICE_STATS_lead.exe:  ${SRCDIR5}/MCAL_SEAICE_STATS_lead.o
-	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
+		$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
 
 $(EXEDIR)/Create_MaskBoite_stereo.exe: $(OBJ) ${SRCDIR4}/Create_MaskBoite_stereo.o
-	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
+		$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
 
 $(EXEDIR)/compute_index_skill_timeseries_best.exe: ${SRCDIR4}/Compute_index_skill_timeseries_best.o
-	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
+		$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
 
 $(EXEDIR)/compute_basic2D_stats_best.exe: ${SRCDIR4}/Compute_basic2D_stats_best.o
-	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
-
-$(EXEDIR)/Compute_seaice_stats_$(zone)_$(machine).exe: $(OBJ) ${SRCDIR}/Compute_seaice_stats.o
-	$(F90) -o $@  $(LD_FLAGS_MP) $? $(LIBRARY)
-
-$(EXEDIR)/Compute_seaice_stats_$(zone)_$(machine)_leadtime.exe: $(OBJ) ${SRCDIR}/Compute_seaice_stats_leadtime.o
-	$(F90) -o $@  $(LD_FLAGS_MP) $? $(LIBRARY)
-
-$(EXEDIR)/Compute_seaice_stats_$(zone)_$(machine)_leadtime_best.exe: $(OBJ) ${SRCDIR}/Compute_seaice_stats_best.o
-	$(F90) -o $@  $(LD_FLAGS_MP) $? $(LIBRARY)
+		$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
 
 $(EXEDIR)/compute_index_skill_timeseries.exe: ${SRCDIR4}/Compute_index_skill_timeseries.o
-	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
+		$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
 
 $(EXEDIR)/compute_basic2D_stats.exe: ${SRCDIR4}/Compute_basic2D_stats.o
-	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
+		$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
 
 $(EXEDIR)/compute_index_skill.exe: ${SRCDIR4}/Compute_index_skill.o
-	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
+		$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
 
 $(EXEDIR)/compute_meantime_lead.exe: ${SRCDIR4}/Compute_meantimeseries_leadtime.o
-	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
+		$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
 
 $(EXEDIR)/compute_meantime.exe: ${SRCDIR4}/Compute_meantimeseries.o
-	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
+		$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
 
 $(EXEDIR)/compute_meantime_hdct.exe: ${SRCDIR4}/Compute_meantimeseries_hdct.o
-	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
+		$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
 
 $(EXEDIR)/test_$(zone).exe: $(OBJ) $(SRCDIR)/test_read.o
 	$(F90) -o $@  $(LD_FLAGS_MP) $? $(LIBRARY) 

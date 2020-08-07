@@ -1,10 +1,6 @@
 # Makefile for Fortran program Class 4
 # Modifs C.REGNIER Janvier 2010
-type=glorys2v4
-type=orca12_allege
-#type=cglors
-include ../../macro/make_intel_$(type).macro
-#include ../../macro/make_intel.macro
+include ../../macro/make_intel.macro
 #include ../../macro/make_intel_orca12_allege.macro
 
 # Rules
@@ -60,10 +56,7 @@ OBJ4 = $(SRCDIR3)/hydro_potentiel.o \
        $(SRCDIR)/read_ARGO.o  
 
 all: $(EXEDIR)/Lecture_class4.exe \
-     $(EXEDIR)/Lecture_class4_MLD.exe \
-     $(EXEDIR)/Creation_zone.exe
-
-test: $(EXEDIR)/Lecture_class4.exe 
+     $(EXEDIR)/Lecture_class4_MLD.exe
 
 change_path:
 	@echo ""
@@ -92,8 +85,6 @@ $(EXEDIR)/Lecture_class4.exe: $(OBJ) $(SRCDIR2)/Lecture_class4.o
 $(EXEDIR)/Lecture_class4_MLD.exe: $(OBJ4) $(SRCDIR2)/Lecture_class4_MLD.o
 	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY) 
 
-$(EXEDIR)/Creation_zone.exe: $(OBJ2) $(SRCDIR2)/Creation_zone.o
-	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY)
 
 $(EXEDIR)/Lecture_class4_EN3.exe: $(OBJ3) $(SRCDIR2)/Lecture_class4_EN3.o
 	$(F90) -o $@  $(LD_FLAGS) $? $(LIBRARY) 

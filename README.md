@@ -1,69 +1,55 @@
 # TEP_CLASS4 
 
 ## Installation
-
 ### SVN 
 
-svn co https://svn.mercator-ocean.fr/svnroot/mo/TEP/TEP_CLASS4/branches/V4/
+svn co https://svn.mercator-ocean.fr/svnroot/mo/TEP/TEP_CLASS4/branches/V6/
 
-### Gitlab 
-
+## Git 
 git clone  https://gitlab.mercator-ocean.fr/mercator/qualif/TEP_CLASS4.git
-### Compilation du code
 
-Charger les modules suivants :
-* module load intel
-* module load netcdf
-Linker avec la librairie MFT compilé avec la même version des modules 
-#### Compilation de la lib mft 
-```Recupération de la lib MFT sous SVN  :
-https://svn.mercator-ocean.fr/svnroot/mo/LIB/LIB_MFT/branches/V3.7
-cd src
-make clean && make all
-```
-La compilation se fait avec le script Launcher.ksh qui a comme paramètre le systeme à compiler (lié  à une macro dans le répertoire macro). 
+## Description
 
-### Description du code 
+Le code est maintenant tout écrit en python, l'interpolation, la recherche des points dans la grille, l'écriture des fichiers de sortie
 
-La figure ci dessous décrit l'architecture du code
-![GitHub Logo](/images/TEP_CLASS4_NEW_structure.png)
+Le code principal est `script/TEP_CLASS4_kdtree.py`. Il y a aussi une version multiprocs à tester `script/TEP_CLASS4_kdtree_multiproc.py`
 
-### Lancement du code
+Le code se lance avec une série de paramètres et un fichier de configuration qui contient des paramètres et des paths. 
+
+Les fichiers de configurations sont là : `script/cfg/config_...`
+
+Les modules qui servent au code principal sont rangés dans le répertoire `module`
+
+J'ai codé une série de tests unitaires pour les différents cas dans le répertoire `script/test/`
+
 
 # Exemple de launcher
-## Launch for a period
-python TEP_CLASS4.py --config=PSY3QV3R3 --date1=20140701 --date2=20140701 --src=GODAE --data=SST
-## Launch 1 Day in delayed time 15 days before today
-python TEP_CLASS4.py --config=PSY3QV3R3 --delta=15 --src=GODAE --data=SST
-## Launch 1 week in delayed time depending on a a rundate
-python TEP_CLASS4.py --config=PSY3V3R3 --daterun=20140730 --nbdate=7 --delta=14 --src=CORIO --data=profile
-python TEP_CLASS4.py --config=MED12 --daterun=20101027 --nbdate=7 --delta=7 --src=CORA4 --data=profile
-## Launch MONTHLY version 
-python TEP_CLASS4.py --config=GLORYS2V3 --date1=200501 --date2=201212 --src=CORA4 --data=profile
-## Launch MONTHLY version multiprocess
-python TEP_CLASS4_multiprocess_naviti.py --typemod=pgn --config=PSY4V3R1 --daterun=20160921 --src=CORIO --nbdate=7 --delta=14 --data=profile --nbproc=10
-## New version with raw CORIO dataset 
-python TEP_CLASS4.py --config=GLORYS2V4 --daterun=all --src=CORIO_RAW --data=profile --nbproc=1 --typemod=pgn --schedule=m
-##  Version Multiprocess monthly
-python TEP_CLASS4_multiprocess_naviti.py --typemod=pgn --config=GLORYS2V4 --date1=199001 --date2=199002 --src=CORA4 --data=profile --nbproc=10
+```
+CONFIG="PSY4QV3R1"
+DATE1="20200710"
+DATE2="20200710"
+typedata="profile"
+typemod="pgn"
+srcdata="GODAE"
+python ../TEP_CLASS4_kdtree.py --config=${CONFIG} --date1=${DATE1} --date2=${DATE2} --src=${srcdata} --data=${typedata} --typemod=${typemod}
+```
 
-## Launch new version with allege
-python TEP_CLASS4.py --config=PSY4V3R1 --daterun=20101027 --nbdate=7 --delta=7 --src=CORA4 --data=profile --typemod=allege
-python TEP_CLASS4.py --config=PSY4V3R1 --date1=200701 --date2=201312 --src=CORA4 --data=profile --typemod=allege
-python TEP_CLASS4.py --config=PSY4V3R1 --date1=20070101 --date2=20070102 --src=CORA4 --data=profile --typemod=allege
-python TEP_CLASS4.py --config=PSY4V3R1 --date1=2007 --src=CORA4 --data=profile --typemod=allege
-python TEP_CLASS4.py --config=PSY4V3R1 --date1=20150101 --date2=20150916 --src=CORIO --data=profile --typemod=allege
-## Lancement de CORA4 avec les alleges de GLORYS12V1
-python TEP_CLASS4_multiprocess_naviti.py --typemod=allege --config=GLORYS12V1 --date1=199301 --date2=201401 --src=CORA4 --data=profile --nbproc=10
+# Adaptation profiles de BIO 
 
-## Run optim Launch 1 week in delayed time depending on a a rundate
-python TEP_CLASS4_optim.py --config=PSY3V3R3 --daterun=20140730 --nbdate=7 --delta=14 --src=CORIO --data=profile
-## Run optim  with GODAE DATASET
-python TEP_CLASS4_optim.py --config=PSY3QV3R3 --date1=20140701 --date2=20140701 --src=GODAE --data=SST
-# Multi process
-python TEP_CLASS4_multiprocess.py --config=PSY4QV2R2 --daterun=20150201 --nbdate=1 --delta=0 --src=GODAE --data=aice
-# BIO
-python TEP_CLASS4_kdtree.py --config=BIOMER4V1R2 --date1=20161201 --date2=20161202 --src=GLOBCOLOUR --data=chloro --typemod=pgn
+- Creation d'une nouvlle config dans `script/cfg/`
 
-## Kdtree
-python TEP_CLASS4_kdtree.py --config=PSY4V3R1 --date1=20080101 --date2=20080102 --src=MICROWAT --data=sss --typemod=pgn
+- Dans cette nouvelle config créer un nouveau type de donnée dans la section [input_dir] => PREFIX = 
+
+- Ce préfix va être lu dans le Loader.py après la recherche du fichier correspondant au bon jour et à la bonne variable va se faire dans `modules/Extractor.py` 
+il va falloir coder une nouvelle fonction qui fait ça ` if type == "....": return Extract...  `, là ça sera simple ça sera juste une recherche et copie de fichier
+
+- Normalement après y a pas de difficulté, le code va passer dans Interpolator.py pour rechercher les 4 points de grille et interpoler 
+
+- Pour le cas d'un profile 3d il va passer dans la fonction interp_3D de Interpolator.py (là que se fait l'interpolation verticale sur les niveaux des profiles).
+
+- Pour verifier l'interpolation verticale il faut sauvegarder les matrices  **tab_interp_tmp[:,ind_prof]**  et  **values_interp[ind_prof,:]**  dans Interpolator.py
+
+- Les données sont là /dataref/opr/DATA/INSITU/HYDRO/BGC_ARGO/daily, le code pour extraire est là `script/extract_BGC.py`, y a parfois plusieurs profiles par jour il sont 
+nommés BGC_ARGO...prof..nc si nécessaire il faudra faire un autre script pour le reconcaténer (les profiles du même jour ne sont pas dans l'ordre donc un ncks multiple ne marche pas) avec ncrcat
+
+- Good luck!  :)

@@ -74,8 +74,8 @@ ENDIF
    DO il_j=2,ip_jpjglo-3
      DO il_i=2,ip_jpiglo-1
 #else
-  DO il_j=2,ip_jpjglo-1
-    DO il_i=2,ip_jpiglo-1
+   DO il_j=2,ip_jpjglo-1
+     DO il_i=2,ip_jpiglo-1
 #endif
         IF ( ida_maskvalue(il_i,il_j) /= 0 .AND. ida_maskvalue(il_i,il_j) /= 9999 ) THEN
            il_kg=il_kg+1

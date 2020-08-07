@@ -48,7 +48,7 @@ PROGRAM SPATIAL_INTERPOLATION
        il_jdateT0, &
        il_jdateT1
   
-  LOGICAL :: ll_mssh
+  LOGICAL :: ll_mssh,ll_compute
   REAL    :: rl_mssh_shift
 
   CHARACTER(LEN=255) :: cl_input, &
@@ -71,6 +71,7 @@ PROGRAM SPATIAL_INTERPOLATION
        il_ncast,         &
        il_nvar,          &
        ll_mssh,          &
+       ll_compute,       &
        rl_mssh_shift,    &
        il_nbfile
   !
@@ -145,6 +146,7 @@ PROGRAM SPATIAL_INTERPOLATION
        il_nbfile,        &
        cla_modelFile,    &
        ll_mssh,          &
+       ll_compute,       &
        rl_mssh_shift,    &
        cl_msshFile)
   !      
@@ -172,6 +174,7 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
      id_nbfile,           &
      cda_modelFile,       &
      ld_mssh,             &
+     ld_compute,          &
      rd_mssh_shift,       &
      cd_msshFile)
   !
@@ -183,7 +186,7 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
   INTEGER ,INTENT(IN):: id_ncast,  &
        id_nvar,      &
        id_nbfile
-  LOGICAL ,INTENT(IN):: ld_mssh
+  LOGICAL ,INTENT(IN):: ld_mssh,ld_compute
   CHARACTER(LEN=255), DIMENSION(id_nbfile), INTENT(IN) :: cda_modelFile 
   CHARACTER(LEN=255), INTENT(IN) :: cd_colocFile,&
        cd_inputFile,      &
@@ -219,9 +222,11 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
   CHARACTER(LEN=255), DIMENSION(:), ALLOCATABLE :: cla_modelVarname
   REAL(KIND=4), DIMENSION(:,:,:,:), ALLOCATABLE :: rla_modelvalue, &
        rla_msshvalue,    &
-       rla_modelEquivValue
+       rla_modelEquivValue,&
+       rla_modelEquivValuemssh
   REAL(KIND=4), DIMENSION(:,:), ALLOCATABLE :: rla_depthvalue, &
        rla_interpValue,    &
+       rla_interpMSSHValue,&
        rla_poids
   REAL(KIND=4), DIMENSION(:), ALLOCATABLE   :: rla_modeldepth, &
         rla_msshdepth,rla_juld_mod
@@ -229,8 +234,8 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
         rla_LAT, &
         rla_leadtimevalue,&
         rla_juld
-
-  LOGICAL :: ll_isDepthVar,ll_isdepthdim,ll_savevalue
+  INTEGER(KIND=4)     :: il_file_id
+  LOGICAL             :: ll_isDepthVar,ll_isdepthdim,ll_savevalue
   ll_isdepthdim = .TRUE.
  !
   rl_fillValue=99999.
@@ -317,7 +322,7 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
   IF ( ld_mssh ) THEN
      ! Recherche des dimensions du fichier MSSH
 #if defined key_debug
-       WRITE(0,*),'inquire_model_file ::',cd_msshFile
+       WRITE(0,*),'inquire_mssh_file ::',cd_msshFile
 #endif
      
      cla_msshVarname(:) = 'mssh'
@@ -342,10 +347,13 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
      !---------------------------------------------------------------------
      ! Lecture du fichier MSSH
      !
-     ALLOCATE(rla_msshvalue(il_nlonmssh,il_nlatmssh,il_ndepthmssh,il_ntime))
+#if defined key_debug
+      WRITE(0,*),'Read mssh file ::',cd_msshFile
+#endif
+     ALLOCATE(rla_msshvalue(il_nlonmssh,il_nlatmssh,il_ndepthmssh,1))
      ALLOCATE(rla_msshdepth(il_ndepthmssh))
      ll_isdepthdim = .FALSE.
-     CALL read_model_file(cd_msshFile, &
+     CALL read_model_file_2(cd_msshFile, &
           cl_msshVarname,           &
           cl_depthvarname,          &
           rla_msshvalue,            &
@@ -354,10 +362,11 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
           il_nlatmssh,              &
           il_ndepthmssh,            &
           il_nbdimmssh,             &
-          il_ntime,                 &
-          ll_isdepthdim,            &
-          rla_juld_mod)
+          ll_isdepthdim)
 
+#if defined key_debug
+      WRITE(0,*),'Read mssh file OK'
+#endif
      DEALLOCATE(rla_msshdepth)
   ENDIF
 !  !------------------------------------------------------------------
@@ -375,6 +384,7 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
   !
   !
   ALLOCATE(rla_modelEquivValue(il_nlevels,id_ncast,id_nvar,il_nprof))
+  IF ( ld_mssh .and. .not. ld_compute ) ALLOCATE(rla_modelEquivValuemssh(il_nlevels,id_ncast,id_nvar,il_nprof))
   !  modelEquiv(numdeps,numfcsts,numvars,numobs)
   !
   il_jc = 1
@@ -446,17 +456,15 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
 #endif
         
      IF ( TRIM(cl_modelVarname) .EQ. 'sossheig' .OR. TRIM(cl_modelVarname) .EQ. 'ileadfra') THEN
+        IF ( ld_mssh .and. ld_compute ) THEN
+                rla_modelvalue(:,:,:,:) = rla_modelvalue(:,:,:,:) - rla_msshvalue(:,:,:,:) - rd_mssh_shift
+                !------------------------------------------------------------------
+                ! Test pour valeurs abherentes de la MDT (dues au fichier MDT)
+                ! 
+                WHERE (rla_modelvalue .LT. -10) rla_modelvalue = rl_fillValue
+        ENDIF
         ! 
         !---------------------------------------------------------------------
-        ! Correction MSSH (MDT) si besoin 
-        ! 
-        IF ( ld_mssh ) THEN
-           rla_modelvalue(:,:,:,:) = rla_modelvalue(:,:,:,:) - rla_msshvalue(:,:,:,:) - rd_mssh_shift
-           !------------------------------------------------------------------
-           ! Test pour valeurs abherentes de la MDT (dues au fichier MDT)
-           ! 
-           WHERE (rla_modelvalue .LT. -10) rla_modelvalue = rl_fillValue
-        ENDIF
         CALL interp_model_field_2d(rla_modelvalue, &
                           rla_interpValue, &
                           il_nlon,         &
@@ -468,6 +476,25 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
                           il_nprof,        &
                           rla_poids,       &
                           rl_fillValue)
+        IF ( ld_mssh .and. .not. ld_compute ) THEN
+                ALLOCATE(rla_interpMSSHValue(il_nlevels, il_nprof))
+                CALL interp_model_field_2d(rla_msshvalue, &
+                                  rla_interpMSSHValue, &
+                                  il_nlon,         &
+                                  il_nlat,         &
+                                  ila_xindex,      &
+                                  ila_yindex,      &
+                                  rla_LON,         &
+                                  rla_LAT,         &
+                                  il_nprof,        &
+                                  rla_poids,       &
+                                  rl_fillValue)
+                !------------------------------------------------------------------
+                ! Test pour valeurs abherentes de la MDT (dues au fichier MDT)
+                ! 
+                WHERE (rla_interpMSSHValue .LT. -10) rla_interpMSSHValue = rl_fillValue
+        ENDIF
+        
      ELSE
         CALL interp_model_field_3d(rla_modelvalue, &
                           rla_modeldepth,  &
@@ -496,6 +523,7 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
         IF (TRIM(cla_modelVarname(il_jv)) .EQ. cl_modelVarname) THEN
           ll_savevalue = .TRUE.
           rla_modelEquivValue(:,il_jc,il_jv,:) = rla_interpValue(:,:)
+          IF ( ld_mssh .and. .not. ld_compute ) rla_modelEquivValuemssh(:,il_jc,il_jv,:)=rla_interpMSSHValue(:,:)
           !  forecast(numdeps,numfcsts,numvars,numobs)
         ENDIF
      ENDDO
@@ -528,7 +556,26 @@ SUBROUTINE interpolate_3D_model_field(cd_inputFile, &
        rla_modelEquivValue, &
        cla_dimname, &
        rl_fillValue)
-
+  IF ( ld_mssh .and. .not. ld_compute ) THEN 
+        WRITE(0,*) 'Write MSSH'
+        CALL write_interp_field(cd_inputFile, &
+                                cl_msshVarname, &
+                                il_nprof, &
+                                id_nvar,  &
+                                id_ncast, &
+                                il_nlevels, &
+                                -rla_modelEquivValuemssh, &
+                                cla_dimname, &
+                                rl_fillValue)
+        CALL MIOL_openw_file_NC(TRIM(cd_inputFile), &
+                                il_file_id)
+        WRITE(0,*) 'Write MSSH shift'
+        CALL MIOL_write_attribute_NC(il_file_id,&
+                                    'mssh',&
+                                    'add_offset',&
+                                    -rd_mssh_shift)
+        CALL MIOL_close_file_NC(il_file_id)
+  ENDIF
   IF (ALLOCATED(rla_poids))         DEALLOCATE(rla_poids)
   IF (ALLOCATED(rla_depthvalue))    DEALLOCATE(rla_depthvalue)
   IF (ALLOCATED(ila_xindex))        DEALLOCATE(ila_xindex)
@@ -608,6 +655,7 @@ SUBROUTINE write_interp_field(cd_outputFile, &
   cl_FillValueatt = '_FillValue'
   cl_nameatt =  'long_name'
   cl_nameValatt =  'Model '//TRIM(cd_outputVarname)//' counterpart of obs. value'
+  
   !il_cparameterintlen = ig_cparameterint
   !il_lparameterintlen = ig_lparameterint
   !WRITE (0,*) 'Dimensions L C :: ',il_lparameterintlen,il_cparameterintlen
@@ -1180,7 +1228,7 @@ SUBROUTINE read_model_file(cd_file, &
   il_status = fi_ncError(NF90_INQ_VARID(il_file_id,cd_fieldname,il_varid),'NF90_INQ_VARID')
   il_status = fi_ncError(NF90_INQUIRE_VARIABLE(il_file_id,il_varid,cd_fieldname,il_type),'NF90_INQ_VARIABLE')
 #if defined key_debug
-  WRITE(0,*) 'inquire variables model OK'
+  WRITE(0,*) 'Read model file'
 #endif
   !! Read time_counter
   CALL MIOL_read_field_NC(il_file_id, &
@@ -1336,6 +1384,192 @@ ENDSUBROUTINE read_model_file
 !******************************************************************************
 !
 !
+SUBROUTINE read_model_file_2(cd_file, &
+     cd_fieldname, &
+     cd_depthname, &
+     rda_fieldvalue, &
+     rda_depthvalue, &
+     id_nlon, &
+     id_nlat, &
+     id_ndepth, &
+     id_nbdim,&
+     ld_isdepthdim)
+  !
+  USE netcdf
+  USE MCAL
+  USE MFT_error
+  USE MIOL
+  IMPLICIT NONE
+  !
+  CHARACTER(LEN=255) :: cd_file, &
+       cl_file_tmp, &
+       cd_fieldname, &
+       cd_depthname
+  INTEGER :: id_nlon, &
+       id_nlat, &
+       id_ndepth, &
+       id_nbdim, &
+       il_varid, &
+       il_type, &
+       il_status, &
+       il_jk
+  REAL(KIND=4)   , DIMENSION(id_nlon,id_nlat,id_ndepth,1)    :: rda_fieldvalue
+  REAL(KIND=4)   , DIMENSION(id_ndepth) :: rda_depthvalue
+  !
+  INTEGER                                        :: il_file_id
+  INTEGER(KIND=4),DIMENSION(2)                   :: ila_nbdim2D
+  INTEGER(KIND=4),DIMENSION(3)                   :: ila_nbdim3D
+  INTEGER(KIND=4),DIMENSION(4)                   :: ila_nbdim4D
+  REAL(KIND=4)   , DIMENSION(:)      , POINTER   :: rlpa_value_1D
+  REAL(KIND=4)   , DIMENSION(:,:)    , POINTER   :: rlpa_value_2D
+  REAL(KIND=4)   , DIMENSION(:,:,:)  , POINTER   :: rlpa_value_3D
+  REAL(KIND=4)   , DIMENSION(:,:,:,:), POINTER   :: rlpa_value_4D
+  INTEGER(KIND=2), DIMENSION(:,:)    , POINTER   :: ilpa_value_2D
+  INTEGER(KIND=2), DIMENSION(:,:,:)  , POINTER   :: ilpa_value_3D
+  INTEGER(KIND=2), DIMENSION(:,:,:,:), POINTER   :: ilpa_value_4D
+  LOGICAL                                        :: ld_isdepthdim
+  !
+  !
+  !---------------------------------------------------------------------
+ !
+  !---------------------------------------------------------------------
+  ! Lecture de la variable a traiter
+  !
+  CALL MIOL_openr_file_NC(TRIM(cd_file), &
+       il_file_id)
+
+  !
+  il_status = fi_ncError(NF90_INQ_VARID(il_file_id,cd_fieldname,il_varid),'NF90_INQ_VARID')
+  il_status = fi_ncError(NF90_INQUIRE_VARIABLE(il_file_id,il_varid,cd_fieldname,il_type),'NF90_INQ_VARIABLE')
+#if defined key_debug
+  WRITE(0,*) 'Read model time no time'
+#endif
+
+  IF (id_nbdim .EQ. 3) THEN
+     IF (ld_isdepthdim) THEN
+        SELECT CASE (il_type)
+        CASE (NF90_FLOAT)
+           CALL MIOL_read_field_NC(il_file_id, &
+                cd_fieldname, &
+                rlpa_value_3D)
+        CASE (NF90_SHORT)
+           CALL MIOL_read_field_NC(il_file_id, &
+                cd_fieldname, &
+                ilpa_value_3D,&
+                ila_nbdim3D,&
+                rlpa_value_3D)
+           DEALLOCATE(ilpa_value_3D)
+        CASE default
+           PRINT *,'Type non reconnu'
+        ENDSELECT
+        rda_fieldvalue(1:id_nlon,1:id_nlat,1:id_ndepth,1) = &
+             rlpa_value_3D(1:id_nlon,1:id_nlat,1:id_ndepth)
+
+        DEALLOCATE(rlpa_value_3D)
+     ELSE
+
+        SELECT CASE (il_type)
+        CASE (NF90_FLOAT)
+           CALL MIOL_read_field_NC(il_file_id, &
+                cd_fieldname, &
+                rlpa_value_2D)
+        CASE (NF90_SHORT)
+           CALL MIOL_read_field_NC(il_file_id, &
+                cd_fieldname, &
+                ilpa_value_2D,&
+                ila_nbdim2D,&
+                rlpa_value_2D)
+           DEALLOCATE(ilpa_value_2D)
+        CASE default
+           PRINT *,'Type non reconnu'
+        ENDSELECT
+        rda_fieldvalue(1:id_nlon,1:id_nlat,1,1) = &
+             rlpa_value_2D(1:id_nlon,1:id_nlat)
+
+        DEALLOCATE(rlpa_value_2D)
+     ENDIF
+  ELSE IF (id_nbdim .EQ. 4) THEN
+     IF (ld_isdepthdim) THEN
+       SELECT CASE (il_type)
+       CASE (NF90_FLOAT)
+          CALL MIOL_read_field_NC(il_file_id, &
+               cd_fieldname, &
+               rlpa_value_4D)
+
+       CASE (NF90_SHORT)
+
+          CALL MIOL_read_field_NC(il_file_id, &
+               cd_fieldname, &
+               ilpa_value_4D,&
+               ila_nbdim4D,&
+               rlpa_value_4D)
+          DEALLOCATE(ilpa_value_4D)
+       CASE default
+          PRINT *,'Type non reconnu'
+       ENDSELECT
+       rda_fieldvalue(1:id_nlon,1:id_nlat,1:id_ndepth,1) = &
+            rlpa_value_4D(1:id_nlon,1:id_nlat,1:id_ndepth,1)
+       DEALLOCATE(rlpa_value_4D)
+     ELSE
+       SELECT CASE (il_type)
+       CASE (NF90_FLOAT)
+
+          CALL MIOL_read_field_NC(il_file_id, &
+               cd_fieldname, &
+               rlpa_value_3D)
+
+       CASE (NF90_SHORT)
+
+          CALL MIOL_read_field_NC(il_file_id, &
+               cd_fieldname, &
+               ilpa_value_3D,&
+               ila_nbdim3D,&
+               rlpa_value_3D)
+          DEALLOCATE(ilpa_value_3D)
+       CASE default
+          PRINT *,'Type non reconnu'
+       ENDSELECT
+
+
+
+       rda_fieldvalue(1:id_nlon,1:id_nlat,1,1) = &
+            rlpa_value_3D(1:id_nlon,1:id_nlat,1)
+       DEALLOCATE(rlpa_value_3D)
+     ENDIF
+  ENDIF
+  !
+  !
+
+  !---------------------------------------------------------------------
+  ! Lecture de la variable de profondeur
+  !
+  CALL MIOL_read_field_NC(il_file_id, &
+       cd_depthname, &
+       rlpa_value_1D)
+  rda_depthvalue(1:id_ndepth) = &
+       rlpa_value_1D(1:id_ndepth)
+  DEALLOCATE(rlpa_value_1D)
+  !
+  !
+  !---------------------------------------------------------------------
+  ! Fermeture du fichier
+  !
+  CALL MIOL_close_file_NC(il_file_id)
+  !
+  !
+ENDSUBROUTINE read_model_file_2
+!
+!
+!
+!!******************************************************************************
+!******************************************************************************
+!******************************************************************************
+!
+
+
+
+
+
 SUBROUTINE interp_model_field_2d(rda_modelvalue, &
      rda_modelvalue_inter, &
      id_nlon, &
@@ -2108,27 +2342,27 @@ SUBROUTINE read_observation_file (cd_inputFile, &
      il_good=0
   ENDIF
 
-!!  DO il_jj=1, id_nprof
-!!     DO il_jk=1, id_nlevels
-!!        IF ( rla_varqc(il_jk, il_jj) .EQ. il_good) THEN
-!!           !** Gestion des profils inversés  
-!!           IF ( il_jk < id_nlevels ) THEN
-!!              IF ( rda_depthvalue(il_jk+1, il_jj) /= 99999.0 .AND. rda_depthvalue(il_jk,il_jj) /= 99999.0 ) THEN
-!!                 IF ( rda_depthvalue(il_jk+1, il_jj) < rda_depthvalue(il_jk,il_jj) )  THEN
-!!                    rda_depthvalue(il_jk, il_jj) =99999.0
-!!                 ENDIF
-!!              ENDIF
-!!           ENDIF
-!!!           WRITE(0,*),'Valeur correcte :: ',rla_varqc(il_jk, il_jj)
-!!        ELSE  
-!!!#if defined key_debug
-!!!            WRITE(0,*),'Profil n° :: ',il_jj
-!!!            WRITE(0,*),'Niveau n ° :: ',il_jk
-!!!#endif
-!!            rda_depthvalue(il_jk, il_jj) = 99999.0
-!!        ENDIF
-!!     ENDDO
-!!  ENDDO
+  DO il_jj=1, id_nprof
+     DO il_jk=1, id_nlevels
+        IF ( rla_varqc(il_jk, il_jj) .EQ. il_good) THEN
+           !** Gestion des profils inversés  
+           IF ( il_jk < id_nlevels ) THEN
+              IF ( rda_depthvalue(il_jk+1, il_jj) /= 99999.0 .AND. rda_depthvalue(il_jk,il_jj) /= 99999.0 ) THEN
+                 IF ( rda_depthvalue(il_jk+1, il_jj) < rda_depthvalue(il_jk,il_jj) )  THEN
+                    rda_depthvalue(il_jk, il_jj) =99999.0
+                 ENDIF
+              ENDIF
+           ENDIF
+!           WRITE(0,*),'Valeur correcte :: ',rla_varqc(il_jk, il_jj)
+        ELSE  
+!#if defined key_debug
+!            WRITE(0,*),'Profil n° :: ',il_jj
+!            WRITE(0,*),'Niveau n ° :: ',il_jk
+!#endif
+            rda_depthvalue(il_jk, il_jj) = 99999.0
+        ENDIF
+     ENDDO
+  ENDDO
   !** 
   !
   !

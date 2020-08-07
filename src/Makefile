@@ -4,12 +4,7 @@
 # Makefile naviti
 # intel/intel-17
 # netcdf/netcdf-4.1_intel11_r4
-type=orca12_allege
-#type=orca025
-#type=orca12
-#type=glorys2v4
-type=glorys12v1
-include ../macro/make_intel_$(type).macro
+include ../macro/make_intel.macro
 ## Rules
 .SUFFIXES:.F90 .F .f90 .mod
 .F90.o:
@@ -18,7 +13,7 @@ include ../macro/make_intel_$(type).macro
 .f90.o:
 	$(F90PT) -c $(FFLAGS) ${INCLUDE} $< -o $@ $(CPP_KEYS)
 
-EXEDIR= ../bin_alleges
+EXEDIR= ../bin
 SRCDIR= .
 SRCDIR2=module
 

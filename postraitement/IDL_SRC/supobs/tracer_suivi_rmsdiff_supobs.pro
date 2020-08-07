@@ -1,7 +1,7 @@
 PRO tracer_suivi_rmsdiff_supobs,modele,fic_mask, $
                                kind,filelist,dir_stats_MERC,days,valeurs_cmax,$
 			       valeurs_cmax_sal,liste_zone,tab_choix,OPER,tab_prof,$
-			       lissage,NB_VALEURS,NB_VALEURS2
+			       lissage,NB_VALEURS,NB_VALEURS2,type_data=type_data
 
 ;==========================================================================
 ;##  Trace de l'evolution de la rms difference pour les fichiers class4
@@ -52,11 +52,11 @@ variable_name=ncdf_lec(file,iodir=dirin,var='param_stats', /nostruct) & variable
 tab_prof_model=ncdf_lec(file,iodir=dirin,var='deptht', /nostruct) & tab_prof_model=transpose(tab_prof_model)
 tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t_0', /nostruct) & tab_e3t=transpose(tab_e3t)
 ;tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t', /nostruct) & tab_e3t=transpose(tab_e3t)
-print,variable_name
+
 nb_prof_model=N_ELEMENTS(tab_prof_model)
 nb_variables=N_ELEMENTS(variable_name)
-print,variable_name
 print,nb_variables/2
+print,variable_name
 ;print, 'Prof model :: ',tab_prof_model
 print, 'Prof  :: ',tab_prof
 print,'Taille :: ',nb_prof_model
@@ -93,6 +93,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
       ;** Allocate tab
       rms_difftot=dblarr(nb_prof_model,nb_variables,412,nfichiers)
       indice_tot=dblarr(nb_prof_model,nb_variables,412,nfichiers) ;intarr
+      print,'Dimensions  : ',nb_prof_model,nb_variables,nfichiers
       tab_indice_ini=intarr(nb_prof)
       tab_indice_fin=intarr(nb_prof)	  
       print,'nb_prof :: ',nb_prof
@@ -123,14 +124,16 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
       print,'indice :',tab_indice_ini(indice2),tab_indice_fin(indice2)
       ; Normalisation par le nombre d'obs par boite
       while i le nfichiers-1 do begin
+     ; while i le 1 do begin
         file=filelist(i)
         dirin=dir_stats_MERC
+        print,file
         rms_diff=ncdf_lec(file,iodir=dirin,var='rms_diff', /nostruct) & rms_diff=transpose(rms_diff)
         indice=ncdf_lec(file,iodir=dirin,var='indice_box', /nostruct) & indice=transpose(indice)
         indice_tot(*,*,*,i)=indice
         rms_difftot(*,*,*,i)=rms_diff(*,*,*,*)
         il_nelem=N_ELEMENTS(rms_diff(1,*,1))
-	;print,'fichier :',i,nfichiers-1
+	print,'fichier :',i,nfichiers-1,il_nelem
 	clear,indice,rms_diff
         i=i+1
       endwhile
@@ -218,7 +221,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
       c9=gold
       
       
-      ;output='logo gif'
+      output='logo gif'
       output='gif'
       ;output='screen gif'
       prof=0L 
@@ -264,14 +267,14 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
            ctot(7,*)=c8
            ctot(8,*)=c9
 	   ll_valide=0
-      ;; Boucle sur les variables 
+           ;; Boucle sur les variables 
            FOR il_ind=il_begin,il_nelem-3,2 DO BEGIN 
               clear,numx1,numx2   
               numx1=jours
               numx2=rms(prof,il_ind,*)
 	      nb_cumul=nbval_cumul(prof,il_ind,*)
 	      nb_data_indice=nb_data(prof,il_ind,*)
-              titre='Rms diff '+var+' '+modele+' '+profondeur(prof)+ ' class4 '+zone
+              titre='Rms diff '+var+' '+type_data+' '+modele+' '+profondeur(prof)+ ' class4 '+zone
               xtitle='rms diff'
               clear,cmin,cmax
 	      if (var eq 'SAL') THEN BEGIN
@@ -325,18 +328,16 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
 		      endelse
                       IF  il_ind2 LT 1 THEN BEGIN
 		        if ( lissage eq 'yes' ) then begin
-                           plot_serietemp_oper2,1.5,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1),RIGHT=nb_cumul_smooth;,OVERPLOT=8
+                           plot_serietemp_oper2,1.0,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1),RIGHT=nb_cumul_smooth;,OVERPLOT=8
 		        endif else begin
-                           plot_serietemp_oper2,1.5,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1),RIGHT=nb_cumul,OVERPLOT=8
+                           plot_serietemp_oper2,1.0,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1),RIGHT=nb_cumul,OVERPLOT=8
 			endelse
                       ENDIF ELSE BEGIN
-                         plot_serietemp_oper2,1.5,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1)
+                         plot_serietemp_oper2,1.0,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1)
                       ENDELSE
 	              il_ind2=il_ind2+1
 	   	      tab_ASCII(0,*)=TRANSPOSE(numx1)
-                      print,il_ind2
 	   	      tab_ASCII(il_ind2,*)=rms(prof,il_ind,*) ; numx2
-                      ;print ,rms(prof,il_ind,*)
 		      tab_ASCII_2(il_ind2-1)=SQRT(TOTAL(rms_cumul(prof,il_ind,*),/nan)/TOTAL(nbval_cumul(prof,il_ind,*),/nan))
 		      tab_var(il_ind2-1)=variable_name(il_ind+2)
 		      nb_val_tot=TOTAL(nb_data(prof,il_ind,*))
@@ -366,12 +367,12 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
 		      print,'-------------------------------------------------'
 	              IF  il_ind2 LT 1 THEN BEGIN
 		         if ( lissage eq 'yes' ) then begin
-		            plot_serietemp_oper,1.5,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1),RIGHT=nb_cumul_smooth ;,OVERPLOT=8
+		            plot_serietemp_oper,1.0,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1),RIGHT=nb_cumul_smooth ;,OVERPLOT=8
 		         endif else begin
-		            plot_serietemp_oper,1.5,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1),RIGHT=nb_cumul,OVERPLOT=8
+		            plot_serietemp_oper,1.0,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1),RIGHT=nb_cumul,OVERPLOT=8
 		         endelse 
 		      ENDIF ELSE BEGIN
-		         plot_serietemp_oper,1.5,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1)
+		         plot_serietemp_oper,1.0,val4,PLOT_KIND=kind,NOTE2=strtrim(variable_name(il_ind+2),1)
 		      ENDELSE
                       il_ind2=il_ind2+1
 		       IF (strtrim(variable_name(il_ind+2)) eq 'HDCST_TEMP' or strtrim(variable_name(il_ind+2)) eq 'HDCST_PSAL' $

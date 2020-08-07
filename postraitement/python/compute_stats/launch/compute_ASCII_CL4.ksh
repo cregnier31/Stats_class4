@@ -30,19 +30,18 @@ PROGDIR=${0%/*}; [ "${PROGDIR}" = "." \
 
 
 config=$1
-day1=$2 #'20130101'
-day2=$3 #'20130331'
+day1=$2
+day2=$3
 typedata=$4
-
 
 usage ()
 {
     echo "Nb d'argument incorrects :: "
-    echo "Necessite 3 arguments :: "
+    echo "Necessite 4 arguments :: "
     echo " Valeur1 = Config "
     echo " Valeur2 = Jour min "
     echo " Valeur3 = Jour max "
-    echo " Valeur4 = Type of data "
+    echo " Valeur4 = Type of data (CHL, TEMP, PSAL, SLA, SST)"
     exit 1
 }
 
@@ -54,17 +53,17 @@ if [ $# -ne 4 ] ;then
     usage
 fi
 case "${config}" in
-        PSY3V3R1|PSY3V3R3|GIOPS|PSY4V2R2|PSY4V3R1|PSY2V4R4|HYCOM|FOAM|BLK)
+        PSY3V3R1|PSY3V3R3|GIOPS|PSY4V2R2|PSY4V3R1|PSY2V4R4|HYCOM|FOAM|BLK|BIOMER4|FREEBIORYS2)
                 ;;
         *)
-        usage
+        echo "config not found"
                 ;;
 esac
 
 
-export PYTHONPATH=$PYTHONPATH:/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/python/module/
+export PYTHONPATH=$PYTHONPATH:../../module/
 
-dir=/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/python/compute_stats/
+dir=../
 workdir=${dir}/log
 cfgfile=${dir}/environment_${config}.cfg
 logfile=${workdir}/CLASS4_${config}_${day1}-${day2}.log

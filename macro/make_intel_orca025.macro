@@ -5,28 +5,23 @@ F90=ifort
 COMPILEPT=$(F90) -cpp
 COMPILE=ifort
 F90PT=ifort -cpp
-#-Qoption,fpp 
-## Debug
-DEBUG=-g -traceback
+
 ## FLAGS
 OPEN_MP=-openmp
-#FLAGS=-O2 -check bounds -ftrapuv -warn -convert big_endian   
-#FLAGS=-O3 -convert big_endian
-#FLAGS_MP=-O3 -convert big_endian $(OPEN_MP) 
-#FLAGS_MP=-O2 -check bounds -ftrapuv -warn -convert big_endian $(OPEN_MP) 
 
+## Compilation avec options de debug
 #FFLAGS=-O0  -check bounds -ftrapuv -check uninit -check pointers -traceback -convert big_endian 
-#LD_FLAGS=-O0 -check bounds -ftrapuv -check uninit -check pointers -traceback -convert big_endian
+#LD_FLAGS=-O0  -check bounds -ftrapuv -check uninit -check pointers -traceback -convert big_endian
 
-FFLAGS=-O3 -convert big_endian -traceback
-LD_FLAGS=-O3 -convert big_endian -traceback
+FFLAGS=-O3 -convert big_endian 
+LD_FLAGS=-O3 -convert big_endian
 
-#FFLAGS=-O3  -check bounds -ftrapuv -check uninit -check pointers -traceback -convert big_endian 
-#LD_FLAGS=-O3  -check bounds -ftrapuv -check uninit -check pointers -traceback -convert big_endian
+## Compilation sans options de debug
+#FFLAGS=-O3 -check bounds -convert big_endian 
+#LD_FLAGS=-O3 -convert big_endian
 
 #Compilation open mp
 #LD_FLAGS_MP=-O2 -check bounds -ftrapuv -warn -convert big_endian -static-intel $(OPEN_MP)
-#LD_FLAGS=-O2 -check bounds -ftrapuv -warn -convert big_endian -static-intel
 #LD_FLAGS_MP=-O3 -convert big_endian -static-intel $(OPEN_MP)
 #
 #
@@ -35,14 +30,12 @@ AR=ar -rv
 ## NETCDF
 LIBNETCDF=netcdf
 NCDF_INC = ${NETCDF_INC}
-NCDF_LIB = -L${NETCDF_LIB} -lnetcdff  -lnetcdf  -L${HDF5_LIB} #-lhdf5_hl -lhdf5                                
 NCDF_LIB = -L${NETCDF_LIB} -lnetcdf
 INCLUDE_NC =  -I$(NCDF_INC)
 LIB_NC=${NETCDF_LIB}/libnetcdf.a
 
 # MFT
-#MFT_DIR=/home/cregnier/LIB/MFT3.6/intel_hdf5/
-MFT_DIR=/home/cregnier/LIB/MFT3.7/intel_naviti/
+MFT_DIR=/home/cregnier/LIB/MFT3.6/intel
 MFT_INC=${MFT_DIR}/include
 MFT_LIB=${MFT_DIR}/lib
 LIB_MFT=libmft.a

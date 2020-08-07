@@ -96,9 +96,7 @@ variable_name(7)='PERS5D_'+variable
 variable_name(8)='CLIM_'+variable
 variable_name_type=variable_name
 print,variable_name_type
-datetrim=year
 date_title=datetrim
-
 CASE variable OF              & $
   'TEMP' : BEGIN                & $
           print,variable        & $

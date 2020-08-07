@@ -11,112 +11,6 @@
 
 import numpy as np
 
-## Definition des variable_names
-
-variable_nameT     = np.chararray(8,itemsize=25)
-variable_nameT[0]  = 'BEST_TEMP'
-variable_nameT[1]  = 'FRCST1D_TEMP'
-variable_nameT[2]  = 'FRCST3D_TEMP'
-variable_nameT[3]  = 'FRCST5D_TEMP'
-variable_nameT[4]  = 'PERS1D_TEMP'
-variable_nameT[5]  = 'PERS3D_TEMP'
-variable_nameT[6]  = 'PERS5D_TEMP'
-variable_nameT[7]  = 'CLIM_TEMP'
-
-variable_nameT_new     = np.chararray(12,itemsize=25)
-variable_nameT_new[0]  = 'BEST_TEMP'
-variable_nameT_new[1]  = 'FRCST1D_TEMP'
-variable_nameT_new[2]  = 'FRCST3D_TEMP'
-variable_nameT_new[3]  = 'FRCST5D_TEMP'
-variable_nameT_new[4]  = 'FRCST7D_TEMP'
-variable_nameT_new[5]  = 'FRCST9D_TEMP'
-variable_nameT_new[6]  = 'PERS1D_TEMP'
-variable_nameT_new[7]  = 'PERS3D_TEMP'
-variable_nameT_new[8]  = 'PERS5D_TEMP'
-variable_nameT_new[9]  = 'PERS7D_TEMP'
-variable_nameT_new[10]  = 'PERS9D_TEMP'
-variable_nameT_new[11]  = 'CLIM_TEMP'
-
-variable_nameSST_best=np.chararray(2,itemsize=25)
-variable_nameSST_best[0]  = 'BEST_TEMP'
-variable_nameSST_best[1]  = 'CLIM_TEMP'
-
-variable_nameSST     = np.chararray(8,itemsize=25)
-variable_nameSST[0]  = 'BEST_SST'
-variable_nameSST[1]  = 'FRCST1D_SST'
-variable_nameSST[2]  = 'FRCST3D_SST'
-variable_nameSST[3]  = 'FRCST5D_SST'
-variable_nameSST[4]  = 'PERS1D_SST'
-variable_nameSST[5]  = 'PERS3D_SST'
-variable_nameSST[6]  = 'PERS5D_SST'
-variable_nameSST[7]  = 'CLIM_SST'
-
-variable_nameSST_new  = np.chararray(12,itemsize=25)
-variable_nameSST_new[0]  = 'BEST_SST'
-variable_nameSST_new[1]  = 'FRCST1D_SST'
-variable_nameSST_new[2]  = 'FRCST3D_SST'
-variable_nameSST_new[3]  = 'FRCST5D_SST'
-variable_nameSST_new[4]  = 'FRCST7D_SST'
-variable_nameSST_new[5]  = 'FRCST9D_SST'
-variable_nameSST_new[6]  = 'PERS1D_SST'
-variable_nameSST_new[7]  = 'PERS3D_SST'
-variable_nameSST_new[8]  = 'PERS5D_SST'
-variable_nameSST_new[9]  = 'PERS7D_SST'
-variable_nameSST_new[10]  = 'PERS9D_SST'
-variable_nameSST_new[11]  = 'CLIM_SST'
-
-variable_nameSLA     = np.chararray(8,itemsize=25)
-variable_nameSLA[0]  = 'BEST_SLA'
-variable_nameSLA[1]  = 'FRCST1D_SLA'
-variable_nameSLA[2]  = 'FRCST3D_SLA'
-variable_nameSLA[3]  = 'FRCST5D_SLA'
-variable_nameSLA[4]  = 'PERS1D_SLA'
-variable_nameSLA[5]  = 'PERS3D_SLA'
-variable_nameSLA[6]  = 'PERS5D_SLA'
-variable_nameSLA[7]  = 'CLIM_SLA'
-
-variable_nameSLA_new = np.chararray(12,itemsize=25)
-variable_nameSLA_new[0]  = 'BEST_SLA'
-variable_nameSLA_new[1]  = 'FRCST1D_SLA'
-variable_nameSLA_new[2]  = 'FRCST3D_SLA'
-variable_nameSLA_new[3]  = 'FRCST5D_SLA'
-variable_nameSLA_new[4]  = 'FRCST7D_SLA'
-variable_nameSLA_new[5]  = 'FRCST9D_SLA'
-variable_nameSLA_new[6]  = 'PERS1D_SLA'
-variable_nameSLA_new[7]  = 'PERS3D_SLA'
-variable_nameSLA_new[8]  = 'PERS5D_SLA'
-variable_nameSLA_new[9]  = 'PERS7D_SLA'
-variable_nameSLA_new[10]  = 'PERS9D_SLA'
-variable_nameSLA_new[11]  = 'CLIM_SLA'
-
-variable_nameCHL= np.chararray(2,itemsize=25)
-variable_nameCHL[0]  = 'HDCT_CHL'
-variable_nameCHL[1]  = 'FCST_CHL'
-
-variable_nameS     = np.chararray(8,itemsize=25)
-variable_nameS[0]  = 'BEST_PSAL'
-variable_nameS[1]  = 'FRCST1D_PSAL'
-variable_nameS[2]  = 'FRCST3D_PSAL'
-variable_nameS[3]  = 'FRCST5D_PSAL'
-variable_nameS[4]  = 'PERS1D_PSAL'
-variable_nameS[5]  = 'PERS3D_PSAL'
-variable_nameS[6]  = 'PERS5D_PSAL'
-variable_nameS[7]  = 'CLIM_PSAL'
-
-variable_nameS_new = np.chararray(12,itemsize=25)
-variable_nameS_new[0]  = 'BEST_PSAL'
-variable_nameS_new[1]  = 'FRCST1D_PSAL'
-variable_nameS_new[2]  = 'FRCST3D_PSAL'
-variable_nameS_new[3]  = 'FRCST5D_PSAL'
-variable_nameS_new[4]  = 'FRCST7D_PSAL'
-variable_nameS_new[5]  = 'FRCST9D_PSAL'
-variable_nameS_new[6]  = 'PERS1D_PSAL'
-variable_nameS_new[7]  = 'PERS3D_PSAL'
-variable_nameS_new[8]  = 'PERS5D_PSAL'
-variable_nameS_new[9]  = 'PERS7D_PSAL'
-variable_nameS_new[10] = 'PERS9D_PSAL'
-variable_nameS_new[11] = 'CLIM_PSAL'
-
 ## Definition des tables de profondeur
 tab_prof    = np.zeros(7)
 tab_prof[0] = 0.
@@ -266,11 +160,6 @@ profondeur2[5] = '300-400m'
 profondeur2[6] = '400-500m'
 profondeur2[7] = '0-500m'
 
-#profondeur3    = np.chararray(3,itemsize=25)
-#profondeur3[0] = '0-100m'
-#profondeur3[1] = '100-500m'
-#profondeur3[2] = '0-500m'
-
 profondeur3    = np.chararray(5,itemsize=25)
 profondeur3[0] ='0-5m'
 profondeur3[1] ='5-100m'
@@ -278,10 +167,15 @@ profondeur3[2] ='100-500m'
 profondeur3[3] ='500-2000m'
 profondeur3[4] ='0-2000m'
 
+profondeur4    = np.chararray(4,itemsize=25)
+profondeur4[0] ='0-500m'
+profondeur4[1] ='500-1000m'
+profondeur4[2] ='1000-2000m'
+profondeur4[3] ='2000-5000m'
+
 profondeur_surf  = np.chararray(1,itemsize=25)
 profondeur_surf[0] = '0-0m'
 
-## Zones CLASS1
 liste_zone      = np.chararray(14,itemsize=25)
 liste_zone[0]   = 'ACC'
 liste_zone[1]   = 'ARC'
@@ -349,13 +243,9 @@ liste_zone_PSY2_SHOM[2] = 'Norvege'
 liste_zone_PSY2_SHOM[3] = 'Atl_Trop'
 liste_zone_PSY2_SHOM[4] = 'Atl_Trop_Guinee'
 liste_zone_PSY2_SHOM[5] = 'Medit_Ouest'
-#liste_zone_PSY2_SHOM[6] = 'Medit_Est'
 liste_zone_PSY2_SHOM[6] = 'Indien_Est'
 liste_zone_PSY2_SHOM[8] = 'Indien_Sud_Ouest'
 
-## zone TEST
-liste_TEST    = np.chararray(1,itemsize=25)
-liste_TEST[0] = 'BALTIC'
 ## MODELES
 listemodele    = np.chararray(4,itemsize=25)
 listemodele[0] = 'PSY3V2R2'
@@ -370,14 +260,50 @@ liste_zone_IND[1] = 'MED'
 liste_zone_IND[2] = 'TAT'
 
 #Ecarts a la clim critiques
-rg_EcartSalMax=1.
-rg_EcartTempMax=8.
-rg_EcartSLAMax=1.
 
-cla_metricname =  np.chararray(6,itemsize=25)
+rg_EcartMax = {}
+rg_EcartMax['PSAL'] = 2.
+rg_EcartMax['TEMP'] =8.
+rg_EcartMax['SLA'] = 1.
+rg_EcartMax['SST'] = 8.
+rg_EcartMax['aice'] = 100.
+rg_EcartMax['UVEL'] = 10.
+rg_EcartMax['VVEL'] = 10.
+
+bad_qc = {}
+bad_qc['TEMP'] = [1., 9.]
+bad_qc['PSAL'] = [1., 9.]
+#bad_qc['TEMP'] = [9.]
+#bad_qc['PSAL'] = [9.]
+bad_qc['SLA'] = [9.]
+bad_qc['SST'] = [1., 9.]
+bad_qc['aice'] = [1.]
+
+cla_metricname =  np.chararray(7,itemsize=25)
 cla_metricname[0] = 'number of data values'
 cla_metricname[1] = 'mean of reference'
 cla_metricname[2] = 'mean squared reference'
 cla_metricname[3] = 'mean of product'
 cla_metricname[4] = 'mean squared product'
 cla_metricname[5] = 'mean squared error'
+cla_metricname[6] = 'anomaly correlation'
+
+cla_metricname2 =  np.chararray(9,itemsize=25)
+cla_metricname2[0] = 'number of data values'
+cla_metricname2[1] = 'mean of reference'
+cla_metricname2[2] = 'mean squared reference'
+cla_metricname2[3] = 'mean of product'
+cla_metricname2[4] = 'mean squared product'
+cla_metricname2[5] = 'mean squared error'
+cla_metricname2[6] = 'anomaly correlation'
+cla_metricname2[7] = 'mean diff cumul'
+cla_metricname2[8] = 'rms diff cumul'
+
+cla_metricname_Q =  np.chararray(7,itemsize=25)
+cla_metricname_Q[0] = 'mean bias (model - obs)'
+cla_metricname_Q[1] = 'percentile Q99'
+cla_metricname_Q[2] = 'percentile Q1'
+cla_metricname_Q[3] = 'percentile Q95'
+cla_metricname_Q[4] = 'percentile Q5'
+cla_metricname_Q[5] = 'percentile Q75'
+cla_metricname_Q[6] = 'percentile Q25'

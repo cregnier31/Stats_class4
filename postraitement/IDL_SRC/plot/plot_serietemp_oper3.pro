@@ -109,7 +109,6 @@ ENDIF
 ;fmean=MEAN(numx2, /NAN)
 fmean=0
 
-print,cmin,cmax
 
 ; date ticks
 IF NOT isfinite(tmin) THEN tmin=MIN( numx1 )
@@ -197,14 +196,14 @@ IF STRPOS(output,'none') EQ -1 THEN BEGIN
                 ;; Date format for X axis 
                 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 ;;date_time=TIMEGEN(UNITS='Days',STEP_SIZE=7,START= JULDAY(1, 1, 1950)+numx1(0),  FINAL=JULDAY(1, 1, 1950)+numx1(N_ELEMENTS(numx1)-1))
-                date_time=TIMEGEN(N_ELEMENTS(numx1)-1,UNITS='Days',START= JULDAY(01, 01, 1950))
-               ; numx1=numx1(*)+date_time(0)
+                ;date_time=TIMEGEN(N_ELEMENTS(numx1)-1,UNITS='Days',START= JULDAY(01, 01, 1950))
+                ;numx1=numx1(*)+date_time(0)
                 numx1=numx1(*)
                 tmax=MAX(numx1)
                 tmin=MIN(numx1)
 		;dummy = LABEL_DATE(DATE_FORMAT=['%D/%N','%Y'])
-		dummy = LABEL_DATE(DATE_FORMAT=['%N','%Y'])
-	;	dummy = LABEL_DATE(DATE_FORMAT=['%Y'])
+		;dummy = LABEL_DATE(DATE_FORMAT=['%N','%Y'])
+		dummy = LABEL_DATE(DATE_FORMAT=['%Y'])
                 IF (KEYWORD_SET(xrange)) THEN BEGIN
                    absc_range=xrange 
                 ENDIF ELSE BEGIN
@@ -245,20 +244,13 @@ IF STRPOS(output,'none') EQ -1 THEN BEGIN
                    AXIS, YAXIS=1,XCHARSIZE=1.5, YCHARSIZE=1.5,YRANGE=[MIN(nb_data,/NaN),MAX(nb_data,/NaN)], ytitle=' Data number ',COLOR =black
 	           ishold=1		 
 	        ENDIF 
-		IF (KEYWORD_SET(xinterv)) THEN BEGIN
-		   interx=xinterv
-		ENDIF ELSE BEGIN
-		   interx=0.5
-		ENDELSE
-		IF (KEYWORD_SET(yinterv)) THEN BEGIN
-		   intery=yinterv
-		ENDIF ELSE BEGIN
-		   intery=0.1
-		ENDELSE
                 PLOT,[tmin, tmax], [cmin, cmax*1.01] , /NODATA, /NOERASE, $
+               ; PLOT,numx1, [cmin, cmax*1.01] , /NODATA, /NOERASE, $
+                    ;LINESTYLE=linestyle,THICK=7.*ABS(scale), COLOR=black, BACKGROUND=white,XCHARSIZE=1.5, YCHARSIZE=1.5, $
                     LINESTYLE=linestyle,THICK=7.*ABS(scale), COLOR=black, BACKGROUND=white,XCHARSIZE=1.5, YCHARSIZE=1.5, $
-                    YSTYLE=8,YTICKLEN=yticklen,YGRIDSTYLE=1, $
-                    XTICKUNITS = ['Time', 'Time'],$
+                    YSTYLE=8,YTICKLEN=yticklen,YGRIDSTYLE=1,XGRIDSTYLE=1,XTICKLEN=1.0, $
+                    ;XTICKUNITS = ['Time', 'Time'],$
+                    XTICKUNITS = ['Time'],$
                     XTICKINTERVAL=interx,$
                     YTICKINTERVAL=intery,$
                     XTICKFORMAT='LABEL_DATE' 
@@ -457,7 +449,9 @@ IF STRPOS(output,'none') EQ -1 THEN BEGIN
 		   print ,'Note oper3  :: ',note2
                    note2='!5'+note2+'!5'
 	          ; zx1=x0+dxw/10+noplot*dxw/7 & zy1=y0+dyw+0.01 ; legend left corner
-	           zx1=0.01+dxw/20+noplot*dxw/15 & zy1=y0+dyw+0.01 ; legend left corner
+	           ;;zx1=0.01+dxw/20+noplot*dxw/15 & zy1=y0+dyw+0.01 ; legend left corner
+	           ;zx1=x0+dxw/4+i*dxw/2 & zy1=y0 -dyw/7 -j*dyw/27 ; legend left corner
+                   zx1=x0+dxw/10+noplot*dxw/7 & zy1=y0+dyw+0.01
 		   print,'X,Y :: ',zx1, zy1     
                    print,'Font2',!P.FONT                          ; !P.FONT
                    XYOUTS, zx1, zy1, note2, /norm, alignment=0.5, CHARSIZE=1.5, COLOR=tscolorin ;; modifs C.REGNIER
