@@ -45,9 +45,9 @@ il va falloir coder une nouvelle fonction qui fait ça ` if type == "....": retu
 
 - Normalement après y a pas de difficulté, le code va passer dans Interpolator.py pour rechercher les 4 points de grille et interpoler 
 
-: pour le cas d'un profile 3d il va passer dans la fonction interp_3D (là que se fait l'interpolation verticale sur les niveaux des profiles).
+- Pour le cas d'un profile 3d il va passer dans la fonction interp_3D de Interpolator.py (là que se fait l'interpolation verticale sur les niveaux des profiles).
 
- Pour verifier l'interpolation verticale il faut sauvegarder les matrices  **tab_interp_tmp[:,ind_prof]**  et  **values_interp[ind_prof,:]** 
+- Pour verifier l'interpolation verticale il faut sauvegarder les matrices  **tab_interp_tmp[:,ind_prof]**  et  **values_interp[ind_prof,:]**  dans Interpolator.py
 
 - Les données sont là /dataref/opr/DATA/INSITU/HYDRO/BGC_ARGO/daily, le code pour extraire est là `script/extract_BGC.py`, y a parfois plusieurs profiles par jour il sont 
 nommés BGC_ARGO...prof..nc si nécessaire il faudra faire un autre script pour le reconcaténer (les profiles du même jour ne sont pas dans l'ordre donc un ncks multiple ne marche pas) avec ncrcat
