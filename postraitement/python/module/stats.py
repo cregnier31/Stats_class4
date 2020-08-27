@@ -78,7 +78,7 @@ def compute_stats_and_extend(dict_inputs, dict_var, dict, cvar,
             if nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
             for numF in range(0, fmax):
                 FCT = []
                 if nb_fcst == 1 and len(np.shape(rla_forecast_var)) == 2:
@@ -103,7 +103,7 @@ def compute_stats_and_extend(dict_inputs, dict_var, dict, cvar,
             if nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
             for numF in range(0, fmax):
                 PER = []
                 if nb_fcst == 1 and len(np.shape(rla_persistence_var)) == 2:
@@ -173,8 +173,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
                                                  dict_inputs['rla_depthobs'][iobs, :],
                                                  dict_inputs['tab_profs'])
             if ll_debug:
-                print ('RMSE {}'.format(rla_rmse))
-                print "-----------------"
+                print(('RMSE {}'.format(rla_rmse)))
             stat_tmp, num_col = loader.stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                     rla_mean_obs, rla_rms_obs, rla_mean_prod,
                                                     rla_rms_prod, rla_rmse, rla_cor, dict_inputs['tab_profs'], yout)
@@ -186,7 +185,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
             if nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
             for numF in range(0, fmax):
                 if nb_fcst == 1 and len(np.shape(dict_inputs['frcst'])) == 2:
                     rla_var = dict_inputs['frcst'][iobs, :]
@@ -215,7 +214,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
             if nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
             for numF in range(0, fmax):
                 if nb_fcst == 1 and len(np.shape(dict_inputs['pers'])) == 2:
                     rla_var = dict_inputs['pers'][iobs, :]
@@ -328,7 +327,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
 
             if ll_debug:
                 print (rla_rmse)
-                print "-----------------"
+                print("-----------------")
 
             stat_tmp, num_col = loader.stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                     rla_mean_obs, rla_rms_obs, rla_mean_prod,
@@ -340,7 +339,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
             if nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
             for numF in range(0, fmax):
                 if nb_fcst == 1 and len(np.shape(dict_inputs['frcst'])) == 2:
                     rla_var = dict_inputs['frcst'][iobs, :]
@@ -368,7 +367,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
             if nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
             for numF in range(0, fmax):
                 if nb_fcst == 1 and len(np.shape(dict_inputs['pers'])) == 2:
                     rla_var = dict_inputs['pers'][iobs, :]
@@ -470,7 +469,7 @@ def compute_stats_bilan_skill(dict_inputs, stat_bilan, stat_PSS_skill, stat_CSS_
                                                         rla_cor)#, rla_meandiff, rla_rmsdiff)
 
         if time == 'forecast':
-            nfcst = nb_fcst/2
+            nfcst = nb_fcst//2
             for numF in range(0, nfcst):
                 if len(np.shape(FCST)) < 2:
                     rla_mean = np.nan
@@ -500,7 +499,7 @@ def compute_stats_bilan_skill(dict_inputs, stat_bilan, stat_PSS_skill, stat_CSS_
                                                             ila_nobs, rla_mean, rla_rms, rla_rmse,
                                                             rla_cor)#, rla_meandiff, rla_rmsdiff)
         if time == 'persistence':
-            nfcst = nb_fcst/2
+            nfcst = nb_fcst//2
             for numF in range(0, nfcst):
                 if len(np.shape(PERS)) < 2:
                     rla_mean = np.nan
@@ -629,7 +628,7 @@ def compute_stats_bilan(dict_inputs, stat_bilan, ilayer, OBS,
                                                         rla_cor)
 
         if time == 'forecast':
-            nfcst = nb_fcst/2
+            nfcst = nb_fcst//2
             for numF in range(0, nfcst):
                 if len(np.shape(FCST)) < 2:
                     rla_mean = np.nan
@@ -659,7 +658,7 @@ def compute_stats_bilan(dict_inputs, stat_bilan, ilayer, OBS,
                                                             ila_nobs, rla_mean, rla_rms, rla_rmse,
                                                             rla_cor)
         if time == 'persistence':
-            nfcst = nb_fcst/2
+            nfcst = nb_fcst//2
             for numF in range(0, nfcst):
                 if len(np.shape(PERS)) < 2:
                     rla_mean = np.nan

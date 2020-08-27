@@ -17,7 +17,7 @@ if sys.version_info[0] >=  3:
     import pickle as cPickle
 else:
     import cPickle
-sys.path.append("/home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_V5/python_modules/")
+#sys.path.append('/home/cregnier/SVN/mo/sytoolkit_branche/sytoolkit_python3/')
 from sytoolkit.sydate import SyDate
 
 __author__      = "C.REGNIER"
@@ -66,13 +66,18 @@ def read_input_files(params_conf):
     # *********************  Read serialized file  *********************
     if params_conf['fmt_mask'] == "basin":
         file_pi = params_conf['dir_static']+"mask_CMEMS_area_all_regions.p"
-        f = open(file_pi, 'rb')
-        table_hull = cPickle.load(f)
+        #f = open(file_pi, 'rb')
+        #table_hull = cPickle.load(f)
+        with open(file_pi, 'rb') as f:
+            table_hull = cPickle.load(f, encoding="latin")
+
     elif params_conf['fmt_mask'] == "basin_pol":
         file_pi = params_conf['dir_static'] + \
             "mask_CMEMS_area_all_polar_NS_regions.p"
-        f = open(file_pi, 'rb')
-        table_hull = cPickle.load(f)
+        #f = open(file_pi, 'rb')
+        #table_hull = cPickle.load(f)
+        with open(file_pi, 'rb') as f:
+            table_hull = cPickle.load(f, encoding="latin")
     else:
         table_hull = None
 

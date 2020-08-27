@@ -1,0 +1,14 @@
+# Series temp daily
+./compute_stats_nc_CMEMS.ksh BIOMER4V2 20180101 20181231 BIO basin on off off
+./compute_stats_nc_CMEMS.ksh PSY4V3R1 20161101 20200731 PHYS basin
+
+## bins 2d mensuel
+./compute_stats_nc_CMEMS.ksh PSY4V3R1 20170501 20190531 PHYS bins2d on off off
+
+## Serie temporelle
+#./compute_stats_nc_CMEMS.ksh BIOMER4V2 20090101 20181231 BIO basin off off on
+## Bilan avec skill
+./compute_stats_nc_CMEMS.ksh PSY4V3R1 20180101 20181231 PHYS basin on off off
+## Percentile
+./compute_stats_nc_CMEMS.ksh PSY4V3R1 20180101 20181231 PHYS basin off off on on 50
+

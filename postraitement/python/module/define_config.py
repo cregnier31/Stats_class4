@@ -206,11 +206,11 @@ def cfg_ltime(cl_file, cexp, cvar):
     if 'forecast' in lead_time :
         if nb_fcst == 1 : yout += 1
         else:
-            for f in range(nb_fcst/2): yout += 1
+            for f in range(nb_fcst//2): yout += 1
     if 'persistence' in lead_time :
         if nb_fcst == 1 : yout += 1
         elif nb_fcst > 1 :
-            for f in range(nb_fcst/2): yout += 1
+            for f in range(nb_fcst//2): yout += 1
     if 'climatology' in lead_time : yout += 1
     if 'climatology' not in lead_time : yout += 1
     rla_forecast =  np.zeros((yout))
@@ -222,14 +222,14 @@ def cfg_ltime(cl_file, cexp, cvar):
         rla_forecast[num_col] = 336.
         num_col += 1
     if 'forecast' in lead_time and cexp == 'PHYS' and nb_fcst != None:
-        for f in range(nb_fcst/2):
+        for f in range(nb_fcst//2):
             rla_forecast[num_col] = (f*48.)+12.
             num_col += 1
     if 'persistence' in lead_time and cexp == 'BIO':
         rla_forecast[num_col] = missing_value
         num_col += 1
     if 'persistence' in lead_time and cexp == 'PHYS' and nb_fcst != None:
-        for f in range(nb_fcst/2):
+        for f in range(nb_fcst//2):
             rla_forecast[num_col] = missing_value
             num_col += 1
     if 'climatology' in lead_time :

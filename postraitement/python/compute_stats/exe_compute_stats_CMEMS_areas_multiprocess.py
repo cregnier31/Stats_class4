@@ -6,8 +6,9 @@ import sys, os, getopt, glob, re
 ## Scientific utilities
 import numpy as np
 ## MO Local modules
-sys.path.append('../../module/')
-sys.path.append('../module/')
+from os.path import dirname
+sys.path.append(dirname(__file__)+'/../../../modules/')
+sys.path.append(dirname(__file__)+'/../module/')
 import geomlib
 import stats
 import cl4_reader
@@ -21,7 +22,6 @@ import supobs
 from supobs import toolkitStats
 from supobs import Statslib
 from writer_stat import writer_stat
-sys.path.append('../../../script/')
 from Logger import Logger
 ## Multiprocess
 from mpi4py import MPI
@@ -126,10 +126,10 @@ comm = MPI.COMM_WORLD
 ndates = len(params_conf['cla_dates'])
 irest  = np.mod(ndates, comm.size)
 ntask  = ndates / comm.size
-istart = ntask*comm.rank
-iend   = istart + ntask - 1
+istart = int(ntask*comm.rank)
+iend   = int(istart + ntask - 1)
 cla_dt = params_conf['cla_dates'][istart:iend+1]
-iend_tot = ntask*comm.size-1
+iend_tot = int(ntask*comm.size-1)
 nb_fcst_max = 0 
 if irest > 0 and comm.rank < irest:
     cla_dt.append(params_conf['cla_dates'][iend_tot+comm.rank+1])
@@ -212,7 +212,7 @@ if params_conf['daily_off'] == 'on':
             elif nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
 
             if params_conf['CMEMS_area'] == True:
                 stat_tmp = np.nan*np.zeros((dict_inputs['yout'], len(dict_inputs['tab_profs']) -1,\
@@ -473,10 +473,10 @@ else:
 comm = MPI.COMM_WORLD
 irest  = np.mod(nareas,comm.size)
 ntask  = nareas / comm.size
-istart = ntask*comm.rank
-iend   = istart + ntask - 1
+istart = int(ntask*comm.rank)
+iend   = int(istart + ntask - 1)
 cla_zone = params_conf['cla_area'][istart:iend+1]
-iend_tot = ntask*comm.size-1
+iend_tot = int(ntask*comm.size-1)
 if irest > 0 and comm.rank < irest:
     cla_zone.append(params_conf['cla_area'][iend_tot+comm.rank+1])
 

@@ -3,6 +3,7 @@ import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 import utilities
+import param.Def_param_bulletin as params
 import xarray as xr
 import dask
 
@@ -81,6 +82,7 @@ def read_mask(params_conf):
         rla_name = nc.variables['area_names'][:]
         area_name = utilities.pull_names(rla_name)
         cla_area = list(cla_areaini)
+        cla_area = [var.decode("utf-8") for var in cla_area]
         CMEMS_area = True
         rla_maskvalues = None
     else:

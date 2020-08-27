@@ -1,10 +1,13 @@
 # coding: utf8
 import os,sys
+
 import netCDF4
 import numpy as np
 import datetime as dt
-sys.path.append('/home/cregnier/DEV/TEP_CLASS4_GODAE/postraitement/CL4_GODAE_LIB/TOOLS_py')
+from os.path import dirname
 import arithm
+sys.path.append(dirname(__file__)+'/../')
+import utilities
 
 #-----------------------------------------------------------------------------
 
@@ -26,7 +29,7 @@ Routine permettant de lire les contenus de fichiers CLASS4 au format GODAE.
     nc   = netCDF4.Dataset(cl_fileIn,'r')
     try:
         cla_varname_read = nc.variables['varname'][:]
-        for cvarn in cla_varname_read : cla_varname.append(''.join(cvarn))
+        cla_varname = utilities.pull_names(cla_varname_read)
     except:
         pass
         #print "Missing varname variable"
