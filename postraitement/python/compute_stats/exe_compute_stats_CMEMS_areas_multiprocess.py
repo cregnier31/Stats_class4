@@ -8,14 +8,12 @@ import numpy as np
 ## MO Local modules
 from os.path import dirname
 sys.path.append(dirname(__file__)+'/../../../modules/')
-sys.path.append(dirname(__file__)+'/../module/')
 import geomlib
 import stats
 import cl4_reader
 import reader
-import loader
 import utils
-from loader import input_params, read_input_files
+from loader_post import input_params, read_input_files
 import param.Def_param_bulletin as params
 import arithm
 import supobs
@@ -125,12 +123,12 @@ if len(cla_filechck) == 0:
 comm = MPI.COMM_WORLD
 ndates = len(params_conf['cla_dates'])
 irest  = np.mod(ndates, comm.size)
-ntask  = ndates / comm.size
+ntask  = int(ndates / comm.size)
 istart = int(ntask*comm.rank)
 iend   = int(istart + ntask - 1)
 cla_dt = params_conf['cla_dates'][istart:iend+1]
 iend_tot = int(ntask*comm.size-1)
-nb_fcst_max = 0 
+nb_fcst_max = 0
 if irest > 0 and comm.rank < irest:
     cla_dt.append(params_conf['cla_dates'][iend_tot+comm.rank+1])
 
@@ -414,7 +412,7 @@ if params_conf['daily_off'] == 'on':
         comm = MPI.COMM_WORLD
         nareas = len(aname)
         irest  = np.mod(nareas, comm.size)
-        ntask  = nareas / comm.size
+        ntask  = int(nareas / comm.size)
         istart = ntask*comm.rank
         iend   = istart + ntask - 1
         cla_ar = params_conf['cmems_basin'][istart:iend+1].tolist()
@@ -472,7 +470,7 @@ else:
 
 comm = MPI.COMM_WORLD
 irest  = np.mod(nareas,comm.size)
-ntask  = nareas / comm.size
+ntask  = int(nareas / comm.size)
 istart = int(ntask*comm.rank)
 iend   = int(istart + ntask - 1)
 cla_zone = params_conf['cla_area'][istart:iend+1]

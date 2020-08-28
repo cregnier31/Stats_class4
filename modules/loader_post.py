@@ -5,7 +5,6 @@ if sys.version_info[0] >= 3:
     import configparser as ConfigParser
 else:
     import ConfigParser
-import loader
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
@@ -164,7 +163,7 @@ def input_params(arg, log):
 
     # *********************  Load config file  *********************
 
-    params_conf['db'] = loader.load_db(_DBFILE_)
+    params_conf['db'] = load_db(_DBFILE_)
     params_conf['config_model'] = params_conf['db'].get(
         'PARAMS', 'CONFIGMDL').upper()
     params_conf['config_obs'] = params_conf['db'].get(
@@ -199,7 +198,7 @@ def input_params(arg, log):
 def load_param(db_file):
 
     params_conf = {}
-    params_conf['db'] = loader.load_db(db_file)
+    params_conf['db'] = load_db(db_file)
     params_conf['ZONE'] = params_conf['db'].get(
         'GLOBAL', 'ZONE')
     params_conf['SUFFIX'] = params_conf['db'].get(

@@ -9,7 +9,7 @@ config="PSY4V3R1"
 #config="HYCOM_RTOFS"
 #config="GIOPS"
 #config="FOAM"
-cfgfile=./environment_${config}_UV.cfg
+cfgfile=./cfg/environment_${config}.cfg
 dir_bin="/data/rd_exchange2/qualif/anaconda/envs/env_py38/bin/"
 if [ ${config} = "BIOMER4V2" -o ${config} = "BIOMER4V1" ] ; then
     typedata="BIO"
