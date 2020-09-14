@@ -12,6 +12,12 @@ from collections import OrderedDict
 from Interp_kdtree import interp_KDtree
 from interpolate import search_orca, search_orca_4pts
 from scipy.interpolate import InterpolatedUnivariateSpline, interp1d
+from lib_pyt.Profile import plot_2profiles, plot_3profiles, plot_2profiles_2
+import matplotlib.pyplot as plt
+from matplotlib import style
+from Writer import Writer
+from glob import glob
+from reader import read_GODAE_profile
 
 if sys.version_info[0] >= 3:
     import pickle
@@ -73,7 +79,7 @@ class Interpolator(object):
         pers = {k for k, v in list_input_file.items() if "pers" in k}
         return len(best), len(fcst), len(pers), len(clim)
 
-    def read_and_interp(self, data_file, list_input_file, param_dict):
+    def read_and_interp(self, data_file, list_input_file, param_dict, date=None):
         """
         Read and Interp data files
         Read input file, compute coloc value and interp with KDtree
@@ -89,6 +95,8 @@ class Interpolator(object):
         """
         # Initialisation
         ll_clim = False
+        ll_json = False
+        ll_verif = False
         nb_best, nb_fcst, nb_pers, nb_clim = self.check_dimensions(
             list_input_file)
         self.log.info("Dimensions best : {} fcst : {} pers : {} clim : {}"
@@ -96,11 +104,13 @@ class Interpolator(object):
         nb_ptsinterp = param_dict['nb_points']
         # Read input obs value
         self.log.info(param_dict['data_format'])
+        #print (param_dict['data_format'])
         lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = Loader.factory(
             param_dict['data_format']).read_pos_and_value(data_file)
+
         ll_best = False
         nb_obs2, nb_profs = np.shape(depth)
-        self.log.info("Number of observations : {} ".format(nb_obs))
+        self.log.info("Number of observations {} Profondeurs {}".format(nb_obs2, nb_profs))
         variable = param_dict['varname']
         self.log.info("Variables : {} ".format(variable))
         if nb_best > 0:
@@ -109,6 +119,7 @@ class Interpolator(object):
             else :
                 hdct_tab = np.ndarray(shape=(nb_obs, len(variable), nb_profs), dtype=float, order='F')
             hdct_tab[:, :, :] = self.missing_value
+            self.log.info("Taille hdct_tab {}".format(np.shape(hdct_tab)))
             ll_best = True
         ll_fcst = False
         if nb_fcst > 0:
@@ -131,7 +142,7 @@ class Interpolator(object):
                                       dtype=float, order='F')
             clim_tab[:, :, :] = self.missing_value
             ll_clim = True
-        self.log.info('Number obs to coloc {} '.format(nb_obs))
+        self.log.info('Number obs to coloc {} '.format(nb_obs2))
         file_coloc_tmp = os.path.basename(data_file)
         file_out = file_coloc_tmp
         # Loop on lead times
@@ -174,8 +185,8 @@ class Interpolator(object):
             if not ll_coloc:
                 TreeObj = interp_KDtree()
                 d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
-                                                          lon_obs, lat_obs, nb_ptsinterp,\
-                                                          weight_file=weight_file,save=False)
+                                                     lon_obs, lat_obs, nb_ptsinterp,\
+                                                     weight_file=weight_file,save=False)
                 weights = TreeObj.get_weight(d1)
 
                 ll_coloc = True
@@ -192,33 +203,53 @@ class Interpolator(object):
             for var in range(len(variable)):
                ## Get the correct file
                varname = variable[var]
-               file_input = list_input_file[key][var]
+               try:
+                  file_input = list_input_file[key][var]
+               except :
+                   self.log.error("Error {} Missing file for key {} var {}".format(sys.exc_info()[0], key, var))
+                   sys.exit(1)
                ll_unique = False
                if len(np.unique(depth)) == 1:
                    self.log.info("Unique depth for all the observations")
-                   if len(np.shape(depth)) == 1 : 
+                   if len(np.shape(depth)) == 1 :
                        depthval = depth[0]
                    elif len(np.shape(depth)) == 2 :
                        depthval = depth[0,0]
                    else:
                        self.log.error("Case not known")
-                       sys.exit(1)
                    interp_values = self.interp_2D(weights, indexes,
                                                   file_input,
                                                   nb_ptsinterp,
-                                                  varname, depth=depthval)
-                   interp_values = np.where(np.array(obs_value.flatten()) == _FillValue,
+                                                  varname, param_dict, depth=depthval, fillvalue=_FillValue)
+                   interp_values = np.where(np.array(obs_value).flatten() == _FillValue,
                                                      _FillValue, np.array(interp_values))
+                   interp_values = np.where(interp_values == np.nan, self.missing_value, interp_values)
+
                    ll_unique = True
                else :
                   self.log.info("Profile case variable : {}".format(variable[var]))
                   interp_values = self.interp_3D(weights, indexes,
                                                   file_input,
                                                   nb_ptsinterp,
-                                                  varname, depth)
-                  if len(np.shape(obs_value)) ==  3: obs_value = np.array(obs_value)[:,var,:]
-                  interp_values = np.where(np.array(obs_value) == _FillValue,
+                                                  varname, depth, ll_verif = param_dict['verif'],
+                                                  obs = obs_value[:,var,:],
+                                                  dateval=date, lon=lon_obs, lat=lat_obs, fillvalue=self.missing_value)
+                  if len(np.shape(obs_value)) ==  3: obs_value2 = np.array(obs_value)[:,var,:]
+                  interp_values = np.where(np.array(obs_value2) == _FillValue,
                                                      self.missing_value, np.array(interp_values))
+                  ll_json = param_dict['json']
+                  if ll_json:
+                      for ind_prf in range(nb_obs2):
+                         index_ok = np.where(np.array(obs_value2[ind_prf,:]) != _FillValue)
+                         dir_out2 = './json/'
+                         filename_json = dir_out2+str(date)+"_"+varname+"_profile_"+str(ind_prf)+".json"
+                         tab_profile = {}
+                         tab_profile['longitude'] = np.array(lon_obs[ind_prf]).tolist()
+                         tab_profile['latitude'] = np.array(lat_obs[ind_prf]).tolist()
+                         tab_profile['Insitu'] = list(zip(np.array(depth[ind_prf,index_ok]).tolist()[0], np.array(obs_value2[ind_prf,index_ok]).tolist()[0]))
+                         tab_profile['Model'] = list(zip(np.array(depth[ind_prf,index_ok]).tolist()[0], np.array(interp_values[ind_prf,index_ok]).tolist()[0]))
+                         Writer(self.log).write_json_profile(filename_json, tab_profile)
+
                if key[0:4] == 'fcst':
                    if len(key) > 4:
                        indice = int(key[4])
@@ -371,7 +402,8 @@ class Interpolator(object):
 
         return WEIGHT, inds_idw1
 
-    def interp_2D(self, weight, inds, file, nbpts_interp, variable, depth=0, time=0):
+    def interp_2D(self, weight, inds, file, nbpts_interp, variable, param_dict,\
+            depth=0, time=0, fillvalue=None):
         """
         -------------------
         2D interpolator
@@ -402,6 +434,12 @@ class Interpolator(object):
             # Surface case
             ll_single = True
 
+        if variable == "sossheig":
+            cl_msshFile = param_dict['cl_msshFile']
+            rp_mssh_shift = param_dict['rp_mssh_shift']
+            dataset_mssh = xr.open_dataset(cl_msshFile)
+            tab_mssh = dataset_mssh['mssh'].values
+
         if len(var_in.shape) == 3:
             if ll_single:
                var_in = var_in[0, :, :].values
@@ -416,6 +454,9 @@ class Interpolator(object):
             else:
                var_in1 = var_in[time, ind_depth1, :, :].values
                var_in2 = var_in[time, ind_depth2, :, :].values
+
+        if variable == "sossheig":
+            var_in = np.where(var_in != fillvalue,  var_in - tab_mssh - rp_mssh_shift, var_in)
 
         if nbpts_interp > 1:
             # Distance weight interpolation
@@ -440,7 +481,8 @@ class Interpolator(object):
         #tab_interp = np.expand_dims(tab_interp[:], axis=1)
         return tab_interp
 
-    def interp_3D(self, weight, inds, file, nbpts_interp, variable, depth, time=0):
+    def interp_3D(self, weight, inds, file, nbpts_interp, variable, depth,
+                    time=0, ll_verif=False, obs=None, dateval=None, lon=None, lat=None, fillvalue=np.nan):
         """
            Interpolate profiles model values onto insitu vertical profiles
         """
@@ -452,23 +494,77 @@ class Interpolator(object):
         maxdepth =  np.nanmax(depth)
         self.log.debug('maxdepth {}'.format(maxdepth))
         ind_depth = self.getneardepth(depth_mod, maxdepth)
-        tab_interp_tmp = np.nan*np.zeros((ind_depth+1, nb_obs))
-        tab_prof_tmp = np.nan*np.zeros((ind_depth+1, nb_obs))
+        ind_tot = len(depth_mod)
+        #tab_interp_tmp = np.nan*np.zeros((ind_tot, nb_obs))
+        tab_interp_tmp = fillvalue*np.zeros((ind_tot, nb_obs))
+        #tab_prof_tmp = np.nan*np.zeros((ind_tot, nb_obs))
         self.log.debug('Size {}'.format(np.shape(tab_interp_tmp)))
         ## Loop on levels
-        for ind in range(len(depth_mod)):
-            tab_interp_tmp[ind, :]  = np.sum(weight * np.array(var_in[time, ind, :, :].values).flatten()
+        for ind in range(ind_tot):
+            tab_interp_tmp[ind, :] = np.sum(weight * np.array(var_in[time, ind, :, :].values).flatten()
                                       [inds], axis=1) / np.sum(weight, axis=1)
-        values_interp = np.nan*np.zeros((nb_obs, nb_profs))
+        values_interp = fillvalue*np.zeros((nb_obs, nb_profs))
+        #values_interp = ma.array((nb_obs, nb_profs))
+        obs2 = obs[~obs.mask]
+#        values_interp = values_interp[~values_interp.mask]
+
         for ind_prof in range (nb_obs):
             profondeur = depth[ind_prof, :]
-            fixture = vertical.Column(tab_interp_tmp[:,ind_prof], depth_mod[:])
+            tab_mod_ma = tab_interp_tmp[:,ind_prof]
+            fixture = vertical.Column(tab_mod_ma, depth_mod[:])
             self.log.debug('Profondeurs profiles {}'.format(profondeur[0:300]))
             self.log.debug('Profondeurs modele {}'.format(depth_mod[0:30]))
-            values_interp[ind_prof,:] = fixture.interpolate(profondeur)
+            val_interp = fixture.interpolate(profondeur)
+            values_interp[ind_prof,:] = val_interp[:]
+            if np.ma.isMaskedArray(val_interp):
+                values_interp[ind_prof,:] = np.where(val_interp.mask, fillvalue, values_interp[ind_prof,:])
+            self.log.debug('Valeurs profile {}'.format(obs[:]))
             self.log.debug('--------------------------------------------')
-            #self.log.debug('Valeurs profile {}'.format(obs_values[0:300]))
-            if ind_prof == 0 : print (values_interp[ind_prof,:])
+            if ll_verif: # and ind_prof == 70:
+                # Plot profiles
+                dir_out = './img2/'
+                dir_out2 = './img3/'
+                label = "prof "+str(ind_prof)
+                title = dateval+" "+variable+" "+label
+                label1 = "Insitu"
+                label2 = "Model"
+                #print ("Profile {}".format(ind_prof))
+                #print ('Profondeurs profiles {}'.format(profondeur[0:70]))
+                #print ('Valeur interp {}'.format(values_interp[ind_prof,0:70]))
+                #print ('Valeur modee {}'.format(tab_mod_ma))
+                ll_compare = True
+                prof_max = np.nanmax(profondeur)
+                ind_prof_max = np.argmax(depth_mod[:])
+                ind1, ind2 = self.getnearpos(prof_max, depth_mod)
+                label1 = "Obs"
+                label2 = "Interp"
+                plot_2profiles_2(-profondeur[:], obs[ind_prof,:], -profondeur, val_interp[:], label1,\
+                                label2, title=title, save=True,
+                                output=dir_out2+dateval+"_compprof_"+variable+"_profile_num"+str(ind_prof),
+                                var=variable)
+                label1 = "Raw"
+                label2 = "Interp"
+                plot_2profiles_2(-depth_mod[0:ind2], tab_interp_tmp[0:ind2,ind_prof] ,-profondeur, values_interp[ind_prof,:], label1,\
+                                  label2, title=title, save=True,
+                                  output=dir_out2+dateval+"_interp_"+variable+"_profile_num"+str(ind_prof),
+                                  var=variable)
+                if ll_compare == True:
+                    ## Read other profile
+                    dir_class4 = "/sortref/calval/DATA_COLOCATIONS/T_S_data_new/PSY4V3R1/data_CLASS4_GODAE/"
+                    filename = glob(dir_class4+"*"+dateval+"*profile.nc")
+                    label3 = "Model2"
+                    if filename:
+                        prof2, model_best, obs = read_GODAE_profile(variable, filename[0])
+                        plot_3profiles(-profondeur, obs[ind_prof,:], values_interp[ind_prof,:],-prof2[ind_prof,:],
+                                       model_best[ind_prof,:], label1,
+                                       label2, label3, title=title, save=True,
+                                       output=dir_out+dateval+"_comparaison_"+variable+"_profile_num"+str(ind_prof),
+                                       var=variable)
+                #plot_2profiles_2(-depth_mod[0:ind2], tab_interp_tmp[0:ind2,ind_prof] ,-profondeur, values_interp[ind_prof,:], label1,\
+                #                    label2, title=title, save=False,
+                #                    output=dir_out+dateval+"_interp_"+variable+"_profile_num"+str(ind_prof),
+                #                    var=variable)
+
             self.log.debug('Valeurs modèle {}'.format(tab_interp_tmp[0:30,ind_prof]))
             self.log.debug('Interp modèle onto profiles {} / {}'.format(ind_prof, nb_obs))
         return values_interp

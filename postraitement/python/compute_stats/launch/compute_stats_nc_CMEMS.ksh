@@ -261,7 +261,7 @@ fi
 
 module load openmpi/openmpi-1.8.5
 module load intel/intel-18
-workdir=/home/cregnier/DEV/My_git/TEP_CLASS4/postraitement/python/compute_stats/log
+workdir=/home/cregnier/Gitlab/TEP_CLASS4/postraitement/python/compute_stats/log
 cfgfile=../cfg/environment_${config}.cfg
 
 logfile=${workdir}/CLASS4_${config}_${day1}-${day2}.log

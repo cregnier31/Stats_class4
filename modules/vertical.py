@@ -103,6 +103,8 @@ class Vertical1DInterpolator(object):
 
         :returns: interpolator chosen from above table
         """
+        ## Todo : add log
+        #print ('Nombre de noeuds {}'.format(self.knots(depths)))
         if self.knots(depths) < 2:
             # Masked data interpolator
             return lambda x: np.ma.masked_all(len(x))

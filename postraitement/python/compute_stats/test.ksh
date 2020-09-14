@@ -1,10 +1,10 @@
 #!/bin/ksh
 day1="20200701"
-day2="20200702"
+day2="20200701"
 
 ## Test different configurations
 config="PSY4V3R1"
-#config="BIOMER4V2"
+config="BIOMER4V2"
 #config="PSY4V2R2"
 #config="HYCOM_RTOFS"
 #config="GIOPS"

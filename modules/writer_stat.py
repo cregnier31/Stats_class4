@@ -780,7 +780,12 @@ class writer_stat():
                     if nb_fcst > nb_fcst_max:
                         nb_fcst_max = nb_fcst
                         rla_forecast_tmp = rla_forecast[:]
-        nb_lead_max=len(rla_forecast_tmp)
+                        nb_lead_max=len(rla_forecast_tmp)
+                else:
+                    rla_forecast_tmp = []
+                    nb_lead_max =  len(rla_forecast)
+
+        log.info('nb_lead_max  {}'.format(nb_lead_max))
 
         for numvar, cvar in enumerate(cla_vars):
 
@@ -828,6 +833,9 @@ class writer_stat():
                     rla_forecast_ref = rla_forecast_tmp
                     run_ini = False
 
+                ## Log
+                log.info('Len leadtime_ref {}'.format(len(leadtime_ref)))
+                ##
                 ldt_ref = np.chararray(len(leadtime_ref), itemsize=14)
 
                 for l in range(len(leadtime_ref)):
@@ -850,6 +858,7 @@ class writer_stat():
                     else:
                         for y, lt in enumerate(lead_time):
                             w = np.where(ldt_ref == lt)[0][0]
+
                             if lt not in ['forecast','persistence']:
                                 stat_all[stat_day,w,0:1,:,:,numvar] = stat_tmp[y,:,:,:]
                             else:

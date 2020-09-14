@@ -196,7 +196,8 @@ if params_conf['daily_off'] == 'on':
                 log.info("BEST FCST PERS are missing!!")
                 continue
             nb_fcst = dict_inputs['nb_fcst']
-            if nb_fcst > nb_fcst_max : nb_fcst_max = nb_fcst
+            if nb_fcst != None:
+               if nb_fcst > nb_fcst_max : nb_fcst_max = nb_fcst
             lead_time = dict_inputs['lead_time']
             yout = dict_inputs['yout']
 

@@ -29,6 +29,7 @@ from Loader import Loader
 from Logger import Logger
 from Interpolator import Interpolator
 from Writer import Writer
+from timeit import default_timer as timer
 # Set Stack to unlimited
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
                                            resource.RLIM_INFINITY))
@@ -61,31 +62,38 @@ def main(level=1):
     log.info('========================================================')
     valeurj = param_dict['date1']
     while valeurj.__ge__(param_dict['date1']) and valeurj.__le__(param_dict['date2']):
+        start = timer()
         log.info('Interp day   {} '.format(str(valeurj)))
         log.info('========================================================')
         dateval = str(valeurj)
         # Selection of the input data
         log.info('Selection of input data')
         log.info('========================================================')
-        input_list_files = Selector(param_dict['data_format'], param_dict['data_type'], log).\
+        input_list_files, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], log).\
             factory("GLOBAL_INPUT_DATA").run(param_dict, dateval)
         log.info(input_list_files)
+        if ll_miss:
+            valeurj = valeurj.goforward(1)
+            continue
         # Selection of the input model data
         log.info('Selection of input model')
-        input_model_file = Selector(param_dict['data_format'], param_dict['data_type'], log).\
+        input_model_file, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], log).\
             factory("GLOBAL_INPUT_MODEL_DATA").run(param_dict, dateval)
-        log.info(input_model_file)
-        # Interpolation of the data
-        for file in input_list_files:
-            tab_results, file_out = Interpolator(log).read_and_interp(
-                file, input_model_file, param_dict)
-            # Write output file
-            filename = param_dict['dirwork']+file_out
-            log.info('Write interp file  {} '.format((str(dateval))))
-            Writer(log).write_output(
-                filename, tab_results, param_dict, dateval,ll_zip=param_dict['ll_zip'])
+        if not ll_miss:
+           log.info(input_model_file)
+           # Interpolation of the data
+           for file in input_list_files:
+               tab_results, file_out = Interpolator(log).read_and_interp(
+                   file, input_model_file, param_dict, date=dateval)
+               # Write output file
+               filename = param_dict['dirwork']+file_out
+               log.info('Write interp file  {} '.format((str(dateval))))
+               Writer(log).write_output(
+                   filename, tab_results, param_dict, dateval,ll_zip=param_dict['ll_zip'])
         valeurj = valeurj.goforward(1)
-
+        end = timer()
+        log.info('~~~~~~~~ Time elapsed to process day {} : {} {}'.format
+                        (str(dateval),str(end - start), " seconds ~~~~~~~~~~~~"))
 
 # Set the level of logger
 log_level = 2

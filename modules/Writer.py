@@ -34,6 +34,7 @@ class Writer():
             'SLA': {'code': 'SLA_L3S', 'defaults': {'name': 'SLA CMEMS L3S'}},
             'chloro': {'code': 'CHLORO-A_L3S', 'defaults': {'name': 'log10-chlorophyll A Satellite'}},
             'aice': {'code': 'SEA_CONC', 'defaults': {'name': 'Sea ice concentration from AMSR2 brightness temperature'}},
+            'DRIFTER_filtr': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Filtered Currents from CMEMS drifting buoys 001_048'}},
             'current': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Current from CMEMS drifting buoys 001_048'}},
             'default': {'code': 'Default_code', 'defaults': {'name': 'Data for validation'}},
        }
@@ -42,6 +43,10 @@ class Writer():
         "Create a directory, and parents if needed"
         if not os.path.exists(path):
             os.makedirs(path)
+
+    def write_json_profile(self, filename, tab):
+        with open(filename, 'w') as outfile:
+                json.dump(tab, outfile,indent=4)
 
     def write_geojson(self, filename, position):
         try:
@@ -120,6 +125,49 @@ class Writer():
         print ('Creation OK %s ')
         print ('-------------------------------')
         nc_fid.close()  # close the new file
+
+    def write_BIOARGO_files(self, filename, hdct_tab, dateval, model, variable, fcst = None, pers = None):
+        nc_fid = Dataset(filename, 'r+')
+        nc_best = nc_fid.createVariable(
+            'best_estimate', 'f4', ('time', 'N_PROF', 'N_LEVELS'), fill_value=self.fillvalue)
+        nc_best.setncatts(
+            {'long_name': u"Model best_estimate counterpart of obs. value"})
+        nc_fid.variables['best_estimate'][:, :, :] = hdct_tab[:, :, :]
+        if fcst:
+            nc_fcst = nc_fid.createVariable(
+                'forecast', 'f4', ('time', 'N_PROF', 'N_LEVELS'), fill_value=self.fillvalue)
+            nc_fcst.setncatts(
+                {'long_name': u"Model forecast counterpart of obs. value"})
+            nc_fid.variables['forecast'][:, :, :] = fcst
+        if pers:
+            nc_pers = nc_fid.createVariable(
+                'pers', 'f4', ('time', 'N_PROF', 'N_LEVELS'), fill_value=self.fillvalue)
+            nc_pers.setncatts(
+                {'long_name': u"Model persistence counterpart of obs. value"})
+            nc_fid.variables['persistence'][:, :, :] = pers
+
+        # Add global attributs
+        nc_fid.institution = 'MERCATOR OCEAN'
+        nc_fid.contact = 'cregnier@mercator-ocean.fr'
+        nc_fid.obs_type = 'BIOARGO'
+        nc_fid.time_interp = "daily average fields"
+        today = date.today()
+        yyyy = str(today)[0:4]
+        yyyy2 = dateval[0:4]
+        month = str(today)[5:7]
+        month2 = dateval[4:6]
+        day = str(today)[8:10]
+        day2 = dateval[7:9]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.system = model
+        nc_fid.Conventions = 'CF-1.6'
+        nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
+        print ('-------------------------------')
+        print ('Creation OK %s ')
+        print ('-------------------------------')
+        nc_fid.close()  # close the new file
+
 
     def write_CMEMS_files(self, filename, hdct_tab, fcst_tab, pers_tab, dateval, model, variable):
         print ("Filename {}".format(filename))
@@ -337,8 +385,7 @@ class Writer():
         dataorigin = param_dict['data_origin']
         self.mkdir(param_dict['diroutput'])
         if dataorigin == "GODAE":
-#            type_data = tab[param_dict['data_type']]
-
+#           type_data = tab[param_dict['data_type']]
             self.log.info("Write inside GODAE file")
             if 'forecast'  not in tab_results.keys() and 'persistence' not in tab_results.keys() \
                     and 'best' in tab_results.keys():
@@ -348,6 +395,10 @@ class Writer():
                 self.write_GODAE_files(
                     filename, tab_results['best'], tab_results['forecast'],
                     tab_results['persistence'], dateval, param_dict['modele'], param_dict['data_type'])
+        elif dataorigin == "BIOARGO":
+                self.write_BIOARGO_files(
+                    filename, tab_results['best'], dateval, param_dict['modele'], param_dict['data_type'])
+
         elif dataorigin == "CMEMS" :
             self.write_CMEMS_files(
                  filename, tab_results['best'], tab_results['forecast'],
@@ -382,7 +433,7 @@ class Writer():
         self.log.info('----------------------------')
         self.log.info('Creation file %s' % (filename))
         self.log.info('----------------------------')
-        if ll_zip == True :
+        if ll_zip:
             # Zipped files and move in output directory
             self.log.info(param_dict['dirwork'])
             #self.log.info(param_dict['dirwork']+"*"+param_dict['cl_conf'] +"*"+param_dict['varname']+"*.nc")

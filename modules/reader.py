@@ -337,3 +337,20 @@ def read_depth(filename):
     rla_depth = nc.variables[variable][:]
 
     return rla_depth
+
+def read_GODAE_profile(varname, filename):
+    '''
+       Read GODAE profile
+    '''
+    ncdata = xr.open_dataset(filename)
+    variables = ncdata.data_vars
+    depth = ncdata['depth'].values
+    if varname == 'votemper':
+        index = 0
+    elif varname == 'vosaline':
+        index = 1
+    tab_var = ncdata['best_estimate'].values
+    tab_var = tab_var[:,index,:]
+    observations = ncdata['observation'][:,index,:].values
+
+    return depth, tab_var, observations

@@ -46,6 +46,7 @@ class Loader(object):
         if type == "NC_CORIO": return LoaderNCcorio()
         if type == "NC_CORIO_ORIGIN": return LoaderNCcorio()
         if type == "NC_CHLORO": return LoaderNCChloro()
+        if type == "NC_BIOARGO": return LoaderNCBioArgo()
         if type == "NC_CLIM": return LoaderNCClim()
         if type == "NC_INSCLIM": return LoaderInsituClim()
         if type == "NC_GODAE": return LoaderNCgodae()
@@ -163,6 +164,36 @@ class LoaderNCChloro(Loader):
         nc.close()
 
         return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, _FillValue
+
+class LoaderNCBioArgo(Loader):
+    def __init__(self, varname='NITRATE_ADJUSTED'):
+        self.varname = varname
+
+    def read_pos_and_value(self,filename):
+        rla_lon, rla_lat, _FillValue, nc = \
+          self.generic_read_pos_and_value(filename, self.varname)
+        rla_value = nc.variables[self.varname][:, :, :]
+        nb_obs, nb_vars, nb_deps = np.shape(rla_value)
+        if 'depth' in nc.variables.keys():
+            rla_depth = nc.variables['depth'][:,0,:]
+        elif 'DEPH' in nc.variables.keys():
+            rla_depth = nc.variables['DEPH'][:,0,:]
+        elif 'DEPH_ADJUSTED' in nc.variables.keys():
+            rla_depth = nc.variables['DEPH_ADJUSTED'][:,0,:]
+        elif 'pres' in nc.variables.keys():
+            rla_depth = nc.variables['pres'][:,0,:]
+        elif 'PRES' in nc.variables.keys():
+            rla_depth = nc.variables['PRES'][:,0,:]
+        elif 'PRES_ADJUSTED' in nc.variables.keys():
+            rla_depth = nc.variables['PRES_ADJUSTED'][:,0,:]
+        else:
+            ## No depth: surface variable
+            nb_lats, nb_lons = np.shape(rla_value)
+            rla_depth = np.ndarray(shape=(nb_lats,nb_lons),dtype=float, order='F')
+            rla_depth[:,:] = 0
+        nc.close()
+
+        return np.float32(rla_lon), np.float32(rla_lat), np.float32(rla_value), nb_obs, np.float32(rla_depth), _FillValue
 
 class LoaderInsituClim(Loader):
     def __init__(self):
@@ -410,6 +441,9 @@ class NmlLoader(Loader):
             log.error("Configuration file not found {} ! ".format(filename))
             sys.exit(1)
         # Add new parameters in the dictionnary
+        if param_dict['data_type'] == "SLA":
+            param_dict['cl_msshFile'] = db.get('static','cl_msshFile')
+            param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
         param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
         param_dict['dirmodel'] = param_dict['dirmodel_pgn']
         param_dict['dirdata'] = db.get('input_dir', 'INPUTDATA')
@@ -432,6 +466,8 @@ class NmlLoader(Loader):
         param_dict['qc_level'] = int(db.get('GLOBAL','qc_level'))
         param_dict['do_qc'] = int(db.get('GLOBAL','do_qc'))
         param_dict['do_sort'] = int(db.get('GLOBAL','do_sort'))
+        param_dict['verif'] = literal_eval(db.get('GLOBAL','verif'))
+        param_dict['json'] = literal_eval(db.get('GLOBAL','ll_json'))
 
         #==========================================================================
         # Sort model values if necessary
@@ -488,7 +524,7 @@ class NmlLoader(Loader):
         param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable'))
         param_dict['nb_points'] = int(db.get('GLOBAL', 'nb_points_interp'))
         param_dict['schedule'] = db.get('GLOBAL', 'SCHEDULE')
-        param_dict['ll_zip'] = db.get('GLOBAL', 'll_zip')
+        param_dict['ll_zip'] = literal_eval(db.get('GLOBAL', 'll_zip'))
 
         if param_dict['zoom'] or param_dict['do_qc']:
             param_dict['lon_min'] = int(param_dict.get('GLOBAL', 'LONMIN'))
@@ -505,7 +541,7 @@ class NmlLoader(Loader):
             param_dict['dirwork'] = param_dict['dirwork']
             param_dict['diroutput'] = param_dict['diroutput']
             date_ini = SyDate(str(param_dict['date1']))
-            param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
+            #param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
         else:
             param_dict['dirwork'] = param_dict['dirwork']
             param_dict['diroutput'] = param_dict['diroutput']
@@ -587,7 +623,6 @@ class LoaderNCgodae(Loader):
     """Loader for GODAE dataset"""
 
     def __init__(self):
-        print ('Init LoaderNCgodae')
         self.varname = 'observation'
 
     def read_pos(self,filename):
@@ -688,7 +723,7 @@ class AsciiLoader(Loader):
         # data=np.genfromtxt(filename,usecols = (2,3),skip_header=1)
         data = np.genfromtxt(filename,usecols = (1,2),skip_header=1)
         position = np.array(data)
-        nc.close()
+        #nc.close()
         return position
 
 class ColocLoader(Loader):
@@ -714,7 +749,6 @@ class LoaderCMEMSDrifter(Loader):
             position_qc, time_qc, dc_reference = read_drifter_filt(filename)
         nb_obs = len(lon)
         _FillValue = np.nan
-        nc.close()
 
         return lon, lat, [u_filtr, v_filtr], nb_obs, depth,  _FillValue
-       
+

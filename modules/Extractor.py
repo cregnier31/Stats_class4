@@ -9,9 +9,12 @@ import numpy as np
 import logging
 import tarfile
 import netCDF4
+#import custom as c
 from sydate import SyDate
-from nco.nco import Nco
 from gz import ZipManipulator
+from os.path import dirname
+sys.path.append(dirname(__file__))
+from nco.nco import Nco
 
 ##############################################################
 # C.REGNIER Juin 2014
@@ -41,9 +44,11 @@ class Extractor(object):
         if type == "GODAE": return Extract_GODAE()
         if type == "ASCII": return Extract_ASCII()
         if type == "L3m": return Extract_genericData()
+        if type == "BGC_ARGO_NITRATE"  or type == "BGC_ARGO_CHL" or type == "BGC_ARGO_PH": return Extract_BGC_ARGO()
         if type == "L3mCHL": return Extract_CHLORO()
         if type == "Microwat_Lband_Orbite_1day_Lband" or type == "Microwat_6.9GHz_Orbite_1day": return Extract_genericData()
         if type == "sssdata_netcdf_good_FNAV" or "sssdata_netcdf_all": return Extract_SSSData()
+
 
     def timelinespace(self, date1, date2):
         """
@@ -165,7 +170,30 @@ class Extract_genericData(Extractor):
         self.log =logging.getLogger("Extract Generic files")
         self.log.setLevel(logging.INFO)
         liste_tot = []
-        liste_file = glob(param_dict['dir_data']+'/*'+dateval+'*.nc')
+        liste_file = glob(param_dict['dirdata']+'/*'+dateval+'*.nc')
+        print (param_dict['dirdata']+'/*'+dateval+'*.nc')
+        sys.exit(1)
+        for file in liste_file:
+            try:
+                filename = os.path.basename(file)
+                shutil.copy(file, param_dict['dirwork']+filename)
+                liste_tot.append(param_dict['dirwork']+filename)
+            except IOError as e:
+                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                sys.exit(1)
+
+        return liste_tot
+
+class Extract_BGC_ARGO(Extractor):
+
+    """ Extract files """
+
+    def run_list(self, param_dict, dateval):
+        logging.basicConfig(format='%(asctime)s %(message)s')
+        self.log =logging.getLogger("Extract Generic files")
+        self.log.setLevel(logging.INFO)
+        liste_tot = []
+        liste_file = glob(param_dict['dirdata']+'/*/'+param_dict['prefix_data']+'*'+dateval+'*.nc')
         for file in liste_file:
             try:
                 filename = os.path.basename(file)
@@ -356,9 +384,9 @@ class Extract_ASCII(Extractor):
 
 class Extract_GODAE(Extractor):
 
-    """ Extract cora 4.1 file """
+    """ Extract GODAE file """
 
-    def run(self,date1,date2,dirdata,dirtmp,typedata,template):
+    def run(self,daterun,dirdata,dirtmp,typedata,template,nb_fcst):
         if typedata != "SLA" and  typedata != "SST" and typedata != "profile" and typedata !=  "aice" and typedata !=  "AMSR" :
             print ("Data %s not known !!! " %(typedata))
             sys.exit(1)
@@ -370,76 +398,92 @@ class Extract_GODAE(Extractor):
         log.setLevel(logging.INFO)
         log.info('Extract_GODAE') 
         # Level of logging output
-        valeurj=date1
+        #valeurj=date1
         liste_tot=[]
         # Nco constructor
         nco = Nco()
-        while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
-            dateval=SyDate.__str__(valeurj)
-            log.info('Day  %s ' % (dateval)) 
-            if typedata ==  "AMSR" : 
-                liste_file=glob(dirdata+'/*'+dateval+'*.nc')
-            else :
-                liste_file=glob(dirdata+'/class4*'+dateval+'*'+typedata+'*.nc')
-                print (dirdata+'/class4*'+dateval+'*'+typedata+'*.nc')
-            # liste_file=glob(dirdata+'/*[TS]*'+dateval+'*.nc')
-            log.info('Liste file %s ' % (liste_file))
-            for new_file in liste_file :
-                try :
-                    filename=os.path.basename(new_file)
-                    if typedata ==  "AMSR" : 
-                        filename=re.sub('GL_h5',template,filename)
-                    else:
-                        template1 = filename.split('_')[0:]
-                        template_tmp = template1[2]+'_'+template1[3]+'_'+template1[4]
-                        filename=re.sub(template_tmp,template,filename)
-                        #if typedata == "aice" :
-                        #    filename=re.sub('GIOPS_CONCEPTS_3.0',template,filename)
-                        #else : 
-                        #    filename=re.sub('FOAM_orca025_14.1.0',template,filename)
-                        print (filename)
-                    # Copy extracted value of GODAE file with nco module
-                    # shutil.copy(new_file,dirtmp)
-                    options = []
-                    if typedata == "SLA" :
-                        options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference'])
-                    else :
-                       options.extend(['-h','-O','-xv','best_estimate,forecast,persistence'])
-                    nco.ncks(input=new_file,output=dirtmp+filename, fortran=True ,options=options)
-                    if typedata == "aice" :
-                        # add missing varname
-                        # options = []
-                        # options.extend(['-h','-v','varname'])
-                        # filein='varname_ice.nc'
-                        # nco.ncks(input=dirstatic+'/'+filein,output=dirtmp+filename,fortran=True,options=options)
-                        # Solution2 : add dimensions and variable varname
-                        cl_fileIn=dirtmp+filename
-                        # nc   = netCDF4.Dataset(cl_fileIn,'a')
-                        # nc.createDimension('string_length8',8)
-                        # for AMSR
-                        # nc.createDimension('numvars',1)
-                        # nc.createVariable('varname','c',('numvars','string_length8'))
-                        # nc.variables['varname'][:]='ileadfra'
-                        # nc.close
-                    if typedata == "AMSR" :
-                        # add missing varname
-                        # Solution2 : add dimensions and variable varname
-                        cl_fileIn=dirtmp+filename
-                        nc   = netCDF4.Dataset(cl_fileIn,'a')
-                        nc.createDimension('string_length8',8)
-                        # for AMSR
-                        nc.createDimension('numvars',1)
-                        nc.createVariable('varname','c',('numvars','string_length8'))
-                        nc.variables['varname'][:]='ileadfra'
-                        nc.close
-                    log.info('Fichier extracted %s ' % (dirtmp+filename)) 
-                    liste_tot.append(dirtmp+filename)
-                    # Design output File
-                    # Design_file('GODAE').run(dirtmp+filename)
-                except IOError as e:
-                    print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                    sys.exit(1)
-            valeurj=valeurj.goforward(1)
+        #while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
+        #    dateval=SyDate.__str__(valeurj)
+        log.info('Day  %s ' % (daterun)) 
+        if typedata ==  "AMSR" : 
+            liste_file=glob(dirdata+'/*'+daterun+'*.nc')
+        else :
+            liste_file=glob(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')
+            print (dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')
+        # liste_file=glob(dirdata+'/*[TS]*'+daterun+'*.nc')
+        log.info('Liste file %s ' % (liste_file))
+        for new_file in liste_file :
+            try :
+                filename=os.path.basename(new_file)
+                if typedata ==  "AMSR" :
+                    filename=re.sub('GL_h5',template,filename)
+                else:
+                    template1 = filename.split('_')[0:]
+                    template_tmp = template1[2]+'_'+template1[3]+'_'+template1[4]
+                    filename=re.sub(template_tmp,template,filename)
+                    #if typedata == "aice" :
+                    #    filename=re.sub('GIOPS_CONCEPTS_3.0',template,filename)
+                    #else : 
+                    #    filename=re.sub('FOAM_orca025_14.1.0',template,filename)
+                    print (filename)
+                # Copy extracted value of GODAE file with nco module
+                # shutil.copy(new_file,dirtmp)
+                ## Change numfcts dim
+                options = []
+                options.extend(['-O','-a','numfcsts'])
+                nco.ncwa(input=new_file, output=dirtmp+filename, fortran=True ,options=options)
+                command ="ncap2 -h -O -s "
+                command2 = "\'defdim(\"numfcsts\","+str(nb_fcst)+");leadtime_new[$numfcsts]=leadtime;modeljuld_new[$numfcsts]=modeljuld\' "
+                os.system(command+command2+dirtmp+filename+" "+dirtmp+filename)
+                options = []
+                if typedata == "SLA" :
+                    options.extend(['-h','-O','-xv','best_estimate,forecast,\
+                        persistence,altimeter_bias,mdt_reference,leadtime,modeljuld'])
+                else :
+                   options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,leadtime,modeljuld'])
+                nco.ncks(input=dirtmp+filename,output=dirtmp+filename, fortran=True ,options=options)
+                # Rename
+                options = []
+                options.extend(['-h','-O','-v','modeljuld_new,modeljuld'])
+                nco.ncrename(input=dirtmp+filename,output=dirtmp+filename, options=options)
+                options = []
+                options.extend(['-h','-O','-v','leadtime_new,leadtime'])
+                nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
+                print ("add new dim ok {}".format(dirtmp+filename))
+                if typedata == "aice" :
+                    # add missing varname
+                    # options = []
+                    # options.extend(['-h','-v','varname'])
+                    # filein='varname_ice.nc'
+                    # nco.ncks(input=dirstatic+'/'+filein,output=dirtmp+filename,fortran=True,options=options)
+                    # Solution2 : add dimensions and variable varname
+                    cl_fileIn=dirtmp+filename
+                    # nc   = netCDF4.Dataset(cl_fileIn,'a')
+                    # nc.createDimension('string_length8',8)
+                    # for AMSR
+                    # nc.createDimension('numvars',1)
+                    # nc.createVariable('varname','c',('numvars','string_length8'))
+                    # nc.variables['varname'][:]='ileadfra'
+                    # nc.close
+                if typedata == "AMSR" :
+                    # add missing varname
+                    # Solution2 : add dimensions and variable varname
+                    cl_fileIn=dirtmp+filename
+                    nc   = netCDF4.Dataset(cl_fileIn,'a')
+                    nc.createDimension('string_length8',8)
+                    # for AMSR
+                    nc.createDimension('numvars',1)
+                    nc.createVariable('varname','c',('numvars','string_length8'))
+                    nc.variables['varname'][:]='ileadfra'
+                    nc.close
+                log.info('Fichier extracted %s ' % (dirtmp+filename)) 
+                liste_tot.append(dirtmp+filename)
+                # Design output File
+                # Design_file('GODAE').run(dirtmp+filename)
+            except IOError as e:
+                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                sys.exit(1)
+        #valeurj=valeurj.goforward(1)
 
         return liste_tot
 

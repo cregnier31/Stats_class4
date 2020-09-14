@@ -67,6 +67,7 @@ def compute_stats_and_extend(dict_inputs, dict_var, dict, cvar,
                 rla_var = rla_best_estimate_var[iobs, :]
             else:
                 rla_var = rla_best_estimate_var[iobs]
+
             val_box_depth, obs_box_depth, clim_box_depth =\
                 supobs.Statslib.extract_CL4var(rla_var, rla_obs, rla_clim,
                                                rla_depthobs[iobs, :], depthmin, depthmax)

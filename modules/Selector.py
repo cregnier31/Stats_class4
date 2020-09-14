@@ -111,6 +111,10 @@ class SelectListModelData(Selector):
             param_dict['gridtype_light'] = ["SLA.B"]
         elif data_type.lower() == "chloro":
             param_dict['gridtype'] = ["gridCHL"]
+        elif data_type.lower() == "nitrate":
+            param_dict['gridtype'] = ["no3"]
+        elif data_type.lower() == "ph":
+            param_dict['gridtype'] = ["ph"]
         elif data_type.lower() == "aice":
             param_dict['gridtype'] = ["icemod"]
         elif data_type.lower() == "drifter_filtr" or data_type.lower() == "drifter":
@@ -122,6 +126,7 @@ class SelectListModelData(Selector):
         elif typemod == "allege":
             dirmodel = param_dict['dirmodel_light']
         MONTH = str(dateval)[4:6]
+        self.log.info("Grid type {}".format(param_dict['gridtype']))
         # loop on lead time
         for time in param_dict['lead_time']:
             list_tmp = []
@@ -171,6 +176,7 @@ class SelectListModelData(Selector):
             ## Find and Load the good file
             ind = 0
             for directory in lead_fin:
+                ll_miss = False
                 if param_dict['data_origin'] == 'GLOBCOLOUR' and directory != 'clim':
                     if directory == 'hdct' and param_dict['daily_pref'] == '7dAV':
                         dirmodel_new = param_dict['dirmodel']+"HINDCAST/"
@@ -186,7 +192,10 @@ class SelectListModelData(Selector):
                         if param_dict['daily_pref'] == '7dAV':
                             dirmodel_new = dirmodel+"HINDCAST/"
                         else:
-                            dirmodel_new = dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
+                            if data_type.lower() == "nitrate" or data_type.lower() == "ph" or  data_type.lower() == "chl" :
+                                dirmodel_new = dirmodel
+                            else:
+                                dirmodel_new = dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
                     elif directory == 'hdct_all':
                         dirmodel_new = param_dict['dirmodel']+"/"
                     elif directory == 'hdct_all' and typemod == 'allege':
@@ -208,8 +217,11 @@ class SelectListModelData(Selector):
                 ## Compute date
                 datev = SyDate(str(dateval))
                 year = str(datev.year)
+                month_up = datev.month + 1
                 if datev.month < 10: month = '0' + str(datev.month)
                 else: month = str(datev.month)
+                if month_up < 10: month_up = '0' + str(month_up)
+                else: month_up = str(month_up)
                 if datev.day < 10: day = '0' + str(datev.day)
                 else: day = str(datev.day)
                 if param_dict['data_origin'] == 'GLOBCOLOUR' and param_dict['daily_pref'] == '7dAV':
@@ -259,13 +271,13 @@ class SelectListModelData(Selector):
                         list_file = glob(dirmodel_new+"/"+year+'/'+month+'/'+modele+"_"+ \
                         param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['varname'][0]+"*.nc")
                         if not list_file:
-                            if datev.month < 9: 
+                            if datev.month < 9:
                                 month2 = '0' + str(datev.month+1)
                                 year2 = str(datev.year)
                             elif datev.month == 12:
                                 month2 = '01'
                                 year2 = str(datev.year+1)
-                            else: 
+                            else:
                                 month2 = str(datev.month+1)
                                 year2 = str(datev.year)
                             list_file = glob(dirmodel_new+"/"+year2+'/'+month2+'/'+modele+"_"+ \
@@ -279,11 +291,24 @@ class SelectListModelData(Selector):
                             #list_file = glob(dirmodel_new+directory+"/"+modele+"_"+ \
                             #param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype']+"*.nc")
                             list_file = []
-                            for i in range(len(param_dict['gridtype'])):
-                                 list_file_tmp = glob(dirmodel_new+directory+"/"+modele+"_"+ \
-                                 param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
-                                 list_file.extend(list_file_tmp)
-                            self.log.info(list_file)
+                            if data_type.lower() == "nitrate" or data_type.lower() == "ph" or  data_type.lower() == "chl":
+                                for i in range(len(param_dict['gridtype'])):
+                                    list_file_tmp = glob(dirmodel_new+"/"+year+"/"+month+"/"+modele+"_"+ \
+                                    param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+                                    if not list_file_tmp:
+                                        list_file_tmp = glob(dirmodel_new+"/"+year+"/"+month_up+"/"+modele+"_"+ \
+                                            param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+
+                                    list_file.extend(list_file_tmp)
+
+                            else:
+                                for i in range(len(param_dict['gridtype'])):
+                                    print (dirmodel_new+directory+"/"+modele+"_"+ \
+                                            param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+                                    list_file_tmp = glob(dirmodel_new+directory+"/"+modele+"_"+ \
+                                    param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+                                    list_file.extend(list_file_tmp)
+                                self.log.info(list_file)
                     elif typemod == "allege":
                         self.log.info('mode allege')
                         if directory == "clim":
@@ -297,13 +322,13 @@ class SelectListModelData(Selector):
                         list_file = glob(dirmodel_new+"/"+year+'/'+month+'/'+modele+"_"+ \
                         param_dict['daily_pref']+"_"+dateval+"*_*"+gridtype+"*.nc")
                         if not list_file:
-                            if datev.month < 9: 
+                            if datev.month < 9:
                                 month2 = '0' + str(datev.month+1)
                                 year2 = str(datev.year)
                             elif datev.month == 12:
                                 month2 = '01'
                                 year2 = str(datev.year+1)
-                            else: 
+                            else:
                                 month2 = str(datev.month+1)
                                 year2 = str(datev.year)
                             list_file = glob(dirmodel_new+"/"+year2+'/'+month2+'/'+modele+"_"+ \
@@ -316,11 +341,11 @@ class SelectListModelData(Selector):
                     self.log.error("Repertory %s" % (dirmodel_new))
                     self.log.error("File missing for %s" %(directory))
                     ll_miss = True
-                    sys.exit(1)
+                    #sys.exit(1)
                 self.log.info('dirmodel  %s ' % (dirmodel))
-                self.log.info('directory and file  %s %s ' % (directory, list_file[0]))
+                if not ll_miss : self.log.info('directory and file  %s %s ' % (directory, list_file[0]))
                 list[directory] = list_file
-        return list
+        return list, ll_miss
 
 class SelectListData(Selector):
 
@@ -343,13 +368,16 @@ class SelectListData(Selector):
         -----------------------
         list_files : 
         """
+        ll_miss = False
         if param_dict['zoom'] or param_dict['data_origin'] == 'GODAE':
             self.log.info('========================================================')
-            self.log.info('              DATE Selection and extraction             ')
+            self.log.info('              DATE Selection and extraction zoom or GODAE ')
             self.log.info('========================================================')
             self.log.info('Prefix  %s ' %(param_dict['prefix_data']))
-            list_files = Extractor().factory(param_dict['prefix_data']).run(param_dict['date1'],\
-            param_dict['date2'],param_dict['dirdata'],param_dict['dirwork'],param_dict['data_type'],param_dict['template'])
+            #list_files = Extractor().factory(param_dict['prefix_data']).run(param_dict['date1'],\
+            #param_dict['date2'],param_dict['dirdata'],param_dict['dirwork'],param_dict['data_type'],param_dict['template'])
+            list_files = Extractor().factory(param_dict['prefix_data']).run(daterun,param_dict['dirdata'],\
+                         param_dict['dirwork'],param_dict['data_type'],param_dict['template'], len(param_dict['lead_int']))
         elif param_dict['do_decomp']:
             self.log.info('do decomp %s '%(param_dict['prefix_data']))
             list_files = Extractor().factory(param_dict['prefix_data']).run(
@@ -357,15 +385,16 @@ class SelectListData(Selector):
                 param_dict['dirwork'], param_dict['data_type'], param_dict['template'], param_dict['prefix_data'])
         else:
             self.log.info('========================================================')
-            self.log.info('              DATE Selection and extraction  %s         ' %(param_dict['prefix_data'])) 
+            self.log.info('              DATE Selection and extraction  %s         ' %(param_dict['prefix_data']))
+            self.log.info(' Prefix Data {}'.format(param_dict['prefix_data']))
             self.log.info('========================================================')
             list_files = Extractor().factory(param_dict['prefix_data']).run_list(param_dict, daterun)
         if not list_files:
-            self.log.error('Missing files')
-            sys.exit(1)
+            self.log.error('Missing files {} {}'.format(param_dict['prefix_data'], param_dict['dirdata']))
+            ll_miss = True
         else:
             self.log.info('List Files  %s ' % (list_files))
-        return list_files
+        return list_files, ll_miss
 
 class Select(Selector):
     def __init__(self, data_format, data_type, **kwargs):

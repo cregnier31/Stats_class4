@@ -1,7 +1,7 @@
 #!/bin/ksh 
 CONFIG="PSY4QV3R1"
-DATE1="20200710"
-DATE2="20200710"
+DATE1="20200901"
+DATE2="20200901"
 typedata="profile"
 typemod="pgn"
 srcdata="GODAE"

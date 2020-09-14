@@ -1,7 +1,7 @@
 #!/bin/ksh 
 CONFIG="PSY4QV3R1"
-DATE1="20200725"
-DATE2="20200726"
+DATE1="20200825"
+DATE2="20200901"
 typedata="SLA"
 typemod="pgn"
 srcdata="GODAE"
