@@ -78,6 +78,8 @@ class Loader(object):
             var_lon = 'lon' ; var_lat = 'lat'
         elif 'LON' in nc.variables:
             var_lon = 'LON' ; var_lat = 'LAT'
+        elif 'Lon' in nc.variables:
+            var_lon = 'Lon' ; var_lat = 'Lat'
         elif 'LONGITUDE' in nc.variables:
             var_lon = 'LONGITUDE' ; var_lat = 'LATITUDE'
         elif 'Longitude' in nc.variables:
@@ -723,7 +725,6 @@ class AsciiLoader(Loader):
         # data=np.genfromtxt(filename,usecols = (2,3),skip_header=1)
         data = np.genfromtxt(filename,usecols = (1,2),skip_header=1)
         position = np.array(data)
-        #nc.close()
         return position
 
 class ColocLoader(Loader):
@@ -735,7 +736,6 @@ class ColocLoader(Loader):
         # data=np.genfromtxt(filename,usecols = (5,6))
         data = np.genfromtxt(filename,usecols = (15,16))
         position = np.array(data)
-        nc.close()
         return position
 
 class LoaderCMEMSDrifter(Loader):

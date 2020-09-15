@@ -1,9 +1,27 @@
-/.idea/
-/data/dump
-/data/maps
-/.env
-/back-end/.cache/
-/back-end/moniqua/local_settings.py
-.pyc
-.o
-.svn
+# Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.pyc
+
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+## Images
+
+*.gif
+*.tiff

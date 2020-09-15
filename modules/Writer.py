@@ -35,7 +35,7 @@ class Writer():
             'chloro': {'code': 'CHLORO-A_L3S', 'defaults': {'name': 'log10-chlorophyll A Satellite'}},
             'aice': {'code': 'SEA_CONC', 'defaults': {'name': 'Sea ice concentration from AMSR2 brightness temperature'}},
             'DRIFTER_filtr': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Filtered Currents from CMEMS drifting buoys 001_048'}},
-            'current': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Current from CMEMS drifting buoys 001_048'}},
+            'current': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Currents from CMEMS drifting buoys 001_048'}},
             'default': {'code': 'Default_code', 'defaults': {'name': 'Data for validation'}},
        }
 
@@ -169,7 +169,7 @@ class Writer():
         nc_fid.close()  # close the new file
 
 
-    def write_CMEMS_files(self, filename, hdct_tab, fcst_tab, pers_tab, dateval, model, variable):
+    def write_CMEMS_files(self, filename, hdct_tab, fcst_tab, pers_tab, clim_tab, dateval, model, variable):
         print ("Filename {}".format(filename))
         nc_fid = Dataset(filename, 'r+')
         print (np.shape(fcst_tab))
@@ -191,12 +191,18 @@ class Writer():
             'persistence', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
         nc_pers.setncatts(
             {'long_name': u"Model persistence counterpart of obs. value"})
+        nc_clim = nc_fid.createVariable(
+            'climatology', 'f4', ('numobs', 'numvars'), fill_value=self.fillvalue)
+        nc_pers.setncatts(
+            {'long_name': u"Surface climatology from Lumpking counterpart of obs. value"})
         nc_fid.variables['best_estimate'][:, :, :] = hdct_tab[:, :, :]
         nc_fid.variables['forecast'][:, :, :, :] = fcst_tab[:, :, :, :]
         nc_fid.variables['persistence'][:, :, :, :] = pers_tab[:, :, :, :]
+        nc_fid.variables['climatology'][:, :] = clim_tab[:, :]
         # Add global attributs
         nc_fid.institution = 'MERCATOR OCEAN'
         nc_fid.contact = 'cregnier@mercator-ocean.fr'
+        print (variable)
         nc_fid.obs_type = self.type_data.get(variable, {}).get('defaults').get('name')
         nc_fid.time_interp = "daily average fields"
         today = date.today()
@@ -402,7 +408,7 @@ class Writer():
         elif dataorigin == "CMEMS" :
             self.write_CMEMS_files(
                  filename, tab_results['best'], tab_results['forecast'],
-                 tab_results['persistence'], dateval, param_dict['modele'], param_dict['data_type'])
+                 tab_results['persistence'], tab_results['clim'], dateval, param_dict['modele'], param_dict['data_type'])
 
         elif dataorigin == "GLOBCOLOUR" and param_dict['daily_pref'] == '7dAV':
             self.log.info("Write inside GLOBCOLOUR files")

@@ -7,6 +7,7 @@ from scipy.spatial import cKDTree
 import xarray as xr
 import vertical
 from Utils import *
+from utils import find_index_month
 from Loader import Loader
 from collections import OrderedDict
 from Interp_kdtree import interp_KDtree
@@ -137,10 +138,14 @@ class Interpolator(object):
             if param_dict['data_origin'] == "GLOBCOLOUR":
                 clim_tab = np.ndarray(shape=(nb_obs, 1, 1),
                            dtype=float, order='F')
+                clim_tab[:, :, :] = self.missing_value
+            elif param_dict['data_type'].lower() == "drifter_filtr":
+                clim_tab = np.ndarray(shape=(nb_obs, len(variable)),dtype=float, order='F')
+                clim_tab[:, :] = self.missing_value
             else:
                 clim_tab = np.ndarray(shape=(nb_obs, len(variable), nb_profs),
                                       dtype=float, order='F')
-            clim_tab[:, :, :] = self.missing_value
+                clim_tab[:, :, :] = self.missing_value
             ll_clim = True
         self.log.info('Number obs to coloc {} '.format(nb_obs2))
         file_coloc_tmp = os.path.basename(data_file)
@@ -158,6 +163,11 @@ class Interpolator(object):
                                         str(nb_ptsinterp) + 'pt.p', file_out)
                 variable = []
                 variable.append(param_dict['varname'][0].upper()+'_mean')
+            elif key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr':
+                ll_coloc = False
+                lon_mod, lat_mod = Loader.factory(
+                    'NC_CLIM').read_pos(param_dict['coord_clim'])
+                variable = ['U', 'V']
             else:
                 self.log.info("Lead time "+key)
                 if param_dict['coordinates']:
@@ -183,7 +193,7 @@ class Interpolator(object):
             self.log.info("Weight_file : {} ".format(weight_file))
             # Coloc file
             if not ll_coloc:
-                TreeObj = interp_KDtree()
+                TreeObj = interp_KDtree(level=self.log.level)
                 d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
                                                      lon_obs, lat_obs, nb_ptsinterp,\
                                                      weight_file=weight_file,save=False)
@@ -217,10 +227,16 @@ class Interpolator(object):
                        depthval = depth[0,0]
                    else:
                        self.log.error("Case not known")
+                   index_time=0
+                   if key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr':  
+                       depthval = 0
+                       index_time=find_index_month(date)
                    interp_values = self.interp_2D(weights, indexes,
                                                   file_input,
                                                   nb_ptsinterp,
-                                                  varname, param_dict, depth=depthval, fillvalue=_FillValue)
+                                                  varname, param_dict, key=key, 
+                                                  depth=depthval, fillvalue=_FillValue,
+                                                  time=index_time)
                    interp_values = np.where(np.array(obs_value).flatten() == _FillValue,
                                                      _FillValue, np.array(interp_values))
                    interp_values = np.where(interp_values == np.nan, self.missing_value, interp_values)
@@ -284,7 +300,10 @@ class Interpolator(object):
                        hdct_tab[:, var, :] = interp_values
                elif key[0:4] == 'clim':
                    if ll_unique:
-                       clim_tab[:, var, 0] = interp_values
+                       if param_dict['data_type'].lower() == "drifter_filtr":
+                           clim_tab[:, var] = interp_values
+                       else:
+                           clim_tab[:, var, 0] = interp_values
                    else:
                        clim_tab[:, var, :] = interp_values
         ####
@@ -403,7 +422,7 @@ class Interpolator(object):
         return WEIGHT, inds_idw1
 
     def interp_2D(self, weight, inds, file, nbpts_interp, variable, param_dict,\
-            depth=0, time=0, fillvalue=None):
+            depth=0, time=0, key=None, fillvalue=None):
         """
         -------------------
         2D interpolator
@@ -442,7 +461,8 @@ class Interpolator(object):
 
         if len(var_in.shape) == 3:
             if ll_single:
-               var_in = var_in[0, :, :].values
+               var_in = var_in[time, :, :].values
+               print ('time {}'.format(time))
             else:
                var_in1 = var_in[ind_depth1, :, :].values
                var_in2 = var_in[ind_depth2, :, :].values
@@ -520,7 +540,8 @@ class Interpolator(object):
                 values_interp[ind_prof,:] = np.where(val_interp.mask, fillvalue, values_interp[ind_prof,:])
             self.log.debug('Valeurs profile {}'.format(obs[:]))
             self.log.debug('--------------------------------------------')
-            if ll_verif: # and ind_prof == 70:
+            if ll_verif: 
+                ## Profiles to test 20200901  155 526 564
                 # Plot profiles
                 dir_out = './img2/'
                 dir_out2 = './img3/'

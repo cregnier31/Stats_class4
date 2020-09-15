@@ -11,6 +11,7 @@ class Logger(object):
     def run(self,level):
         logging.basicConfig(format='%(asctime)s %(message)s')
         log = logging.getLogger(self.name)
+        log.level = level
         ## Level of logging output
         if level == 0 :
             log.setLevel(logging.NOTSET)
