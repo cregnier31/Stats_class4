@@ -3,6 +3,7 @@ import re
 import sys
 import numpy as np
 import numpy.ma as ma
+import json
 from scipy.spatial import cKDTree
 import xarray as xr
 import vertical
@@ -139,9 +140,6 @@ class Interpolator(object):
                 clim_tab = np.ndarray(shape=(nb_obs, 1, 1),
                            dtype=float, order='F')
                 clim_tab[:, :, :] = self.missing_value
-            elif param_dict['data_type'].lower() == "drifter_filtr":
-                clim_tab = np.ndarray(shape=(nb_obs, len(variable)),dtype=float, order='F')
-                clim_tab[:, :] = self.missing_value
             else:
                 clim_tab = np.ndarray(shape=(nb_obs, len(variable), nb_profs),
                                       dtype=float, order='F')
@@ -192,6 +190,11 @@ class Interpolator(object):
             weight_file = param_dict['coloc_rep'] + file_coloc_tmp
             self.log.info("Weight_file : {} ".format(weight_file))
             # Coloc file
+            if len(np.shape(lon_mod)) > 1:
+                nlon, nlat = np.shape(lon_mod)
+            else:
+                nlon = len(lon_mod)
+                nlat = len(lat_mod)
             if not ll_coloc:
                 TreeObj = interp_KDtree(level=self.log.level)
                 d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
@@ -236,9 +239,10 @@ class Interpolator(object):
                                                   nb_ptsinterp,
                                                   varname, param_dict, key=key, 
                                                   depth=depthval, fillvalue=_FillValue,
-                                                  time=index_time)
-                   interp_values = np.where(np.array(obs_value).flatten() == _FillValue,
-                                                     _FillValue, np.array(interp_values))
+                                                  time=index_time, nblon=nlon, nblat=nlat, 
+                                                  lon_mod=lon_mod, lat_mod=lat_mod)
+                   #interp_values = np.where(np.array(obs_value).flatten() == _FillValue,
+                   #                                  _FillValue, np.array(interp_values))
                    interp_values = np.where(interp_values == np.nan, self.missing_value, interp_values)
 
                    ll_unique = True
@@ -251,8 +255,8 @@ class Interpolator(object):
                                                   obs = obs_value[:,var,:],
                                                   dateval=date, lon=lon_obs, lat=lat_obs, fillvalue=self.missing_value)
                   if len(np.shape(obs_value)) ==  3: obs_value2 = np.array(obs_value)[:,var,:]
-                  interp_values = np.where(np.array(obs_value2) == _FillValue,
-                                                     self.missing_value, np.array(interp_values))
+                  #interp_values = np.where(np.array(obs_value2) == _FillValue,
+                  #                                   self.missing_value, np.array(interp_values))
                   ll_json = param_dict['json']
                   if ll_json:
                       for ind_prf in range(nb_obs2):
@@ -300,10 +304,16 @@ class Interpolator(object):
                        hdct_tab[:, var, :] = interp_values
                elif key[0:4] == 'clim':
                    if ll_unique:
-                       if param_dict['data_type'].lower() == "drifter_filtr":
-                           clim_tab[:, var] = interp_values
-                       else:
-                           clim_tab[:, var, 0] = interp_values
+                       clim_tab[:, var, 0] = interp_values
+                       index_nan = np.isnan(interp_values)
+                       self.log.info('% of bad values for clim {}'.format((np.shape(interp_values[index_nan])[0]/np.shape(interp_values)[0]) * 100))
+                       if ll_json:
+                           lon_nan = lon_obs[index_nan]
+                           lat_nan = lat_obs[index_nan]
+                           zip_val = list(zip(lon_nan.tolist(),lat_nan.tolist()))
+                           filename = "missing_clim_"+str(date)+".json"
+                           with open(filename, 'w') as outfile:
+                               json.dump(zip_val, outfile,indent=4)
                    else:
                        clim_tab[:, var, :] = interp_values
         ####
@@ -421,8 +431,21 @@ class Interpolator(object):
 
         return WEIGHT, inds_idw1
 
+    def test_lonlat(self, var_in, nblon, nblat):
+        """
+           Test if the matrix is in lon/lat instead of lat/lon  
+        """ 
+        nsize1, nsize2 = np.shape(var_in)
+        if nsize1 == nblon:
+           ll_reshape = True
+        else: 
+           ll_reshape = False
+
+        return ll_reshape
+
     def interp_2D(self, weight, inds, file, nbpts_interp, variable, param_dict,\
-            depth=0, time=0, key=None, fillvalue=None):
+            depth=0, time=0, key=None, fillvalue=None, nblon=None, nblat=None, 
+            lon_mod=None, lat_mod=None):
         """
         -------------------
         2D interpolator
@@ -462,7 +485,6 @@ class Interpolator(object):
         if len(var_in.shape) == 3:
             if ll_single:
                var_in = var_in[time, :, :].values
-               print ('time {}'.format(time))
             else:
                var_in1 = var_in[ind_depth1, :, :].values
                var_in2 = var_in[ind_depth2, :, :].values
@@ -482,6 +504,8 @@ class Interpolator(object):
             # Distance weight interpolation
             self.log.info("Distance weight interpolation")
             if ll_single :
+               ll_reshape = self.test_lonlat(var_in, nblon, nblat)
+               if ll_reshape : var_in = np.transpose(var_in)
                tab_interp = np.sum(weight * np.array(var_in).flatten()
                                    [inds], axis=1) / np.sum(weight, axis=1)
             else:
@@ -498,7 +522,6 @@ class Interpolator(object):
             else:
                 tab_interp =  (w1 * ma.array(var_in1).flatten()[inds])+ (w2 * ma.array(var_in2).flatten()[inds])
 
-        #tab_interp = np.expand_dims(tab_interp[:], axis=1)
         return tab_interp
 
     def interp_3D(self, weight, inds, file, nbpts_interp, variable, depth,

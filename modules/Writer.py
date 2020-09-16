@@ -34,8 +34,8 @@ class Writer():
             'SLA': {'code': 'SLA_L3S', 'defaults': {'name': 'SLA CMEMS L3S'}},
             'chloro': {'code': 'CHLORO-A_L3S', 'defaults': {'name': 'log10-chlorophyll A Satellite'}},
             'aice': {'code': 'SEA_CONC', 'defaults': {'name': 'Sea ice concentration from AMSR2 brightness temperature'}},
-            'DRIFTER_filtr': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Filtered Currents from CMEMS drifting buoys 001_048'}},
             'current': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Currents from CMEMS drifting buoys 001_048'}},
+            'DRIFTER_filtr': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Filtered Currents from CMEMS drifting buoys 001_048'}},
             'default': {'code': 'Default_code', 'defaults': {'name': 'Data for validation'}},
        }
 
@@ -121,9 +121,6 @@ class Writer():
         nc_fid.system = model
         nc_fid.Conventions = 'CF-1.6'
         nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
-        print ('-------------------------------')
-        print ('Creation OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
     def write_BIOARGO_files(self, filename, hdct_tab, dateval, model, variable, fcst = None, pers = None):
@@ -163,18 +160,12 @@ class Writer():
         nc_fid.system = model
         nc_fid.Conventions = 'CF-1.6'
         nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
-        print ('-------------------------------')
-        print ('Creation OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
 
     def write_CMEMS_files(self, filename, hdct_tab, fcst_tab, pers_tab, clim_tab, dateval, model, variable):
-        print ("Filename {}".format(filename))
         nc_fid = Dataset(filename, 'r+')
-        print (np.shape(fcst_tab))
         nb_obs, nb_vars, nb_fcst, nb_depths = np.shape(fcst_tab)
-        print ("nb_depths {}, nb_vars {}, nb_fcst {}".format(nb_depths, nb_vars, nb_fcst)) 
         nc_fid.createDimension('numobs', nb_obs)
         nc_fid.createDimension('numvars', nb_vars)
         nc_fid.createDimension('numfcsts', nb_fcst) 
@@ -192,17 +183,18 @@ class Writer():
         nc_pers.setncatts(
             {'long_name': u"Model persistence counterpart of obs. value"})
         nc_clim = nc_fid.createVariable(
-            'climatology', 'f4', ('numobs', 'numvars'), fill_value=self.fillvalue)
-        nc_pers.setncatts(
-            {'long_name': u"Surface climatology from Lumpking counterpart of obs. value"})
+            'climatology', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
+        nc_clim.setncatts(
+            {'long_name': u"Surface climatology from Lumpkin counterpart of obs. value"})
+        nc_clim.setncatts(
+            {'version': u"V3.05"}) 
         nc_fid.variables['best_estimate'][:, :, :] = hdct_tab[:, :, :]
         nc_fid.variables['forecast'][:, :, :, :] = fcst_tab[:, :, :, :]
         nc_fid.variables['persistence'][:, :, :, :] = pers_tab[:, :, :, :]
-        nc_fid.variables['climatology'][:, :] = clim_tab[:, :]
+        nc_fid.variables['climatology'][:, :, :] = clim_tab[:, :, :]
         # Add global attributs
         nc_fid.institution = 'MERCATOR OCEAN'
         nc_fid.contact = 'cregnier@mercator-ocean.fr'
-        print (variable)
         nc_fid.obs_type = self.type_data.get(variable, {}).get('defaults').get('name')
         nc_fid.time_interp = "daily average fields"
         today = date.today()
@@ -217,9 +209,6 @@ class Writer():
         nc_fid.system = model
         nc_fid.Conventions = 'CF-1.6'
         nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
-        print ('-------------------------------')
-        print ('Creation File CMEMS OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
     def write_GODAE_files(self, filename, hdct_tab, fcst_tab, pers_tab, dateval, model, variable):
@@ -257,9 +246,6 @@ class Writer():
         nc_fid.system = model
         nc_fid.Conventions = 'CF-1.6'
         nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
-        print ('-------------------------------')
-        print ('Creation OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
     def write_GLOBCOLOR_files(self, filename, tab1, tab2, tab3, dateval, model, variable):
@@ -355,9 +341,6 @@ class Writer():
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
-        print ('-------------------------------')
-        print ('Creation OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
     def write_best(self, filename, tab1, dateval, model, dimension, variable, desc, variable2):
@@ -382,9 +365,6 @@ class Writer():
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
-        print ('-------------------------------')
-        print ('Creation OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
     def write_output(self, filename, tab_results, param_dict, dateval, ll_zip=True):

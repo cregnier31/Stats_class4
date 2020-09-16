@@ -59,9 +59,11 @@ class interp_KDtree(object):
 
         if len(X1.shape) > 1:
             X1, Y1 = X1, Y1
+            self.log.debug('Shape > 1')
+            self.log.debug('Shape {}'.format(np.shape(X1)))
         else:
            X1, Y1 = np.meshgrid(X1, Y1)
-
+           self.log.debug('Shape = x {} y {}'.format(np.shape(X1), np.shape(Y1)))
         if isinstance(lon_out, np.float64) or isinstance(lon_out, np.float32):
            self.log.debug('lon_out is a float')
         else:
