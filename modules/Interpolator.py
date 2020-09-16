@@ -233,7 +233,7 @@ class Interpolator(object):
                    index_time=0
                    if key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr':  
                        depthval = 0
-                       index_time=find_index_month(date)
+                       index_time=find_index_month(date)-1
                    interp_values = self.interp_2D(weights, indexes,
                                                   file_input,
                                                   nb_ptsinterp,
@@ -538,33 +538,28 @@ class Interpolator(object):
         self.log.debug('maxdepth {}'.format(maxdepth))
         ind_depth = self.getneardepth(depth_mod, maxdepth)
         ind_tot = len(depth_mod)
-        #tab_interp_tmp = np.nan*np.zeros((ind_tot, nb_obs))
         tab_interp_tmp = fillvalue*np.zeros((ind_tot, nb_obs))
-        #tab_prof_tmp = np.nan*np.zeros((ind_tot, nb_obs))
         self.log.debug('Size {}'.format(np.shape(tab_interp_tmp)))
         ## Loop on levels
         for ind in range(ind_tot):
             tab_interp_tmp[ind, :] = np.sum(weight * np.array(var_in[time, ind, :, :].values).flatten()
                                       [inds], axis=1) / np.sum(weight, axis=1)
         values_interp = fillvalue*np.zeros((nb_obs, nb_profs))
-        #values_interp = ma.array((nb_obs, nb_profs))
         obs2 = obs[~obs.mask]
-#        values_interp = values_interp[~values_interp.mask]
 
         for ind_prof in range (nb_obs):
             profondeur = depth[ind_prof, :]
             tab_mod_ma = tab_interp_tmp[:,ind_prof]
             fixture = vertical.Column(tab_mod_ma, depth_mod[:])
-            self.log.debug('Profondeurs profiles {}'.format(profondeur[0:300]))
-            self.log.debug('Profondeurs modele {}'.format(depth_mod[0:30]))
+            self.log.debug('Profondeurs profiles {}'.format(profondeur[0:70]))
+            self.log.debug('Profondeurs modele {}'.format(depth_mod[:]))
             val_interp = fixture.interpolate(profondeur)
             values_interp[ind_prof,:] = val_interp[:]
             if np.ma.isMaskedArray(val_interp):
                 values_interp[ind_prof,:] = np.where(val_interp.mask, fillvalue, values_interp[ind_prof,:])
             self.log.debug('Valeurs profile {}'.format(obs[:]))
             self.log.debug('--------------------------------------------')
-            if ll_verif: 
-                ## Profiles to test 20200901  155 526 564
+            if ll_verif:
                 # Plot profiles
                 dir_out = './img2/'
                 dir_out2 = './img3/'
@@ -573,9 +568,10 @@ class Interpolator(object):
                 label1 = "Insitu"
                 label2 = "Model"
                 #print ("Profile {}".format(ind_prof))
-                #print ('Profondeurs profiles {}'.format(profondeur[0:70]))
-                #print ('Valeur interp {}'.format(values_interp[ind_prof,0:70]))
-                #print ('Valeur modee {}'.format(tab_mod_ma))
+                #print ('Profondeurs profiles {}'.format(profondeur[340:360]))
+                #print ('Valeur interp {}'.format(values_interp[ind_prof,340:360]))
+                #print ('Valeur modele {}'.format(tab_mod_ma[27:34]))
+                #print ('Profondeur modele {}'.format(depth_mod[27:34]))
                 ll_compare = True
                 prof_max = np.nanmax(profondeur)
                 ind_prof_max = np.argmax(depth_mod[:])
