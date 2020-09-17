@@ -437,8 +437,7 @@ class Extract_GODAE(Extractor):
                 os.system(command+command2+dirtmp+filename+" "+dirtmp+filename)
                 options = []
                 if typedata == "SLA" :
-                    options.extend(['-h','-O','-xv','best_estimate,forecast,\
-                        persistence,altimeter_bias,mdt_reference,leadtime,modeljuld'])
+                    options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference,leadtime,modeljuld'])
                 else :
                    options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,leadtime,modeljuld'])
                 nco.ncks(input=dirtmp+filename,output=dirtmp+filename, fortran=True ,options=options)
