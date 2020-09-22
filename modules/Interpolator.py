@@ -216,60 +216,65 @@ class Interpolator(object):
             for var in range(len(variable)):
                ## Get the correct file
                varname = variable[var]
+               ll_miss = False
                try:
                   file_input = list_input_file[key][var]
                except :
                    self.log.error("Error {} Missing file for key {} var {}".format(sys.exc_info()[0], key, var))
-                   sys.exit(1)
+                   ll_miss = True
+                   #sys.exit(1)
                ll_unique = False
-               if len(np.unique(depth)) == 1:
-                   self.log.info("Unique depth for all the observations")
-                   if len(np.shape(depth)) == 1 :
-                       depthval = depth[0]
-                   elif len(np.shape(depth)) == 2 :
-                       depthval = depth[0,0]
-                   else:
-                       self.log.error("Case not known")
-                   index_time=0
-                   if key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr':  
-                       depthval = 0
-                       index_time=find_index_month(date)-1
-                   interp_values = self.interp_2D(weights, indexes,
-                                                  file_input,
-                                                  nb_ptsinterp,
-                                                  varname, param_dict, key=key, 
-                                                  depth=depthval, fillvalue=_FillValue,
-                                                  time=index_time, nblon=nlon, nblat=nlat, 
-                                                  lon_mod=lon_mod, lat_mod=lat_mod)
-                   #interp_values = np.where(np.array(obs_value).flatten() == _FillValue,
-                   #                                  _FillValue, np.array(interp_values))
-                   interp_values = np.where(interp_values == np.nan, self.missing_value, interp_values)
-
-                   ll_unique = True
-               else :
-                  self.log.info("Profile case variable : {}".format(variable[var]))
-                  interp_values = self.interp_3D(weights, indexes,
-                                                  file_input,
-                                                  nb_ptsinterp,
-                                                  varname, depth, ll_verif = param_dict['verif'],
-                                                  obs = obs_value[:,var,:],
-                                                  dateval=date, lon=lon_obs, lat=lat_obs, fillvalue=self.missing_value)
-                  if len(np.shape(obs_value)) ==  3: obs_value2 = np.array(obs_value)[:,var,:]
-                  #interp_values = np.where(np.array(obs_value2) == _FillValue,
-                  #                                   self.missing_value, np.array(interp_values))
-                  ll_json = param_dict['json']
-                  if ll_json:
-                      for ind_prf in range(nb_obs2):
-                         index_ok = np.where(np.array(obs_value2[ind_prf,:]) != _FillValue)
-                         dir_out2 = './json/'
-                         filename_json = dir_out2+str(date)+"_"+varname+"_profile_"+str(ind_prf)+".json"
-                         tab_profile = {}
-                         tab_profile['longitude'] = np.array(lon_obs[ind_prf]).tolist()
-                         tab_profile['latitude'] = np.array(lat_obs[ind_prf]).tolist()
-                         tab_profile['Insitu'] = list(zip(np.array(depth[ind_prf,index_ok]).tolist()[0], np.array(obs_value2[ind_prf,index_ok]).tolist()[0]))
-                         tab_profile['Model'] = list(zip(np.array(depth[ind_prf,index_ok]).tolist()[0], np.array(interp_values[ind_prf,index_ok]).tolist()[0]))
-                         Writer(self.log).write_json_profile(filename_json, tab_profile)
-
+               if not ll_miss:
+                  if len(np.unique(depth)) == 1:
+                      self.log.info("Unique depth for all the observations")
+                      if len(np.shape(depth)) == 1 :
+                          depthval = depth[0]
+                      elif len(np.shape(depth)) == 2 :
+                          depthval = depth[0,0]
+                      else:
+                          self.log.error("Case not known")
+                      index_time=0
+                      if key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr':  
+                          depthval = 0
+                          index_time=find_index_month(date)-1
+                      interp_values = self.interp_2D(weights, indexes,
+                                                     file_input,
+                                                     nb_ptsinterp,
+                                                     varname, param_dict, key=key, 
+                                                     depth=depthval, fillvalue=_FillValue,
+                                                     time=index_time, nblon=nlon, nblat=nlat, 
+                                                     lon_mod=lon_mod, lat_mod=lat_mod, missing_value=self.missing_value)
+                      #interp_values = np.where(np.array(obs_value).flatten() == _FillValue,
+                      #                                  _FillValue, np.array(interp_values))
+                      ll_unique = True
+                  else :
+                     self.log.info("Profile case variable : {}".format(variable[var]))
+                     interp_values = self.interp_3D(weights, indexes,
+                                                     file_input,
+                                                     nb_ptsinterp,
+                                                     varname, depth, ll_verif = param_dict['verif'],
+                                                     obs = obs_value[:,var,:],
+                                                     dateval=date, lon=lon_obs, lat=lat_obs, fillvalue=self.missing_value)
+                     if len(np.shape(obs_value)) ==  3: obs_value2 = np.array(obs_value)[:,var,:]
+                     #interp_values = np.where(np.array(obs_value2) == _FillValue,
+                     #                                   self.missing_value, np.array(interp_values))
+                     ll_json = param_dict['json']
+                     if ll_json:
+                         for ind_prf in range(nb_obs2):
+                            index_ok = np.where(np.array(obs_value2[ind_prf,:]) != _FillValue)
+                            dir_out2 = './json/'
+                            filename_json = dir_out2+str(date)+"_"+varname+"_profile_"+str(ind_prf)+".json"
+                            tab_profile = {}
+                            tab_profile['longitude'] = np.array(lon_obs[ind_prf]).tolist()
+                            tab_profile['latitude'] = np.array(lat_obs[ind_prf]).tolist()
+                            tab_profile['Insitu'] = list(zip(np.array(depth[ind_prf,index_ok]).tolist()[0], np.array(obs_value2[ind_prf,index_ok]).tolist()[0]))
+                            tab_profile['Model'] = list(zip(np.array(depth[ind_prf,index_ok]).tolist()[0], np.array(interp_values[ind_prf,index_ok]).tolist()[0]))
+                            Writer(self.log).write_json_profile(filename_json, tab_profile)
+               else:
+                   interp_values = np.ndarray(shape=(nb_obs, nb_profs),
+                                         dtype=float, order='F')
+                   interp_values[:, :] = self.missing_value
+	           
                if key[0:4] == 'fcst':
                    if len(key) > 4:
                        indice = int(key[4])
@@ -433,19 +438,19 @@ class Interpolator(object):
 
     def test_lonlat(self, var_in, nblon, nblat):
         """
-           Test if the matrix is in lon/lat instead of lat/lon  
-        """ 
+           Test if the matrix is in lon/lat instead of lat/lon
+        """
         nsize1, nsize2 = np.shape(var_in)
         if nsize1 == nblon:
            ll_reshape = True
-        else: 
+        else:
            ll_reshape = False
 
         return ll_reshape
 
     def interp_2D(self, weight, inds, file, nbpts_interp, variable, param_dict,\
-            depth=0, time=0, key=None, fillvalue=None, nblon=None, nblat=None, 
-            lon_mod=None, lat_mod=None):
+            depth=0, time=0, key=None, fillvalue=None, nblon=None, nblat=None,
+            lon_mod=None, lat_mod=None, missing_value=np.nan):
         """
         -------------------
         2D interpolator
@@ -521,7 +526,10 @@ class Interpolator(object):
                 tab_interp = ma.array(var_in).flatten()[inds]
             else:
                 tab_interp =  (w1 * ma.array(var_in1).flatten()[inds])+ (w2 * ma.array(var_in2).flatten()[inds])
-
+        
+        # Put nan to missing values
+        tab_interp = np.where(np.isnan(tab_interp), missing_value, tab_interp)
+        
         return tab_interp
 
     def interp_3D(self, weight, inds, file, nbpts_interp, variable, depth,
@@ -533,7 +541,11 @@ class Interpolator(object):
         var_in = dataset_in[variable]
         nb_obs, nb_profs = np.shape(depth)
         depth_mod = dataset_in['deptht'][:].values
-        nb_obs, nb_pts =  np.shape(weight)
+        if len (np.shape(weight)) > 1:
+            nb_obs, nb_pts =  np.shape(weight)
+        else:
+            nb_obs =  np.shape(weight)[0]
+            nb_pts = 1
         maxdepth =  np.nanmax(depth)
         self.log.debug('maxdepth {}'.format(maxdepth))
         ind_depth = self.getneardepth(depth_mod, maxdepth)
@@ -542,8 +554,13 @@ class Interpolator(object):
         self.log.debug('Size {}'.format(np.shape(tab_interp_tmp)))
         ## Loop on levels
         for ind in range(ind_tot):
-            tab_interp_tmp[ind, :] = np.sum(weight * np.array(var_in[time, ind, :, :].values).flatten()
-                                      [inds], axis=1) / np.sum(weight, axis=1)
+            if nb_pts > 1:
+                tab_interp_tmp[ind, :] = np.sum(weight * np.array(var_in[time, ind, :, :].values).flatten()
+                                          [inds], axis=1) / np.sum(weight, axis=1)
+            else:
+                ## Nearest neighbour case
+                tab_interp_tmp[ind, :] = np.array(var_in[time, ind, :, :].values).flatten()[inds]
+
         values_interp = fillvalue*np.zeros((nb_obs, nb_profs))
         obs2 = obs[~obs.mask]
 
@@ -579,13 +596,13 @@ class Interpolator(object):
                 label1 = "Obs"
                 label2 = "Interp"
                 plot_2profiles_2(-profondeur[:], obs[ind_prof,:], -profondeur, val_interp[:], label1,\
-                                label2, title=title, save=True,
+                                label2, title=title, save=False,
                                 output=dir_out2+dateval+"_compprof_"+variable+"_profile_num"+str(ind_prof),
                                 var=variable)
                 label1 = "Raw"
                 label2 = "Interp"
                 plot_2profiles_2(-depth_mod[0:ind2], tab_interp_tmp[0:ind2,ind_prof] ,-profondeur, values_interp[ind_prof,:], label1,\
-                                  label2, title=title, save=True,
+                                  label2, title=title, save=False,
                                   output=dir_out2+dateval+"_interp_"+variable+"_profile_num"+str(ind_prof),
                                   var=variable)
                 if ll_compare == True:
@@ -597,13 +614,9 @@ class Interpolator(object):
                         prof2, model_best, obs = read_GODAE_profile(variable, filename[0])
                         plot_3profiles(-profondeur, obs[ind_prof,:], values_interp[ind_prof,:],-prof2[ind_prof,:],
                                        model_best[ind_prof,:], label1,
-                                       label2, label3, title=title, save=True,
+                                       label2, label3, title=title, save=False,
                                        output=dir_out+dateval+"_comparaison_"+variable+"_profile_num"+str(ind_prof),
                                        var=variable)
-                #plot_2profiles_2(-depth_mod[0:ind2], tab_interp_tmp[0:ind2,ind_prof] ,-profondeur, values_interp[ind_prof,:], label1,\
-                #                    label2, title=title, save=False,
-                #                    output=dir_out+dateval+"_interp_"+variable+"_profile_num"+str(ind_prof),
-                #                    var=variable)
 
             self.log.debug('Valeurs modèle {}'.format(tab_interp_tmp[0:30,ind_prof]))
             self.log.debug('Interp modèle onto profiles {} / {}'.format(ind_prof, nb_obs))

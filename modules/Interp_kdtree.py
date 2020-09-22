@@ -48,7 +48,7 @@ class interp_KDtree(object):
             return result
 
         return timed
-    
+
     @timeit
     def tree_and_query(self, X1, Y1, lon_out, lat_out, nbpts_interp,\
                        weight_file=None,save=False):
@@ -97,11 +97,11 @@ class interp_KDtree(object):
         ### Convert to cartesian
         xs, ys, zs = lon_lat_to_cartesian(X1.flatten(), Y1.flatten())
         if self.kdname == 'pykdtree':
-            coords = np.zeros((xs.size, 3), dtype=xs.dtype)
+            coords = np.zeros((xs.size, 3), dtype=float)
             coords[:, 0] = xs
             coords[:, 1] = ys
             coords[:, 2] = zs
-            coords2 =  np.zeros((xt.size, 3), dtype=xt.dtype)
+            coords2 =  np.zeros((xt.size, 3), dtype=float)
             coords2[:, 0] = xt
             coords2[:, 1] = yt
             coords2[:, 2] = zt
