@@ -59,11 +59,11 @@ class interp_KDtree(object):
 
         if len(X1.shape) > 1:
             X1, Y1 = X1, Y1
-            self.log.debug('Shape > 1')
-            self.log.debug('Shape {}'.format(np.shape(X1)))
+            self.log.debug('Shape 1 > 1')
+            self.log.debug('Shape 1 {}'.format(np.shape(X1)))
         else:
            X1, Y1 = np.meshgrid(X1, Y1)
-           self.log.debug('Shape = x {} y {}'.format(np.shape(X1), np.shape(Y1)))
+           self.log.debug('Shape 1 = x {} y {}'.format(np.shape(X1), np.shape(Y1)))
         if isinstance(lon_out, np.float64) or isinstance(lon_out, np.float32):
            self.log.debug('lon_out is a float')
         else:
@@ -92,6 +92,7 @@ class interp_KDtree(object):
             self.log.debug('2D case')
             X2, Y2 = lon_out, lat_out
 
+        self.log.debug('Shape 2 = x {} y {}'.format(np.shape(X2), np.shape(Y2)))
         # Convert to cartesian
         xt, yt, zt = lon_lat_to_cartesian(X2.flatten(), Y2.flatten())
         ### Convert to cartesian
