@@ -20,6 +20,7 @@ from matplotlib import style
 from Writer import Writer
 from glob import glob
 from reader import read_GODAE_profile
+from netCDF4 import Dataset
 
 if sys.version_info[0] >= 3:
     import pickle
@@ -64,6 +65,20 @@ class Interpolator(object):
            sys.exit(1)
         return w1, w2
 
+    def search_dims(self, filename):
+        """
+        Find the lon/lat dimensions of a file
+        """
+        nc = Dataset(filename,'r')
+        list_lon = ['x','lon','long','longitude','longitudes']
+        list_lat = ['y','lat','lati','latitude','latitudes']
+        nlon = None
+        nlat = None
+        for dim in nc.dimensions.keys():
+            if dim.lower() in list_lon: nlon = nc.dimensions[dim].size
+            if dim.lower() in list_lat: nlat = nc.dimensions[dim].size
+
+        return nlon, nlat
 
     def check_dimensions(self, list_input_file):
         """
@@ -161,11 +176,13 @@ class Interpolator(object):
                                         str(nb_ptsinterp) + 'pt.p', file_out)
                 variable = []
                 variable.append(param_dict['varname'][0].upper()+'_mean')
+                nlon, nlat = self.search_dims(param_dict['coord_clim'])
             elif key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr':
                 ll_coloc = False
                 lon_mod, lat_mod = Loader.factory(
                     'NC_CLIM').read_pos(param_dict['coord_clim'])
                 variable = ['U', 'V']
+                nlon, nlat = self.search_dims(param_dict['coord_clim'])
             else:
                 self.log.info("Lead time "+key)
                 if param_dict['coordinates']:
@@ -179,6 +196,7 @@ class Interpolator(object):
                         self.log.info('Read coords Alleges OK ')
                     else:
                         self.log.error("Type mod not known")
+                    nlon, nlat = self.search_dims(param_dict['coordinates'])
                 else:
                     self.log.error("No coordinates files")
                     # TODO read lon/lat from first file
@@ -190,11 +208,6 @@ class Interpolator(object):
             weight_file = param_dict['coloc_rep'] + file_coloc_tmp
             self.log.info("Weight_file : {} ".format(weight_file))
             # Coloc file
-            if len(np.shape(lon_mod)) > 1:
-                nlon, nlat = np.shape(lon_mod)
-            else:
-                nlon = len(lon_mod)
-                nlat = len(lat_mod)
             if not ll_coloc:
                 TreeObj = interp_KDtree(level=self.log.level)
                 d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
@@ -244,8 +257,13 @@ class Interpolator(object):
                                                      depth=depthval, fillvalue=_FillValue,
                                                      time=index_time, nblon=nlon, nblat=nlat, 
                                                      lon_mod=lon_mod, lat_mod=lat_mod, missing_value=self.missing_value)
-                      #interp_values = np.where(np.array(obs_value).flatten() == _FillValue,
-                      #                                  _FillValue, np.array(interp_values))
+                      if len(np.shape(obs_value)) ==  3:
+                          obs_value2 = np.array(obs_value)[var,:,:]
+                          interp_values = np.where(np.array(obs_value2).flatten() == _FillValue,
+                                                            _FillValue, np.array(interp_values))
+                      elif len(np.shape(obs_value)) ==  2:
+                          interp_values = np.where(np.array(obs_value).flatten() == _FillValue,
+                                                            _FillValue, np.array(interp_values))
                       ll_unique = True
                   else :
                      self.log.info("Profile case variable : {}".format(variable[var]))
@@ -445,7 +463,6 @@ class Interpolator(object):
            ll_reshape = True
         else:
            ll_reshape = False
-
         return ll_reshape
 
     def interp_2D(self, weight, inds, file, nbpts_interp, variable, param_dict,\
@@ -509,7 +526,10 @@ class Interpolator(object):
             # Distance weight interpolation
             self.log.info("Distance weight interpolation")
             if ll_single :
+               self.log.debug('Dimension longitude {}'.format(nblon))
+               self.log.debug('Dimension latitude {}'.format(nblat))
                ll_reshape = self.test_lonlat(var_in, nblon, nblat)
+               self.log.debug('Reshape {}'.format(ll_reshape))
                if ll_reshape : var_in = np.transpose(var_in)
                tab_interp = np.sum(weight * np.array(var_in).flatten()
                                    [inds], axis=1) / np.sum(weight, axis=1)
@@ -526,10 +546,10 @@ class Interpolator(object):
                 tab_interp = ma.array(var_in).flatten()[inds]
             else:
                 tab_interp =  (w1 * ma.array(var_in1).flatten()[inds])+ (w2 * ma.array(var_in2).flatten()[inds])
-        
+
         # Put nan to missing values
         tab_interp = np.where(np.isnan(tab_interp), missing_value, tab_interp)
-        
+
         return tab_interp
 
     def interp_3D(self, weight, inds, file, nbpts_interp, variable, depth,
