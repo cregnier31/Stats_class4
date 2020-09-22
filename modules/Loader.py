@@ -543,7 +543,7 @@ class NmlLoader(Loader):
             param_dict['dirwork'] = param_dict['dirwork']
             param_dict['diroutput'] = param_dict['diroutput']
             date_ini = SyDate(str(param_dict['date1']))
-            #param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
+            if param_dict['prefix_data'] == "L3mCHL": param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
         else:
             param_dict['dirwork'] = param_dict['dirwork']
             param_dict['diroutput'] = param_dict['diroutput']
