@@ -65,8 +65,8 @@ def main(level=1):
     ndate = len(param_dict['time_period'])
     irest  = np.mod(ndate,comm.size)
     ntask  = ndate / comm.size
-    istart = ntask*comm.rank
-    iend   = istart + ntask - 1
+    istart = int(ntask*comm.rank)
+    iend   = int(istart + ntask - 1)
     cla_date = np.array(param_dict['time_period'][istart:iend+1]).tolist()
     iend_tot = ntask*comm.size-1
     if irest > 0 and comm.rank < irest:
@@ -76,14 +76,14 @@ def main(level=1):
         log.info('Interp day  %s ' % (str(valeurj)))
         dateval = str(valeurj)
         # Selection of the input data
-        input_list_files, ll_miss = Selector(param_dict['data_format'], param_dict['data_type']).\
-            factory("GLOBAL_INPUT_DATA").run(param_dict, dateval, log)
+        input_list_files, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'],log).\
+            factory("GLOBAL_INPUT_DATA").run(param_dict, dateval)
         log.info(input_list_files)
         if ll_miss: continue
         # Selection of the input model data
         log.info('Selection of input model')
-        input_model_file,ll_miss = Selector(param_dict['data_format'], param_dict['data_type']).\
-            factory("GLOBAL_INPUT_MODEL_DATA").run(param_dict, dateval, log)
+        input_model_file,ll_miss = Selector(param_dict['data_format'], param_dict['data_type'],log).\
+            factory("GLOBAL_INPUT_MODEL_DATA").run(param_dict, dateval)
         if not ll_miss:
             log.info(input_model_file)
             # Interpolation of the data
