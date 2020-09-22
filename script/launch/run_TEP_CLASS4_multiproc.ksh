@@ -49,5 +49,3 @@ rm -f $PWD/OK.flag
 exe="../exe_TEP_CLASS4_multi.py"
 
 qsub -v day1=$day1,day2=$day2,cfg=$cfg,source=$source,typedata=$typedata,mode=$mode,pbsworkdir=$PWD $PWD/${exe}
-
-echo "Connection successful" >> $logfile
