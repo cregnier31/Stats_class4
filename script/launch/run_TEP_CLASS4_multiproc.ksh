@@ -33,7 +33,7 @@ usage ()
     echo "           Value4 = Data Source (GLOBCOLOUR)"
     echo "    Value5 = Data Type / Variable (chloro, sst, sla)"
     echo "                 Value6 = Mode (pgn)"
-    echo " " 
+    echo " "
     echo "******************************************************* "
     echo " "
     exit 1
@@ -43,7 +43,7 @@ if [ $# -eq 0 ] ;then
     usage
 fi
 
-workdir=/home/cszczypta/TEP_CLASS4/V5/script/log
+workdir=/home/cregnier/Gitlab/TEP_CLASS4/script/log
 logfile=${workdir}/TEP_CLASS4_${day1}-${day2}.log
 
 # Suppression du flag de controle fin de job
@@ -54,4 +54,3 @@ exe="../exe_TEP_CLASS4_multi.py"
 qsub -v day1=$day1,day2=$day2,cfg=$cfg,source=$source,typedata=$typedata,mode=$mode,pbsworkdir=$PWD $PWD/${exe}  >> $logfile
 
 echo "Connection successful" >> $logfile
-

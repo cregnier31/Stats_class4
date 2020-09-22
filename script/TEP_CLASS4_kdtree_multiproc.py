@@ -20,7 +20,8 @@ from __future__ import generators
 import os
 import sys
 import numpy as np
-sys.path.append('../../python_modules/')
+from os.path import dirname
+sys.path.append(dirname(__file__)+'/../modules/')
 import resource
 # Import local modules
 from Selector import Selector
@@ -50,10 +51,9 @@ def main(level=1):
     param_dict = Loader().factory('INPUT').load(sys.argv[1:], level, log)
 
     # Load db configuration file
-    conf_path = os.getcwd()
-    filename = conf_path + '/../cfg/' + param_dict['confname']
+    conf_path = dirname(__file__) #os.getcwd()
+    filename = conf_path + '/cfg/' + param_dict['confname']
     param_dict = Loader.factory('NML').load(filename, level, param_dict)
-
     # ==========================================================================
     # PART-2 - Loop for a given time range
     # ==========================================================================
@@ -74,24 +74,27 @@ def main(level=1):
 
     for valeurj in cla_date:
         log.info('Interp day  %s ' % (str(valeurj)))
-        dateval = str(valeurj) 
+        dateval = str(valeurj)
         # Selection of the input data
-        input_list_files = Selector(param_dict['data_format'], param_dict['data_type']).\
+        input_list_files, ll_miss = Selector(param_dict['data_format'], param_dict['data_type']).\
             factory("GLOBAL_INPUT_DATA").run(param_dict, dateval, log)
         log.info(input_list_files)
+        if ll_miss: continue
         # Selection of the input model data
-        input_model_file = Selector(param_dict['data_format'], param_dict['data_type']).\
+        log.info('Selection of input model')
+        input_model_file,ll_miss = Selector(param_dict['data_format'], param_dict['data_type']).\
             factory("GLOBAL_INPUT_MODEL_DATA").run(param_dict, dateval, log)
-        log.info(input_model_file)
-        # Interpolation of the data
-        for file in input_list_files:
-            tab_results, file_out = Interpolator(log).read_and_interp(
-                                    file, input_model_file, param_dict)
-            # Write output file
-            log.info('Write interp file  %s ' % (str(dateval)))
-            Writer(log).write_output(
-                file_out, tab_results, param_dict, dateval)
-
+        if not ll_miss:
+            log.info(input_model_file)
+            # Interpolation of the data
+            for file in input_list_files:
+                tab_results, file_out = Interpolator(log).read_and_interp(
+                   file, input_model_file, param_dict, date=dateval)
+                # Write output file
+                log.info('Write interp file  %s ' % (str(dateval)))
+                filename = param_dict['dirwork']+file_out
+                Writer(log).write_output(
+                   filename, tab_results, param_dict, dateval,ll_zip=param_dict['ll_zip'])
 # Set the level of logger
 log_level = 1
 # Run the main code
