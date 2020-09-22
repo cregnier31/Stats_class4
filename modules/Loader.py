@@ -501,14 +501,11 @@ class NmlLoader(Loader):
         param_dict['dirwork'] = db.get('output_dir', 'DIRWORK')
         param_dict['diroutput'] = db.get('output_dir', 'DIROUTPUT')
         param_dict['diroutput2'] = db.get('output_dir', 'DIROUTPUT2')
-        param_dict['homedir'] = db.get('GLOBAL', 'DIRHOME')
         param_dict['dirclim'] = db.get('climato', 'DIRCLIM')
         param_dict['coord_clim'] = glob(param_dict['dirclim'] + "*.nc")[0]
         param_dict['dirtmp'] = param_dict['dirwork'] + 'ext-'
         param_dict['prefix_data'] = db.get('input_dir', 'PREFIX')
-        param_dict['nml_dir'] = db.get('GLOBAL', 'NAMELIST_DIR')
         param_dict['daily_pref'] = db.get('GLOBAL', 'DAILY_PREF')
-        param_dict['direxec'] = db.get('GLOBAL', 'EXEDIR')
         param_dict['data_origin'] = db.get('input_dir', 'DATA_ORIGIN')
         param_dict['cl_conf'] = db.get('GLOBAL', 'CONF')
         param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION')
@@ -518,7 +515,6 @@ class NmlLoader(Loader):
         param_dict['lead_time'] = db.get('input_dir', 'LEAD_TIME').split()
         param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
         param_dict['coloc_rep'] = db.get('output_dir', 'DIRCOLOC')
-        param_dict['dir_log'] = db.get('GLOBAL', 'DIRLOG')
         param_dict['gridtemp'] = db.get('GLOBAL', 'gridtemp')
         param_dict['gridsal'] = db.get('GLOBAL', 'gridsal')
         param_dict['type_run'] = db.get('GLOBAL', 'TYPE_RUN')
@@ -533,7 +529,6 @@ class NmlLoader(Loader):
             param_dict['lon_max'] = int(param_dict.get('GLOBAL', 'LONMAX'))
             param_dict['lat_min'] = int(param_dict.get('GLOBAL', 'LATMIN'))
             param_dict['lat_max'] = int(param_dict.get('GLOBAL', 'LATMAX'))
-#        param_dict['dimension']=db.get('input_dir','DIMENSION')
         param_dict['coordinates'] = db.get('static', 'fic_coordinates')
         if param_dict['cl_data_id']:
             param_dict['dirwork'] = param_dict['dirwork']+str(cl_data_id)+'/'
