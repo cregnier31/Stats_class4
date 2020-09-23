@@ -19,7 +19,7 @@ from collections import OrderedDict
 #######################################################################################
 ## C.REGNIER Juillet 2014
 ## Class Selector to select profile : the selection depends on QC value and zoom
-##			              possibility to store the positions in a file 
+##              possibility to store the positions in a file
 #######################################################################################
 
 class Selector(object):
@@ -181,11 +181,11 @@ class SelectListModelData(Selector):
                 if param_dict['data_origin'] == 'GLOBCOLOUR' and directory != 'clim':
                     if directory == 'hdct' and param_dict['daily_pref'] == '7dAV':
                         dirmodel_new = param_dict['dirmodel']+"HINDCAST/"
-                    elif directory == 'hdct' and param_dict['daily_pref'] == '1dAV':                
+                    elif directory == 'hdct' and param_dict['daily_pref'] == '1dAV':
                         dirmodel_new = param_dict['dirmodel']
                     elif directory == 'fcst' and param_dict['daily_pref'] == '7dAV':
                         dirmodel_new = param_dict['dirmodel']+"FORECAST/"
-                    elif directory == 'fcst' and param_dict['daily_pref'] == '1dAV':                
+                    elif directory == 'fcst' and param_dict['daily_pref'] == '1dAV':
                         self.log.debug('define forecast path')
                         sys.exit()
                 else:
@@ -291,8 +291,8 @@ class SelectListModelData(Selector):
                                 list_file = glob(dirmodel_new+"/*.nc")
                                 list_file.append(glob(dirmodel_new+"/*.nc")[0])
                             else:
-                            	list_file = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
-                            	param_dict['gridtype_clim']+".nc")
+                                list_file = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
+                                param_dict['gridtype_clim']+".nc")
                         else:
                             #list_file = glob(dirmodel_new+directory+"/"+modele+"_"+ \
                             #param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype']+"*.nc")

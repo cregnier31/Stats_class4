@@ -47,8 +47,8 @@ class Extractor(object):
         if type == "BGC_ARGO_NITRATE"  or type == "BGC_ARGO_CHL" or type == "BGC_ARGO_PH": return Extract_BGC_ARGO()
         if type == "L3mCHL": return Extract_CHLORO()
         if type == "Microwat_Lband_Orbite_1day_Lband" or type == "Microwat_6.9GHz_Orbite_1day": return Extract_genericData()
+        if type == "001_048" : return Extract_CMEMS_drifters()
         if type == "sssdata_netcdf_good_FNAV" or "sssdata_netcdf_all": return Extract_SSSData()
-
 
     def timelinespace(self, date1, date2):
         """
@@ -82,6 +82,40 @@ class Extractor(object):
         """
         liste_tot = []
         liste_file = glob(param_dict['dirdata']+'/*'+dateval+'*.nc')
+        for file in liste_file:
+            try:
+                filename = os.path.basename(file)
+                shutil.copy(file, param_dict['dirwork']+filename)
+                liste_tot.append(param_dict['dirwork']+filename)
+            except IOError as e:
+                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                sys.exit(1)
+        return liste_tot
+
+
+class Extract_CMEMS_drifters(Extractor):
+
+    """ Class to extract CMEMS drifters """
+
+    def run_list(self, param_dict, dateval):
+        """
+         Create a list of data corresponding to a specific date
+         Arguments
+         -----------------------------
+         param_dict : dictionnary with all the parameters
+         dateval : date value
+         Returns
+         -----------------------------
+         liste_tot : list of input data corresponding to a date
+        """
+        liste_tot = []
+        year = SyDate(dateval).year
+        month = SyDate(dateval).month
+        if month < 10:
+            month = '0'+str(month)
+        else:
+            month = str(month)
+        liste_file = glob(param_dict['dirdata']+str(year)+'/'+str(month)+'/*'+dateval+'*.nc')
         for file in liste_file:
             try:
                 filename = os.path.basename(file)
