@@ -61,7 +61,7 @@ class Interpolator(object):
         w2 = abs(1- (abs(depth2 - depth) / dist_tot))
 
         if w1 + w2 > 1 :
-           print ("Pb with weight files {} {}".format(w1, w2))
+           self.log.error("Pb with weight files {} {}".format(w1, w2))
            sys.exit(1)
         return w1, w2
 
@@ -121,9 +121,10 @@ class Interpolator(object):
         nb_ptsinterp = param_dict['nb_points']
         # Read input obs value
         self.log.info(param_dict['data_format'])
-        #print (param_dict['data_format'])
         lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = Loader.factory(
             param_dict['data_format']).read_pos_and_value(data_file)
+
+        tuple_obs = (np.shape(lon_obs)[0], np.shape(lat_obs)[0])
 
         ll_best = False
         nb_obs2, nb_profs = np.shape(depth)
@@ -177,12 +178,14 @@ class Interpolator(object):
                 variable = []
                 variable.append(param_dict['varname'][0].upper()+'_mean')
                 nlon, nlat = self.search_dims(param_dict['coord_clim'])
+                tuple_coord = (nlon, nlat)
             elif key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr':
                 ll_coloc = False
                 lon_mod, lat_mod = Loader.factory(
                     'NC_CLIM').read_pos(param_dict['coord_clim'])
                 variable = ['U', 'V']
                 nlon, nlat = self.search_dims(param_dict['coord_clim'])
+                tuple_coord = (nlon, nlat)
             else:
                 self.log.info("Lead time "+key)
                 if param_dict['coordinates']:
@@ -197,6 +200,7 @@ class Interpolator(object):
                     else:
                         self.log.error("Type mod not known")
                     nlon, nlat = self.search_dims(param_dict['coordinates'])
+                    tuple_coord = (nlon, nlat)
                 else:
                     self.log.error("No coordinates files")
                     # TODO read lon/lat from first file
@@ -207,6 +211,13 @@ class Interpolator(object):
                                         str(nb_ptsinterp) + 'pt.p', file_out)
             weight_file = param_dict['coloc_rep'] + file_coloc_tmp
             self.log.info("Weight_file : {} ".format(weight_file))
+            same_grid = False
+            if tuple_obs == tuple_coord:
+                same_grid = True
+                ll_coloc = True
+                weights =  None
+                indexes = None
+            self.log.debug("Dimension tuples {} {} same_grid {}".format(tuple_obs,tuple_coord,same_grid))
             # Coloc file
             if not ll_coloc:
                 TreeObj = interp_KDtree(level=self.log.level)
@@ -237,6 +248,7 @@ class Interpolator(object):
                    ll_miss = True
                    #sys.exit(1)
                ll_unique = False
+
                if not ll_miss:
                   if len(np.unique(depth)) == 1:
                       self.log.info("Unique depth for all the observations")
@@ -247,16 +259,18 @@ class Interpolator(object):
                       else:
                           self.log.error("Case not known")
                       index_time=0
-                      if key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr':  
+                      if key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr':
                           depthval = 0
                           index_time=find_index_month(date)-1
                       interp_values = self.interp_2D(weights, indexes,
                                                      file_input,
                                                      nb_ptsinterp,
-                                                     varname, param_dict, key=key, 
+                                                     varname, param_dict, key=key,
                                                      depth=depthval, fillvalue=_FillValue,
-                                                     time=index_time, nblon=nlon, nblat=nlat, 
-                                                     lon_mod=lon_mod, lat_mod=lat_mod, missing_value=self.missing_value)
+                                                     time=index_time, nblon=nlon, nblat=nlat,
+                                                     lon_mod=lon_mod, lat_mod=lat_mod,
+                                                     missing_value=self.missing_value,
+                                                     same_grid=same_grid)
                       if len(np.shape(obs_value)) ==  3:
                           obs_value2 = np.array(obs_value)[var,:,:]
                           interp_values = np.where(np.array(obs_value2).flatten() == _FillValue,
@@ -292,7 +306,7 @@ class Interpolator(object):
                    interp_values = np.ndarray(shape=(nb_obs, nb_profs),
                                          dtype=float, order='F')
                    interp_values[:, :] = self.missing_value
-	           
+
                if key[0:4] == 'fcst':
                    if len(key) > 4:
                        indice = int(key[4])
@@ -467,7 +481,7 @@ class Interpolator(object):
 
     def interp_2D(self, weight, inds, file, nbpts_interp, variable, param_dict,\
             depth=0, time=0, key=None, fillvalue=None, nblon=None, nblat=None,
-            lon_mod=None, lat_mod=None, missing_value=np.nan):
+            lon_mod=None, lat_mod=None, missing_value=np.nan, same_grid=False):
         """
         -------------------
         2D interpolator
@@ -521,31 +535,34 @@ class Interpolator(object):
 
         if variable == "sossheig":
             var_in = np.where(var_in != fillvalue,  var_in - tab_mssh - rp_mssh_shift, var_in)
-
-        if nbpts_interp > 1:
-            # Distance weight interpolation
-            self.log.info("Distance weight interpolation")
-            if ll_single :
-               self.log.debug('Dimension longitude {}'.format(nblon))
-               self.log.debug('Dimension latitude {}'.format(nblat))
-               ll_reshape = self.test_lonlat(var_in, nblon, nblat)
-               self.log.debug('Reshape {}'.format(ll_reshape))
-               if ll_reshape : var_in = np.transpose(var_in)
-               tab_interp = np.sum(weight * np.array(var_in).flatten()
-                                   [inds], axis=1) / np.sum(weight, axis=1)
-            else:
-               tab_interp_1 = np.sum(weight * np.array(var_in1).flatten()
-                                   [inds], axis=1) / np.sum(weight, axis=1)
-               tab_interp_2 = np.sum(weight * np.array(var_in2).flatten()
-                                   [inds], axis=1) / np.sum(weight, axis=1)
-               tab_interp = (w1 * tab_interp_1) + (w2 * tab_interp_2)
+        if same_grid:
+            ## The output grid is the same than the input grid
+            tab_interp = np.array(var_in).flatten()
         else:
-            # Nearest neighbour interpolation
-            self.log.info("Interp nearest")
-            if ll_single :
-                tab_interp = ma.array(var_in).flatten()[inds]
+            if nbpts_interp > 1:
+                # Distance weight interpolation
+                self.log.info("Distance weight interpolation")
+                if ll_single :
+                   self.log.debug('Dimension longitude {}'.format(nblon))
+                   self.log.debug('Dimension latitude {}'.format(nblat))
+                   ll_reshape = self.test_lonlat(var_in, nblon, nblat)
+                   self.log.debug('Reshape {}'.format(ll_reshape))
+                   if ll_reshape : var_in = np.transpose(var_in)
+                   tab_interp = np.sum(weight * np.array(var_in).flatten()
+                                       [inds], axis=1) / np.sum(weight, axis=1)
+                else:
+                   tab_interp_1 = np.sum(weight * np.array(var_in1).flatten()
+                                       [inds], axis=1) / np.sum(weight, axis=1)
+                   tab_interp_2 = np.sum(weight * np.array(var_in2).flatten()
+                                       [inds], axis=1) / np.sum(weight, axis=1)
+                   tab_interp = (w1 * tab_interp_1) + (w2 * tab_interp_2)
             else:
-                tab_interp =  (w1 * ma.array(var_in1).flatten()[inds])+ (w2 * ma.array(var_in2).flatten()[inds])
+                # Nearest neighbour interpolation
+                self.log.info("Interp nearest")
+                if ll_single :
+                    tab_interp = ma.array(var_in).flatten()[inds]
+                else:
+                    tab_interp =  (w1 * ma.array(var_in1).flatten()[inds])+ (w2 * ma.array(var_in2).flatten()[inds])
 
         # Put nan to missing values
         tab_interp = np.where(np.isnan(tab_interp), missing_value, tab_interp)
@@ -604,11 +621,11 @@ class Interpolator(object):
                 title = dateval+" "+variable+" "+label
                 label1 = "Insitu"
                 label2 = "Model"
-                #print ("Profile {}".format(ind_prof))
-                #print ('Profondeurs profiles {}'.format(profondeur[340:360]))
-                #print ('Valeur interp {}'.format(values_interp[ind_prof,340:360]))
-                #print ('Valeur modele {}'.format(tab_mod_ma[27:34]))
-                #print ('Profondeur modele {}'.format(depth_mod[27:34]))
+                #self.log("Profile {}".format(ind_prof))
+                #self.log('Profondeurs profiles {}'.format(profondeur[340:360]))
+                #self.log('Valeur interp {}'.format(values_interp[ind_prof,340:360]))
+                #self.log('Valeur modele {}'.format(tab_mod_ma[27:34]))
+                #self.log('Profondeur modele {}'.format(depth_mod[27:34]))
                 ll_compare = True
                 prof_max = np.nanmax(profondeur)
                 ind_prof_max = np.argmax(depth_mod[:])
