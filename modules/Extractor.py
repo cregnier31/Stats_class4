@@ -44,7 +44,7 @@ class Extractor(object):
         if type == "GODAE": return Extract_GODAE()
         if type == "ASCII": return Extract_ASCII()
         if type == "L3m": return Extract_genericData()
-        if type == "BGC_ARGO_NITRATE"  or type == "BGC_ARGO_CHL" or type == "BGC_ARGO_PH": return Extract_BGC_ARGO()
+        if type == "BGC_ARGO_NITRATE"  or type == "BGC_ARGO_CHLA" or type == "BGC_ARGO_PH": return Extract_BGC_ARGO()
         if type == "L3mCHL": return Extract_CHLORO()
         if type == "Microwat_Lband_Orbite_1day_Lband" or type == "Microwat_6.9GHz_Orbite_1day": return Extract_genericData()
         if type == "001_048" : return Extract_CMEMS_drifters()
