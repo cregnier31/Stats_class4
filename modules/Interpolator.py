@@ -122,7 +122,7 @@ class Interpolator(object):
         # Read input obs value
         self.log.info(param_dict['data_format'])
         if param_dict['prefix_data'].startswith("BGC_ARGO"):
-            variable_obs = param_dict['prefix_data'].split('_')[2]+'_ADJUSTED'
+            variable_obs = param_dict['prefix_data'].split('BGC_ARGO_')[1]+'_ADJUSTED'
             lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = Loader.factory(
                 param_dict['data_format']).read_pos_and_value(data_file, varname=variable_obs)
         else:
