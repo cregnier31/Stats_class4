@@ -168,13 +168,11 @@ class LoaderNCChloro(Loader):
         return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, _FillValue
 
 class LoaderNCBioArgo(Loader):
-    def __init__(self, varname='NITRATE_ADJUSTED'):
-        self.varname = varname
 
     def read_pos_and_value(self,filename, varname='NITRATE_ADJUSTED'):
         rla_lon, rla_lat, _FillValue, nc = \
-          self.generic_read_pos_and_value(filename, self.varname)
-        rla_value = nc.variables[self.varname][:, :, :]
+          self.generic_read_pos_and_value(filename, varname)
+        rla_value = nc.variables[varname][:, :, :]
         nb_obs, nb_vars, nb_deps = np.shape(rla_value)
         if 'depth' in nc.variables.keys():
             rla_depth = nc.variables['depth'][:,0,:]
