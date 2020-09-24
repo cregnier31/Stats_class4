@@ -171,7 +171,7 @@ class LoaderNCBioArgo(Loader):
     def __init__(self, varname='NITRATE_ADJUSTED'):
         self.varname = varname
 
-    def read_pos_and_value(self,filename):
+    def read_pos_and_value(self,filename, varname='NITRATE_ADJUSTED'):
         rla_lon, rla_lat, _FillValue, nc = \
           self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][:, :, :]
