@@ -121,8 +121,13 @@ class Interpolator(object):
         nb_ptsinterp = param_dict['nb_points']
         # Read input obs value
         self.log.info(param_dict['data_format'])
-        lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = Loader.factory(
-            param_dict['data_format']).read_pos_and_value(data_file)
+        if param_dict['prefix_data'].startswith("BGC_ARGO"):
+            variable_obs = param_dict['prefix_data'].split('_')[2]+'_ADJUSTED'
+            lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = Loader.factory(
+                param_dict['data_format']).read_pos_and_value(data_file, varname=variable_obs)
+        else:
+            lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = Loader.factory(
+                param_dict['data_format']).read_pos_and_value(data_file)
 
         tuple_obs = (np.shape(lon_obs)[0], np.shape(lat_obs)[0])
 
@@ -497,7 +502,7 @@ class Interpolator(object):
         --------------------
         interp tab : interpolated array
         """
-        self.log.info('Read input file : {}'.format(file))
+        self.log.info('Interp2D Read input file : {}'.format(file))
         self.log.info('Variable : {}'.format(variable))
         dataset_in = xr.open_dataset(file)
         var_in = dataset_in[variable]
@@ -508,6 +513,7 @@ class Interpolator(object):
             ind_depth1, ind_depth2 = self.getnearpos(depth, depth_mod)
             w1, w2 = self.getweight(depth_mod[ind_depth1], depth_mod[ind_depth2], depth)
             self.log.info("Index of depth value {} {} {} {}".format(ind_depth1, ind_depth2, depth_mod[ind_depth1], depth_mod[ind_depth2]))
+            self.log.info("weight {} {}".format(w1, w2))
         else:
             # Surface case
             ll_single = True
@@ -551,6 +557,9 @@ class Interpolator(object):
                    tab_interp = np.sum(weight * np.array(var_in).flatten()
                                        [inds], axis=1) / np.sum(weight, axis=1)
                 else:
+                   self.log.debug('depth > 0.5')
+                   print ('weight {} {}'.format(w1, w2))
+
                    tab_interp_1 = np.sum(weight * np.array(var_in1).flatten()
                                        [inds], axis=1) / np.sum(weight, axis=1)
                    tab_interp_2 = np.sum(weight * np.array(var_in2).flatten()
