@@ -251,11 +251,11 @@ class Writer():
     def write_GLOBCOLOR_files(self, filename, tab1, tab2, tab3, dateval, model, variable):
         nc_fid = Dataset(filename, 'r+') #, format='NETCDF3_CLASSIC')
         nc_file = nc_fid.createVariable(
-            'best_estimate', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'best_estimate', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file2 = nc_fid.createVariable(
-            'forecast', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'forecast', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file3 = nc_fid.createVariable(
-            'climatology', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'climatology', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file.setncatts(
             {'long_name': u"Model best_estimate counterpart of obs. value"})
         nc_file2.setncatts(
@@ -287,9 +287,9 @@ class Writer():
     def write_GLOBCOLOR_files2(self, filename, tab, tab2, dateval, model, variable):
         nc_fid = Dataset(filename, 'r+', format='NETCDF3_CLASSIC')
         nc_file = nc_fid.createVariable(
-            'best_estimate', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'best_estimate', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file2 = nc_fid.createVariable(
-            'climatology', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'climatology', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file.setncatts(
             {'long_name': u"Model best_estimate counterpart of obs. value"})
         nc_file2.setncatts(
@@ -318,9 +318,9 @@ class Writer():
     def write_best_fcst(self, filename, tab1, tab2, dateval, model, variable):
         nc_fid = Dataset(filename, 'r+') #, format='NETCDF3_CLASSIC')
         nc_file = nc_fid.createVariable(
-            'best_estimate', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'best_estimate', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file2 = nc_fid.createVariable(
-            'forecast', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'forecast', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file.setncatts(
             {'long_name': u"Model best_estimate counterpart of obs. value"})
         nc_file2.setncatts(

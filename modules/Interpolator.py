@@ -277,12 +277,15 @@ class Interpolator(object):
                                                      missing_value=self.missing_value,
                                                      same_grid=same_grid)
                       if len(np.shape(obs_value)) ==  3:
-                          obs_value2 = np.array(obs_value)[var,:,:]
+                          if param_dict['data_type'].lower() == 'drifter_filtr' or param_dict['data_type'].lower() == 'drifter':
+                             obs_value2 = np.array(obs_value)[var,:,:]
+                          else:
+                              obs_value2 = np.array(obs_value)[:,:,:]
                           interp_values = np.where(np.array(obs_value2).flatten() == _FillValue,
-                                                            _FillValue, np.array(interp_values))
+                                                            self.missing_value, np.array(interp_values))
                       elif len(np.shape(obs_value)) ==  2:
                           interp_values = np.where(np.array(obs_value).flatten() == _FillValue,
-                                                            _FillValue, np.array(interp_values))
+                                                            self.missing_value, np.array(interp_values))
                       ll_unique = True
                   else :
                      self.log.info("Profile case variable : {}".format(variable[var]))

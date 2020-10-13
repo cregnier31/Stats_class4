@@ -455,20 +455,19 @@ class Extract_GODAE(Extractor):
                     template1 = filename.split('_')[0:]
                     template_tmp = template1[2]+'_'+template1[3]+'_'+template1[4]
                     filename=re.sub(template_tmp,template,filename)
-                    #if typedata == "aice" :
-                    #    filename=re.sub('GIOPS_CONCEPTS_3.0',template,filename)
-                    #else : 
-                    #    filename=re.sub('FOAM_orca025_14.1.0',template,filename)
-                    print (filename)
                 # Copy extracted value of GODAE file with nco module
-                # shutil.copy(new_file,dirtmp)
                 ## Change numfcts dim
                 options = []
                 options.extend(['-O','-a','numfcsts'])
                 nco.ncwa(input=new_file, output=dirtmp+filename, fortran=True ,options=options)
-                command ="ncap2 -h -O -s "
-                command2 = "\'defdim(\"numfcsts\","+str(nb_fcst)+");leadtime_new[$numfcsts]=leadtime;modeljuld_new[$numfcsts]=modeljuld\' "
-                os.system(command+command2+dirtmp+filename+" "+dirtmp+filename)
+                nc = netCDF4.Dataset(dirtmp+filename, 'r')
+                variables = nc.variables.keys()
+                if 'modeljuld' in variables:
+                   command ="ncap2 -h -O -s "
+                   command2 = "\'defdim(\"numfcsts\","+str(nb_fcst)+");leadtime_new[$numfcsts]=leadtime;modeljuld_new[$numfcsts]=modeljuld\' "
+                   os.system(command+command2+dirtmp+filename+" "+dirtmp+filename)
+                else:
+                    log.info('no modeljuld !!')
                 options = []
                 if typedata == "SLA" :
                     options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference,leadtime,modeljuld'])
@@ -482,22 +481,22 @@ class Extract_GODAE(Extractor):
                 options = []
                 options.extend(['-h','-O','-v','leadtime_new,leadtime'])
                 nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
-                print ("add new dim ok {}".format(dirtmp+filename))
-                if typedata == "aice" :
-                    # add missing varname
-                    # options = []
-                    # options.extend(['-h','-v','varname'])
-                    # filein='varname_ice.nc'
-                    # nco.ncks(input=dirstatic+'/'+filein,output=dirtmp+filename,fortran=True,options=options)
-                    # Solution2 : add dimensions and variable varname
-                    cl_fileIn=dirtmp+filename
-                    # nc   = netCDF4.Dataset(cl_fileIn,'a')
-                    # nc.createDimension('string_length8',8)
-                    # for AMSR
-                    # nc.createDimension('numvars',1)
-                    # nc.createVariable('varname','c',('numvars','string_length8'))
-                    # nc.variables['varname'][:]='ileadfra'
-                    # nc.close
+                log.info("add new dim ok {}".format(dirtmp+filename))
+                #if typedata == "aice" :
+                #    # add missing varname
+                #    # options = []
+                #    # options.extend(['-h','-v','varname'])
+                #    # filein='varname_ice.nc'
+                #    # nco.ncks(input=dirstatic+'/'+filein,output=dirtmp+filename,fortran=True,options=options)
+                #    # Solution2 : add dimensions and variable varname
+                #    cl_fileIn=dirtmp+filename
+                #    # nc   = netCDF4.Dataset(cl_fileIn,'a')
+                #    # nc.createDimension('string_length8',8)
+                #    # for AMSR
+                #    # nc.createDimension('numvars',1)
+                #    # nc.createVariable('varname','c',('numvars','string_length8'))
+                #    # nc.variables['varname'][:]='ileadfra'
+                #    # nc.close
                 if typedata == "AMSR" :
                     # add missing varname
                     # Solution2 : add dimensions and variable varname
@@ -634,7 +633,6 @@ class Extract_cora3(Extractor) :
                     # print 'Problem with copy or extraction'
             else :
                 print ('file not known %s ' %(file_path))
-                sys.exit(1)
                 sys.exit(1)
         liste_tot=[]
         for month in liste_month : 
