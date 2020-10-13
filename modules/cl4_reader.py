@@ -60,7 +60,7 @@ def cfg_ltime(cl_file, cexp, cvar):
         num_col += 1
     if 'forecast' in lead_time and cexp == 'PHYS' and nb_fcst != None:
         for f in range(nb_fcst//2):
-            rla_forecast[num_col] = (f*48.)+12.
+            rla_forecast[num_col] = (f*48.)-12.
             num_col += 1
     if 'persistence' in lead_time and cexp == 'BIO':
         rla_forecast[num_col] = -336.
