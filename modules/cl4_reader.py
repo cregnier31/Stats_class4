@@ -63,14 +63,14 @@ def cfg_ltime(cl_file, cexp, cvar):
             rla_forecast[num_col] = (f*48.)+12.
             num_col += 1
     if 'persistence' in lead_time and cexp == 'BIO':
-        rla_forecast[num_col] = missing_value
+        rla_forecast[num_col] = -336.
         num_col += 1
     if 'persistence' in lead_time and cexp == 'PHYS' and nb_fcst != None:
         for f in range(nb_fcst//2):
-            rla_forecast[num_col] = missing_value
+            rla_forecast[num_col] = -(f*48.)+12.
             num_col += 1
     if 'climatology' in lead_time:
-        rla_forecast[num_col] = missing_value
+        rla_forecast[num_col] = 1.
     dict_inputs = {}
     dict_inputs['lead_time'] = lead_time
     dict_inputs['yout'] = yout
