@@ -782,7 +782,7 @@ class writer_stat():
                         rla_forecast_tmp = rla_forecast[:]
                         nb_lead_max=len(rla_forecast_tmp)
                 else:
-                    rla_forecast_tmp = []
+                    rla_forecast_tmp = rla_forecast
                     nb_lead_max =  len(rla_forecast)
 
         log.info('nb_lead_max  {}'.format(nb_lead_max))
