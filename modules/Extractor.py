@@ -456,48 +456,39 @@ class Extract_GODAE(Extractor):
                     template_tmp = template1[2]+'_'+template1[3]+'_'+template1[4]
                     filename=re.sub(template_tmp,template,filename)
                 # Copy extracted value of GODAE file with nco module
-                ## Change numfcts dim
-                options = []
-                options.extend(['-O','-a','numfcsts'])
-                nco.ncwa(input=new_file, output=dirtmp+filename, fortran=True ,options=options)
-                nc = netCDF4.Dataset(dirtmp+filename, 'r')
-                variables = nc.variables.keys()
-                if 'modeljuld' in variables:
-                   command ="ncap2 -h -O -s "
-                   command2 = "\'defdim(\"numfcsts\","+str(nb_fcst)+");leadtime_new[$numfcsts]=leadtime;modeljuld_new[$numfcsts]=modeljuld\' "
-                   os.system(command+command2+dirtmp+filename+" "+dirtmp+filename)
-                else:
-                    log.info('no modeljuld !!')
-                options = []
-                if typedata == "SLA" :
-                    options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference,leadtime,modeljuld'])
-                else :
-                   options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,leadtime,modeljuld'])
-                nco.ncks(input=dirtmp+filename,output=dirtmp+filename, fortran=True ,options=options)
-                # Rename
-                options = []
-                if 'modeljuld' in variables:
-                    options.extend(['-h','-O','-v','modeljuld_new,modeljuld'])
-                    nco.ncrename(input=dirtmp+filename,output=dirtmp+filename, options=options)
+                if typedata != "aice":
+                    ## Change numfcts dim
                     options = []
-                    options.extend(['-h','-O','-v','leadtime_new,leadtime'])
-                    nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
-                log.info("add new dim ok {}".format(dirtmp+filename))
-                #if typedata == "aice" :
-                #    # add missing varname
-                #    # options = []
-                #    # options.extend(['-h','-v','varname'])
-                #    # filein='varname_ice.nc'
-                #    # nco.ncks(input=dirstatic+'/'+filein,output=dirtmp+filename,fortran=True,options=options)
-                #    # Solution2 : add dimensions and variable varname
-                #    cl_fileIn=dirtmp+filename
-                #    # nc   = netCDF4.Dataset(cl_fileIn,'a')
-                #    # nc.createDimension('string_length8',8)
-                #    # for AMSR
-                #    # nc.createDimension('numvars',1)
-                #    # nc.createVariable('varname','c',('numvars','string_length8'))
-                #    # nc.variables['varname'][:]='ileadfra'
-                #    # nc.close
+                    options.extend(['-O','-a','numfcsts'])
+                    nco.ncwa(input=new_file, output=dirtmp+filename, fortran=True ,options=options)
+                    nc = netCDF4.Dataset(dirtmp+filename, 'r')
+                    variables = nc.variables.keys()
+                    if 'modeljuld' in variables:
+                       command ="ncap2 -h -O -s "
+                       command2 = "\'defdim(\"numfcsts\","+str(nb_fcst)+");leadtime_new[$numfcsts]=leadtime;modeljuld_new[$numfcsts]=modeljuld\' "
+                       os.system(command+command2+dirtmp+filename+" "+dirtmp+filename)
+                    else:
+                        log.info('no modeljuld !!')
+                    options = []
+                    if typedata == "SLA" :
+                        options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference,leadtime,modeljuld'])
+                    else :
+                        options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,leadtime,modeljuld'])
+                    nco.ncks(input=dirtmp+filename,output=dirtmp+filename, fortran=True ,options=options)
+                    # Rename
+                    options = []
+                    if 'modeljuld' in variables:
+                        options.extend(['-h','-O','-v','modeljuld_new,modeljuld'])
+                        nco.ncrename(input=dirtmp+filename,output=dirtmp+filename, options=options)
+                        options = []
+                        options.extend(['-h','-O','-v','leadtime_new,leadtime'])
+                        nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
+                    log.info("add new dim ok {}".format(dirtmp+filename))
+                else:
+                    #typedata == "aice" :
+                    options = []
+                    options.extend(['-h','-O','-xv','best_estimate,forecast,persistence'])
+                    nco.ncks(input=new_file,output=dirtmp+filename,options=options)
                 if typedata == "AMSR" :
                     # add missing varname
                     # Solution2 : add dimensions and variable varname
