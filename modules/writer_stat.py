@@ -813,9 +813,6 @@ class writer_stat():
                     name_ascii = aname
 
                 if run_ini == True:
-                    #stat_all = np.nan*np.zeros((len(params_conf['cla_dates']), len(rla_forecast), len(rla_layers[0:-1]),\
-                    #                            len(params_conf['cla_metricname']), len(aname),\
-                    #                            len(cla_vars)))
                     stat_all = np.nan*np.zeros((len(params_conf['cla_dates']), nb_lead_max, len(rla_layers[0:-1]),\
                                                 len(params_conf['cla_metricname']), len(aname),\
                                                 len(cla_vars)))
