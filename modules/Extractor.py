@@ -476,11 +476,12 @@ class Extract_GODAE(Extractor):
                 nco.ncks(input=dirtmp+filename,output=dirtmp+filename, fortran=True ,options=options)
                 # Rename
                 options = []
-                options.extend(['-h','-O','-v','modeljuld_new,modeljuld'])
-                nco.ncrename(input=dirtmp+filename,output=dirtmp+filename, options=options)
-                options = []
-                options.extend(['-h','-O','-v','leadtime_new,leadtime'])
-                nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
+                if 'modeljuld' in variables:
+                    options.extend(['-h','-O','-v','modeljuld_new,modeljuld'])
+                    nco.ncrename(input=dirtmp+filename,output=dirtmp+filename, options=options)
+                    options = []
+                    options.extend(['-h','-O','-v','leadtime_new,leadtime'])
+                    nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
                 log.info("add new dim ok {}".format(dirtmp+filename))
                 #if typedata == "aice" :
                 #    # add missing varname
