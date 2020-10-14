@@ -131,7 +131,7 @@ class SelectListModelData(Selector):
         # loop on lead time
         for time in param_dict['lead_time']:
             list_tmp = []
-            self.log.info('Lead Time  %s ' % (time))
+            self.log.debug('Lead Time  %s ' % (time))
             lead_fin = []
             lead_new = param_dict['lead_int']
             cl_config_use = param_dict['cl_config']
@@ -139,7 +139,7 @@ class SelectListModelData(Selector):
             if  time == 'forecast':
                 if param_dict['cl_config'][0:6] == 'BIOMER':
                     lead_new = [time[0]+time[4]+time[6:8]]
-                    self.log.info("Config biomer")
+                    self.log.debug("Config biomer")
                 else:
                     lead_new = [time[0]+time[4]+time[6:8]+element for element in lead_new ]
                 lead_fin = lead_new
@@ -156,11 +156,11 @@ class SelectListModelData(Selector):
             elif time == 'best_estimate':
                 cl_config_use = re.sub('Q', '', param_dict['cl_config'])
                 lead_fin = ['hdct']
-                self.log.info('Lead fin %s ' % (lead_fin))
+                self.log.debug('Lead fin %s ' % (lead_fin))
             elif time == 'best':
                 cl_config_use = re.sub('Q', '', param_dict['cl_config'])
                 lead_fin = ['hdct_all']
-                self.log.info('Lead fin %s ' % (lead_fin))
+                self.log.debug('Lead fin %s ' % (lead_fin))
                 ll_single = True
             elif time == 'best_weekly':
                 lead_fin = ['hdct', 'nwct']
@@ -201,7 +201,7 @@ class SelectListModelData(Selector):
                         dirmodel_new = param_dict['dirmodel']+"/"
                     elif directory == 'hdct_all' and typemod == 'allege':
                         type_out = 'RUN'
-                        self.log.info("lightout type")
+                        self.log.debug("lightout type")
                         dirmodel_new = dirmodel+"/"
                         template = self.get_template_alleges(dateval,
                                                              type_out,
@@ -265,10 +265,10 @@ class SelectListModelData(Selector):
                 elif param_dict['data_origin'] == 'GLOBCOLOUR' and param_dict['daily_pref'] == '1dAV':
                     if directory == 'clim':
                         template = '1998'+month+day
-                        self.log.info('directory %s' % (dirmodel_new))
+                        self.log.debug('directory %s' % (dirmodel_new))
                         list_file = glob(dirmodel_new+"/"+template+"*.nc")
                     else:
-                        self.log.info('directory %s' % (dirmodel_new+'/'+year+'/'+month))
+                        self.log.debug('directory %s' % (dirmodel_new+'/'+year+'/'+month))
                         list_file = glob(dirmodel_new+"/"+year+'/'+month+'/'+modele+"_"+ \
                         param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['varname'][0]+"*.nc")
                         if not list_file:
@@ -309,14 +309,12 @@ class SelectListModelData(Selector):
 
                             else:
                                 for i in range(len(param_dict['gridtype'])):
-                                    print (dirmodel_new+directory+"/"+modele+"_"+ \
-                                            param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
                                     list_file_tmp = glob(dirmodel_new+directory+"/"+modele+"_"+ \
                                     param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
                                     list_file.extend(list_file_tmp)
-                                self.log.info(list_file)
+                                self.log.debug(list_file)
                     elif typemod == "allege":
-                        self.log.info('mode allege')
+                        self.log.debug('mode allege')
                         if directory == "clim":
                             dirmodel_new = param_dict['dirclim']
                             list_file = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
@@ -324,7 +322,7 @@ class SelectListModelData(Selector):
                         else:
                             list_file = glob(template)
                     else:
-                        self.log.info('directory %s' % (dirmodel_new+'/'+year+'/'+month))
+                        self.log.debug('directory %s' % (dirmodel_new+'/'+year+'/'+month))
                         list_file = glob(dirmodel_new+"/"+year+'/'+month+'/'+modele+"_"+ \
                         param_dict['daily_pref']+"_"+dateval+"*_*"+gridtype+"*.nc")
                         if not list_file:
@@ -341,15 +339,14 @@ class SelectListModelData(Selector):
                             param_dict['daily_pref']+"_"+dateval+"*_*"+gridtype+"*.nc")
                         #print ("Type not define %s" %(cl_typemod.lower()))
                         #sys.exit(1)
-                    #self.log.info('directory %s' % (dirmodel_new+directory))
-                    self.log.info('directory %s' % (dirmodel_new))
+                    self.log.debug('directory %s' % (dirmodel_new))
                 if not list_file:
                     self.log.error("Repertory %s" % (dirmodel_new))
                     self.log.error("File missing for %s" %(directory))
                     ll_miss = True
                     #sys.exit(1)
-                self.log.info('dirmodel  %s ' % (dirmodel))
-                if not ll_miss : self.log.info('directory and file  %s %s ' % (directory, list_file[0]))
+                self.log.debug('dirmodel  %s ' % (dirmodel))
+                if not ll_miss : self.log.debug('directory and file  %s %s ' % (directory, list_file[0]))
                 list[directory] = list_file
         return list, ll_miss
 
@@ -376,30 +373,30 @@ class SelectListData(Selector):
         """
         ll_miss = False
         if param_dict['zoom'] or param_dict['data_origin'] == 'GODAE':
-            self.log.info('========================================================')
-            self.log.info('              DATE Selection and extraction zoom or GODAE ')
-            self.log.info('========================================================')
-            self.log.info('Prefix  %s ' %(param_dict['prefix_data']))
+            self.log.debug('========================================================')
+            self.log.debug('              DATE Selection and extraction zoom or GODAE ')
+            self.log.debug('========================================================')
+            self.log.debug('Prefix  %s ' %(param_dict['prefix_data']))
             #list_files = Extractor().factory(param_dict['prefix_data']).run(param_dict['date1'],\
             #param_dict['date2'],param_dict['dirdata'],param_dict['dirwork'],param_dict['data_type'],param_dict['template'])
             list_files = Extractor().factory(param_dict['prefix_data']).run(daterun,param_dict['dirdata'],\
                          param_dict['dirwork'],param_dict['data_type'],param_dict['template'], len(param_dict['lead_int']))
         elif param_dict['do_decomp']:
-            self.log.info('do decomp %s '%(param_dict['prefix_data']))
+            self.log.debug('do decomp %s '%(param_dict['prefix_data']))
             list_files = Extractor().factory(param_dict['prefix_data']).run(
                 param_dict['date1'], param_dict['date2'], param_dict['dirdata'],\
                 param_dict['dirwork'], param_dict['data_type'], param_dict['template'], param_dict['prefix_data'])
         else:
-            self.log.info('========================================================')
-            self.log.info('              DATE Selection and extraction  %s         ' %(param_dict['prefix_data']))
-            self.log.info(' Prefix Data {}'.format(param_dict['prefix_data']))
-            self.log.info('========================================================')
+            self.log.debug('========================================================')
+            self.log.debug('              DATE Selection and extraction  %s         ' %(param_dict['prefix_data']))
+            self.log.debug(' Prefix Data {}'.format(param_dict['prefix_data']))
+            self.log.debug('========================================================')
             list_files = Extractor().factory(param_dict['prefix_data']).run_list(param_dict, daterun)
         if not list_files:
             self.log.error('Missing files {} {}'.format(param_dict['prefix_data'], param_dict['dirdata']))
             ll_miss = True
         else:
-            self.log.info('List Files  %s ' % (list_files))
+            self.log.debug('List Files  %s ' % (list_files))
         return list_files, ll_miss
 
 class Select(Selector):

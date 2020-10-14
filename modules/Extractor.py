@@ -205,8 +205,6 @@ class Extract_genericData(Extractor):
         self.log.setLevel(logging.INFO)
         liste_tot = []
         liste_file = glob(param_dict['dirdata']+'/*'+dateval+'*.nc')
-        print (param_dict['dirdata']+'/*'+dateval+'*.nc')
-        sys.exit(1)
         for file in liste_file:
             try:
                 filename = os.path.basename(file)
@@ -285,7 +283,6 @@ class Extract_corio_raw(Extractor):
         # ===============
         # LOGGER
         # ===============
-        logging.basicConfig(format='%(asctime)s %(message)s')
         self.log = logging.getLogger("Extract_corio_raw")
         self.log.setLevel(logging.INFO)
         self.date=SyDate('19500101')
@@ -302,7 +299,7 @@ class Extract_corio_raw(Extractor):
             ind=0
             for val in dateval : 
                 if SyDate(val).tojulian() < 16189 :
-                   print ("Probleme  : %s %i  "%(val,ind))
+                   self.log.error("Probleme  : %s %i  "%(val,ind))
                 else :
                     list_dateval.append(val)
                 ind+=1
@@ -327,7 +324,7 @@ class Extract_corio_raw(Extractor):
             ind=0
             for val in dateval : 
                 if SyDate(val).tojulian() < 16189 :
-                   print ("Probleme  : %s %i  "%(val,ind))
+                   self.log.error("Probleme  : %s %i  "%(val,ind))
                 else :
                     file_out=str(val)+'_'+frame+'_profile_'+str(ind)+'.nc'
                     nco.ncks(input=file,output=dirtmp+file_out, fortran=True ,dimension=str(dimprof)+','+str(ind+1),options=options)              
@@ -344,7 +341,6 @@ class Extract_corio(Extractor):
         # ===============
         # LOGGER
         # ===============
-        logging.basicConfig(format='%(asctime)s %(message)s')
         log = logging.getLogger("Extract_ARMOR")
         log.setLevel(logging.INFO)
         # Level of logging output
@@ -359,7 +355,7 @@ class Extract_corio(Extractor):
                 shutil.copy(new_file,param_dict['dirtmp'])
                 liste_tot.append(param_dict['dirtmp']+filename)
             except IOError as e:
-                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
                 sys.exit(1)
 
         return liste_tot
@@ -373,7 +369,6 @@ class Extract_cora4_1(Extractor):
         # ===============
         # LOGGER
         # ===============
-        logging.basicConfig(format='%(asctime)s %(message)s')
         log = logging.getLogger("Extract_ARMOR")
         log.setLevel(logging.INFO)
         # Level of logging output
@@ -392,7 +387,7 @@ class Extract_cora4_1(Extractor):
                     shutil.copy(new_file,dirtmp)
                     liste_tot.append(dirtmp+filename)
                 except IOError as e:
-                    print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
                     sys.exit(1)
             valeurj=valeurj.goforward(1)
 
@@ -407,7 +402,6 @@ class Extract_ASCII(Extractor):
     def run_list(self, param_dict, dateval):
         liste_tot=[]
         liste_file=glob(param_dict['dirdata']+'/*_'+dateval+'*.txt')
-        print (liste_file)
         for file in liste_file :
             try :
                 liste_tot.append(file)
@@ -421,16 +415,15 @@ class Extract_GODAE(Extractor):
     """ Extract GODAE file """
 
     def run(self,daterun,dirdata,dirtmp,typedata,template,nb_fcst):
-        if typedata != "SLA" and  typedata != "SST" and typedata != "profile" and typedata !=  "aice" and typedata !=  "AMSR" :
-            print ("Data %s not known !!! " %(typedata))
-            sys.exit(1)
         # =============== 
         # LOGGER
         # ===============
-        logging.basicConfig(format='%(asctime)s %(message)s')
         log = logging.getLogger("Extract GODAE")
         log.setLevel(logging.INFO)
-        log.info('Extract_GODAE') 
+        log.info('Extract_GODAE')
+        if typedata != "SLA" and  typedata != "SST" and typedata != "profile" and typedata !=  "aice" and typedata !=  "AMSR" :
+            log.error("Data %s not known !!! " %(typedata))
+            sys.exit(1)
         # Level of logging output
         #valeurj=date1
         liste_tot=[]
@@ -443,7 +436,6 @@ class Extract_GODAE(Extractor):
             liste_file=glob(dirdata+'/*'+daterun+'*.nc')
         else :
             liste_file=glob(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')
-            print (dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')
         # liste_file=glob(dirdata+'/*[TS]*'+daterun+'*.nc')
         log.info('Liste file %s ' % (liste_file))
         for new_file in liste_file :
@@ -505,7 +497,7 @@ class Extract_GODAE(Extractor):
                 # Design output File
                 # Design_file('GODAE').run(dirtmp+filename)
             except IOError as e:
-                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
                 sys.exit(1)
         #valeurj=valeurj.goforward(1)
 

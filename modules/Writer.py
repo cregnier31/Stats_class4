@@ -226,7 +226,6 @@ class Writer():
         nc_pers.setncatts(
             {'long_name': u"Model persistence counterpart of obs. value"})
         nc_fid.variables['best_estimate'][:, :, :] = hdct_tab[:, :, :]
-        print (np.shape(fcst_tab))
         nc_fid.variables['forecast'][:, :, :, :] = fcst_tab[:, :, :, :]
         nc_fid.variables['persistence'][:, :, :, :] = pers_tab[:, :, :, :]
         # Add global attributs
@@ -371,8 +370,7 @@ class Writer():
         dataorigin = param_dict['data_origin']
         self.mkdir(param_dict['diroutput'])
         if dataorigin == "GODAE":
-#           type_data = tab[param_dict['data_type']]
-            self.log.info("Write inside GODAE file")
+            self.log.debug("Write inside GODAE file")
             if 'forecast'  not in tab_results.keys() and 'persistence' not in tab_results.keys() \
                     and 'best' in tab_results.keys():
                 self.write_GODAE_files_best(
@@ -416,9 +414,7 @@ class Writer():
             if os.path.exists(file_coloc):
                 os.remove(file_coloc)   
 
-        self.log.info('----------------------------')
         self.log.info('Creation file %s' % (filename))
-        self.log.info('----------------------------')
         if ll_zip:
             # Zipped files and move in output directory
             self.log.info(param_dict['dirwork'])

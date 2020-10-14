@@ -116,11 +116,14 @@ class Interpolator(object):
         ll_verif = False
         nb_best, nb_fcst, nb_pers, nb_clim = self.check_dimensions(
             list_input_file)
+        self.log.info("========================================================")
+        self.log.info(" Interp file")
+        self.log.info("========================================================")
         self.log.info("Dimensions best : {} fcst : {} pers : {} clim : {}"
                       .format(nb_best, nb_fcst, nb_pers, nb_clim))
         nb_ptsinterp = param_dict['nb_points']
         # Read input obs value
-        self.log.info(param_dict['data_format'])
+        self.log.debug(param_dict['data_format'])
         if param_dict['prefix_data'].startswith("BGC_ARGO"):
             variable_obs = param_dict['prefix_data'].split('BGC_ARGO_')[1]+'_ADJUSTED'
             lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = Loader.factory(
@@ -133,7 +136,7 @@ class Interpolator(object):
 
         ll_best = False
         nb_obs2, nb_profs = np.shape(depth)
-        self.log.info("Number of observations {} Profondeurs {}".format(nb_obs2, nb_profs))
+        self.log.debug("Number of observations {} Profondeurs {}".format(nb_obs2, nb_profs))
         variable = param_dict['varname']
         self.log.info("Variables : {} ".format(variable))
         if nb_best > 0:
@@ -142,7 +145,7 @@ class Interpolator(object):
             else :
                 hdct_tab = np.ndarray(shape=(nb_obs, len(variable), nb_profs), dtype=float, order='F')
             hdct_tab[:, :, :] = self.missing_value
-            self.log.info("Taille hdct_tab {}".format(np.shape(hdct_tab)))
+            self.log.debug("Taille hdct_tab {}".format(np.shape(hdct_tab)))
             ll_best = True
         ll_fcst = False
         if nb_fcst > 0:
@@ -166,7 +169,7 @@ class Interpolator(object):
                                       dtype=float, order='F')
                 clim_tab[:, :, :] = self.missing_value
             ll_clim = True
-        self.log.info('Number obs to coloc {} '.format(nb_obs2))
+        self.log.debug('Number obs to coloc {} '.format(nb_obs2))
         file_coloc_tmp = os.path.basename(data_file)
         file_out = file_coloc_tmp
         # Loop on lead times
@@ -197,11 +200,11 @@ class Interpolator(object):
                     if param_dict['cl_typemod'].lower() == "pgn":
                         lon_mod, lat_mod = Loader.factory('PGN_coords').\
                             read_pos(param_dict['coordinates'])
-                        self.log.info('Read coords PGN OK ')
+                        self.log.debug('Read coords PGN OK ')
                     elif param_dict['cl_typemod'].lower() == "allege":
                         lon_mod, lat_mod = Loader.factory('alleges_coords').\
                             read_pos(param_dict['coordinates'])
-                        self.log.info('Read coords Alleges OK ')
+                        self.log.debug('Read coords Alleges OK ')
                     else:
                         self.log.error("Type mod not known")
                     nlon, nlat = self.search_dims(param_dict['coordinates'])
@@ -215,7 +218,7 @@ class Interpolator(object):
                                         param_dict['cl_typemod'].upper()+'_idw' +
                                         str(nb_ptsinterp) + 'pt.p', file_out)
             weight_file = param_dict['coloc_rep'] + file_coloc_tmp
-            self.log.info("Weight_file : {} ".format(weight_file))
+            self.log.debug("Weight_file : {} ".format(weight_file))
             same_grid = False
             if tuple_obs == tuple_coord:
                 same_grid = True
@@ -234,13 +237,13 @@ class Interpolator(object):
                 ll_coloc = True
 
             # Interp model file for different lead times
-            self.log.info('Variable to interpolate %s ' %
+            self.log.debug('Variable to interpolate %s ' %
                           (param_dict['varname']))
             tab_results = {}
             list_file = []
             list_file = list_input_file[key]
-            self.log.info("Variable {}".format(variable))
-            self.log.info("Work on {} variables".format(len(variable)))
+            self.log.debug("Variable {}".format(variable))
+            self.log.debug("Work on {} variables".format(len(variable)))
             ## loop on variable
             for var in range(len(variable)):
                ## Get the correct file
@@ -256,7 +259,7 @@ class Interpolator(object):
 
                if not ll_miss:
                   if len(np.unique(depth)) == 1:
-                      self.log.info("Unique depth for all the observations")
+                      self.log.debug("Unique depth for all the observations")
                       if len(np.shape(depth)) == 1 :
                           depthval = depth[0]
                       elif len(np.shape(depth)) == 2 :
@@ -288,7 +291,7 @@ class Interpolator(object):
                                                             self.missing_value, np.array(interp_values))
                       ll_unique = True
                   else :
-                     self.log.info("Profile case variable : {}".format(variable[var]))
+                     self.log.debug("Profile case variable : {}".format(variable[var]))
                      interp_values = self.interp_3D(weights, indexes,
                                                      file_input,
                                                      nb_ptsinterp,
@@ -320,14 +323,14 @@ class Interpolator(object):
                        indice = int(key[4])
                    else:
                        indice = 0
-                   self.log.info("Fead forecast indice %i " % (indice))
+                   self.log.debug("Fead forecast indice %i " % (indice))
                    if ll_unique :
                        fcst_tab[:, var, indice, 0] = interp_values
                    else:
                        fcst_tab[:, var, indice, :] = interp_values
                elif key[0:4] == 'nwct':
                    indice = 0
-                   self.log.info("%s Persistence indice  %i " %(key,indice))
+                   self.log.debug("%s Persistence indice  %i " %(key,indice))
                    if ll_unique :
                        pers_tab[:, var, indice, 0] = interp_values
                    else:
@@ -337,7 +340,7 @@ class Interpolator(object):
                        indice = int(key[4])
                    else:
                        indice = 0
-                   self.log.info("Persistence indice %i " % (indice))
+                   self.log.debug("Persistence indice %i " % (indice))
                    if ll_unique :
                         pers_tab[:, var, indice, 0] = interp_values
                    else:
@@ -351,7 +354,7 @@ class Interpolator(object):
                    if ll_unique:
                        clim_tab[:, var, 0] = interp_values
                        index_nan = np.isnan(interp_values)
-                       self.log.info('% of bad values for clim {}'.format((np.shape(interp_values[index_nan])[0]/np.shape(interp_values)[0]) * 100))
+                       self.log.debug('% of bad values for clim {}'.format((np.shape(interp_values[index_nan])[0]/np.shape(interp_values)[0]) * 100))
                        if ll_json:
                            lon_nan = lon_obs[index_nan]
                            lat_nan = lat_obs[index_nan]
@@ -406,7 +409,7 @@ class Interpolator(object):
         """
         # Compute or not weight file
         if os.path.exists(weight_file):
-            log.info("load existing tree :%s " % (weight_file))
+            log.debug("load existing tree :%s " % (weight_file))
             if sys.version_info[0] >= 3:
                 with open(weight_file, 'rb') as f:
                     zip_var = pickle.load(f)
@@ -419,7 +422,7 @@ class Interpolator(object):
             inds_idw1 = np.array(inds_idw)
             f.close
         else:
-            log.info("Create CKDTREE object")
+            log.debug("Create CKDTREE object")
             # Read input grid
             # Test size
             if len(lon_in.shape) > 1:
@@ -505,8 +508,8 @@ class Interpolator(object):
         --------------------
         interp tab : interpolated array
         """
-        self.log.info('Interp2D Read input file : {}'.format(file))
-        self.log.info('Variable : {}'.format(variable))
+        self.log.debug('Interp2D Read input file : {}'.format(file))
+        self.log.debug('Variable : {}'.format(variable))
         dataset_in = xr.open_dataset(file)
         var_in = dataset_in[variable]
         ll_single = False
@@ -515,8 +518,8 @@ class Interpolator(object):
             depth_mod = dataset_in['deptht'][:].values
             ind_depth1, ind_depth2 = self.getnearpos(depth, depth_mod)
             w1, w2 = self.getweight(depth_mod[ind_depth1], depth_mod[ind_depth2], depth)
-            self.log.info("Index of depth value {} {} {} {}".format(ind_depth1, ind_depth2, depth_mod[ind_depth1], depth_mod[ind_depth2]))
-            self.log.info("weight {} {}".format(w1, w2))
+            self.log.debug("Index of depth value {} {} {} {}".format(ind_depth1, ind_depth2, depth_mod[ind_depth1], depth_mod[ind_depth2]))
+            self.log.debug("weight {} {}".format(w1, w2))
         else:
             # Surface case
             ll_single = True
@@ -550,7 +553,7 @@ class Interpolator(object):
         else:
             if nbpts_interp > 1:
                 # Distance weight interpolation
-                self.log.info("Distance weight interpolation")
+                self.log.debug("Distance weight interpolation")
                 if ll_single :
                    self.log.debug('Dimension longitude {}'.format(nblon))
                    self.log.debug('Dimension latitude {}'.format(nblat))
@@ -570,7 +573,7 @@ class Interpolator(object):
                    tab_interp = (w1 * tab_interp_1) + (w2 * tab_interp_2)
             else:
                 # Nearest neighbour interpolation
-                self.log.info("Interp nearest")
+                self.log.debug("Interp nearest")
                 if ll_single :
                     tab_interp = ma.array(var_in).flatten()[inds]
                 else:

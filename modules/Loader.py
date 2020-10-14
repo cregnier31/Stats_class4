@@ -316,55 +316,55 @@ class InputLoader(Loader):
             date1 = datetoday.gobackward(int(cl_delta))
             date2 = date1
         elif ll_date1 and ll_date2 and not ll_delta and not ll_daterun:
-            log.info("Case 2 Date1 Date2")
+            log.debug("Case 2 Date1 Date2")
             # Test LEN of input date
             datelen1 = len(cl_start_date)
             datelen2 = len(cl_end_date)
-            log.info("Lenght of date %i %i" % (datelen1, datelen2))
+            log.debug("Lenght of date %i %i" % (datelen1, datelen2))
             if datelen1 == datelen2 and datelen1 == 6:
-                log.info("Monthly values")
-                log.info("Values %s %s :" %
+                log.debug("Monthly values")
+                log.debug("Values %s %s :" %
                          (cl_start_date[0:4], cl_start_date[4:6]))
                 nb_day1 = monthrange(
                     int(cl_start_date[0:4]), int(cl_start_date[4:6]))[1]
                 cl_start_date2 = cl_start_date+"01"
                 cl_end_date2 = cl_start_date+str(nb_day1)
-                log.info(cl_start_date2)
-                log.info(cl_end_date2)
+                log.debug(cl_start_date2)
+                log.debug(cl_end_date2)
                 date1 = SyDate(cl_start_date2)
                 date2 = SyDate(cl_end_date2)
                 date1 = SyDate(cl_start_date2)
                 date2 = SyDate(cl_end_date2)
                 cl_schedule = 'm'
             elif datelen1 == datelen2 and datelen1 == 8:
-                log.info("Daily values")
+                log.debug("Daily values")
                 date1 = SyDate(cl_start_date)
                 date2 = SyDate(cl_end_date)
                 cl_schedule = 'd'
             elif datelen1 == datelen2 and datelen1 == 4:
-                log.info("Year values")
+                log.debug("Year values")
                 date1 = SyDate(cl_start_date+"0101")
                 date2 = SyDate(cl_end_date+"1231")
                 cl_schedule = 'y'
             else:
                 log.error("Input date must be in year month or day")
         elif ll_daterun and ll_nbdate and ll_delta:
-            log.info("Case 3 Backward run")
+            log.debug("Case 3 Backward run")
             jrun = SyDate(cl_daterun)
             date1 = jrun.gobackward(int(cl_delta))
             date2 = jrun.gobackward(int(cl_delta)-int(cl_nbdate)+1)
         elif ll_date1:
-            log.info("Only one date")
+            log.debug("Only one date")
             if len(str(cl_start_date)) == 4:
                 date1 = SyDate(cl_start_date+"0101")
                 date2 = SyDate(cl_start_date+"1231")
-                log.info("Year values")
+                log.debug("Year values")
                 cl_schedule = 'y'
             else:
-                log.info("Date must be a year")
+                log.debug("Date must be a year")
                 sys.exit(1)
         elif not ll_date1 and not ll_date2:
-            log.info("No date: last month")
+            log.debug("No date: last month")
             date_now = dt.datetime.now()
             if date_now.month == 1:
                 cl_start_date = str(date_now.year-1)+"1201"
@@ -383,7 +383,7 @@ class InputLoader(Loader):
             date1=SyDate(cl_start_date)
             date2=SyDate(cl_end_date)
         elif cl_daterun == "all" :
-            log.info("Need to find dates in file")
+            log.debug("Need to find dates in file")
             date1=None
             date2=None
         else :
@@ -394,12 +394,12 @@ class InputLoader(Loader):
                             (for example 1 week before today -14 and today -7)")
             sys.exit(1)
         if ll_date1 and ll_date2 :
-            log.info("Date1 %s Date2 %s " %(date1,date2))
+            log.debug("Date1 %s Date2 %s " %(date1,date2))
         confname='config_'+str(cl_config)+'_'+str(cl_src)+'_'+str(cl_data)+'.cfg'
         # Logger
-        log.info("Nombre de proc %i" %(nb_proc))
-        log.info("Type des fichiers d'entree %s " %(cl_typemod))
-        log.info("Schedule %s " %(cl_schedule))
+        log.debug("Nombre de proc %i" %(nb_proc))
+        log.debug("Type des fichiers d'entree %s " %(cl_typemod))
+        log.debug("Schedule %s " %(cl_schedule))
         log.info("Dates %s %s " %(date1,date2))
         log.info("Datatype %s " %(cl_data))
         log.info("Daterun %s " %(cl_daterun))
@@ -453,7 +453,7 @@ class NmlLoader(Loader):
         param_dict['write_geojson'] = int(db.get('GLOBAL', 'write_geojson'))
         if param_dict['write_geojson']:
             # Write Geojson file
-            log.info("Write Geojson file")
+            log.debug("Write Geojson file")
             # Db file for extracted positions
             file_db = 'CLASS4_shelf.db'
             file_db2 = 'Coloc_CLASS4_shelf.db'
@@ -473,7 +473,7 @@ class NmlLoader(Loader):
         # Sort model values if necessary
         #==========================================================================
         if param_dict['do_sort']:
-            log.info('              Sort Values for interp               ')
+            log.debug('              Sort Values for interp               ')
             param_dict['sort_rep'] = param_dict.get('input_dir', 'DATA_SORT')
             file_template = param_dict['cl_config'] + \
             '_'+param_dict['daily_pref']+'_'
@@ -488,10 +488,10 @@ class NmlLoader(Loader):
                 log.error("Schedule not valid")
                 sys.exit(1)
         else:
-            log.info('              Input data already sorted               ')
+            log.debug('              Input data already sorted               ')
             param_dict['sort_rep'] = param_dict['dirmodel']
 
-        log.info('Sort rep : %s' % (param_dict['sort_rep']))
+        log.debug('Sort rep : %s' % (param_dict['sort_rep']))
         param_dict['do_decomp'] = int(db.get('GLOBAL', 'do_decomp'))
         param_dict['model_type'] = db.get('GLOBAL', 'MODELTYPE')
         param_dict['data_format'] = db.get('input_dir', 'DATA_FMT')

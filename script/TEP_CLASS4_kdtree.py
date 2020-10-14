@@ -71,23 +71,25 @@ def main(level=1):
         log.info('========================================================')
         input_list_files, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], log).\
             factory("GLOBAL_INPUT_DATA").run(param_dict, dateval)
-        log.info(input_list_files)
         if ll_miss:
             valeurj = valeurj.goforward(1)
             continue
         # Selection of the input model data
         log.info('Selection of input model')
+        log.info('========================================================')
         input_model_file, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], log).\
             factory("GLOBAL_INPUT_MODEL_DATA").run(param_dict, dateval)
         if not ll_miss:
-           log.info(input_model_file)
+           log.debug(input_model_file)
            # Interpolation of the data
            for file in input_list_files:
                tab_results, file_out = Interpolator(log).read_and_interp(
                    file, input_model_file, param_dict, date=dateval)
                # Write output file
                filename = param_dict['dirwork']+file_out
+               log.info("========================================================")
                log.info('Write interp file  {} '.format((str(dateval))))
+               log.info("========================================================")
                Writer(log).write_output(
                    filename, tab_results, param_dict, dateval,ll_zip=param_dict['ll_zip'])
         valeurj = valeurj.goforward(1)
