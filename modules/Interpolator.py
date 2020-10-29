@@ -253,8 +253,9 @@ class Interpolator(object):
                   file_input = list_input_file[key][var]
                except :
                    self.log.error("Error {} Missing file for key {} var {}".format(sys.exc_info()[0], key, var))
+                   self.log.error("Varname {}".format(varname))
                    ll_miss = True
-                   #sys.exit(1)
+                   sys.exit(1)
                ll_unique = False
 
                if not ll_miss:

@@ -202,8 +202,8 @@ if params_conf['daily_off'] == 'on':
             yout = dict_inputs['yout']
 
             # ---> Passe au jour suivant si pas de hindcast <---
-            if np.isnan(dict_inputs['best']).all(): 
-                log.info("Best estimate is nan!!")
+            if np.isnan(dict_inputs['best']).all():
+                log.info("Best estimate is nan {} {}!!".format(cdate,cvar))
                 continue
             # **********************  Variable initialisation  **********************
             if nb_fcst == None:

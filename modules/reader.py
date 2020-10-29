@@ -283,6 +283,8 @@ def read_drifter_filt(file):
             position_qc, time_qc, dc_reference = read_drifter(file)
     ncdata = xr.open_dataset(file)
     variables = ncdata.data_vars
+    lon = ncdata['LONGITUDE_FILTR'].values
+    lat = ncdata['LATITUDE_FILTR'].values
     ll_var = False
     if 'EWCT_FILTR' and 'NSCT_FILTR' in variables.keys():
         ll_var = True
