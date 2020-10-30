@@ -198,7 +198,7 @@ class Interpolator(object):
                 self.log.info("Lead time "+key)
                 if param_dict['coordinates']:
                     if param_dict['cl_typemod'].lower() == "pgn":
-                        lon_mod, lat_mod = Loader.factory('PGN_coords').\
+                        lon_mod, lat_mod, mask_tab = Loader.factory('PGN_coords').\
                             read_pos(param_dict['coordinates'])
                         self.log.debug('Read coords PGN OK ')
                     elif param_dict['cl_typemod'].lower() == "allege":
@@ -227,7 +227,7 @@ class Interpolator(object):
                 indexes = None
             self.log.debug("Dimension tuples {} {} same_grid {}".format(tuple_obs,tuple_coord,same_grid))
             # Coloc file
-            if not ll_coloc:
+            if not ll_coloc and len(np.unique(depth)) == 1:
                 TreeObj = interp_KDtree(level=self.log.level)
                 d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
                                                      lon_obs, lat_obs, nb_ptsinterp,\
@@ -235,6 +235,8 @@ class Interpolator(object):
                 weights = TreeObj.get_weight(d1)
 
                 ll_coloc = True
+            #elif len(np.unique(depth)) > 1 and not ll_coloc :
+            #    ## Compte weight file
 
             # Interp model file for different lead times
             self.log.debug('Variable to interpolate %s ' %
@@ -293,9 +295,8 @@ class Interpolator(object):
                       ll_unique = True
                   else :
                      self.log.debug("Profile case variable : {}".format(variable[var]))
-                     interp_values = self.interp_3D(weights, indexes,
-                                                     file_input,
-                                                     nb_ptsinterp,
+                     interp_values = self.interp_3D(lon_mod, lat_mod, mask_tab,
+                                                     file_input, nb_ptsinterp,
                                                      varname, depth, ll_verif = param_dict['verif'],
                                                      obs = obs_value[:,var,:],
                                                      dateval=date, lon=lon_obs, lat=lat_obs, fillvalue=self.missing_value)
@@ -585,7 +586,7 @@ class Interpolator(object):
 
         return tab_interp
 
-    def interp_3D(self, weight, inds, file, nbpts_interp, variable, depth,
+    def interp_3D(self, lon_mod, lat_mod, mask_tab, file, nbpts_interp, variable, depth,
                     time=0, ll_verif=False, obs=None, dateval=None, lon=None, lat=None, fillvalue=np.nan):
         """
            Interpolate profiles model values onto insitu vertical profiles
@@ -594,33 +595,46 @@ class Interpolator(object):
         var_in = dataset_in[variable]
         nb_obs, nb_profs = np.shape(depth)
         depth_mod = dataset_in['deptht'][:].values
-        if len (np.shape(weight)) > 1:
-            nb_obs, nb_pts =  np.shape(weight)
-        else:
-            nb_obs =  np.shape(weight)[0]
-            nb_pts = 1
+        #if len (np.shape(weight)) > 1:
+        #    nb_obs, nb_pts =  np.shape(weight)
+        #else:
+        #    nb_obs =  np.shape(weight)[0]
+        #    nb_pts = 1
         maxdepth =  np.nanmax(depth)
         self.log.debug('maxdepth {}'.format(maxdepth))
         ind_depth = self.getneardepth(depth_mod, maxdepth)
         ind_tot = len(depth_mod)
-        tab_interp_tmp = fillvalue*np.zeros((ind_tot, nb_obs))
-        self.log.debug('Size {}'.format(np.shape(tab_interp_tmp)))
         ## Loop on levels
-        for ind in range(ind_tot):
-            if nb_pts > 1:
+        ind_tmp = ind_tot
+        if ind_depth < ind_tot-2:
+           ind_tmp = ind_depth+2
+
+        tab_interp_tmp = fillvalue*np.zeros((ind_tmp, nb_obs))
+        self.log.debug('Size {}'.format(np.shape(tab_interp_tmp)))
+
+        TreeObj = interp_KDtree(level=4)
+        ## Loop on levels
+        for ind in range(ind_tmp):
+            ## Compute weight at each level
+            d1, inds = TreeObj.tree_and_query(lon_mod, lat_mod,
+                                              np.array(lon), np.array(lat), nbpts_interp,\
+                                              weight_file='test.p',save=False, mask= mask_tab[ind,:,:])
+            weight = TreeObj.get_weight(d1)
+
+            if nbpts_interp > 1:
                 tab_interp_tmp[ind, :] = np.sum(weight * np.array(var_in[time, ind, :, :].values).flatten()
                                           [inds], axis=1) / np.sum(weight, axis=1)
             else:
                 ## Nearest neighbour case
                 tab_interp_tmp[ind, :] = np.array(var_in[time, ind, :, :].values).flatten()[inds]
-
+            self.log.debug('Depth loop : {}'.format(ind))
         values_interp = fillvalue*np.zeros((nb_obs, nb_profs))
         obs2 = obs[~obs.mask]
 
         for ind_prof in range (nb_obs):
             profondeur = depth[ind_prof, :]
             tab_mod_ma = tab_interp_tmp[:,ind_prof]
-            fixture = vertical.Column(tab_mod_ma, depth_mod[:])
+            fixture = vertical.Column(tab_mod_ma, depth_mod[0:ind_tmp])
             self.log.debug('Profondeurs profiles {}'.format(profondeur[0:70]))
             self.log.debug('Profondeurs modele {}'.format(depth_mod[:]))
             val_interp = fixture.interpolate(profondeur)

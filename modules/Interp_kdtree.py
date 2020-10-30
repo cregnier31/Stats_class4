@@ -30,6 +30,7 @@ class interp_KDtree(object):
     def __init__(self, level=2):
         self.kdname = kd_tree_name
         self.log = Logger("interp_KDtree").run(level)
+        self.log_level = level
 
     def timeit(method):
         """
@@ -44,14 +45,14 @@ class interp_KDtree(object):
                 kw['log_time'][name] = int((te - ts) * 1000)
             else:
                 print ('%r  %2.2f s' % \
-                         (method.__name__, (te - ts)))
+                             (method.__name__, (te - ts)))
             return result
 
         return timed
 
-    @timeit
+    #@timeit
     def tree_and_query(self, X1, Y1, lon_out, lat_out, nbpts_interp,\
-                       weight_file=None,save=False):
+                       weight_file=None,save=False, mask=None):
 
         """
             Compute tree and search weight files
@@ -126,7 +127,7 @@ class interp_KDtree(object):
                 if self.kdname == 'pykdtree':
                     # --- pykdtree method ---
                     tree = KDTree(coords)
-                    d1, inds_idw1 = tree.query(coords2, k = nbpts_interp)
+                    d1, inds_idw1 = tree.query(coords2, k = nbpts_interp, mask = mask)
                 else:
                     # --- cKDTree method ---
                     tree = cKDTree(list(zip(xs, ys, zs)))
