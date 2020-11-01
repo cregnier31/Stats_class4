@@ -696,11 +696,13 @@ class PGN_coords_Loader(Loader):
         rla_lat = nc.variables[variable][:,:]
         variable = 'tmask'
         rla_mask = nc.variables[variable][:,:,:]
+        variable = 'nav_lev'
+        depth_mod =  nc.variables[variable][:]
         nlat, nlon, ndepth = np.shape(rla_mask)
         mask_tab = np.full((nlat,nlon,ndepth), True)
         mask_tab = np.where(rla_mask == 1, False, mask_tab)
         nc.close()
-        return rla_lon,rla_lat,mask_tab
+        return rla_lon,rla_lat,mask_tab,depth_mod
 
 class alleges_coords(Loader):
 
