@@ -243,9 +243,12 @@ class Interpolator(object):
                 ind_depth = self.getneardepth(depth_mod, maxdepth)
                 ind_tot = len(depth_mod)
                 ## Loop on levels
-                ind_max = ind_tot
-                if ind_depth < ind_tot-2:
-                   ind_max = ind_depth+2
+                ind_max = ind_depth
+                #if ind_depth < ind_tot-2:
+                #   ind_max = ind_depth+2
+                self.log.debug('maxindex {}'.format(ind_max))
+                self.log.debug('maxindex {}'.format(ind_tot))
+                self.log.debug('maxindex {} {}'.format(ind_depth, depth_mod[ind_depth]))
                 ## Compute weight
                 TreeObj = interp_KDtree(level=4)
                 tab_weight = np.nan*np.zeros((nb_obs,nb_ptsinterp,ind_max),dtype=float)
@@ -622,15 +625,6 @@ class Interpolator(object):
         var_in = dataset_in[variable]
         nb_obs, nb_profs = np.shape(depth)
         depth_mod = dataset_in['deptht'][:].values
-        #maxdepth =  np.nanmax(depth)
-        #self.log.debug('maxdepth {}'.format(maxdepth))
-        #ind_depth = self.getneardepth(depth_mod, maxdepth)
-        #ind_tot = len(depth_mod)
-        ### Loop on levels
-        #ind_tmp = ind_tot
-        #if ind_depth < ind_tot-2:
-        #   ind_tmp = ind_depth+2
-
         tab_interp_tmp = fillvalue*np.zeros((ind_max, nb_obs))
         self.log.debug('Size {}'.format(np.shape(tab_interp_tmp)))
         ## Loop on levels
