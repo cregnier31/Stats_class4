@@ -256,8 +256,7 @@ class Interpolator(object):
                     ## Compute weight at each level
                     d1, inds = TreeObj.tree_and_query(lon_mod, lat_mod,
                                                       np.array(lon_obs), np.array(lat_obs), nb_ptsinterp,\
-                                                      weight_file='test.p',save=False)
-                                                      #weight_file='test.p',save=False, mask= mask_tab[ind,:,:])
+                                                      weight_file='test.p',save=False, mask=mask_tab[ind,:,:])
                     weight = TreeObj.get_weight(d1)
                     tab_weight[:,:,ind] = weight[:,:]
                     tab_indexes[:,:,ind] = inds[:,:]
