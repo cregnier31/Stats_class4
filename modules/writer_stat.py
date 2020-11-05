@@ -831,7 +831,7 @@ class writer_stat():
                     run_ini = False
 
                 ## Log
-                log.info('Len leadtime_ref {}'.format(len(leadtime_ref)))
+                log.debug('Len leadtime_ref {}'.format(len(leadtime_ref)))
                 ##
                 ldt_ref = np.chararray(len(leadtime_ref), itemsize=14)
 
