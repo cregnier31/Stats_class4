@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 import supobs
-from loader_post import stat_mod_obs, stat_mod_glob
+from loader_post import stat_mod_obs, stat_mod_glob, stat_obs_glob
 import arithm
 
 __version__ = 0.1
