@@ -421,7 +421,8 @@ class Extract_GODAE(Extractor):
         log = logging.getLogger("Extract GODAE")
         log.setLevel(logging.INFO)
         log.info('Extract_GODAE')
-        if typedata != "SLA" and  typedata != "SST" and typedata != "profile" and typedata !=  "aice" and typedata !=  "AMSR" :
+        if typedata != "SLA" and  typedata != "SST" and typedata != "profile" \
+            and typedata !=  "aice" and typedata !=  "AMSR" and  typedata !=  "current" :
             log.error("Data %s not known !!! " %(typedata))
             sys.exit(1)
         # Level of logging output
@@ -443,15 +444,17 @@ class Extract_GODAE(Extractor):
                 filename=os.path.basename(new_file)
                 if typedata ==  "AMSR" :
                     filename=re.sub('GL_h5',template,filename)
+                elif typedata ==  "current":
+                    filename=filename
                 else:
                     template1 = filename.split('_')[0:]
                     template_tmp = template1[2]+'_'+template1[3]+'_'+template1[4]
                     filename=re.sub(template_tmp,template,filename)
                 # Copy extracted value of GODAE file with nco module
-                if typedata != "aice":
+                if typedata != "aice" and typedata != 'current':
                     ## Change numfcts dim
                     options = []
-                    options.extend(['-O','-a','numfcsts'])
+                    options.extend(['-h','-O','-a','numfcsts'])
                     nco.ncwa(input=new_file, output=dirtmp+filename, fortran=True ,options=options)
                     nc = netCDF4.Dataset(dirtmp+filename, 'r')
                     variables = nc.variables.keys()
@@ -476,6 +479,9 @@ class Extract_GODAE(Extractor):
                         options.extend(['-h','-O','-v','leadtime_new,leadtime'])
                         nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
                     log.info("add new dim ok {}".format(dirtmp+filename))
+                elif typedata == "current":
+                    options = []
+                    shutil.copy(dirdata+filename,dirtmp)
                 else:
                     #typedata == "aice" :
                     options = []

@@ -187,7 +187,8 @@ class Interpolator(object):
                 variable.append(param_dict['varname'][0].upper()+'_mean')
                 nlon, nlat = self.search_dims(param_dict['coord_clim'])
                 tuple_coord = (nlon, nlat)
-            elif key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr':
+            elif key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr' \
+                or key.lower() == "clim" and param_dict['data_type'].lower() == 'current':
                 ll_coloc = False
                 lon_mod, lat_mod = Loader.factory(
                     'NC_CLIM').read_pos(param_dict['coord_clim'])
@@ -227,14 +228,25 @@ class Interpolator(object):
                 indexes = None
             self.log.debug("Dimension tuples {} {} same_grid {}".format(tuple_obs,tuple_coord,same_grid))
             # Coloc file
-            if not ll_coloc and len(np.unique(depth)) == 1:
+            if not ll_coloc and len(np.unique(depth)) == 1 or \
+                key.lower() == "clim" and param_dict['data_type'].lower() == 'current':
+
+                ind = 0
                 TreeObj = interp_KDtree(level=self.log.level)
-                d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
-                                                     lon_obs, lat_obs, nb_ptsinterp,\
-                                                     weight_file=weight_file,save=False)
+                if  param_dict['data_type'].lower() == 'aice':
+                    self.log.info('No mask for aice')
+                    ## No mask with ice dataset create issues in the ANT
+                    d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
+                                                         lon_obs, lat_obs, nb_ptsinterp,\
+                                                          weight_file=weight_file,save=False)
+                else :
+                    d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
+                                                         lon_obs, lat_obs, nb_ptsinterp,\
+                                                          weight_file=weight_file,save=False, mask=mask_tab[ind,:,:])
                 weights = TreeObj.get_weight(d1)
 
                 ll_coloc = True
+
             elif len(np.unique(depth)) > 1 and not ll_coloc :
                 ## Compte weight file
                 nb_obs, nb_profs = np.shape(depth)
@@ -310,6 +322,7 @@ class Interpolator(object):
                                                      lon_mod=lon_mod, lat_mod=lat_mod,
                                                      missing_value=self.missing_value,
                                                      same_grid=same_grid)
+
                       if len(np.shape(obs_value)) ==  3:
                           if param_dict['data_type'].lower() == 'drifter_filtr' or param_dict['data_type'].lower() == 'drifter':
                              obs_value2 = np.array(obs_value)[var,:,:]
@@ -321,6 +334,24 @@ class Interpolator(object):
                           interp_values = np.where(np.array(obs_value).flatten() == _FillValue,
                                                             self.missing_value, np.array(interp_values))
                       ll_unique = True
+                  elif key.lower() == "clim" and param_dict['data_type'].lower() == 'current' :
+                      depthval = 0
+                      index_time=find_index_month(date)-1
+                      interp_values = self.interp_2D(weights, indexes,
+                                                     file_input,
+                                                     nb_ptsinterp,
+                                                     varname, param_dict, key=key,
+                                                     depth=depthval, fillvalue=_FillValue,
+                                                     time=index_time, nblon=nlon, nblat=nlat,
+                                                     lon_mod=lon_mod, lat_mod=lat_mod,
+                                                     missing_value=self.missing_value,
+                                                     same_grid=same_grid)
+                      #if len(np.shape(obs_value)) ==  3: obs_value2 = np.array(obs_value)[:,var,1]
+                      #interp_values = np.where(np.array(obs_value2).flatten() == _FillValue,
+                      #                                  self.missing_value, np.array(interp_values))
+                      self.log.debug("Max value for the interpolation {}".format(np.nanmax(interp_values)))
+                      ll_unique = True
+                      ##
                   else :
                      self.log.debug("Profile case variable : {}".format(variable[var]))
                      interp_values = self.interp_3D(tab_weight,
@@ -542,7 +573,7 @@ class Interpolator(object):
         """
         self.log.debug('Interp2D Read input file : {}'.format(file))
         self.log.debug('Variable : {}'.format(variable))
-        dataset_in = xr.open_dataset(file)
+        dataset_in = xr.open_dataset(file,decode_times=False)
         var_in = dataset_in[variable]
         ll_single = False
         if depth > 0.5 :
@@ -592,11 +623,11 @@ class Interpolator(object):
                    ll_reshape = self.test_lonlat(var_in, nblon, nblat)
                    self.log.debug('Reshape {}'.format(ll_reshape))
                    if ll_reshape : var_in = np.transpose(var_in)
+                   ## Modif cregnier
                    tab_interp = np.sum(weight * np.array(var_in).flatten()
                                        [inds], axis=1) / np.sum(weight, axis=1)
                 else:
                    self.log.debug('depth > 0.5')
-                   print ('weight {} {}'.format(w1, w2))
 
                    tab_interp_1 = np.sum(weight * np.array(var_in1).flatten()
                                        [inds], axis=1) / np.sum(weight, axis=1)
@@ -611,6 +642,7 @@ class Interpolator(object):
                 else:
                     tab_interp =  (w1 * ma.array(var_in1).flatten()[inds])+ (w2 * ma.array(var_in2).flatten()[inds])
 
+
         # Put nan to missing values
         tab_interp = np.where(np.isnan(tab_interp), missing_value, tab_interp)
 
@@ -621,7 +653,7 @@ class Interpolator(object):
         """
            Interpolate profiles model values onto insitu vertical profiles
         """
-        dataset_in = xr.open_dataset(file)
+        dataset_in = xr.open_dataset(file, decode_times=False)
         var_in = dataset_in[variable]
         nb_obs, nb_profs = np.shape(depth)
         depth_mod = dataset_in['deptht'][:].values

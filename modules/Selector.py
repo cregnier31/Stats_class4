@@ -122,6 +122,8 @@ class SelectListModelData(Selector):
             param_dict['gridtype_clim'] = ["current"]
         elif data_type.lower() == "profile":
             param_dict['gridtype'] = ["gridT", "gridS"]
+        elif data_type.lower() == "current":
+            param_dict['gridtype'] = ["gridU", "gridV"]
         if typemod == "pgn":
             dirmodel = param_dict['dirmodel_pgn']
         elif typemod == "allege":
@@ -286,10 +288,11 @@ class SelectListModelData(Selector):
                 else:
                     if typemod == "pgn":
                         if directory == "clim":
-                            if data_type.lower() == "drifter_filtr" or data_type.lower() == "drifter":
+                            if data_type.lower() == "drifter_filtr" or data_type.lower() == "drifter" \
+                                    or data_type.lower() == "current":
                                 dirmodel_new = param_dict['dirclim']
-                                list_file = glob(dirmodel_new+"/*.nc")
-                                list_file.append(glob(dirmodel_new+"/*.nc")[0])
+                                list_file = glob(dirmodel_new+"/*_monthlymeans.nc")
+                                list_file.append(glob(dirmodel_new+"/*monthlymeans.nc")[0])
                             else:
                                 list_file = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
                                 param_dict['gridtype_clim']+".nc")

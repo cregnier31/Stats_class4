@@ -115,13 +115,32 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
+        day2 = dateval[6:8]
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
         nc_fid.Conventions = 'CF-1.6'
         nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
         nc_fid.close()  # close the new file
+
+    def write_GODAE_files_clim(self, filename,clim_tab, dateval, model, variable):
+        nc_fid = Dataset(filename, 'r+') #, format='NETCDF3')
+        nc_clim = nc_fid.createVariable(
+            'climatology', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
+        nc_clim.setncatts({'long_name': u"Climatology Lumpkin V3.05",'units': u"m s-1"})
+        nc_clim.setncatts({'comment': u"Monthly Means of Drifter Data"})
+        nc_fid.variables['climatology'][:, :, :] = clim_tab[:, :, :]
+        today = date.today()
+        yyyy = str(today)[0:4]
+        yyyy2 = dateval[0:4]
+        month = str(today)[5:7]
+        month2 = dateval[4:6]
+        day = str(today)[8:10]
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.close()  # close the new file
+
 
     def write_BIOARGO_files(self, filename, hdct_tab, dateval, model, variable, fcst = None, pers = None):
         nc_fid = Dataset(filename, 'r+')
@@ -154,7 +173,7 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
+        day2 = dateval[6:8]
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
@@ -203,7 +222,7 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
+        day2 = dateval[6:8]
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
@@ -239,7 +258,7 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
+        day2 = dateval[6:8]
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
@@ -274,7 +293,7 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
+        day2 = dateval[6:8]
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
@@ -305,7 +324,7 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
+        day2 = dateval[6:8]
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
@@ -336,7 +355,7 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
+        day2 = dateval[6:8]
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
@@ -360,7 +379,7 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
+        day2 = dateval[6:8]
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
@@ -375,6 +394,10 @@ class Writer():
                     and 'best' in tab_results.keys():
                 self.write_GODAE_files_best(
                     filename, tab_results['best'], dateval, param_dict['modele'], param_dict['data_type'])
+            elif 'forecast'  not in tab_results.keys() and 'persistence' not in tab_results.keys() \
+                    and 'best' not in tab_results.keys() and 'clim' in tab_results.keys():
+                self.write_GODAE_files_clim(
+                    filename, tab_results['clim'], dateval, param_dict['modele'], param_dict['data_type'])
             else:
                 self.write_GODAE_files(
                     filename, tab_results['best'], tab_results['forecast'],
