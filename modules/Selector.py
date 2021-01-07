@@ -343,11 +343,12 @@ class SelectListModelData(Selector):
                         #print ("Type not define %s" %(cl_typemod.lower()))
                         #sys.exit(1)
                     self.log.debug('directory %s' % (dirmodel_new))
+
                 if not list_file:
                     self.log.error("Repertory %s" % (dirmodel_new))
                     self.log.error("File missing for %s" %(directory))
                     ll_miss = True
-                    #sys.exit(1)
+                    sys.exit(1)
                 self.log.debug('dirmodel  %s ' % (dirmodel))
                 if not ll_miss : self.log.debug('directory and file  %s %s ' % (directory, list_file[0]))
                 list[directory] = list_file

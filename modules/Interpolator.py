@@ -233,16 +233,16 @@ class Interpolator(object):
 
                 ind = 0
                 TreeObj = interp_KDtree(level=self.log.level)
-                if  param_dict['data_type'].lower() == 'aice':
-                    self.log.info('No mask for aice')
-                    ## No mask with ice dataset create issues in the ANT
-                    d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
-                                                         lon_obs, lat_obs, nb_ptsinterp,\
-                                                          weight_file=weight_file,save=False)
-                else :
-                    d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
-                                                         lon_obs, lat_obs, nb_ptsinterp,\
-                                                          weight_file=weight_file,save=False, mask=mask_tab[ind,:,:])
+                ##if  param_dict['data_type'].lower() == 'aice':
+                ##self.log.info('No mask for aice')
+                ## No mask with ice dataset create issues in the ANT
+                d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
+                                                     lon_obs, lat_obs, nb_ptsinterp,\
+                                                      weight_file=weight_file,save=False)
+                #else :
+                #    d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
+                #                                         lon_obs, lat_obs, nb_ptsinterp,\
+                #                                          weight_file=weight_file,save=False, mask=mask_tab[ind,:,:])
                 weights = TreeObj.get_weight(d1)
 
                 ll_coloc = True
@@ -293,7 +293,7 @@ class Interpolator(object):
                ll_miss = False
                try:
                   file_input = list_input_file[key][var]
-               except :
+               except OSError:
                    self.log.error("Error {} Missing file for key {} var {}".format(sys.exc_info()[0], key, var))
                    self.log.error("Varname {}".format(varname))
                    ll_miss = True
