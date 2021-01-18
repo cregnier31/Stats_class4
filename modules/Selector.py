@@ -122,6 +122,7 @@ class SelectListModelData(Selector):
             param_dict['gridtype_clim'] = ["current"]
         elif data_type.lower() == "profile":
             param_dict['gridtype'] = ["gridT", "gridS"]
+            param_dict['gridtype_clim'] = ["TEMP_POT", "SAL"]
         elif data_type.lower() == "current":
             param_dict['gridtype'] = ["gridU", "gridV"]
         if typemod == "pgn":
@@ -169,8 +170,10 @@ class SelectListModelData(Selector):
             elif time == 'climatology':
                 lead_fin = ['clim']
             elif time == 'clim_lev13_A5B2':
-                lead_fin=['clim']
-                type_clim="WOA13_A5B2"
+                lead_fin = ['clim']
+                type_clim = "WOA13_A5B2"
+                dirclim = param_dict.get('climato','DIRLEV')
+                type_clim = "WOA13_A5B2"
             else:
                 self.log.error('Lead time %s not expected ' %(time))
             config_d = re.sub("V", "QV", param_dict['cl_config'])
@@ -180,6 +183,10 @@ class SelectListModelData(Selector):
             ind = 0
             for directory in lead_fin:
                 ll_miss = False
+                ## Compute date
+                datev = SyDate(str(dateval))
+                year = str(datev.year)
+                month_up = datev.month + 1
                 if param_dict['data_origin'] == 'GLOBCOLOUR' and directory != 'clim':
                     if directory == 'hdct' and param_dict['daily_pref'] == '7dAV':
                         dirmodel_new = param_dict['dirmodel']+"HINDCAST/"
@@ -198,7 +205,10 @@ class SelectListModelData(Selector):
                             if data_type.lower() == "nitrate" or data_type.lower() == "ph" or  data_type.lower() == "chl" :
                                 dirmodel_new = dirmodel
                             else:
-                                dirmodel_new = dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
+                                if param_dict['type_run'] == "REA":
+                                    dirmodel_new = dirmodel+year+'/'+MONTH+'/'
+                                else:
+                                    dirmodel_new = dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
                     elif directory == 'hdct_all':
                         dirmodel_new = param_dict['dirmodel']+"/"
                     elif directory == 'hdct_all' and typemod == 'allege':
@@ -217,10 +227,6 @@ class SelectListModelData(Selector):
                         dirmodel_new = param_dict['dirclim']
                     else:
                         dirmodel_new = dirmodel+"DAILY/"+modele[:5]+"/"+modele.lower()+"/"
-                ## Compute date
-                datev = SyDate(str(dateval))
-                year = str(datev.year)
-                month_up = datev.month + 1
                 if datev.month < 10: month = '0' + str(datev.month)
                 else: month = str(datev.month)
                 if month_up < 10: month_up = '0' + str(month_up)
@@ -294,8 +300,18 @@ class SelectListModelData(Selector):
                                 list_file = glob(dirmodel_new+"/*_monthlymeans.nc")
                                 list_file.append(glob(dirmodel_new+"/*monthlymeans.nc")[0])
                             else:
-                                list_file = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
-                                param_dict['gridtype_clim']+".nc")
+                                if param_dict['type_run'] == "REA":
+                                    for i in range(len(param_dict['gridtype'])):
+                                        list_file_tmp=glob.glob(dir_clim+"/"+type_clim+"_M"+MONTH+"_*"+\
+                                                gridtype_clim+".nc")
+                                       # list_file_tmp = glob(dirmodel_new+ "/"+modele+"_"+ \
+                                       # param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+                                        list_file.extend(list_file_tmp)
+                                    print (list_file)
+                                    sys.exit(1)
+                                else:
+                                    list_file = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
+                                    param_dict['gridtype_clim']+".nc")
                         else:
                             #list_file = glob(dirmodel_new+directory+"/"+modele+"_"+ \
                             #param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype']+"*.nc")
@@ -311,10 +327,16 @@ class SelectListModelData(Selector):
                                     list_file.extend(list_file_tmp)
 
                             else:
-                                for i in range(len(param_dict['gridtype'])):
-                                    list_file_tmp = glob(dirmodel_new+directory+"/"+modele+"_"+ \
-                                    param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
-                                    list_file.extend(list_file_tmp)
+                                if param_dict['type_run'] == "REA":
+                                    for i in range(len(param_dict['gridtype'])):
+                                        list_file_tmp = glob(dirmodel_new+ "/"+modele+"_"+ \
+                                        param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+                                        list_file.extend(list_file_tmp)
+                                else:
+                                    for i in range(len(param_dict['gridtype'])):
+                                        list_file_tmp = glob(dirmodel_new+directory+"/"+modele+"_"+ \
+                                        param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+                                        list_file.extend(list_file_tmp)
                                 self.log.debug(list_file)
                     elif typemod == "allege":
                         self.log.debug('mode allege')

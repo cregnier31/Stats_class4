@@ -11,6 +11,7 @@ import tarfile
 import netCDF4
 #import custom as c
 from sydate import SyDate
+from Logger import Logger
 from gz import ZipManipulator
 from os.path import dirname
 sys.path.append(dirname(__file__))
@@ -37,6 +38,7 @@ class Extractor(object):
         if type == "CORA4.1_MERC": return Extract_cora4('.tgz')
         if type == "cora5.0_raw": return Extract_cora4('.tar.gz')
         if type == "CORA5.0": return Extract_cora4('.tgz')
+        if type == "CORA5.2": return Extract_cora4_1()
         if type == "CORIOLIS": return Extract_corio()
         if type == "CORIOLIS_RAW": return Extract_corio_raw()
         if type == "ENS": return ExtractEns()
@@ -365,31 +367,40 @@ class Extract_cora4_1(Extractor):
 
     """ Extract cora 4.1 file """
 
-    def run(self,date1,date2,dirdata,dirtmp,typedata,template):
+    def __init__(self, level=2):
+        self.date = SyDate('19500101')
+        self.log = Logger("Extract Cora").run(level)
+
+    def run(self,date1,date2,dirdata,dirtmp,typedata,template,prefix):
         # ===============
         # LOGGER
         # ===============
         log = logging.getLogger("Extract_ARMOR")
         log.setLevel(logging.INFO)
+        valeurj_tmp = SyDate(str(date1))
         # Level of logging output
-        valeurj=date1
+        valeurj = valeurj_tmp
+        valeurj2 = SyDate(str(date2))
         liste_tot=[]
-        while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
-            dateval=SyDate.__str__(valeurj)
-            log.info('Day %s ' % (dateval))
+        while  valeurj_tmp >= valeurj and valeurj_tmp <= valeurj2 :
+            dateval = str(valeurj_tmp)
+            #dateval=str(SyDate(str(self.date.setfromjulian(int(valeurj)))))
+            self.log.info('Day %s ' % (dateval))
             month=dateval[0:6] 
-            frame=dirdata+month+'/*'+dateval.strip()+'*.nc'
+            #frame=dirdata+month+'/*'+dateval.strip()+'*.nc'
+            frame=dirdata+'/*'+dateval.strip()+'*.nc'
             liste_file=glob(frame)
-            log.info('Liste file %s ' % (liste_file)) 
+            self.log.info('Liste file CORA %s ' % (liste_file))
             for new_file in liste_file :
                 try :
                     filename=os.path.basename(new_file)
                     shutil.copy(new_file,dirtmp)
+                    self.log.info('copy file {}'.format(dirtmp+filename))
                     liste_tot.append(dirtmp+filename)
                 except IOError as e:
                     self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
                     sys.exit(1)
-            valeurj=valeurj.goforward(1)
+            valeurj_tmp=valeurj_tmp.goforward(1)
 
         return liste_tot
 
