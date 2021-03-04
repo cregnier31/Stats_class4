@@ -35,20 +35,18 @@ resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
                                            resource.RLIM_INFINITY))
 
 
-def main(level=1):
+def main(level=2):
     """
     Main TEP CLASS4 function
     """
-    # LOGGER
-    log = Logger("TEP_CLASS4").run(level)
 
     # ==================================================================
     #  PART-1 -  Load input parameters
     # ==================================================================
+    param_dict,log = Loader().factory('INPUT').load(sys.argv[1:], level)
     log.info('========================================================')
     log.info('          Load input options and parameter file         ')
     log.info('========================================================')
-    param_dict = Loader().factory('INPUT').load(sys.argv[1:], level, log)
 
     # Load db configuration file
     conf_path = dirname(__file__) #os.getcwd()
@@ -79,6 +77,7 @@ def main(level=1):
         log.info('========================================================')
         input_model_file, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], log).\
             factory("GLOBAL_INPUT_MODEL_DATA").run(param_dict, dateval)
+        log.debug(' Select model ok')
         if not ll_miss:
            log.debug(input_model_file)
            # Interpolation of the data
@@ -98,6 +97,7 @@ def main(level=1):
                         (str(dateval),str(end - start), " seconds ~~~~~~~~~~~~"))
 
 # Set the level of logger
-log_level = 2
+#log_level = 2
 # Run the main code
-main(log_level)
+#main(log_level)
+main()
