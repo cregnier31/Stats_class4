@@ -14,7 +14,8 @@ import shelve
 from Writer import Writer
 import itertools
 from Extractor import Extractor
-from sydate import SyDate
+#from sydate import SyDate
+from sytoolkit.sydate import SyDate
 from collections import OrderedDict
 #######################################################################################
 ## C.REGNIER Juillet 2014
@@ -52,7 +53,7 @@ class Selector(object):
         else:
             print("Type not known %s " %(type))
 
-    def get_template_alleges(self, dateval, type_out, param_dict):
+    def get_template_alleges(self, dateval, param_dict):
 
         """ Get the template for model inputs  """
 
@@ -76,11 +77,34 @@ class Selector(object):
         elif type_run == 'HINDCAST':
             date1 = daterun.gobackward(14)
             date2 = daterun.gobackward(7)
-        template = param_dict['dirmodel_light']+'ALLEGES_'+type_run.lower()+\
-                 '_'+str(date1)+'_'+str(date2)+'_R'+str(daterun)+ \
-                 '/'+type_out+'/'+param_dict['gridtype_light']+'.d'+\
-                 str(dateval)+'.run.01.0'
-        self.log.info("Template allege : %s " %(template))
+        if param_dict['data_type'] == 'profile':
+            depthval='50.0'
+            typeval='.end.'
+            type_out='END'
+            dateval=daterun
+        elif param_dict['data_type'] == 'SLA':
+            depthval='01.0'
+            typeval='.run.'
+            type_out='RUN'
+        elif param_dict['data_type'] == 'SST':
+            depthval='01.0'
+            typeval='.run.'
+            type_out='RUN'
+        elif param_dict['data_type'] == 'aice':
+            depthval='01.0'
+            typeval='.run.'
+            type_out='RUN'
+        else:
+            depthval='01.0'
+            type_out='RUN'
+
+        template = []
+        for i, val in enumerate(param_dict['gridtype_light']):
+            template.append(param_dict['dirmodel_light']+'ALLEGES_'+type_run.lower()+\
+                            '_'+str(date1)+'_'+str(date2)+'_R'+str(daterun)+ \
+                            '/'+type_out+'/'+val+'.d'+\
+                            str(dateval)+typeval+str(depthval))
+        self.log.debug("Template allege : {} ".format(template))
         return template
 
 class SelectListModelData(Selector):
@@ -122,7 +146,8 @@ class SelectListModelData(Selector):
             param_dict['gridtype_clim'] = ["current"]
         elif data_type.lower() == "profile":
             param_dict['gridtype'] = ["gridT", "gridS"]
-            param_dict['gridtype_clim'] = ["TEMP_POT", "SAL"]
+            param_dict['gridtype_clim'] = ["TEMP", "PSAL"]
+            param_dict['gridtype_light'] = ["TN.B", "SN.B"]
         elif data_type.lower() == "current":
             param_dict['gridtype'] = ["gridU", "gridV"]
         if typemod == "pgn":
@@ -198,6 +223,7 @@ class SelectListModelData(Selector):
                         self.log.debug('define forecast path')
                         sys.exit()
                 else:
+                    self.log.debug("directory {}".format(directory))
                     if directory == 'hdct':
                         if param_dict['daily_pref'] == '7dAV':
                             dirmodel_new = dirmodel+"HINDCAST/"
@@ -209,15 +235,13 @@ class SelectListModelData(Selector):
                                     dirmodel_new = dirmodel+year+'/'+MONTH+'/'
                                 else:
                                     dirmodel_new = dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
-                    elif directory == 'hdct_all':
-                        dirmodel_new = param_dict['dirmodel']+"/"
                     elif directory == 'hdct_all' and typemod == 'allege':
-                        type_out = 'RUN'
                         self.log.debug("lightout type")
                         dirmodel_new = dirmodel+"/"
                         template = self.get_template_alleges(dateval,
-                                                             type_out,
                                                              param_dict)
+                    elif directory == 'hdct_all':
+                        dirmodel_new = param_dict['dirmodel']+"/"
                     elif directory == 'fcst':
                         if param_dict['daily_pref'] == '7dAV':
                             dirmodel_new = dirmodel+"FORECAST/"
@@ -307,8 +331,6 @@ class SelectListModelData(Selector):
                                        # list_file_tmp = glob(dirmodel_new+ "/"+modele+"_"+ \
                                        # param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
                                         list_file.extend(list_file_tmp)
-                                    print (list_file)
-                                    sys.exit(1)
                                 else:
                                     list_file = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
                                     param_dict['gridtype_clim']+".nc")
@@ -339,13 +361,18 @@ class SelectListModelData(Selector):
                                         list_file.extend(list_file_tmp)
                                 self.log.debug(list_file)
                     elif typemod == "allege":
-                        self.log.debug('mode allege')
                         if directory == "clim":
+                            list_file = []
                             dirmodel_new = param_dict['dirclim']
-                            list_file = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
-                            param_dict['gridtype_clim']+".nc")
+                            for i in range(len(param_dict['gridtype_clim'])):
+                                list_file_tmp = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
+                                param_dict['gridtype_clim'][i]+".nc")
+                                list_file.extend(list_file_tmp)
+                            self.log.debug('Liste File clim :{}'.format(list_file))
+
                         else:
-                            list_file = glob(template)
+                            self.log.debug('Liste template')
+                            list_file = template
                     else:
                         self.log.debug('directory %s' % (dirmodel_new+'/'+year+'/'+month))
                         list_file = glob(dirmodel_new+"/"+year+'/'+month+'/'+modele+"_"+ \

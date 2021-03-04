@@ -10,12 +10,14 @@ import logging
 import tarfile
 import netCDF4
 #import custom as c
-from sydate import SyDate
+#from sydate import SyDate
+from sytoolkit.sydate import SyDate
 from Logger import Logger
 from gz import ZipManipulator
 from os.path import dirname
 sys.path.append(dirname(__file__))
 from nco.nco import Nco
+#from nco import Nco
 
 ##############################################################
 # C.REGNIER Juin 2014
@@ -39,6 +41,7 @@ class Extractor(object):
         if type == "cora5.0_raw": return Extract_cora4('.tar.gz')
         if type == "CORA5.0": return Extract_cora4('.tgz')
         if type == "CORA5.2": return Extract_cora4_1()
+        if type == "CORIO_ASSIM": return Extract_corio_cmems()
         if type == "CORIOLIS": return Extract_corio()
         if type == "CORIOLIS_RAW": return Extract_corio_raw()
         if type == "ENS": return ExtractEns()
@@ -404,6 +407,45 @@ class Extract_cora4_1(Extractor):
 
         return liste_tot
 
+class Extract_corio_cmems(Extractor):
+
+    """ Extract CMEMS coriolis profiles files """
+
+    def __init__(self, level=2):
+        self.date = SyDate('19500101')
+        self.log = Logger("Extract CMEMS profiles").run(level)
+
+    def run(self,date1,date2,dirdata,dirtmp,typedata,template,prefix):
+        # ===============
+        # LOGGER
+        # ===============
+        log = logging.getLogger("Extract_CMEMS_prof")
+        log.setLevel(logging.INFO)
+        valeurj_tmp = SyDate(str(date1))
+        # Level of logging output
+        valeurj = valeurj_tmp
+        valeurj2 = SyDate(str(date2))
+        liste_tot=[]
+        while  valeurj_tmp >= valeurj and valeurj_tmp <= valeurj2 :
+            dateval = str(valeurj_tmp)
+            self.log.info('Day %s ' % (dateval))
+            year=dateval[0:4]
+            frame=dirdata+year+'/*'+dateval.strip()+'*.nc'
+            liste_file=glob(frame)
+            self.log.info('Liste file CMEMS profiles %s ' % (liste_file))
+            for new_file in liste_file :
+                try :
+                    filename=os.path.basename(new_file)
+                    shutil.copy(new_file,dirtmp)
+                    self.log.info('copy file {}'.format(dirtmp+filename))
+                    liste_tot.append(dirtmp+filename)
+                except IOError as e:
+                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
+                    sys.exit(1)
+            valeurj_tmp=valeurj_tmp.goforward(1)
+
+        return liste_tot
+
 class Extract_ASCII(Extractor): 
 
     """ Extract ASCII file """
@@ -483,12 +525,13 @@ class Extract_GODAE(Extractor):
                     nco.ncks(input=dirtmp+filename,output=dirtmp+filename, fortran=True ,options=options)
                     # Rename
                     options = []
-                    if 'modeljuld' in variables:
-                        options.extend(['-h','-O','-v','modeljuld_new,modeljuld'])
-                        nco.ncrename(input=dirtmp+filename,output=dirtmp+filename, options=options)
-                        options = []
-                        options.extend(['-h','-O','-v','leadtime_new,leadtime'])
-                        nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
+                    #if 'modeljuld' in variables:
+                    #    options.extend(['-h','-O','-v','modeljuld_new,modeljuld'])
+                    #    print (dirtmp+filename)
+                    #    nco.ncrename(input=dirtmp+filename,output=dirtmp+filename, options=options)
+                    #    options = []
+                    #    options.extend(['-h','-O','-v','leadtime_new,leadtime'])
+                    #    nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
                     log.info("add new dim ok {}".format(dirtmp+filename))
                 elif typedata == "current":
                     options = []

@@ -351,8 +351,12 @@ def read_GODAE_profile(varname, filename):
         index = 0
     elif varname == 'vosaline':
         index = 1
-    tab_var = ncdata['best_estimate'].values
-    tab_var = tab_var[:,index,:]
+    tab_hdct = ncdata['best_estimate'].values
+    tab_hdct = tab_hdct[:,index,:]
+    tab_fcst = ncdata['forecast'].values
+    tab_fcst = tab_fcst[:,index,:,:]
+    tab_pers = ncdata['persistence'].values
+    tab_pers = tab_pers[:,index,:,:]
     observations = ncdata['observation'][:,index,:].values
 
-    return depth, tab_var, observations
+    return depth, tab_hdct, tab_fcst, tab_pers, observations

@@ -11,25 +11,30 @@ PROGDIR=${0%/*}; [ "${PROGDIR}" = "." \
 JRUN=$1
 CONFIG=$2
 TYPE_GRID=$3
+MACHINE=$4
+DAYMAX=$5
+
 usage ()
 {
     echo "Nb d'argument incorrects :: "
-    echo "Necessite 2 arguments :: "
+    echo "Necessite 3 arguments :: "
     echo " Valeur1 = Date du RUN"
     echo " Valeur2 = CONFIG "
     echo " Valeur3 = Resolution de la grille "
+    echo " Valeur4 = Machine "
+    echo " Valeur5 = Maxday "
     exit 1
 }
 
 if [ -z "${JRUN}" ]; then
     usage
 fi
-if [ $# -ne 3 ] ;then
+if [ $# -ne 5 ] ;then
     echo $#
     usage
 fi
 case "${CONFIG}" in
-        PSY2V4R3|PSY2V4R2|PSY3V3R3|PSY3V3R1|PSY4V2R1|PSY4V2R2|PSY2V4R4)
+        GLORYS2V4|GLORYS12V1|GLORYS12V1-free|GLO4|FOAM|CGLORS|ORAS5|ENSEMBLE|PSY2V4R3|PSY2V4R2|PSY3V3R3|PSY3V3R1|PSY4V2R1|PSY4V3R1|PSY4V2R2|PSY2V4R4)
                 ;;
         *)
         usage
@@ -43,21 +48,27 @@ TYPE=`echo ${CONFIG} | cut -c-4`
 file_tmp=${PROGDIR}'/tmp/'${TYPE}'/'
 julrun=`d2j ${JRUN}`
 GRID_TYPE=${TYPE_GRID}
-DIR_LOG='/home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_trunk/postraitement/log_'${TYPE}'/'
-job_script="${file_tmp}/Launch_STATS_${JRUN}_${CONFIG}.pbs"
-SBATCH_HEADER=${PROGDIR}/envelope_CLASS4_STATS.txt
+DIR_LOG=${PROGDIR}'/log_'${TYPE}
 mkdir -p ${file_tmp}
-
+if [ "${MACHINE}" == "kara" ]; then
+job_script="${file_tmp}/Launch_STATS_${JRUN}_${CONFIG}.pbs"
+PBS_HEADER=${PROGDIR}/envelope_CLASS4_STATS.txt
+dir_bin='/data/rd_exchange/qualif/anaconda3/envs/env_py38/bin/'
 cat > ${job_script} <<_EOF_
 #!/bin/ksh
 #SBATCH -J ${CONFIG}_STATS_CLASS4_${JRUN}
 #SBATCH -o ${DIR_LOG}/STATS_CLASS4_${JRUN}.out
 #SBATCH -e ${DIR_LOG}/STATS_CLASS4_${JRUN}.err
-$( sed -e "s/__numtask_job__/1/" $SBATCH_HEADER )
+$( sed -e "s/__NBPROC__/1/" $PBS_HEADER )
 _EOF_
 echo "echo \$(date) STATS CLASS4 for JRUN ${JRUN}" >> ${job_script}
 cat >> ${job_script} <<_EOF_ 
-python ${PROGDIR}/traitement_class4_WEEKLY.py $JRUN $CONFIG $GRID_TYPE
+${dir_bin}python ${PROGDIR}/traitement_class4_WEEKLY.py $JRUN $CONFIG $GRID_TYPE
 _EOF_
-
-sbatch ${job_script}
+    qsub ${job_script}
+elif [ "${MACHINE}" == "local" ]; then
+    echo "Launch local"
+    python ${PROGDIR}/traitement_class4_WEEKLY.py $JRUN $CONFIG $GRID_TYPE $MACHINE $DAYMAX
+else
+    echo "Machine not known"
+fi

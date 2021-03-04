@@ -4,8 +4,8 @@
 # faire module load intel/intel-15
 #                   netcdf/netcdf-4.3_intel15_hdf5
 #type=orca12_allege
-type=orca025
-#type=orca12
+type=orca_r025_light
+#type=orca12_allege
 #type=glorys2v4
 include ../macro/make_intel_$(type)_local.macro
 ## Rules
@@ -43,6 +43,7 @@ all:  $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS.exe \
       $(EXEDIR)/CLASS4_spatial_interpolation_GODAE.exe 
 aice: $(EXEDIR)/CLASS4_spatial_interpolation_GODAE.exe
 coloc_aice: $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE)_aice.exe
+coloc: $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE).exe
 test: $(EXEDIR)/test_write.exe
 inter_corio: $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS_local.exe 
 

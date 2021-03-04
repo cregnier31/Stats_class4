@@ -68,7 +68,7 @@ print,'Fonction plot serie temp oper3'
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; some colors for THIS program
 
-common COLOR_BLOCK,black,grey,white,bleuey,cyan,green,gold,yellow,red,blue,salmon,aquam,brown,burly,gmt_land
+common COLOR_BLOCK,black,grey,white,bleuey,cyan,green,gold,yellow,red,blue,salmon,aquam,brown,burly,dark_orange,gmt_land
 Def_colors
 
 colors=[black,cyan, green, yellow, red, blue, salmon,  aquam, brown,burly] ; serie of fav colors (flashy and distinct)
@@ -167,6 +167,7 @@ IF STRPOS(output,'none') EQ -1 THEN BEGIN
 ;       	some color indexes in the current colormap
 		black=  rgb2ind(000,000,000)
 		grey=   rgb2ind(127,127,127)
+		red=   rgb2ind(255,000,000)
 		;grey=   rgb2ind(184,184,184)
 		white=  rgb2ind(255,255,255)
 	
@@ -217,7 +218,7 @@ IF STRPOS(output,'none') EQ -1 THEN BEGIN
                    maxval=MAX(numx2, /NAN)
                    ord_range=[minval,maxval]
                 ENDELSE
-                tscolorin=black
+                tscolorin=red
 		color=grey
 		IF (KEYWORD_SET(xinterv)) THEN BEGIN
 		   interx=xinterv
@@ -258,31 +259,32 @@ IF STRPOS(output,'none') EQ -1 THEN BEGIN
                 ishold=1
                 ;; ishold=1
                 ;;;; Ajout C. REGNIER                 
-                if (KEYWORD_SET(overplot)) then begin 
+                if (KEYWORD_SET(overplot)) then begin
                    a=FINDGEN(17)*(!PI*2/16.)
                    ;; Definition d'un point !!
                    USERSYM, COS(a), SIN(a), /FILL                                                                             ; use PSYM=8
                     OPLOT, numx1, numx2, PSYM=overplot,LINESTYLE=linestyle, SYMSIZE=0.5,THICK=3.*ABS(scale),COLOR=tscolorin    ;; Modifs C.REGNIER
                 ENDIF
-
 ;;                
 ; one of the set of colors : the closest in the current colortable
 
                 IF STRPOS(plot_kind,'colormap_ind') EQ -1 THEN BEGIN ; local colors
                    IF NOT isfinite(tscolor) THEN BEGIN & ncolor=(noplot-1) MOD ncolors
                    ENDIF ELSE BEGIN & ncolor=tscolor & ENDELSE
-                   ;; color=rgb2ind(colors(ncolor,0), colors(ncolor,1), colors(ncolor,2)) modifs cregnier
-                      color=tscolorin
+                    color=rgb2ind(colors(ncolor,0), colors(ncolor,1), colors(ncolor,2)) ;; modifs cregnier
+                     ;;color=tscolorin
                    ENDIF ELSE BEGIN
                       color=tscolorin
                    ENDELSE
+                   print, "overplot"
+                   print, tscolorin
                    OPLOT, numx1, numx2, LINESTYLE=linestyle, THICK=3.*ABS(scale),COLOR=tscolorin  ;; modifs C. REGNIER
                    ;;;
                    IF dots THEN plot_dot, numx1, numx2, scale, tscolorin  ;; Modifs C.REGNIER
 
 ; plot the mean as a thin solid line
-                   IF STRPOS(plot_kind,'mean') NE -1 AND isfinite(fmean) THEN $
-                      OPLOT, [min(numx1),max(numx1)],[fmean,fmean], LINESTYLE=0, THICK=0.5*ABS(scale), COLOR=color
+;                   IF STRPOS(plot_kind,'mean') NE -1 AND isfinite(fmean) THEN $
+;                      OPLOT, [min(numx1),max(numx1)],[fmean,fmean], LINESTYLE=0, THICK=0.5*ABS(scale), COLOR=color
 
 ; titre du plot
                    IF NOT isfinite(titre) THEN BEGIN

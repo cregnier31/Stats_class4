@@ -6,8 +6,10 @@ import numpy.ma as ma
 import json
 from scipy.spatial import cKDTree
 import xarray as xr
+import dask
 import vertical
-from Utils import *
+from lib_pyt.Utils import *
+from lib_pyt.Reader import ReadModel
 from utils import find_index_month
 from Loader import Loader
 from collections import OrderedDict
@@ -21,6 +23,7 @@ from Writer import Writer
 from glob import glob
 from reader import read_GODAE_profile
 from netCDF4 import Dataset
+from timeit import default_timer as timer
 
 if sys.version_info[0] >= 3:
     import pickle
@@ -123,7 +126,7 @@ class Interpolator(object):
                       .format(nb_best, nb_fcst, nb_pers, nb_clim))
         nb_ptsinterp = param_dict['nb_points']
         # Read input obs value
-        self.log.debug(param_dict['data_format'])
+        self.log.debug("Format of the data {}".format(param_dict['data_format']))
         if param_dict['prefix_data'].startswith("BGC_ARGO"):
             variable_obs = param_dict['prefix_data'].split('BGC_ARGO_')[1]+'_ADJUSTED'
             lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = Loader.factory(
@@ -174,8 +177,10 @@ class Interpolator(object):
         file_out = file_coloc_tmp
         # Loop on lead times
         ll_coloc = False
+        ll_light = False
         for i, key in enumerate(list_input_file.keys()):
             # Create weight file
+            if key.lower() == "clim": ll_clim = True
             if key.lower() == "clim" and param_dict['data_type'].lower() == 'chloro':
                 ll_coloc = False
                 lon_mod, lat_mod = Loader.factory(
@@ -201,11 +206,12 @@ class Interpolator(object):
                     if param_dict['cl_typemod'].lower() == "pgn":
                         lon_mod, lat_mod, mask_tab, depth_mod = Loader.factory('PGN_coords').\
                             read_pos(param_dict['coordinates'])
-                        self.log.debug('Read coords PGN OK ')
                     elif param_dict['cl_typemod'].lower() == "allege":
-                        lon_mod, lat_mod = Loader.factory('alleges_coords').\
+                        lon_mod, lat_mod, mask_tab, depth_mod = Loader.factory('alleges_coords').\
                             read_pos(param_dict['coordinates'])
                         self.log.debug('Read coords Alleges OK ')
+                        ll_light = True
+                        if key.lower() == "clim" : ll_light = False
                     else:
                         self.log.error("Type mod not known")
                     nlon, nlat = self.search_dims(param_dict['coordinates'])
@@ -266,6 +272,7 @@ class Interpolator(object):
                 tab_weight = np.nan*np.zeros((nb_obs,nb_ptsinterp,ind_max),dtype=float)
                 #tab_indexes = np.nan*np.zeros((nb_obs,nb_ptsinterp,ind_max),dtype=int)
                 tab_indexes = np.ndarray(shape=(nb_obs, nb_ptsinterp,ind_max), dtype=int, order='F')
+                start = timer()
                 ## Loop on levels
                 for ind in range(ind_max):
                     ## Compute weight at each level
@@ -275,8 +282,11 @@ class Interpolator(object):
                     weight = TreeObj.get_weight(d1)
                     tab_weight[:,:,ind] = weight[:,:]
                     tab_indexes[:,:,ind] = inds[:,:]
-                    self.log.debug('Depth OK {}'.format(ind))
+                    #self.log.debug('Depth OK {}'.format(ind))
                 ll_coloc = True
+                end = timer()
+                self.log.debug('~~~~~~~~ Time elapsed compute weight on levels: %s %s' %
+                              (str(end - start), " seconds ~~~~~~~~~~~~"))
 
             # Interp model file for different lead times
             self.log.debug('Variable to interpolate %s ' %
@@ -360,7 +370,8 @@ class Interpolator(object):
                                                      file_input, nb_ptsinterp,
                                                      varname, depth, ll_verif = param_dict['verif'],
                                                      obs = obs_value[:,var,:],
-                                                     dateval=date, lon=lon_obs, lat=lat_obs, fillvalue=self.missing_value)
+                                                     dateval=date, lon=lon_obs, lat=lat_obs, light=ll_light,
+                                                     clim=ll_clim, depth_mod=depth_mod, fillvalue=self.missing_value)
                      if len(np.shape(obs_value)) ==  3: obs_value2 = np.array(obs_value)[:,var,:]
                      #interp_values = np.where(np.array(obs_value2) == _FillValue,
                      #                                   self.missing_value, np.array(interp_values))
@@ -649,41 +660,68 @@ class Interpolator(object):
         return tab_interp
 
     def interp_3D(self, weight, inds, ind_max, file, nbpts_interp, variable, depth,
-                    time=0, ll_verif=False, obs=None, dateval=None, lon=None, lat=None, fillvalue=np.nan):
+                    time=0, ll_verif=False, obs=None, dateval=None, lon=None, lat=None,
+                    depth_mod=None, light=False, clim=False, fillvalue=np.nan):
         """
            Interpolate profiles model values onto insitu vertical profiles
         """
-        dataset_in = xr.open_dataset(file, decode_times=False)
-        var_in = dataset_in[variable]
+        start = timer()
+        ## Code allégé case
+        if light:
+            self.log.debug("Open lighout file")
+            var_in, lon, lat = ReadModel.read_lightout(file)
+        elif clim:
+            tab_var_clim = {}
+            tab_var_clim['votemper'] = 'temperature'
+            tab_var_clim['vosaline'] = 'salinity'
+            self.log.debug("Open clim file {}".format(file))
+            dataset_in = xr.open_dataset(file, decode_times=False)
+            var_in = dataset_in[variable][:, :, :].values
+            nc_file = Dataset(file,'r')
+            var_in = nc_file.variables[tab_var_clim[variable]][:, :, :]
+        else:
+            dataset_in = xr.open_dataset(file, decode_times=False)
+            var_in = dataset_in[variable][time, :, :, :].values
+            depth_mod = dataset_in['deptht'][:].values
         nb_obs, nb_profs = np.shape(depth)
-        depth_mod = dataset_in['deptht'][:].values
         tab_interp_tmp = fillvalue*np.zeros((ind_max, nb_obs))
+        end = timer()
+        self.log.debug('~~~~~~~~ Time elapsed read files : {} {}'.format
+                        (str(end - start), " seconds ~~~~~~~~~~~~"))
         self.log.debug('Size {}'.format(np.shape(tab_interp_tmp)))
+        start = timer()
         ## Loop on levels
         for ind in range(ind_max):
             tab_ind = inds[:,:,ind]
             if nbpts_interp > 1:
-                tab_interp_tmp[ind, :] = np.sum(weight[:,:,ind] * np.array(var_in[time, ind, :, :].values).flatten()
+                tab_interp_tmp[ind, :] = np.sum(weight[:,:,ind] * np.array(var_in[ind, :, :]).flatten()
                                            [tab_ind], axis=1) / np.sum(weight[:,:,ind], axis=1)
+                #tab_interp_tmp[ind, :] = np.sum(weight[:,:,ind] * np.array(var_in[time, ind, :, :].values).flatten()
+                #                           [tab_ind], axis=1) / np.sum(weight[:,:,ind], axis=1)
             else:
                 ## Nearest neighbour case
-                tab_interp_tmp[ind, :] = np.array(var_in[time, ind, :, :].values).flatten()[tab_ind]
-            self.log.debug('Depth loop : {}'.format(ind))
+                #tab_interp_tmp[ind, :] = np.array(var_in[time, ind, :, :].values).flatten()[tab_ind]
+                tab_interp_tmp[ind, :] = np.array(var_in[ind, :, :]).flatten()[tab_ind]
+            #self.log.debug('Depth loop : {}'.format(ind))
         values_interp = fillvalue*np.zeros((nb_obs, nb_profs))
-        obs2 = obs[~obs.mask]
+        end = timer()
+        self.log.debug('~~~~~~~~ Time elapsed loops on levels : %s %s' %
+                        (str(end - start), " seconds ~~~~~~~~~~~~"))
+        #obs2 = obs[~obs.mask]
 
+        start = timer()
         for ind_prof in range (nb_obs):
             profondeur = depth[ind_prof, :]
             tab_mod_ma = tab_interp_tmp[:,ind_prof]
             fixture = vertical.Column(tab_mod_ma, depth_mod[0:ind_max])
-            self.log.debug('Profondeurs profiles {}'.format(profondeur[0:70]))
-            self.log.debug('Profondeurs modele {}'.format(depth_mod[0:ind_max]))
+            #self.log.debug('Profondeurs profiles {}'.format(profondeur[0:70]))
+            #self.log.debug('Profondeurs modele {}'.format(depth_mod[0:ind_max]))
             val_interp = fixture.interpolate(profondeur)
             values_interp[ind_prof,:] = val_interp[:]
             if np.ma.isMaskedArray(val_interp):
                 values_interp[ind_prof,:] = np.where(val_interp.mask, fillvalue, values_interp[ind_prof,:])
-            self.log.debug('Valeurs profile {}'.format(obs[:]))
-            self.log.debug('--------------------------------------------')
+            #self.log.debug('Valeurs profile {}'.format(obs[:]))
+            #self.log.debug('--------------------------------------------')
             if ll_verif:
                 # Plot profiles
                 dir_out = './img2/'
@@ -726,6 +764,9 @@ class Interpolator(object):
                                        output=dir_out+dateval+"_comparaison_"+variable+"_profile_num"+str(ind_prof),
                                        var=variable)
 
-            self.log.debug('Valeurs modèle {}'.format(tab_interp_tmp[0:30,ind_prof]))
-            self.log.debug('Interp modèle onto profiles {} / {}'.format(ind_prof, nb_obs))
+            #self.log.debug('Valeurs modèle {}'.format(tab_interp_tmp[0:30,ind_prof]))
+            #self.log.debug('Interp modèle onto profiles {} / {}'.format(ind_prof, nb_obs))
+        end = timer()
+        self.log.debug('~~~~~~~~ Time elapsed interp levels on profiles: %s %s' %
+                        (str(end - start), " seconds ~~~~~~~~~~~~"))
         return values_interp

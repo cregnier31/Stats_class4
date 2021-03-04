@@ -209,9 +209,10 @@ PROGRAM COLOCALIZE
 #endif
   INQUIRE (FILE=TRIM(cl_gridFile), EXIST=ll_exist_grid)
   IF ( ll_exist_grid ) THEN
+#if defined key_debug
      WRITE(0,*) 'File exist'
+#endif
      CALL MIOL_openr_file_NC(TRIM(cl_gridFile), il_file_id)
-     WRITE(0,*) 'File exist ok'
 #if defined key_debug
   WRITE(0,*) 'Open OK'
 #endif
@@ -472,7 +473,9 @@ PROGRAM COLOCALIZE
 #endif
     !* Lecture des positions
     !
+#if defined key_debug
     WRITE(0,*) 'Start coloc'
+#endif
     DO il_jk=1,il_nb_files
 #if defined key_debug
           WRITE(0,*) ' nombre de profils : ', il_nb_files

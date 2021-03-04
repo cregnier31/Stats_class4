@@ -2073,7 +2073,7 @@ REAL FUNCTION distancenorm( x0,y0,xcan0,ycan0)
   dx =  x0 - xcan0
 #ifdef NO_NORMLON
 #else
-#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1 ||  defined key_orca_r12_allege
+#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1 ||  defined key_orca_r12_allege ||  defined key_orca_r025_light
   IF ( ifconv /= 0 ) CALL normLon(dx)
 #endif
 #endif
@@ -2265,14 +2265,14 @@ SUBROUTINE getSWnodeWeights( x, y, xcan,ycan,vertex, c )
   REAL(KIND=4) :: rl_sum
   REAL(KIND=4), DIMENSION(:,:), INTENT(IN) :: xcan,ycan
 
-#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r12_allege || defined key_atl12 || defined key_atl12_zNEATL36 || defined key_orca_r1 || defined key_med12 || defined key_ibi12 || defined key_ibi36
+#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r12_allege || defined key_atl12 || defined key_atl12_zNEATL36 || defined key_orca_r1 || defined key_med12 || defined key_ibi12 || defined key_ibi36 ||  defined key_orca_r025_light
 #ifdef key_weights_method_OASIS
   REAL(KIND=4) :: xvmin,yvmin,xvmax,yvmax
   INTEGER :: iamb1, iamb2
 #endif
 #endif
 
-#if defined key_minipog || defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 ||  defined key_orca_r12_allege || defined key_atl12 || defined key_atl12_zNEATL36 || defined key_orca_r1 || defined key_med12 || defined key_ibi12 || defined key_ibi36
+#if defined key_minipog || defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 ||  defined key_orca_r12_allege || defined key_atl12 || defined key_atl12_zNEATL36 || defined key_orca_r1 || defined key_med12 || defined key_ibi12 || defined key_ibi36  ||  defined key_orca_r025_light
   REAL(KIND=4) :: DiffLon
   EXTERNAL DiffLon
 #endif
@@ -2299,7 +2299,8 @@ SUBROUTINE getSWnodeWeights( x, y, xcan,ycan,vertex, c )
     xv(iv) = xcan(igrd(vertex(iv)),jgrd(vertex(iv)))
 #endif
 #if defined key_weights_method_PDM
-#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1 || defined key_orca_r12_allege 
+#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1 || defined key_orca_r12_allege  ||  defined key_orca_r025_light
+
     xv(iv) = DiffLon( xcan(igrd(vertex(iv)),jgrd(vertex(iv))) , xx )
 #endif
 #if defined key_atl12 || defined key_atl4 || defined key_atl12_zNEATL36 || defined key_med12 || defined key_ibi12 || defined key_ibi36
@@ -2371,7 +2372,7 @@ SUBROUTINE getSWnodeWeights( x, y, xcan,ycan,vertex, c )
   xvmin = MIN( xv(1),xv(2),xv(3),xv(4) )
   IF ( xx < xvmin ) xx = xx + 360.
 #endif
-#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1 || defined key_orca_r12_allege
+#if defined key_orca_r2 || defined key_orca_r025 || defined key_orca_r12 || defined key_orca_r1 || defined key_orca_r12_allege ||  defined key_orca_r025_light
 !
 ! Constantes pour gerer l 'ambiguite des 360 degres
 ! ---------------------------------------------------
@@ -2385,7 +2386,8 @@ SUBROUTINE getSWnodeWeights( x, y, xcan,ycan,vertex, c )
 ! correction bug!!(pas clair pourquoi)
   iamb1 = 217
 #endif
-#if defined key_orca_r12 || defined key_orca_r12_allege
+#if defined key_orca_r12 || defined key_orca_r12_allege ||  defined key_orca_r025_light
+
 ! correction bug!!(pas clair pourquoi)
   iamb1 = 10
 #endif

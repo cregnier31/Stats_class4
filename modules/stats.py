@@ -148,6 +148,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
     for time in lead_time:
         if len(np.shape(dict_inputs['obs'])) == 2:
             rla_obs = dict_inputs['obs'][iobs, :]
+            log.debug('shape iobs {}'.format(np.shape(iobs)))
             if 'climatology' in lead_time:
                 rla_clim = dict_inputs['clim'][iobs, :]
             else:
@@ -164,15 +165,22 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
         if time == 'best_estimate':
             num_col = 0
             if len(np.shape(dict_inputs['best'])) == 2:
+                log.debug('size {}'.format(np.shape( dict_inputs['best'][iobs, :])))
+                log.debug('max1 {}'.format(np.nanmax( dict_inputs['best'][iobs, :])))
+                log.debug('max2 {}'.format(np.nanmax( dict_inputs['best'][:, :])))
                 rla_var = dict_inputs['best'][iobs, :]
             else:
                 rla_var = dict_inputs['best'][iobs]
+            log.debug('Observations {}'.format(np.nanmax(rla_obs)))
+            log.debug('Hindcast {}'.format(np.nanmax(rla_var)))
+            log.debug('Clim {}'.format(np.nanmax(rla_clim)))
             rla_mean_obs, rla_rms_obs, rla_mean_prod, rla_rms_prod, rla_rmse, rla_cor, ila_nobs =\
                 supobs.Statslib.statlayer_CL4var(rla_var,
                                                  rla_obs,
                                                  rla_clim,
                                                  dict_inputs['rla_depthobs'][iobs, :],
                                                  dict_inputs['tab_profs'])
+            log.debug('RMSE Hindcast {}'.format(rla_rmse))
             if ll_debug:
                 print(('RMSE {}'.format(rla_rmse)))
             stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
@@ -207,6 +215,9 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
                 stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
                                                         rla_rms_prod, rla_rmse, rla_cor, dict_inputs['tab_profs'], yout)
+                log.debug('RMSE {} Forecast range {}'.format(rla_rmse, str(numF)))
+
+                log.debug('Nb obs {} Forecast range {}'.format(ila_nobs, str(numF)))
 
                 del ila_nobs, rla_mean_obs, rla_rms_obs, rla_mean_prod, rla_rms_prod, rla_rmse, rla_cor
 
@@ -236,6 +247,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
                 stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
                                                         rla_rms_prod, rla_rmse, rla_cor, dict_inputs['tab_profs'], yout)
+                log.debug('RMSE {} Persistence range {}'.format(rla_rmse, str(numF)))
 
                 del ila_nobs, rla_mean_obs, rla_rms_obs, rla_mean_prod, rla_rms_prod, rla_rmse, rla_cor
 
@@ -255,6 +267,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
             stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                     rla_mean_obs, rla_rms_obs, rla_mean_prod,
                                                     rla_rms_prod, rla_rmse, rla_cor, dict_inputs['tab_profs'], yout)
+            log.debug('RMSE Climatology {}'.format(rla_rmse))
 
             if abs(np.nanmax(rla_rmse)) > 100.:
                 #log.info('CLIMATOLOGY')

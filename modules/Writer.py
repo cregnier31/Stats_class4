@@ -59,7 +59,7 @@ class Writer():
             with open(filename, 'w') as outfile:
                 json.dump(MultiPoint(liste_position), outfile)
         except:
-            print ('Probleme d ecriture')
+            print ('Probleme d ecriture geojson')
             sys.exit(1)
 
     def write_ASCII(self, filename, position):
@@ -78,7 +78,7 @@ class Writer():
         # print len(position)
         #print 'Write ASCII file OK'
         except:
-            print ('Probleme d ecriture')
+            print ('Probleme d ecriture ASCII')
             sys.exit(1)
 
     def write_geojson_fromdb(self, type_f, file_out, file_db):
@@ -385,6 +385,35 @@ class Writer():
         nc_fid.system = model
         nc_fid.close()  # close the new file
 
+    def write_coriolis_file(self, filename, tab1, tab2, tab3, dateval, model, variable):
+        nc_fid = Dataset(filename, 'r+') #, format='NETCDF3_CLASSIC')
+        nc_file = nc_fid.createVariable(
+            'best_estimate', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
+        nc_file2 = nc_fid.createVariable(
+            'climatology', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
+        nc_file.setncatts(
+            {'long_name': u"Model best_estimate counterpart of obs. value"})
+        nc_file2.setncatts(
+            {'long_name': u"Climatology counterpart of obs. value"})
+        nc_fid.variables['best_estimate'][:] = tab1
+        nc_fid.variables['climatology'][:] = tab3
+        # Add global attributs
+        nc_fid.institution = 'MERCATOR OCEAN'
+        nc_fid.obs_type = self.type_data.get(variable, {}).get('defaults').get('name')
+        nc_fid.contact = 'qualif@mercator-ocean.fr'
+        today = date.today()
+        yyyy = str(today)[0:4]
+        yyyy2 = dateval[0:4]
+        month = str(today)[5:7]
+        month2 = dateval[4:6]
+        day = str(today)[8:10]
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.system = model
+        print ('-------------------------------')
+
+###
     def write_output(self, filename, tab_results, param_dict, dateval, ll_zip=True):
         dataorigin = param_dict['data_origin']
         self.mkdir(param_dict['diroutput'])
@@ -429,6 +458,10 @@ class Writer():
                             param_dict['dimension'], 'best_estimate', param_dict['desc'], param_dict['data_type'])
             self.write_best(filename, tab_results['clim'], dateval, param_dict['cl_config'],
                             param_dict['dimension'], 'clim', param_dict['desc'], param_dict['data_type'])
+        elif dataorigin == "CORIOLIS":
+            self.write_coriolis_files(filename, tab_results['best'],
+                                       tab_results['clim'],
+                                       dateval, param_dict['cl_config'], param_dict['data_type'])
         else:
             self.log.error("Origin Not Known : %s :" % (dataorigin))
 

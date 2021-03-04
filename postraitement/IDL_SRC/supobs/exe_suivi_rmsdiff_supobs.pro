@@ -21,8 +21,11 @@
 ;@config_PSY2V4R4
 ;@config_PSY4V2R2
 ;@config_IBI36V2R1
-@config_GLORYS2V3
-;@config_GLORYS2V3_free
+;@config_GLORYS2V3
+;@config_PSY4V3R1
+;@config_GLORYS12V1
+@config_GLORYS12V1-free
+;@config_GLO4
 ;@config_GLORYS2V1
 ;@config_MJM105b
 ;@config_T323
@@ -115,8 +118,18 @@ CASE modele OF  & $
          ;liste_region(*)='BALTIC' & $
          ENDCASE & $
 
-	 'GLORYS2V1':BEGIN & $
-         liste_region=strarr(13) & $
+	 'GLORYS12V1':BEGIN & $
+         liste_region=strarr(14) & $
+         liste_region(*)=liste_zone(*) & $
+          ENDCASE & $
+ 
+          'GLORYS12V1-free':BEGIN & $
+         liste_region=strarr(14) & $
+         liste_region(*)=liste_zone(*) & $
+          ENDCASE & $
+
+          'GLO4':BEGIN & $
+         liste_region=strarr(14) & $
          liste_region(*)=liste_zone(*) & $
           ENDCASE & $
 
@@ -133,7 +146,7 @@ CASE modele OF  & $
          ;liste_region=strarr(1) & $
          ;liste_region(0)='GLO' & $
          ENDCASE & $
-       
+
 	 'GLORYS2V3' :BEGIN & $
 	 liste_region=strarr(14) & $
          liste_region(*)=liste_zone(*) & $
@@ -148,35 +161,43 @@ ENDCASE & $
 ;;; Lancé du tracé de la rms diff et la mean diff sur les couches MYOcean 
 ;; 0-5, 5-100,100-300,300-800,800-2000
 tracer_suivi_rmsdiff_supobs,modele,file_mask,$
-kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,liste_region,tab_choix,OPER,tab_prof,lissage,NB_VALEURS,NB_VALEURS2
+kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,$
+liste_region,tab_choix,OPER,tab_prof,lissage,NB_VALEURS,NB_VALEURS2,type_data=type_data
 dirname_out=fic_out
 dirin=dir_stats_MERC
 tracer_suivi_meandiff_supobs,modele,file_mask,$
-kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,liste_region,tab_choix,OPER,tab_prof,lissage,NB_VALEURS,NB_VALEURS2
-exit,/NO_CONFIRM
+kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,$
+liste_region,tab_choix,OPER,tab_prof,lissage,NB_VALEURS,NB_VALEURS2,type_data=type_data
+;;exit,/NO_CONFIRM
 ;;STOP
 
 ;;;; Lancé du tracé de la rms diff et la mean diff sur les couches classiques
 ;;;; 0-50, 50-100, 100-150 ...
-;;dirname_out=fic_out
-;;dirin=dir_stats_MERC
-;;tracer_suivi_rmsdiff_supobs,modele,file_mask,$
-;;kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,liste_region,tab_choix,OPER,tab_prof_2,lissage,NB_VALEURS,NB_VALEURS2
-;;
-;;dirname_out=fic_out
-;;dirin=dir_stats_MERC
-;;tracer_suivi_meandiff_supobs,modele,file_mask,$
-;;kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,liste_region,tab_choix,OPER,tab_prof_2,lissage,NB_VALEURS,NB_VALEURS2
+dirname_out=fic_out
+dirin=dir_stats_MERC
+tracer_suivi_rmsdiff_supobs,modele,file_mask,$
+kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,$
+liste_region,tab_choix,OPER,tab_prof_2,lissage,NB_VALEURS,NB_VALEURS2,type_data=type_data
+
+dirname_out=fic_out
+dirin=dir_stats_MERC
+tracer_suivi_meandiff_supobs,modele,file_mask,$
+kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,$
+liste_region,tab_choix,OPER,tab_prof_2,lissage,NB_VALEURS,NB_VALEURS2,type_data=type_data
+
+exit,/NO_CONFIRM
 
 ;;;;;;;;;; Reanalyse
 ;;;; 0-100, 100-300, 300-800, 800-2000,0-2000
 tracer_suivi_rmsdiff_supobs,modele,file_mask,$
-kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,liste_region,tab_choix,OPER,tab_prof_3,lissage,NB_VALEURS,NB_VALEURS2
+kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,$
+liste_region,tab_choix,OPER,tab_prof_3,lissage,NB_VALEURS,NB_VALEURS2,type_data=type_data
 dirname_out=fic_out
 dirin=dir_stats_MERC
 ;;
 tracer_suivi_meandiff_supobs,modele,file_mask,$
-kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,liste_region,tab_choix,OPER,tab_prof_3,lissage,NB_VALEURS,NB_VALEURS2
+kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,$
+liste_region,tab_choix,OPER,tab_prof_3,lissage,NB_VALEURS,NB_VALEURS2,type_data=type_data
 exit,/NO_CONFIRM
 
 

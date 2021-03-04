@@ -3,7 +3,8 @@ import os,sys,string,shutil,glob,re
 import numpy as np
 import logging
 import tarfile
-from sydate import SyDate
+#from sydate import SyDate
+from sytoolkit.sydate import SyDate
 from nco.nco import Nco
 import datetime as dt
 

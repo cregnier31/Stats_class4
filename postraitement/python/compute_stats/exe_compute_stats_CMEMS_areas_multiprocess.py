@@ -193,7 +193,7 @@ if params_conf['daily_off'] == 'on':
             # ******************  Read observations and model values  ******************
             dict_inputs = cl4_reader.read_inputfile(cvar, params_conf['cexp'], cl_cl4file, params_conf, log)
             if not dict_inputs:
-                log.info("BEST FCST PERS are missing!!")
+                log.info("BEST FCST PERS are missing!! var: {}  file: {}".format(cvar,cl_cl4file))
                 continue
             nb_fcst = dict_inputs['nb_fcst']
             if nb_fcst != None:
@@ -272,6 +272,7 @@ if params_conf['daily_off'] == 'on':
 
                     # *********************************  Find observations in area  *****************************
                     if params_conf['cla_area'][area_mask] == 'GLO':
+                        log.debug(' GLobal area {}')
                         iobs = np.arange(len(dict_inputs['latobs']))
                     else:
                         region = params_conf['area_name'][area_mask]
