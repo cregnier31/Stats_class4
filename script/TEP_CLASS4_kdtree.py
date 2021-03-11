@@ -82,7 +82,7 @@ def main(level=2):
            log.debug(input_model_file)
            # Interpolation of the data
            for file in input_list_files:
-               tab_results, file_out = Interpolator(log).read_and_interp(
+               tab_results, file_out = Interpolator(log, dask=param_dict['dask']).read_and_interp(
                    file, input_model_file, param_dict, date=dateval)
                # Write output file
                filename = param_dict['dirwork']+file_out
