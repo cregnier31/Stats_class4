@@ -116,7 +116,7 @@ class Writer():
         month2 = dateval[4:6]
         day = str(today)[8:10]
         day2 = dateval[6:8]
-        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
         nc_fid.Conventions = 'CF-1.6'
@@ -137,7 +137,7 @@ class Writer():
         month2 = dateval[4:6]
         day = str(today)[8:10]
         day2 = dateval[6:8]
-        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.close()  # close the new file
 
@@ -174,7 +174,7 @@ class Writer():
         month2 = dateval[4:6]
         day = str(today)[8:10]
         day2 = dateval[6:8]
-        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
         nc_fid.Conventions = 'CF-1.6'
@@ -223,7 +223,7 @@ class Writer():
         month2 = dateval[4:6]
         day = str(today)[8:10]
         day2 = dateval[6:8]
-        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
         nc_fid.Conventions = 'CF-1.6'
@@ -259,7 +259,7 @@ class Writer():
         month2 = dateval[4:6]
         day = str(today)[8:10]
         day2 = dateval[6:8]
-        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
         nc_fid.Conventions = 'CF-1.6'
@@ -356,7 +356,7 @@ class Writer():
         month2 = dateval[4:6]
         day = str(today)[8:10]
         day2 = dateval[6:8]
-        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
         nc_fid.close()  # close the new file
@@ -380,7 +380,7 @@ class Writer():
         month2 = dateval[4:6]
         day = str(today)[8:10]
         day2 = dateval[6:8]
-        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
         nc_fid.close()  # close the new file
@@ -408,7 +408,7 @@ class Writer():
         month2 = dateval[4:6]
         day = str(today)[8:10]
         day2 = dateval[6:8]
-        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
         print ('-------------------------------')
@@ -493,3 +493,4 @@ class Writer():
                     shutil.move(filename+'.gz', param_dict['diroutput'])
                 os.remove(filename)
                 self.log.info('File ok %s' % (filename))
+        shutil.move(filename, param_dict['diroutput'])
