@@ -257,7 +257,7 @@ class InputLoader(Loader):
         keywords = ['date1=', 'date2=', 'delta=', 'nbdate=', 'daterun=',
         'config=', 'data=', 'src=', 'nbproc=', 'typemod=', 'schedule=',
         'data_id=','loglevel=','daymax=']
-        cla_opts = getopt.getopt(options, '', keywords)
+        cla_opts = getopt.getopt(options, 'd', keywords)
         ll_delta = None
         ll_date1 = None
         ll_date2 = None
@@ -270,6 +270,7 @@ class InputLoader(Loader):
         ll_data_id = None
         ll_cycle = None
         daymax = None
+        dask = False
         list_var = []
         nb_proc = 0
         cl_schedule = 'd'
@@ -317,7 +318,8 @@ class InputLoader(Loader):
                 level = int(p)
             elif o in ['--daymax']:
                 daymax = p
-
+            elif o in ['-d']:
+                dask = True
         # LOGGER
         log = Logger("TEP_CLASS4").run(level)
         list_var.append(ll_date1)
@@ -448,7 +450,7 @@ class InputLoader(Loader):
         param_dict['cl_typemod'] = cl_typemod
         param_dict['cl_data_id'] = cl_data_id
         param_dict['daymax'] = daymax
-
+        param_dict['dask'] = dask
         # Create time vector between date1 and date2
         start_date = dt.datetime(year=int(str(param_dict['date1'])[0:4]),\
                                  month=int(str(param_dict['date1'])[4:6]),\
@@ -481,7 +483,6 @@ class NmlLoader(Loader):
         #if param_dict['data_type'] == "SLA":
         param_dict['cl_msshFile'] = db.get('static','cl_msshFile')
         param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
-        param_dict['type_file'] = db.get('GLOBAL', 'TYPE_FILE')
         param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
         param_dict['dirmodel'] = param_dict['dirmodel_pgn']
         param_dict['dirdata'] = db.get('input_dir', 'INPUTDATA')
@@ -539,6 +540,12 @@ class NmlLoader(Loader):
         param_dict['model_type'] = db.get('GLOBAL', 'MODELTYPE')
         param_dict['data_format'] = db.get('input_dir', 'DATA_FMT')
         param_dict['dirwork'] = db.get('output_dir', 'DIRTMP')
+        if not os.path.exists(param_dict['dirwork']):
+            try:
+                os.makedirs(param_dict['dirwork'])
+            except OSError as exc:
+                if exc.errno == errno.EEXIST and os.path.isdir(param_dict['dirwork']):
+                    pass
         #param_dict['dirwork'] = db.get('output_dir', 'DIRWORK')
         param_dict['diroutput'] = db.get('output_dir', 'DIROUTPUT')
         param_dict['diroutput2'] = db.get('output_dir', 'DIROUTPUT2')
@@ -598,7 +605,6 @@ class LoaderNCcorio(Loader):
         self.varname_list = []
 
     def read_pos(self,filename):
-        # print 'read netcdf file : %s ' %(filename)
         nc = netCDF4.Dataset(filename,'r')
         variable = 'LONGITUDE'
         rla_lon = nc.variables[variable][:]
@@ -788,14 +794,22 @@ class PGN_coords_Loader(Loader):
     """Loader for PGN dataset"""
     def read_pos(self,filename):
         nc = netCDF4.Dataset(filename,'r')
-        variable = 'nav_lon'
-        rla_lon = nc.variables[variable][:,:]
-        variable = 'nav_lat'
-        rla_lat = nc.variables[variable][:,:]
+        variables = nc.variables
+        list_lon = ['x', 'X', 'lon', 'LON', 'lons', 'longitude', 'LONGITUDE', 'nav_lon']
+        list_lat = ['y', 'Y', 'lat', 'LAT', 'LATS', 'latitude', 'LATITUDE', 'nav_lat']
+        list_depth = [ 'deptht', 'depth', 'z', 'Z', 'DEPTH','nav_lev']
+        try:
+            lon_name = [ k for k in variables.keys() & set(list_lon)][0]
+            lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
+            depth_name = [ k for k in variables.keys() & set(list_depth)][0]
+        except:
+            print('lon lat or depth not defined')
+            raise
+        rla_lon = nc.variables[lon_name][:,:]
+        rla_lat = nc.variables[lat_name][:,:]
         variable = 'tmask'
         rla_mask = nc.variables[variable][:,:,:]
-        variable = 'nav_lev'
-        depth_mod =  nc.variables[variable][:]
+        depth_mod =  nc.variables[depth_name][:]
         nlat, nlon, ndepth = np.shape(rla_mask)
         mask_tab = np.full((nlat,nlon,ndepth), True)
         mask_tab = np.where(rla_mask == 1, False, mask_tab)
