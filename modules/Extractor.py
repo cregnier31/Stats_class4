@@ -525,13 +525,12 @@ class Extract_GODAE(Extractor):
                     nco.ncks(input=dirtmp+filename,output=dirtmp+filename, fortran=True ,options=options)
                     # Rename
                     options = []
-                    #if 'modeljuld' in variables:
-                    #    options.extend(['-h','-O','-v','modeljuld_new,modeljuld'])
-                    #    print (dirtmp+filename)
-                    #    nco.ncrename(input=dirtmp+filename,output=dirtmp+filename, options=options)
-                    #    options = []
-                    #    options.extend(['-h','-O','-v','leadtime_new,leadtime'])
-                    #    nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
+                    if 'modeljuld' in variables:
+                        options.extend(['-h','-O','-v','modeljuld_new,modeljuld'])
+                        nco.ncrename(input=dirtmp+filename,output=dirtmp+filename, options=options)
+                        options = []
+                        options.extend(['-h','-O','-v','leadtime_new,leadtime'])
+                        nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
                     log.info("add new dim ok {}".format(dirtmp+filename))
                 elif typedata == "current":
                     options = []
@@ -663,7 +662,6 @@ class Extract_cora3(Extractor) :
         for file in liste_file:
             file_path=dirdata+file
             if os.path.isfile(file_path)  :
-                print ('file ok')
                 try :
                     shutil.copy(file_path,dirtmp)
                     os.chdir(dirtmp)
