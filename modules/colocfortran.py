@@ -8,10 +8,10 @@ from glob import glob
 from timeit import default_timer as timer
 from sytoolkit.sydate import SyDate
 import time
+import subprocess,shlex
 ## local modules
 from Writer import Writer
 from NmlCreator import NmlCreator
-import subprocess,shlex
 
 class ColocFortran(object):
     """
@@ -62,16 +62,13 @@ class ColocFortran(object):
                 '-r'+' '+file_pos+' ' \
                 +'-c'+' '+self.config+' '+'-m'+' '+self.maskname
         self.log.debug(code_lancement)
-        # subprocess.call(code_lancement)
-        try:
-            #subprocess.check_output(code_lancement,stderr=subprocess.STDOUT,shell=True)
-            self.log.debug(code_lancement)
-            #subprocess.check_call(code_lancement)
-            os.system(code_lancement)
-        except IOError as e:
-            self.log.error("Problem in the execution")
-            self.log.error("File %s" %file_pos )
-            self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
+        exe = self.direxec+'CLASS4_create_colocfile_ASCII_'+self.config+'.exe'
+        codexe = '%s -g %s -r %s -c %s -m %s' %(exe,self.coords,file_pos,self.config,self.maskname)
+        args   = shlex.split(codexe)
+        try :   subprocess.check_call(args)
+        except subprocess.CalledProcessError as e:
+            self.log.error('executable {} {} failed'.format(exe,e))
+            raise
 
     @timeit
     def split_coloc(self, file, position):
@@ -214,7 +211,7 @@ class ColocFortran(object):
                 self.log.info('Lead Time {}'.format(time))
                 lead_fin = []
                 lead_new=self.params['lead_int']
-                if self.params['type_file'] == "ALLEGE":
+                if self.params['cl_typemod'] == "allege":
                     sort_rep = self.params['dirmodel_light']
                 else:
                     sort_rep = self.params['dirmodel']
@@ -268,7 +265,7 @@ class ColocFortran(object):
                               .run(nml,cl_config_use,self.params['daily_pref'],self.params['data_type'],\
                               time,sort_rep,self.params['coloc_rep'],self.params['dirwork'],time,dateval,self.params['gridtemp'],\
                               self.params['gridsal'],self.params['cl_schedule'],self.params['type_run'],self.params['coordinates'],\
-                              self.params['type_file'])
+                              self.params['cl_typemod'])
                     if not os.path.exists(exe) :
                         self.log.error('Did not find executable {}'.format(exe))
                         sys.exit(1)

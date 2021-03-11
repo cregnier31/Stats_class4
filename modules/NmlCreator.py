@@ -152,7 +152,6 @@ class NmlCreator_IAOOS(NmlCreator):
             prefix_var=listdir
         if schedule == 'm' : 
             searchdir="MONTHLY_"+yearval 	
-            print("monthly values")
             daterun=dateval[0:6]
             template=dirmodel+searchdir+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
         elif type_run == 'free' :
@@ -285,7 +284,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
         if schedule == 'm' :
             searchdir="MONTHLY_"+yearval
             daterun=dateval[0:6]
-            if type_file == 'ALLEGE' :
+            if type_file == 'allege' :
                 type_out='END'
                 ## Find next daterun
                 jdatemin=SyDate(dateval)
@@ -324,7 +323,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
             template=dirmodel+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
         else :
             log.debug("schedule daily")
-            if type_file == 'ALLEGE' :
+            if type_file == 'allege' :
                 type_out='END'
                 log.debug("lightout type")
                 ## Find next daterun
@@ -356,9 +355,15 @@ class NmlCreator_CORIOLIS(NmlCreator):
                     sys.exit(1)
                 template=dirmodel+'ALLEGES_'+type_run_tmp+'_'+str(date1)+'_'+str(date2)+'_R'+str(daterun)+'/'+type_out+'/'+gridtemp+'N.B.d*.50.0'
                 ll_lightout=True
-            else : 
-                #template=dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
-                template=dirmodel+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
+            else :
+                if type_run == "REA":
+                    YEAR = daterun[0:3]
+                    template=dirmodel+YEAR+'*/*/'+modele+'_1dAV_'+daterun+'*'+gridtemp+'*.nc'
+                elif type_run == "OPER":
+                    template = dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
+                else:
+                    #template=dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
+                    template=dirmodel+'/'+modele+'_'+daterun+'*'+gridtemp+'*.nc'
 
         output_varname_T=prefix_var+'_'+input_varname_T
         output_varname_S=prefix_var+'_'+input_varname_S
@@ -400,8 +405,9 @@ class NmlCreator_CORIOLIS(NmlCreator):
         fic_psal = []
         for file in glob.glob(template):
             fic_temp=file
+            log.debug('File {}'.format(file))
             if listdir[0:4] != 'CLIM' :
-                if type_file == 'ALLEGE' :
+                if type_file == 'allege' :
                     fic_psal=re.sub(gridtemp+"N.B",gridsal+"N.B",fic_temp)
                 else :
                     fic_psal=re.sub(gridtemp,gridsal,fic_temp)
@@ -410,6 +416,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
                     fic_psal=re.sub('TEMP','PSAL',fic_temp)
                     #fic_psal=re.sub('tempinsitu','sal',fic_temp)
                 else :
+                    log.debug('Dans le else')
                     fic_psal=fic_temp
         if not fic_temp or not fic_psal :
             log.error("Files doesn't exist ")
