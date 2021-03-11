@@ -25,6 +25,9 @@ class Logger(object):
         self.stream = logging.StreamHandler()
     def run(self,level):
         log = logging.getLogger(self.name)
+        ## Clean logger
+        if (log.hasHandlers()):
+           log.handlers.clear()
         ## Level of logging output
         if level == 0 :
             log.setLevel(logging.NOTSET)
