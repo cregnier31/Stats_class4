@@ -134,7 +134,7 @@ class SelectListModelData(Selector):
             param_dict['gridtype'] = ["grid2D"]
             param_dict['gridtype_light'] = ["SLA.B"]
         elif data_type.lower() == "chloro":
-            param_dict['gridtype'] = ["gridCHL"]
+            param_dict['gridtype'] = ["chl"]
         elif data_type.lower() == "nitrate":
             param_dict['gridtype'] = ["no3"]
         elif data_type.lower() == "ph":
@@ -182,9 +182,14 @@ class SelectListModelData(Selector):
                     lead_tmp.extend(lead_new)
                     lead_fin = lead_tmp
             elif time == 'best_estimate':
-                cl_config_use = re.sub('Q', '', param_dict['cl_config'])
-                lead_fin = ['hdct']
-                self.log.debug('Lead fin %s ' % (lead_fin))
+                if param_dict['cl_config'][0:6] == 'BIOMER':
+                    #lead_fin = [time[0]+time[4]+time[6:8]]
+                    lead_fin = ['hdct']
+                    self.log.debug("Config biomer")
+                else:
+                    cl_config_use = re.sub('Q', '', param_dict['cl_config'])
+                    lead_fin = ['hdct']
+                    self.log.debug('Lead fin %s ' % (lead_fin))
             elif time == 'best':
                 cl_config_use = re.sub('Q', '', param_dict['cl_config'])
                 lead_fin = ['hdct_all']
@@ -207,6 +212,7 @@ class SelectListModelData(Selector):
             ## Find and Load the good file
             ind = 0
             for directory in lead_fin:
+                self.log.debug("directory {}".format(directory))
                 ll_miss = False
                 ## Compute date
                 datev = SyDate(str(dateval))
@@ -223,7 +229,6 @@ class SelectListModelData(Selector):
                         self.log.debug('define forecast path')
                         sys.exit()
                 else:
-                    self.log.debug("directory {}".format(directory))
                     if directory == 'hdct':
                         if param_dict['daily_pref'] == '7dAV':
                             dirmodel_new = dirmodel+"HINDCAST/"
@@ -283,6 +288,7 @@ class SelectListModelData(Selector):
                             list_file_tmp = glob(dirmodel_new+template+"*.nc")
                             list_file.extend(list_file_tmp)
                     elif directory == 'clim' and param_dict['data_type'].lower() == 'chloro':
+
                         dirmodel_new = param_dict['dirclim']
                         datev = SyDate(str(dateval))
                         if int(datev.month) < 10 and int(datev.day) < 10:
@@ -297,11 +303,13 @@ class SelectListModelData(Selector):
                 elif param_dict['data_origin'] == 'GLOBCOLOUR' and param_dict['daily_pref'] == '1dAV':
                     if directory == 'clim':
                         template = '1998'+month+day
-                        self.log.debug('directory %s' % (dirmodel_new))
+                        template = '1998'+month
+                        self.log.debug('directory clim bio {}'.format(dirmodel_new+"/"+template+"*.nc"))
                         list_file = glob(dirmodel_new+"/"+template+"*.nc")
                     else:
-                        self.log.debug('directory %s' % (dirmodel_new+'/'+year+'/'+month))
-                        list_file = glob(dirmodel_new+"/"+year+'/'+month+'/'+modele+"_"+ \
+                        #directory = dirmodel_new+'/'+year+'/'+month+'/'
+                        dir_input = dirmodel_new
+                        list_file = glob(dir_input+modele+"_"+ \
                         param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['varname'][0]+"*.nc")
                         if not list_file:
                             if datev.month < 9:
