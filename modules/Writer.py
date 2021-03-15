@@ -279,7 +279,10 @@ class Writer():
         nc_file2.setncatts(
             {'long_name': u"Model forecast counterpart of obs. value"})
         nc_file3.setncatts(
-            {'long_name': u"Satellite L4 climatology counterpart of obs. value"})
+            {'long_name': u"Satellite L4 climatology counterpart of obs. value",
+             'product': u"OCEANCOLOUR_GLO_CHL_L4_REP_OBSERVATIONS_009_082",
+             'dataset': u"dataset-oc-glo-chl-multi-l4-gsm_4km_daily-climatology-v02"}
+            )
         nc_fid.variables['best_estimate'][:] = tab1
         nc_fid.variables['forecast'][:] = tab2
         nc_fid.variables['climatology'][:] = tab3
@@ -297,9 +300,6 @@ class Writer():
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
-        print ('-------------------------------')
-        print ('Creation OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
     def write_GLOBCOLOR_files2(self, filename, tab, tab2, dateval, model, variable):
@@ -311,7 +311,9 @@ class Writer():
         nc_file.setncatts(
             {'long_name': u"Model best_estimate counterpart of obs. value"})
         nc_file2.setncatts(
-            {'long_name': u"Satellite L4 climatology counterpart of obs. value"})
+            {'long_name': u"Daily Satellite L4 climatology counterpart of obs. value",
+             'product': u"OCEANCOLOUR_GLO_CHL_L4_REP_OBSERVATIONS_009_082",
+             'dataset': u"dataset-oc-glo-chl-multi-l4-gsm_4km_daily-climatology-v02"})
         nc_fid.variables['best_estimate'][:] = tab
         nc_fid.variables['climatology'][:] = tab2
         # Add global attributs
@@ -328,9 +330,6 @@ class Writer():
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
-        print ('-------------------------------')
-        print ('Creation OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
     def write_best_fcst(self, filename, tab1, tab2, dateval, model, variable):
