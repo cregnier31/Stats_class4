@@ -303,7 +303,7 @@ class SelectListModelData(Selector):
                 elif param_dict['data_origin'] == 'GLOBCOLOUR' and param_dict['daily_pref'] == '1dAV':
                     if directory == 'clim':
                         template = '1998'+month+day
-                        template = '1998'+month
+                        # Code Monthly case  template = '1998'+month
                         self.log.debug('directory clim bio {}'.format(dirmodel_new+"/"+template+"*.nc"))
                         list_file = glob(dirmodel_new+"/"+template+"*.nc")
                     else:
@@ -440,11 +440,11 @@ class SelectListData(Selector):
             self.log.debug('Prefix  %s ' %(param_dict['prefix_data']))
             #list_files = Extractor().factory(param_dict['prefix_data']).run(param_dict['date1'],\
             #param_dict['date2'],param_dict['dirdata'],param_dict['dirwork'],param_dict['data_type'],param_dict['template'])
-            list_files = Extractor().factory(param_dict['prefix_data']).run(daterun,param_dict['dirdata'],\
+            list_files = Extractor(self.log).factory(param_dict['prefix_data']).run(daterun,param_dict['dirdata'],\
                          param_dict['dirwork'],param_dict['data_type'],param_dict['template'], len(param_dict['lead_int']))
         elif param_dict['do_decomp']:
             self.log.debug('do decomp %s '%(param_dict['prefix_data']))
-            list_files = Extractor().factory(param_dict['prefix_data']).run(
+            list_files = Extractor(self.log).factory(param_dict['prefix_data']).run(
                 param_dict['date1'], param_dict['date2'], param_dict['dirdata'],\
                 param_dict['dirwork'], param_dict['data_type'], param_dict['template'], param_dict['prefix_data'])
         else:
@@ -452,7 +452,7 @@ class SelectListData(Selector):
             self.log.debug('              DATE Selection and extraction  %s         ' %(param_dict['prefix_data']))
             self.log.debug(' Prefix Data {}'.format(param_dict['prefix_data']))
             self.log.debug('========================================================')
-            list_files = Extractor().factory(param_dict['prefix_data']).run_list(param_dict, daterun)
+            list_files = Extractor(self.log).factory(param_dict['prefix_data']).run_list(param_dict, daterun)
         if not list_files:
             self.log.error('Missing files {} {}'.format(param_dict['prefix_data'], param_dict['dirdata']))
             ll_miss = True

@@ -27,6 +27,11 @@ from nco.nco import Nco
 
 class Extractor(object):
 
+    def __init__(self, log):
+        
+        self.log = log
+
+
     """ Factory extract file depending on type """
 
     def factory(self, type):
@@ -34,26 +39,26 @@ class Extractor(object):
          Create an interface for different type of data
          Factory
         """
-        if type == "CORA3": return Extract_cora3()
-        if type == "cora4.0_merc": return Extract_cora4('.tgz')
-        if type == "cora4.1_raw": return Extract_cora4_1()
-        if type == "CORA4.1_MERC": return Extract_cora4('.tgz')
-        if type == "cora5.0_raw": return Extract_cora4('.tar.gz')
-        if type == "CORA5.0": return Extract_cora4('.tgz')
-        if type == "CORA5.2": return Extract_cora4_1()
-        if type == "CORIO_ASSIM": return Extract_corio_cmems()
-        if type == "CORIOLIS": return Extract_corio()
-        if type == "CORIOLIS_RAW": return Extract_corio_raw()
-        if type == "ENS": return ExtractEns()
-        if type == "ARMOR_CO" or type == "ARMOR_AR" or type == "AR_": return Extract_ARMOR()
-        if type == "GODAE": return Extract_GODAE()
-        if type == "ASCII": return Extract_ASCII()
-        if type == "L3m": return Extract_genericData()
-        if type.startswith("BGC_ARGO"): return Extract_BGC_ARGO()
-        if type == "L3mCHL": return Extract_CHLORO()
-        if type == "Microwat_Lband_Orbite_1day_Lband" or type == "Microwat_6.9GHz_Orbite_1day": return Extract_genericData()
-        if type == "001_048" : return Extract_CMEMS_drifters()
-        if type == "sssdata_netcdf_good_FNAV" or "sssdata_netcdf_all": return Extract_SSSData()
+        if type == "CORA3": return Extract_cora3(self.log)
+        if type == "cora4.0_merc": return Extract_cora4('.tgz',self.log)
+        if type == "cora4.1_raw": return Extract_cora4_1(self.log)
+        if type == "CORA4.1_MERC": return Extract_cora4('.tgz',self.log)
+        if type == "cora5.0_raw": return Extract_cora4('.tar.gz',self.log)
+        if type == "CORA5.0": return Extract_cora4('.tgz', self.log)
+        if type == "CORA5.2": return Extract_cora4_1(self.log)
+        if type == "CORIO_ASSIM": return Extract_corio_cmems(self.log)
+        if type == "CORIOLIS": return Extract_corio(self.log)
+        if type == "CORIOLIS_RAW": return Extract_corio_raw(self.log)
+        if type == "ENS": return ExtractEns(self.log)
+        if type == "ARMOR_CO" or type == "ARMOR_AR" or type == "AR_": return Extract_ARMOR(self.log)
+        if type == "GODAE": return Extract_GODAE(self.log)
+        if type == "ASCII": return Extract_ASCII(self.log)
+        if type == "L3m": return Extract_genericData(self.log)
+        if type.startswith("BGC_ARGO"): return Extract_BGC_ARGO(self.log)
+        if type == "L3mCHL": return Extract_CHLORO(self.log)
+        if type == "Microwat_Lband_Orbite_1day_Lband" or type == "Microwat_6.9GHz_Orbite_1day": return Extract_genericData(self.log)
+        if type == "001_048" : return Extract_CMEMS_drifters(self.log)
+        if type == "sssdata_netcdf_good_FNAV" or "sssdata_netcdf_all": return Extract_SSSData(self.log)
 
     def timelinespace(self, date1, date2):
         """
@@ -225,10 +230,10 @@ class Extract_BGC_ARGO(Extractor):
 
     """ Extract files """
 
+    def __init__(self, log):
+        self.log = log
+
     def run_list(self, param_dict, dateval):
-        logging.basicConfig(format='%(asctime)s %(message)s')
-        self.log =logging.getLogger("Extract Generic files")
-        self.log.setLevel(logging.INFO)
         liste_tot = []
         liste_file = glob(param_dict['dirdata']+'/*/'+param_dict['prefix_data']+'*'+dateval+'*.nc')
         for file in liste_file:
@@ -237,7 +242,7 @@ class Extract_BGC_ARGO(Extractor):
                 shutil.copy(file, param_dict['dirwork']+filename)
                 liste_tot.append(param_dict['dirwork']+filename)
             except IOError as e:
-                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                self.log ("I/O error({0}): {1}".format(e.errno, e.strerror))
                 sys.exit(1)
 
         return liste_tot
@@ -246,6 +251,9 @@ class Extract_BGC_ARGO(Extractor):
 class Extract_CHLORO(Extractor):
 
     """ Extract Chloro Globcolour files """
+    
+    def __init__(self, log):
+        self.log = log
 
     def mkdir(self, path):
         "Create a directory, and parents if needed"
@@ -253,9 +261,6 @@ class Extract_CHLORO(Extractor):
             os.makedirs(path)
 
     def run_list(self, param_dict, dateval):
-        logging.basicConfig(format='%(asctime)s %(message)s')
-        self.log = logging.getLogger("Extract Chloro")
-        self.log.setLevel(logging.INFO)
         liste_tot = []
         liste_file = glob(param_dict['dirdata']+'/'+dateval+'*REP'+'*.nc')
 
@@ -274,7 +279,7 @@ class Extract_CHLORO(Extractor):
                 shutil.copy(file,param_dict['dirwork']+filename)
                 liste_tot.append(param_dict['dirwork']+filename)
             except IOError as e:
-                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
                 sys.exit(1)
 
         return liste_tot
@@ -283,13 +288,12 @@ class Extract_corio_raw(Extractor):
 
     """ Extract coriolis raw common file """
 
-    def __init__(self): 
+    def __init__(self, log): 
 
         # ===============
         # LOGGER
         # ===============
-        self.log = logging.getLogger("Extract_corio_raw")
-        self.log.setLevel(logging.INFO)
+        self.log = log
         self.date=SyDate('19500101')
 
     def search(self,dirdata,**kwargs):
@@ -341,19 +345,18 @@ class Extract_corio_raw(Extractor):
 class Extract_corio(Extractor):
 
     """ Extract coriolis common file """
+    def __init__(self, log):
+        self.log = log
 
     def run(self, param_dict, dateval):
         # ===============
         # LOGGER
         # ===============
-        log = logging.getLogger("Extract_ARMOR")
-        log.setLevel(logging.INFO)
-        # Level of logging output
         liste_tot=[]
-        log.info('Day %s ' % (dateval))
+        self.log.info('Day %s ' % (dateval))
         frame=param_dict['dir_data']+'/*'+dateval.strip()+'*.nc'
         liste_file=glob(frame)
-        log.info('Liste file %s ' % (liste_file)) 
+        self.log.info('Liste file %s ' % (liste_file)) 
         for new_file in liste_file :
             try :
                 filename=os.path.basename(new_file)
@@ -370,9 +373,9 @@ class Extract_cora4_1(Extractor):
 
     """ Extract cora 4.1 file """
 
-    def __init__(self, level=2):
+    def __init__(self, log):
         self.date = SyDate('19500101')
-        self.log = Logger("Extract Cora").run(level)
+        self.log = log
 
     def run(self,date1,date2,dirdata,dirtmp,typedata,template,prefix):
         # ===============
@@ -411,16 +414,14 @@ class Extract_corio_cmems(Extractor):
 
     """ Extract CMEMS coriolis profiles files """
 
-    def __init__(self, level=2):
+    def __init__(self, log):
         self.date = SyDate('19500101')
-        self.log = Logger("Extract CMEMS profiles").run(level)
+        self.log = log
 
     def run(self,date1,date2,dirdata,dirtmp,typedata,template,prefix):
         # ===============
         # LOGGER
         # ===============
-        log = logging.getLogger("Extract_CMEMS_prof")
-        log.setLevel(logging.INFO)
         valeurj_tmp = SyDate(str(date1))
         # Level of logging output
         valeurj = valeurj_tmp
@@ -466,32 +467,31 @@ class Extract_ASCII(Extractor):
 class Extract_GODAE(Extractor):
 
     """ Extract GODAE file """
+    
+    def __init__(self, log):
+        self.log = log
 
     def run(self,daterun,dirdata,dirtmp,typedata,template,nb_fcst):
         # =============== 
         # LOGGER
         # ===============
-        log = logging.getLogger("Extract GODAE")
-        log.setLevel(logging.INFO)
-        log.info('Extract_GODAE')
         if typedata != "SLA" and  typedata != "SST" and typedata != "profile" \
             and typedata !=  "aice" and typedata !=  "AMSR" and  typedata !=  "current" :
-            log.error("Data %s not known !!! " %(typedata))
+            self.log.error("Data %s not known !!! " %(typedata))
             sys.exit(1)
-        # Level of logging output
         #valeurj=date1
         liste_tot=[]
         # Nco constructor
         nco = Nco()
         #while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
         #    dateval=SyDate.__str__(valeurj)
-        log.info('Day  %s ' % (daterun)) 
+        self.log.info('Day  %s ' % (daterun)) 
         if typedata ==  "AMSR" : 
             liste_file=glob(dirdata+'/*'+daterun+'*.nc')
         else :
             liste_file=glob(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')
         # liste_file=glob(dirdata+'/*[TS]*'+daterun+'*.nc')
-        log.info('Liste file %s ' % (liste_file))
+        self.log.info('Liste file %s ' % (liste_file))
         for new_file in liste_file :
             try :
                 filename=os.path.basename(new_file)
@@ -516,7 +516,7 @@ class Extract_GODAE(Extractor):
                        command2 = "\'defdim(\"numfcsts\","+str(nb_fcst)+");leadtime_new[$numfcsts]=leadtime;modeljuld_new[$numfcsts]=modeljuld\' "
                        os.system(command+command2+dirtmp+filename+" "+dirtmp+filename)
                     else:
-                        log.info('no modeljuld !!')
+                        self.log.info('no modeljuld !!')
                     options = []
                     if typedata == "SLA" :
                         options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference,leadtime,modeljuld'])
@@ -531,7 +531,7 @@ class Extract_GODAE(Extractor):
                         options = []
                         options.extend(['-h','-O','-v','leadtime_new,leadtime'])
                         nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
-                    log.info("add new dim ok {}".format(dirtmp+filename))
+                    self.log.info("add new dim ok {}".format(dirtmp+filename))
                 elif typedata == "current":
                     options = []
                     shutil.copy(dirdata+filename,dirtmp)
@@ -551,13 +551,13 @@ class Extract_GODAE(Extractor):
                     nc.createVariable('varname','c',('numvars','string_length8'))
                     nc.variables['varname'][:]='ileadfra'
                     nc.close
-                log.info('Fichier extracted %s ' % (dirtmp+filename)) 
+                self.log.info('Fichier extracted %s ' % (dirtmp+filename)) 
                 liste_tot.append(dirtmp+filename)
                 # Design output File
                 # Design_file('GODAE').run(dirtmp+filename)
             except IOError as e:
-                log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-                sys.exit(1)
+                self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
+                raise
         #valeurj=valeurj.goforward(1)
 
         return liste_tot
@@ -567,30 +567,26 @@ class Extract_GODAE(Extractor):
 class Extract_ARMOR(Extractor):
 
     """ Extract ARMOR file """
+    
+    def __init__(self, log):
+        self.log = log
 
     def run(self,date1,date2,dirdata,dirtmp,typedata,template,prefix):
-        # ===============
-        # LOGGER
-        # ===============
-        logging.basicConfig(format='%(asctime)s %(message)s')
-        log = logging.getLogger("Extract_ARMOR")
-        log.setLevel(logging.INFO)
-        # Level of logging output
         valeurj=date1
         liste_tot=[]
         while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
             dateval=SyDate.__str__(valeurj)
-            log.info('Day %s ' % (dateval)) 
+            self.log.info('Day %s ' % (dateval)) 
             frame=dirdata+prefix+'*'+dateval.strip()+'*.nc*'
             liste_file=glob(frame)
             # liste_file=glob(dirdata+'/*[TS]*'+dateval+'*.nc')
-            log.info('Liste file %s ' % (liste_file)) 
+            self.log.info('Liste file %s ' % (liste_file)) 
             for new_file in liste_file :
                 try :
                     filename=os.path.basename(new_file)
                     shutil.copy(new_file,dirtmp)
                     if filename[-2:] == 'gz' :
-                        log.info('Dezip')
+                        self.log.info('Dezip')
                         filename2=filename
                         dezip=ZipManipulator(dirtmp)
                         fichier=dirtmp+filename2
@@ -602,7 +598,7 @@ class Extract_ARMOR(Extractor):
                         liste_tot.append(filename)
                     else :
                         liste_tot.append(dirtmp+filename)
-                    log.info("append : %s " %(filename))
+                    self.log.info("append : %s " %(filename))
                 except IOError as e:
                     print ("I/O error({0}): {1}".format(e.errno, e.strerror))
                     sys.exit(1)
@@ -631,24 +627,17 @@ class Extract_cora3(Extractor) :
 
     """ Extract Cora3 file """
 
-    def __init__(self):
+    def __init__(self, log):
         self.PREFIX='cora3.4_merc'
+        self.log = log
+
     def run(self,date1,date2,dirdata,dirtmp,typedata,template):
-        # ===============
-        # LOGGER
-        # ===============
-        logging.basicConfig(format='%(asctime)s %(message)s')
-        log = logging.getLogger("Extract_cora3")
-        log.setLevel(logging.INFO)
-        # Level of logging output
-        log.info('Extraction of Cora 3 dataset')
+        self.log.info('Extraction of Cora 3 dataset')
         presmonth=SyDate.__str__(date2)[:6]
         backmonth=SyDate.__str__(date1)[:6]
         liste_month=[]
         liste_file=[]
         if presmonth == backmonth : 
-            file=self.PREFIX+"_"+presmonth+".tgz"
-            print ("Same month %s " %(file))
             liste_file.append(file)
             liste_month.append(presmonth)
         else :
@@ -670,11 +659,10 @@ class Extract_cora3(Extractor) :
                     tar.close()
                     os.remove(file)
                 except  IOError as e :
-                    print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                    sys.exit(1)
-                    # print 'Problem with copy or extraction'
+                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
+                    raise e
             else :
-                print ('file not known %s ' %(file_path))
+                self.log.error('file not known %s ' %(file_path))
                 sys.exit(1)
         liste_tot=[]
         for month in liste_month : 
@@ -682,9 +670,9 @@ class Extract_cora3(Extractor) :
             year=SyDate.__str__(valeurj)[:4]
             while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 dateval=SyDate.__str__(valeurj)
-                log.info('Day  %s ' % (dateval)) 
+                self.log.info('Day  %s ' % (dateval)) 
                 liste_file=glob(dirtmp+'/'+year+'/*'+dateval+'*.nc')
-                log.info('Day list %s ' % (liste_file)) 
+                self.log.info('Day list %s ' % (liste_file)) 
                 for new_file in liste_file :
                     try :
                         # os.rename(new_file,dirtmp)
@@ -692,8 +680,8 @@ class Extract_cora3(Extractor) :
                         shutil.copy(new_file,dirtmp)
                         liste_tot.append(new_file)
                     except IOError as e:
-                        print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                        sys.exit(1)
+                        self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
+                        raise e
                 valeurj=valeurj.goforward(1)
             # Remove directory 
             shutil.rmtree(dirtmp+year)
@@ -706,7 +694,7 @@ class Extract_cora4(Extractor) :
 
     """ Extract Cora4 file """
 
-    def __init__(self,compress):
+    def __init__(self,compressi,log):
         """
 
         Constructor cora 4
@@ -714,20 +702,14 @@ class Extract_cora4(Extractor) :
         """
         self.PREFIX='cora4.0_merc'
         self.compress=compress
+        self.log = log
+
     def run(self,date1,date2,dirdata,dirtmp,typedata,templat,prefix):
-        print ('Extractor cora4 : '+self.compress)
-        # ===============
-        # LOGGER
-        # ===============
-        logging.basicConfig(format='%(asctime)s %(message)s')
-        log = logging.getLogger("Extract_cora4")
-        # Level of logging output
-        log.setLevel(logging.INFO)
+        self.log.info('Extractor cora4 : '+self.compress)
         presyear=SyDate.__str__(date2)[:4]
         backyear=SyDate.__str__(date1)[:4]
         liste_file=[]
         liste_year=[]
-        print (presyear,backyear)
         if presyear == backyear : 
             file=prefix+"_"+presyear+self.compress
             liste_file.append(file)
@@ -740,7 +722,6 @@ class Extract_cora4(Extractor) :
             liste_year.append(presyear)
             liste_year.append(backyear)
         # Extract and copy file
-        print (liste_file)
         for file in liste_file :
             file_path=dirdata+file
             # Test the existence of the year
@@ -755,11 +736,11 @@ class Extract_cora4(Extractor) :
                         tar.close()
                         os.remove(file)
                     except  IOError as e :
-                        print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                        sys.exit(1)
+                        self.log.error ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                        raise e
                         # print 'Problem with copy or extraction'
                 else :
-                    print ('file not known %s ' %(file_path))
+                    self.log.error('file not known %s ' %(file_path))
                     sys.exit(1)
             else :
                 print ("Directory already exist")
@@ -769,17 +750,18 @@ class Extract_cora4(Extractor) :
             valeurj=date1
             while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
                 dateval=SyDate.__str__(valeurj)
-                log.info('Day  %s ' % (dateval)) 
+                self.log.info('Day  %s ' % (dateval)) 
                 liste_file=glob(dirtmp+'/'+year+'/*'+dateval+'*.nc')
                 print (liste_file)
                 for file in liste_file :
                     try :
-                        log.info('Fichier  %s ' % (file))
+                        self.log.info('Fichier  %s ' % (file))
                         shutil.move(file,dirtmp)
                         filename=os.path.basename(file)
                         liste_tot.append(dirtmp+filename)
                     except IOError as e:
-                        print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                        self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
+                        raise e
                 valeurj=valeurj.goforward(1)
             # Remove directory 
             # shutil.rmtree(dirtmp+year)
@@ -797,7 +779,7 @@ class Extract_cora4(Extractor) :
                 try :
                     liste_tot.append(file)
                 except IOError as e:
-                    print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                    sys.exit(1)
+                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
+                    raise e
             valeurj=valeurj.goforward(1)
         return liste_tot
