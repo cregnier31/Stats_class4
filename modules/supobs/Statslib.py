@@ -7,9 +7,11 @@
 """
 import numpy as np
 import os, sys
+from os.path import dirname
+sys.path.append(dirname(__file__))
+sys.path.append(dirname(__file__)+'/../modules/')
 import datetime as dt
 import netCDF4
-sys.path.append('../module')
 import toolkitStats
 import arithm
 from copy import deepcopy

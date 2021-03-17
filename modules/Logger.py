@@ -1,16 +1,33 @@
 import logging
+from colorlog import ColoredFormatter
 ## Log wrapper
 # Creation C.REGNIER Juillet 2014
+# Creation C.REGNIER October 2020 :  add color logger
 
 class Logger(object):
 
     """ Class Logger : define level of log with a number """
 
-    def __init__(self,name) :  
+    def __init__(self,name) :
         self.name=name
+        LOGFORMAT = " %(log_color)s %(asctime)s  %(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
+        self.formatter = ColoredFormatter(LOGFORMAT,
+                         datefmt=None,
+                         reset=True,
+                         log_colors={
+                                     'DEBUG':    'cyan',
+                                     'INFO':     'green',
+                                     'WARNING':  'yellow',
+                                     'ERROR':    'red',
+                                     'CRITICAL': 'red,bg_white',
+                                      },
+                )
+        self.stream = logging.StreamHandler()
     def run(self,level):
-        logging.basicConfig(format='%(asctime)s %(message)s')
         log = logging.getLogger(self.name)
+        ## Clean logger
+        if (log.hasHandlers()):
+           log.handlers.clear()
         ## Level of logging output
         if level == 0 :
             log.setLevel(logging.NOTSET)
@@ -24,4 +41,8 @@ class Logger(object):
             log.setLevel(logging.ERROR)
         elif level == 5 :
             log.setLevel(logging.CRITICAL)
+        self.stream.setLevel(level)
+        self.stream.setFormatter(self.formatter)
+        log.addHandler(self.stream)
+
         return log

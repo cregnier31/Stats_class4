@@ -7,23 +7,13 @@
 # C.REGNIER April 2012 : merge ksh script lancer_CLASS4.ksh
 
 import os,errno,sys,string,shutil,glob,re
-## Beaufix path
-#sys.path.append("/home/ext/mr/smer/regnierc/python/module")
-## Local path
-sys.path.append("/home/cregnier/python/module/")
-sys.path.append("/home/qualif/CLASS4/python_mod")
-sys.path.append("/home/cregnier/python/module/lib/python2.6/site-packages")
-sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/")
-sys.path.append("/home/cregnier/python/module/lib/python2.7/site-packages/nco-0.0beta-py2.7.egg/")
-
 from datetime import timedelta,datetime,date
 from ModuleTime import Time
-import ConfigParser
+import configparser
 import resource
 import shlex,subprocess
 import logging
 from array import *
-from sytoolkit.sydate_origin import SyDateOrigin
 from sytoolkit.sydate import SyDate
 
 
@@ -31,30 +21,31 @@ from sytoolkit.sydate import SyDate
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 #
 ## Test input parameters
-if len(sys.argv) != 4: 
-    print 'Usage: traitement_class4.py <daterun> <MODELE_TYPE> <gridtype>' 
-    print len(sys.argv)
-    sys.exit(1) 
+if len(sys.argv) != 6:
+    print('Usage: traitement_class4.py <daterun> <MODELE_TYPE> <gridtype><Machine><daymax>') 
+    sys.exit(1)
 else:
     DATERUN=sys.argv[1]
     MODELE_TYPE=sys.argv[2]
     GRID=sys.argv[3]
+    MACHINE=sys.argv[4]
+    DAYMAX=sys.argv[5]
 # =============
 # CONFIGURATION
 # =============
 
-#_DBFILE_ = ['/home/ext/mr/smer/regnierc/SAVE/DEV/TEP_CLASS4_trunk/postraitement/exe/config_'+MODELE_TYPE+'.cfg']
-_DBFILE_ = ['/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V4/postraitement/exe/config_'+MODELE_TYPE+'.cfg']
+HOMEDIR = os.path.dirname(os.path.realpath(__file__))
+_DBFILE_ = [HOMEDIR+'/cfg/config_'+MODELE_TYPE+'.cfg']
 # =========
 # FUNCTIONS
 # =========
 ## Chargement de tous les éléments du fichier de configuration
 def load_db():
-    db = ConfigParser.ConfigParser()
+    db = configparser.ConfigParser()
     for file in _DBFILE_:
         db.read(os.path.expanduser(file))
     if not db.sections():
-        print "Configuration file not found !"
+        print("Configuration file not found !")
         os._exit(1)
     return db
 
@@ -81,13 +72,14 @@ LISTE_VAR=db.get('GLOBAL','LISTEVAR').split()
 output=db.get('output_dir','DIROUTPUT')
 dir_CL4=db.get('input_dir','dir_CL4')
 modele=db.get('GLOBAL','CONFIGURATION')
-EXEDIR=db.get('GLOBAL','EXEDIR')
+#EXEDIR=db.get('GLOBAL','EXEDIR')
 TYPERUN=db.get('GLOBAL','RUNTYPE')
 DIR_LOG=db.get('GLOBAL','DIRLOG')
-DIR_NAMELIST=db.get('GLOBAL','NAMELIST_DIR')
+DIR_NAMELIST = HOMEDIR + '/../../NAMELIST/'
 DIR_BIN=db.get('GLOBAL','DIRBIN')
-File_BOXES=db.get('GLOBAL','FILEBOX')
-DIR_utils=os.path.dirname(File_BOXES) 
+#File_BOXES=db.get('GLOBAL','FILEBOX')
+File_BOXES = HOMEDIR + "/../utils/File_boxes.txt"
+DIR_utils=os.path.dirname(File_BOXES)
 DIR_CPT=db.get('GLOBAL','DIRCPTRD')
 fic_boxes=os.path.basename(File_BOXES)
 ficlog=db.get('GLOBAL','FILELOG')
@@ -130,8 +122,8 @@ if os.path.isfile(DIR_LOG+ficsynth) :
 # Creation du lien vers la grille de tri des données
 # ==========================================
 
-if GRID ==  "0" :       
-  dir_out=output+'/'    
+if GRID ==  "0" :
+  dir_out=output+'/'
   name="Region_boite_global.txt"
   GRIDTYPE='1'
 elif GRID ==  "1" :
@@ -179,7 +171,7 @@ if TYPEDATANAME ==  "CORA" :
 elif TYPEDATANAME ==  "CORA4.1" :       
   TYPEDATA="1"
   PREFIX="CO" 
-  print "Cora4.1"
+  print("Cora4.1")
 elif TYPEDATANAME ==  "CORIOLIS" :
   TYPEDATA="1"
   PREFIX="CO" 
@@ -197,7 +189,7 @@ else :
 # Creation du lien symbolique
 try : 
    os.symlink(DIR_utils+'/'+name,DIR_utils+'/'+fic_boxes)
-except OSError, e:
+except OSError as e:
    if e.errno == errno.EEXIST:
        os.remove(DIR_utils+'/'+fic_boxes)
        os.symlink(DIR_utils+'/'+name,DIR_utils+'/'+fic_boxes)
@@ -212,7 +204,7 @@ date_run=SyDate(DATERUN)
 presmonth=DATERUN[:6]
 backmonth=SyDate.__str__(date_run.gobackward(28))[:6]
 
-print presmonth,backmonth
+print(presmonth,backmonth)
 if  TYPERUN == "OPER" :
   julcorstart=julrun - 14
   julcorend=julrun - 8
@@ -232,14 +224,14 @@ for fic in glob.glob(LISTFILE) :
   fic_bis=os.path.basename(fic)
   files.append(fic_bis)
 LISTFILE2=dir_CL4+PREFIX+"_*"+presmonth+"*.nc"
-print LISTFILE2
-if TYPEDATANAME ==  "CORA" :       
+print(LISTFILE2)
+if TYPEDATANAME ==  "CORA" :
   TYPEDATA="1"
   PREFIX="ext-CO" 
 for fic in glob.glob(LISTFILE2) :
    fic_bis=os.path.basename(fic)
    files.append(fic_bis)
-  
+
 log.info("Nombre de fichiers avant tri %i" %(len(files)))
 #log.info("Fichiers :: %s "%(files))
 new_files=[]
@@ -302,7 +294,8 @@ log.info("----------------------------")
 
 taille_param=len(LISTE_VAR)
 #fic_namelist_param=DIR_utils+"/param_names_"+modele.lower()+".in"
-fic_namelist_param=DIR_utils+"/param_names_"+modele+".in"
+fic_namelist_param = DIR_utils+"/param_names_"+modele+".in"
+log.info("Namelist param {}".format(fic_namelist_param))
 try:
   # Creation fichier
   obFichier=open(fic_namelist_param,'w')
@@ -313,7 +306,8 @@ try:
       obFichier.write(i+'\n')
   obFichier.close()
 except:
- sys.exit(1)
+    log.error("Write error param ")
+    sys.exit(1)
 
 log.info("----------------------------")
 log.info("Ecriture Namelist param  OK  %s :" %(fic_namelist_param))
@@ -470,29 +464,30 @@ if os.path.isfile(DIR_LOG+'ResultAnoPSAL.txt') :
 
 log.info("-------  Renommage ok  ------------------")
 ## Lancement du run d'après
-DAYMAX=db.get('GLOBAL','DAY_MAX')
-HOMEDIR=db.get('GLOBAL','DIRHOME')
-print 'DAYMAX %s ' %(DAYMAX) 
-jmax=Obj.d2j(DAYMAX)
-jrunext=julrun+7
-print 'nextrun %s ' %(jrunext)
-if  jrunext <= jmax :
-   JRUN=Obj.j2d(jrunext)
-   print 'Lancement du run %s ' %(JRUN)
-   code_lancement=HOMEDIR+'exe/Launch_Stat_CLASS4_naviti.ksh '+JRUN+' '+MODELE_TYPE+' '+GRID
-   #code_lancement='python '+HOMEDIR+'exe/traitement_class4_WEEKLY.py '+JRUN+' '+MODELE_TYPE+' '+GRID
-   print code_lancement
-   try:
-        os.system(code_lancement)
-        print "Lancement date run %s ok " % (JRUN)
-   except:
-      print 'Probleme execution'
-      sys.exit(1)
+#DAYMAX=db.get('GLOBAL','DAY_MAX')
+#HOMEDIR=db.get('GLOBAL','DIRHOME')
+log.info('DAYMAX {} '.format(DAYMAX))
+dayvalmax=SyDate(DAYMAX)
+date_next=SyDate(DATERUN).goforward(7)
+#jmax=Obj.d2j(DAYMAX)
+log.info('nextrun {} '.format(date_next))
+if  date_next <= dayvalmax :
+    JRUN=SyDate(str(date_next))
+    log.info('Launch run %s '.format(JRUN))
+    if MACHINE == 'kara' :
+        code_lancement=HOMEDIR+'exe/Launch_Stat_CLASS4_'+MACHINE+'.ksh '+str(JRUN)+' '+MODELE_TYPE+' '+GRID+' '+MACHINE
+    elif MACHINE == 'local' :
+        code_lancement='python '+HOMEDIR+'/traitement_class4_WEEKLY.py '+str(JRUN)+' '+MODELE_TYPE+' '+GRID+' '+MACHINE+' '+DAYMAX
+    try:
+         os.system(code_lancement)
+         log.info("Lancement date run %s ok " % (JRUN))
+    except:
+        log.error('Problem execution')
+        sys.exit(1)
 
-else : 
-  JRUN=Obj.j2d(jrunext)
-  print 'Dépassement de JMAX : %s %s ' % (JRUN,DAYMAX)
-  sys.exit(1)
+else :
+    log.error('Dépassement de JMAX : {} {} '.format(JRUN,DAYMAX))
+    sys.exit(1)
 
 
 

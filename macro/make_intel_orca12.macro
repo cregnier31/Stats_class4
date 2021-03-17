@@ -40,7 +40,7 @@ INCLUDE_NC =  -I$(NCDF_INC)
 LIB_NC=${NETCDF_LIB}/libnetcdf.a
 
 # MFT
-MFT_DIR=/home/cregnier/LIB/MFT3.6/intel
+MFT_DIR=/home/cregnier/LIB/MFT3.7/intel_hdf5
 MFT_INC=${MFT_DIR}/include
 MFT_LIB=${MFT_DIR}/lib
 LIB_MFT=libmft.a

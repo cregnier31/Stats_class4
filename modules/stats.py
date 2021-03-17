@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 import supobs
-import loader
+from loader_post import stat_mod_obs, stat_mod_glob, stat_obs_glob
 import arithm
 
 __version__ = 0.1
@@ -67,6 +67,7 @@ def compute_stats_and_extend(dict_inputs, dict_var, dict, cvar,
                 rla_var = rla_best_estimate_var[iobs, :]
             else:
                 rla_var = rla_best_estimate_var[iobs]
+
             val_box_depth, obs_box_depth, clim_box_depth =\
                 supobs.Statslib.extract_CL4var(rla_var, rla_obs, rla_clim,
                                                rla_depthobs[iobs, :], depthmin, depthmax)
@@ -78,7 +79,7 @@ def compute_stats_and_extend(dict_inputs, dict_var, dict, cvar,
             if nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
             for numF in range(0, fmax):
                 FCT = []
                 if nb_fcst == 1 and len(np.shape(rla_forecast_var)) == 2:
@@ -103,7 +104,7 @@ def compute_stats_and_extend(dict_inputs, dict_var, dict, cvar,
             if nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
             for numF in range(0, fmax):
                 PER = []
                 if nb_fcst == 1 and len(np.shape(rla_persistence_var)) == 2:
@@ -147,6 +148,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
     for time in lead_time:
         if len(np.shape(dict_inputs['obs'])) == 2:
             rla_obs = dict_inputs['obs'][iobs, :]
+            log.debug('shape iobs {}'.format(np.shape(iobs)))
             if 'climatology' in lead_time:
                 rla_clim = dict_inputs['clim'][iobs, :]
             else:
@@ -163,19 +165,25 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
         if time == 'best_estimate':
             num_col = 0
             if len(np.shape(dict_inputs['best'])) == 2:
+                log.debug('size {}'.format(np.shape( dict_inputs['best'][iobs, :])))
+                log.debug('max1 {}'.format(np.nanmax( dict_inputs['best'][iobs, :])))
+                log.debug('max2 {}'.format(np.nanmax( dict_inputs['best'][:, :])))
                 rla_var = dict_inputs['best'][iobs, :]
             else:
                 rla_var = dict_inputs['best'][iobs]
+            log.debug('Observations {}'.format(np.nanmax(rla_obs)))
+            log.debug('Hindcast {}'.format(np.nanmax(rla_var)))
+            log.debug('Clim {}'.format(np.nanmax(rla_clim)))
             rla_mean_obs, rla_rms_obs, rla_mean_prod, rla_rms_prod, rla_rmse, rla_cor, ila_nobs =\
                 supobs.Statslib.statlayer_CL4var(rla_var,
                                                  rla_obs,
                                                  rla_clim,
                                                  dict_inputs['rla_depthobs'][iobs, :],
                                                  dict_inputs['tab_profs'])
+            log.debug('RMSE Hindcast {}'.format(rla_rmse))
             if ll_debug:
-                print ('RMSE {}'.format(rla_rmse))
-                print "-----------------"
-            stat_tmp, num_col = loader.stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
+                print(('RMSE {}'.format(rla_rmse)))
+            stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                     rla_mean_obs, rla_rms_obs, rla_mean_prod,
                                                     rla_rms_prod, rla_rmse, rla_cor, dict_inputs['tab_profs'], yout)
 
@@ -186,7 +194,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
             if nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
             for numF in range(0, fmax):
                 if nb_fcst == 1 and len(np.shape(dict_inputs['frcst'])) == 2:
                     rla_var = dict_inputs['frcst'][iobs, :]
@@ -204,9 +212,12 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
                                                      dict_inputs['rla_depthobs'][iobs, :],
                                                      dict_inputs['tab_profs'])
 
-                stat_tmp, num_col = loader.stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
+                stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
                                                         rla_rms_prod, rla_rmse, rla_cor, dict_inputs['tab_profs'], yout)
+                log.debug('RMSE {} Forecast range {}'.format(rla_rmse, str(numF)))
+
+                log.debug('Nb obs {} Forecast range {}'.format(ila_nobs, str(numF)))
 
                 del ila_nobs, rla_mean_obs, rla_rms_obs, rla_mean_prod, rla_rms_prod, rla_rmse, rla_cor
 
@@ -215,7 +226,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
             if nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
             for numF in range(0, fmax):
                 if nb_fcst == 1 and len(np.shape(dict_inputs['pers'])) == 2:
                     rla_var = dict_inputs['pers'][iobs, :]
@@ -233,9 +244,10 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
                                                      dict_inputs['rla_depthobs'][iobs, :],
                                                      dict_inputs['tab_profs'])
 
-                stat_tmp, num_col = loader.stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
+                stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
                                                         rla_rms_prod, rla_rmse, rla_cor, dict_inputs['tab_profs'], yout)
+                log.debug('RMSE {} Persistence range {}'.format(rla_rmse, str(numF)))
 
                 del ila_nobs, rla_mean_obs, rla_rms_obs, rla_mean_prod, rla_rms_prod, rla_rmse, rla_cor
 
@@ -252,9 +264,10 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
                                                  dict_inputs['rla_depthobs'][iobs, :],
                                                  dict_inputs['tab_profs'])
 
-            stat_tmp, num_col = loader.stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
+            stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                     rla_mean_obs, rla_rms_obs, rla_mean_prod,
                                                     rla_rms_prod, rla_rmse, rla_cor, dict_inputs['tab_profs'], yout)
+            log.debug('RMSE Climatology {}'.format(rla_rmse))
 
             if abs(np.nanmax(rla_rmse)) > 100.:
                 #log.info('CLIMATOLOGY')
@@ -328,9 +341,9 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
 
             if ll_debug:
                 print (rla_rmse)
-                print "-----------------"
+                print("-----------------")
 
-            stat_tmp, num_col = loader.stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
+            stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                     rla_mean_obs, rla_rms_obs, rla_mean_prod,
                                                     rla_rms_prod, rla_rmse, rla_cor, dict_inputs['tab_profs'], yout)
 
@@ -340,7 +353,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
             if nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
             for numF in range(0, fmax):
                 if nb_fcst == 1 and len(np.shape(dict_inputs['frcst'])) == 2:
                     rla_var = dict_inputs['frcst'][iobs, :]
@@ -358,7 +371,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
                                                      dict_inputs['rla_depthobs'][iobs, :],
                                                      dict_inputs['tab_profs'])
 
-                stat_tmp, num_col = loader.stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
+                stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
                                                         rla_rms_prod, rla_rmse, rla_cor, dict_inputs['tab_profs'], yout)
 
@@ -368,7 +381,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
             if nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
             for numF in range(0, fmax):
                 if nb_fcst == 1 and len(np.shape(dict_inputs['pers'])) == 2:
                     rla_var = dict_inputs['pers'][iobs, :]
@@ -386,7 +399,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
                                                      dict_inputs['rla_depthobs'][iobs, :],
                                                      dict_inputs['tab_profs'])
 
-                stat_tmp, num_col = loader.stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
+                stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
                                                         rla_rms_prod, rla_rmse, rla_cor, dict_inputs['tab_profs'], yout)
 
@@ -405,7 +418,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
                                                  dict_inputs['rla_depthobs'][iobs, :],
                                                  dict_inputs['tab_profs'])
 
-            stat_tmp, num_col = loader.stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
+            stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                     rla_mean_obs, rla_rms_obs, rla_mean_prod,
                                                     rla_rms_prod, rla_rmse, rla_cor, dict_inputs['tab_profs'], yout)
 
@@ -437,7 +450,7 @@ def compute_stats_bilan_skill(dict_inputs, stat_bilan, stat_PSS_skill, stat_CSS_
             else:
                 rla_mean = np.nan
                 rla_rms = np.nan
-            stat_bilan = loader.stat_obs_glob(
+            stat_bilan = stat_obs_glob(
                 stat_bilan, dict_inputs['yout'], ilayer, rla_mean, rla_rms)
             rla_mean_obs = rla_mean
         if time == 'best_estimate':
@@ -465,12 +478,12 @@ def compute_stats_bilan_skill(dict_inputs, stat_bilan, stat_PSS_skill, stat_CSS_
                 rla_cor = np.nan
                 #rla_meandiff = np.nan
                 #rla_rmsdiff = np.nan
-            stat_bilan, num_col = loader.stat_mod_glob(stat_bilan, num_col, ilayer,
+            stat_bilan, num_col = stat_mod_glob(stat_bilan, num_col, ilayer,
                                                         ila_nobs, rla_mean, rla_rms, rla_rmse,
                                                         rla_cor)#, rla_meandiff, rla_rmsdiff)
 
         if time == 'forecast':
-            nfcst = nb_fcst/2
+            nfcst = nb_fcst//2
             for numF in range(0, nfcst):
                 if len(np.shape(FCST)) < 2:
                     rla_mean = np.nan
@@ -496,11 +509,11 @@ def compute_stats_bilan_skill(dict_inputs, stat_bilan, stat_PSS_skill, stat_CSS_
                     rla_cor = np.nan
                     #rla_meandiff = np.nan
                     #rla_rmsdiff = np.nan
-                stat_bilan, num_col = loader.stat_mod_glob(stat_bilan, num_col, ilayer,
+                stat_bilan, num_col = stat_mod_glob(stat_bilan, num_col, ilayer,
                                                             ila_nobs, rla_mean, rla_rms, rla_rmse,
                                                             rla_cor)#, rla_meandiff, rla_rmsdiff)
         if time == 'persistence':
-            nfcst = nb_fcst/2
+            nfcst = nb_fcst//2
             for numF in range(0, nfcst):
                 if len(np.shape(PERS)) < 2:
                     rla_mean = np.nan
@@ -526,7 +539,7 @@ def compute_stats_bilan_skill(dict_inputs, stat_bilan, stat_PSS_skill, stat_CSS_
                     rla_cor = np.nan
                     #rla_meandiff = np.nan
                     #rla_rmsdiff = np.nan
-                stat_bilan, num_col = loader.stat_mod_glob(stat_bilan, num_col, ilayer,
+                stat_bilan, num_col = stat_mod_glob(stat_bilan, num_col, ilayer,
                                                             ila_nobs, rla_mean, rla_rms, rla_rmse,
                                                             rla_cor)#, rla_meandiff, rla_rmsdiff)
         if time == 'climatology':
@@ -546,7 +559,7 @@ def compute_stats_bilan_skill(dict_inputs, stat_bilan, stat_PSS_skill, stat_CSS_
                 rla_cor = np.nan
                 #rla_meandiff = np.nan
                 #rla_rmsdiff = np.nan
-            stat_bilan, num_col = loader.stat_mod_glob(stat_bilan, num_col, ilayer,
+            stat_bilan, num_col = stat_mod_glob(stat_bilan, num_col, ilayer,
                                                         ila_nobs, rla_mean, rla_rms, rla_rmse,
                                                         rla_cor)#, rla_meandiff, rla_rmsdiff)
     if 'climatology' not in lead_time:
@@ -557,7 +570,7 @@ def compute_stats_bilan_skill(dict_inputs, stat_bilan, stat_PSS_skill, stat_CSS_
         rla_cor = np.nan
         #rla_meandiff = np.nan
         #rla_rmsdiff = np.nan
-        stat_bilan, num_col = loader.stat_mod_glob(stat_bilan, num_col, ilayer,
+        stat_bilan, num_col = stat_mod_glob(stat_bilan, num_col, ilayer,
                                                     ila_nobs, rla_mean, rla_rms, rla_rmse,
                                                     rla_cor)#, rla_meandiff, rla_rmsdiff)
     ## Compute skill 
@@ -592,7 +605,7 @@ def compute_stats_bilan(dict_inputs, stat_bilan, ilayer, OBS,
             else:
                 rla_mean = np.nan
                 rla_rms = np.nan
-            stat_bilan = loader.stat_obs_glob(
+            stat_bilan = stat_obs_glob(
                 stat_bilan, dict_inputs['yout'], ilayer, rla_mean, rla_rms)
             rla_mean_obs = rla_mean
         if time == 'best_estimate':
@@ -624,12 +637,12 @@ def compute_stats_bilan(dict_inputs, stat_bilan, ilayer, OBS,
             log.info('HINDCAST')
             #log.info(np.nanmin(rla_mean), np.nanmin(rla_rmse), np.nanmax(rla_rmse))
 
-            stat_bilan, num_col = loader.stat_mod_glob(stat_bilan, num_col, ilayer,
+            stat_bilan, num_col = stat_mod_glob(stat_bilan, num_col, ilayer,
                                                         ila_nobs, rla_mean, rla_rms, rla_rmse,
                                                         rla_cor)
 
         if time == 'forecast':
-            nfcst = nb_fcst/2
+            nfcst = nb_fcst//2
             for numF in range(0, nfcst):
                 if len(np.shape(FCST)) < 2:
                     rla_mean = np.nan
@@ -655,11 +668,11 @@ def compute_stats_bilan(dict_inputs, stat_bilan, ilayer, OBS,
                     rla_cor = np.nan
                     rla_meandiff = np.nan
                     rla_rmsdiff = np.nan
-                stat_bilan, num_col = loader.stat_mod_glob(stat_bilan, num_col, ilayer,
+                stat_bilan, num_col = stat_mod_glob(stat_bilan, num_col, ilayer,
                                                             ila_nobs, rla_mean, rla_rms, rla_rmse,
                                                             rla_cor)
         if time == 'persistence':
-            nfcst = nb_fcst/2
+            nfcst = nb_fcst//2
             for numF in range(0, nfcst):
                 if len(np.shape(PERS)) < 2:
                     rla_mean = np.nan
@@ -685,7 +698,7 @@ def compute_stats_bilan(dict_inputs, stat_bilan, ilayer, OBS,
                     rla_cor = np.nan
                     rla_meandiff = np.nan
                     rla_rmsdiff = np.nan
-                stat_bilan, num_col = loader.stat_mod_glob(stat_bilan, num_col, ilayer,
+                stat_bilan, num_col = stat_mod_glob(stat_bilan, num_col, ilayer,
                                                             ila_nobs, rla_mean, rla_rms, rla_rmse,
                                                             rla_cor)
                 # TODO compute skill
@@ -710,7 +723,7 @@ def compute_stats_bilan(dict_inputs, stat_bilan, ilayer, OBS,
             #log.info('CLIMATOLOGY')
             #log.info(np.nanmin(rla_mean), np.nanmin(rla_rmse), np.nanmax(rla_rmse))
 
-            stat_bilan, num_col = loader.stat_mod_glob(stat_bilan, num_col, ilayer,
+            stat_bilan, num_col = stat_mod_glob(stat_bilan, num_col, ilayer,
                                                         ila_nobs, rla_mean, rla_rms, rla_rmse,
                                                         rla_cor)
     if 'climatology' not in lead_time:
@@ -721,7 +734,7 @@ def compute_stats_bilan(dict_inputs, stat_bilan, ilayer, OBS,
         rla_cor = np.nan
         rla_meandiff = np.nan
         rla_rmsdiff = np.nan
-        stat_bilan, num_col = loader.stat_mod_glob(stat_bilan, num_col, ilayer,
+        stat_bilan, num_col = stat_mod_glob(stat_bilan, num_col, ilayer,
                                                     ila_nobs, rla_mean, rla_rms, rla_rmse,
                                                     rla_cor)
 

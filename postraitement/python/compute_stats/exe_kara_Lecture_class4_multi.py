@@ -38,7 +38,7 @@ EXE = os.path.join(pbsworkdir,'../exe_compute_stats_CMEMS_areas_multiprocess.py'
 try : os.remove(os.path.join(pbsworkdir,"OK.flag")) 
 except : pass
 #dir_bin="/home/cszczypta/anaconda3/envs/env_py27/bin/"
-dir_bin="/kara/data1/cregnier/env_kara_py27/bin/" 
+#dir_bin="/kara/data1/cregnier/env_kara_py27/bin/" 
 #dir_bin="/homelocal-px/px-116/sauvegarde/cregnier/Program_files/miniconda2_kara/bin/" 
 
 # **************************** Python launcher *********************************

@@ -87,7 +87,9 @@ ENDIF
   ENDDO
   
   IF ( il_kg /= ip_maxgrd ) then
+#if defined key_debug  
      WRITE(0,*) "GenereCanvas: warning il_kg /= ip_maxgrd", il_kg,ip_maxgrd
+#endif
      call flush(0)
   ENDIF
 

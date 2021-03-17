@@ -34,7 +34,8 @@ class Writer():
             'SLA': {'code': 'SLA_L3S', 'defaults': {'name': 'SLA CMEMS L3S'}},
             'chloro': {'code': 'CHLORO-A_L3S', 'defaults': {'name': 'log10-chlorophyll A Satellite'}},
             'aice': {'code': 'SEA_CONC', 'defaults': {'name': 'Sea ice concentration from AMSR2 brightness temperature'}},
-            'current': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Current from CMEMS drifting buoys 001_048'}},
+            'current': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Currents from CMEMS drifting buoys 001_048'}},
+            'DRIFTER_filtr': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Filtered Currents from CMEMS drifting buoys 001_048'}},
             'default': {'code': 'Default_code', 'defaults': {'name': 'Data for validation'}},
        }
 
@@ -42,6 +43,10 @@ class Writer():
         "Create a directory, and parents if needed"
         if not os.path.exists(path):
             os.makedirs(path)
+
+    def write_json_profile(self, filename, tab):
+        with open(filename, 'w') as outfile:
+                json.dump(tab, outfile,indent=4)
 
     def write_geojson(self, filename, position):
         try:
@@ -54,7 +59,7 @@ class Writer():
             with open(filename, 'w') as outfile:
                 json.dump(MultiPoint(liste_position), outfile)
         except:
-            print ('Probleme d ecriture')
+            print ('Probleme d ecriture geojson')
             sys.exit(1)
 
     def write_ASCII(self, filename, position):
@@ -73,7 +78,7 @@ class Writer():
         # print len(position)
         #print 'Write ASCII file OK'
         except:
-            print ('Probleme d ecriture')
+            print ('Probleme d ecriture ASCII')
             sys.exit(1)
 
     def write_geojson_fromdb(self, type_f, file_out, file_db):
@@ -110,23 +115,76 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
-        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
         nc_fid.Conventions = 'CF-1.6'
         nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
-        print ('-------------------------------')
-        print ('Creation OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
-    def write_CMEMS_files(self, filename, hdct_tab, fcst_tab, pers_tab, dateval, model, variable):
-        print ("Filename {}".format(filename))
+    def write_GODAE_files_clim(self, filename,clim_tab, dateval, model, variable):
+        nc_fid = Dataset(filename, 'r+') #, format='NETCDF3')
+        nc_clim = nc_fid.createVariable(
+            'climatology', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
+        nc_clim.setncatts({'long_name': u"Climatology Lumpkin V3.05",'units': u"m s-1"})
+        nc_clim.setncatts({'comment': u"Monthly Means of Drifter Data"})
+        nc_fid.variables['climatology'][:, :, :] = clim_tab[:, :, :]
+        today = date.today()
+        yyyy = str(today)[0:4]
+        yyyy2 = dateval[0:4]
+        month = str(today)[5:7]
+        month2 = dateval[4:6]
+        day = str(today)[8:10]
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
+        nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.close()  # close the new file
+
+
+    def write_BIOARGO_files(self, filename, hdct_tab, dateval, model, variable, fcst = None, pers = None):
         nc_fid = Dataset(filename, 'r+')
-        print (np.shape(fcst_tab))
+        nc_best = nc_fid.createVariable(
+            'best_estimate', 'f4', ('time', 'N_PROF', 'N_LEVELS'), fill_value=self.fillvalue)
+        nc_best.setncatts(
+            {'long_name': u"Model best_estimate counterpart of obs. value"})
+        nc_fid.variables['best_estimate'][:, :, :] = hdct_tab[:, :, :]
+        if fcst:
+            nc_fcst = nc_fid.createVariable(
+                'forecast', 'f4', ('time', 'N_PROF', 'N_LEVELS'), fill_value=self.fillvalue)
+            nc_fcst.setncatts(
+                {'long_name': u"Model forecast counterpart of obs. value"})
+            nc_fid.variables['forecast'][:, :, :] = fcst
+        if pers:
+            nc_pers = nc_fid.createVariable(
+                'pers', 'f4', ('time', 'N_PROF', 'N_LEVELS'), fill_value=self.fillvalue)
+            nc_pers.setncatts(
+                {'long_name': u"Model persistence counterpart of obs. value"})
+            nc_fid.variables['persistence'][:, :, :] = pers
+
+        # Add global attributs
+        nc_fid.institution = 'MERCATOR OCEAN'
+        nc_fid.contact = 'cregnier@mercator-ocean.fr'
+        nc_fid.obs_type = 'BIOARGO'
+        nc_fid.time_interp = "daily average fields"
+        today = date.today()
+        yyyy = str(today)[0:4]
+        yyyy2 = dateval[0:4]
+        month = str(today)[5:7]
+        month2 = dateval[4:6]
+        day = str(today)[8:10]
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
+        nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.system = model
+        nc_fid.Conventions = 'CF-1.6'
+        nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
+        nc_fid.close()  # close the new file
+
+
+    def write_CMEMS_files(self, filename, hdct_tab, fcst_tab, pers_tab, clim_tab, dateval, model, variable):
+        nc_fid = Dataset(filename, 'r+')
         nb_obs, nb_vars, nb_fcst, nb_depths = np.shape(fcst_tab)
-        print ("nb_depths {}, nb_vars {}, nb_fcst {}".format(nb_depths, nb_vars, nb_fcst)) 
         nc_fid.createDimension('numobs', nb_obs)
         nc_fid.createDimension('numvars', nb_vars)
         nc_fid.createDimension('numfcsts', nb_fcst) 
@@ -143,9 +201,16 @@ class Writer():
             'persistence', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
         nc_pers.setncatts(
             {'long_name': u"Model persistence counterpart of obs. value"})
+        nc_clim = nc_fid.createVariable(
+            'climatology', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
+        nc_clim.setncatts(
+            {'long_name': u"Surface climatology from Lumpkin counterpart of obs. value"})
+        nc_clim.setncatts(
+            {'version': u"V3.05"}) 
         nc_fid.variables['best_estimate'][:, :, :] = hdct_tab[:, :, :]
         nc_fid.variables['forecast'][:, :, :, :] = fcst_tab[:, :, :, :]
         nc_fid.variables['persistence'][:, :, :, :] = pers_tab[:, :, :, :]
+        nc_fid.variables['climatology'][:, :, :] = clim_tab[:, :, :]
         # Add global attributs
         nc_fid.institution = 'MERCATOR OCEAN'
         nc_fid.contact = 'cregnier@mercator-ocean.fr'
@@ -157,15 +222,12 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
-        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
         nc_fid.Conventions = 'CF-1.6'
         nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
-        print ('-------------------------------')
-        print ('Creation File CMEMS OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
     def write_GODAE_files(self, filename, hdct_tab, fcst_tab, pers_tab, dateval, model, variable):
@@ -183,7 +245,6 @@ class Writer():
         nc_pers.setncatts(
             {'long_name': u"Model persistence counterpart of obs. value"})
         nc_fid.variables['best_estimate'][:, :, :] = hdct_tab[:, :, :]
-        print (np.shape(fcst_tab))
         nc_fid.variables['forecast'][:, :, :, :] = fcst_tab[:, :, :, :]
         nc_fid.variables['persistence'][:, :, :, :] = pers_tab[:, :, :, :]
         # Add global attributs
@@ -197,31 +258,31 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
-        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
         nc_fid.Conventions = 'CF-1.6'
         nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
-        print ('-------------------------------')
-        print ('Creation OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
     def write_GLOBCOLOR_files(self, filename, tab1, tab2, tab3, dateval, model, variable):
         nc_fid = Dataset(filename, 'r+') #, format='NETCDF3_CLASSIC')
         nc_file = nc_fid.createVariable(
-            'best_estimate', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'best_estimate', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file2 = nc_fid.createVariable(
-            'forecast', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'forecast', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file3 = nc_fid.createVariable(
-            'climatology', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'climatology', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file.setncatts(
             {'long_name': u"Model best_estimate counterpart of obs. value"})
         nc_file2.setncatts(
             {'long_name': u"Model forecast counterpart of obs. value"})
         nc_file3.setncatts(
-            {'long_name': u"Satellite L4 climatology counterpart of obs. value"})
+            {'long_name': u"Satellite L4 climatology counterpart of obs. value",
+             'product': u"OCEANCOLOUR_GLO_CHL_L4_REP_OBSERVATIONS_009_082",
+             'dataset': u"dataset-oc-glo-chl-multi-l4-gsm_4km_daily-climatology-v02"}
+            )
         nc_fid.variables['best_estimate'][:] = tab1
         nc_fid.variables['forecast'][:] = tab2
         nc_fid.variables['climatology'][:] = tab3
@@ -235,25 +296,24 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
+        day2 = dateval[6:8]
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
-        print ('-------------------------------')
-        print ('Creation OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
     def write_GLOBCOLOR_files2(self, filename, tab, tab2, dateval, model, variable):
         nc_fid = Dataset(filename, 'r+', format='NETCDF3_CLASSIC')
         nc_file = nc_fid.createVariable(
-            'best_estimate', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'best_estimate', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file2 = nc_fid.createVariable(
-            'climatology', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'climatology', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file.setncatts(
             {'long_name': u"Model best_estimate counterpart of obs. value"})
         nc_file2.setncatts(
-            {'long_name': u"Satellite L4 climatology counterpart of obs. value"})
+            {'long_name': u"Daily Satellite L4 climatology counterpart of obs. value",
+             'product': u"OCEANCOLOUR_GLO_CHL_L4_REP_OBSERVATIONS_009_082",
+             'dataset': u"dataset-oc-glo-chl-multi-l4-gsm_4km_daily-climatology-v02"})
         nc_fid.variables['best_estimate'][:] = tab
         nc_fid.variables['climatology'][:] = tab2
         # Add global attributs
@@ -266,21 +326,18 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
+        day2 = dateval[6:8]
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
-        print ('-------------------------------')
-        print ('Creation OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
     def write_best_fcst(self, filename, tab1, tab2, dateval, model, variable):
         nc_fid = Dataset(filename, 'r+') #, format='NETCDF3_CLASSIC')
         nc_file = nc_fid.createVariable(
-            'best_estimate', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'best_estimate', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file2 = nc_fid.createVariable(
-            'forecast', 'f4', ('lat', 'lon'), fill_value=-999.0)
+            'forecast', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
         nc_file.setncatts(
             {'long_name': u"Model best_estimate counterpart of obs. value"})
         nc_file2.setncatts(
@@ -297,13 +354,10 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
-        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
-        print ('-------------------------------')
-        print ('Creation OK %s ')
-        print ('-------------------------------')
         nc_fid.close()  # close the new file
 
     def write_best(self, filename, tab1, dateval, model, dimension, variable, desc, variable2):
@@ -324,34 +378,66 @@ class Writer():
         month = str(today)[5:7]
         month2 = dateval[4:6]
         day = str(today)[8:10]
-        day2 = dateval[7:9]
-        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
+        nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.system = model
+        nc_fid.close()  # close the new file
+
+    def write_coriolis_file(self, filename, tab1, tab2, tab3, dateval, model, variable):
+        nc_fid = Dataset(filename, 'r+') #, format='NETCDF3_CLASSIC')
+        nc_file = nc_fid.createVariable(
+            'best_estimate', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
+        nc_file2 = nc_fid.createVariable(
+            'climatology', 'f4', ('lat', 'lon'), fill_value=self.fillvalue)
+        nc_file.setncatts(
+            {'long_name': u"Model best_estimate counterpart of obs. value"})
+        nc_file2.setncatts(
+            {'long_name': u"Climatology counterpart of obs. value"})
+        nc_fid.variables['best_estimate'][:] = tab1
+        nc_fid.variables['climatology'][:] = tab3
+        # Add global attributs
+        nc_fid.institution = 'MERCATOR OCEAN'
+        nc_fid.obs_type = self.type_data.get(variable, {}).get('defaults').get('name')
+        nc_fid.contact = 'qualif@mercator-ocean.fr'
+        today = date.today()
+        yyyy = str(today)[0:4]
+        yyyy2 = dateval[0:4]
+        month = str(today)[5:7]
+        month2 = dateval[4:6]
+        day = str(today)[8:10]
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
         print ('-------------------------------')
-        print ('Creation OK %s ')
-        print ('-------------------------------')
-        nc_fid.close()  # close the new file
 
+###
     def write_output(self, filename, tab_results, param_dict, dateval, ll_zip=True):
         dataorigin = param_dict['data_origin']
         self.mkdir(param_dict['diroutput'])
         if dataorigin == "GODAE":
-#            type_data = tab[param_dict['data_type']]
-
-            self.log.info("Write inside GODAE file")
+            self.log.debug("Write inside GODAE file")
             if 'forecast'  not in tab_results.keys() and 'persistence' not in tab_results.keys() \
                     and 'best' in tab_results.keys():
                 self.write_GODAE_files_best(
                     filename, tab_results['best'], dateval, param_dict['modele'], param_dict['data_type'])
+            elif 'forecast'  not in tab_results.keys() and 'persistence' not in tab_results.keys() \
+                    and 'best' not in tab_results.keys() and 'clim' in tab_results.keys():
+                self.write_GODAE_files_clim(
+                    filename, tab_results['clim'], dateval, param_dict['modele'], param_dict['data_type'])
             else:
                 self.write_GODAE_files(
                     filename, tab_results['best'], tab_results['forecast'],
                     tab_results['persistence'], dateval, param_dict['modele'], param_dict['data_type'])
+        elif dataorigin == "BIOARGO":
+                self.write_BIOARGO_files(
+                    filename, tab_results['best'], dateval, param_dict['modele'], param_dict['data_type'])
+
         elif dataorigin == "CMEMS" :
             self.write_CMEMS_files(
                  filename, tab_results['best'], tab_results['forecast'],
-                 tab_results['persistence'], dateval, param_dict['modele'], param_dict['data_type'])
+                 tab_results['persistence'], tab_results['clim'], dateval, param_dict['modele'], param_dict['data_type'])
 
         elif dataorigin == "GLOBCOLOUR" and param_dict['daily_pref'] == '7dAV':
             self.log.info("Write inside GLOBCOLOUR files")
@@ -371,6 +457,10 @@ class Writer():
                             param_dict['dimension'], 'best_estimate', param_dict['desc'], param_dict['data_type'])
             self.write_best(filename, tab_results['clim'], dateval, param_dict['cl_config'],
                             param_dict['dimension'], 'clim', param_dict['desc'], param_dict['data_type'])
+        elif dataorigin == "CORIOLIS":
+            self.write_coriolis_files(filename, tab_results['best'],
+                                       tab_results['clim'],
+                                       dateval, param_dict['cl_config'], param_dict['data_type'])
         else:
             self.log.error("Origin Not Known : %s :" % (dataorigin))
 
@@ -379,10 +469,8 @@ class Writer():
             if os.path.exists(file_coloc):
                 os.remove(file_coloc)   
 
-        self.log.info('----------------------------')
         self.log.info('Creation file %s' % (filename))
-        self.log.info('----------------------------')
-        if ll_zip == True :
+        if ll_zip:
             # Zipped files and move in output directory
             self.log.info(param_dict['dirwork'])
             #self.log.info(param_dict['dirwork']+"*"+param_dict['cl_conf'] +"*"+param_dict['varname']+"*.nc")
@@ -404,3 +492,4 @@ class Writer():
                     shutil.move(filename+'.gz', param_dict['diroutput'])
                 os.remove(filename)
                 self.log.info('File ok %s' % (filename))
+        shutil.move(filename, param_dict['diroutput'])

@@ -4,7 +4,10 @@
 # Makefile naviti
 # intel/intel-17
 # netcdf/netcdf-4.1_intel11_r4
-include ../macro/make_intel.macro
+#type=orca_r025_light
+type=orca12_allege
+#type=glorys2v4
+include ../macro/make_intel_$(type).macro
 ## Rules
 .SUFFIXES:.F90 .F .f90 .mod
 .F90.o:
@@ -13,7 +16,7 @@ include ../macro/make_intel.macro
 .f90.o:
 	$(F90PT) -c $(FFLAGS) ${INCLUDE} $< -o $@ $(CPP_KEYS)
 
-EXEDIR= ../bin
+EXEDIR= /kara/data1/cregnier/bin_alleges/
 SRCDIR= .
 SRCDIR2=module
 
@@ -40,6 +43,7 @@ all:  $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS.exe \
       $(EXEDIR)/CLASS4_spatial_interpolation_GODAE.exe 
 aice: $(EXEDIR)/CLASS4_spatial_interpolation_GODAE.exe
 coloc_aice: $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE)_aice.exe
+coloc: $(EXEDIR)/CLASS4_create_colocfile_ASCII_$(MODELE).exe
 test: $(EXEDIR)/test_write.exe
 inter_corio: $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS.exe 
 test_interp: $(EXEDIR)/CLASS4_spatial_interpolation_CORIOLIS_test.exe 

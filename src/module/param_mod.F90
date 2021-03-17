@@ -174,7 +174,23 @@ MODULE PARAM_MOD
                             jpisl   =  150  ,      &  !: number of islands
                             jpnisl  = 3000            !: maximum number of points per island
 #endif
-
+! Config  GLO4_light
+#if defined key_orca_r025_light 
+  !! PSY3
+  CHARACTER (len=16), PARAMETER ::  cp_cfg = "orca025"        !: name of the configuration 
+  INTEGER, PARAMETER :: jp_cfg = 025       !: resolution of the configuration (degrees)
+  INTEGER, PARAMETER :: ip_maxgrd = 901044 !901046 ! maximum number of grid points
+  INTEGER, PARAMETER :: ip_jpiglo = 720   !1442 ! number of grid points x
+  INTEGER, PARAMETER :: ip_jpjglo = 509   !1021 ! number of grid points y
+  INTEGER, PARAMETER :: jpkdta = 50       !: number of levels      ( >= jpk    )
+  INTEGER, PARAMETER ::      jpiglo  = ip_jpiglo,      &  !: 1st dimension of global domain --> i
+                             jpjglo  = ip_jpjglo,      &  !: 2nd    ""    --> j
+                             jpk     = jpkdta,         &  !: number of verticallevels
+                             ! Domain characteristics
+                            jperio  =    4  ,      &  !: lateral cond. type (between 0 and 6)
+                            jpisl   =  150  ,      &  !: number of islands
+                            jpnisl  = 3000            !: maximum number of points per island
+#endif
 #if defined key_orca12_old 
   ! PSY4
   CHARACTER (len=16), PARAMETER ::  cp_cfg = "orca12"        !: name of the configuration 

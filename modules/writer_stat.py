@@ -7,7 +7,6 @@ import cl4_reader
 import datetime as dt
 from numba import jit
 from timeit import default_timer as timer
-import cPickle
 
 ########################################################
 #     Class Writer to write output file in NetCDF
@@ -33,8 +32,8 @@ def _compute_percentile(nb_fcst, nb_layers, nb_vars, stat_bias, nb_obs, stat_per
                     for nbo in range(int(nb_obs[t,fcst,dep,v])):
                         mat_tmp[ini] = stat_bias[t,fcst,dep,v]
                         ini+=1
-                                    
-                stat_percent[fcst,dep,0, v] = np.nanmean(mat_tmp)                         
+
+                stat_percent[fcst,dep,0, v] = np.nanmean(mat_tmp)
                 stat_percent[fcst,dep,1, v] = np.percentile(mat_tmp, 99)
                 stat_percent[fcst,dep,2, v] = np.percentile(mat_tmp, 1)
                 stat_percent[fcst,dep,3, v] = np.percentile(mat_tmp, 95)
@@ -781,7 +780,12 @@ class writer_stat():
                     if nb_fcst > nb_fcst_max:
                         nb_fcst_max = nb_fcst
                         rla_forecast_tmp = rla_forecast[:]
-        nb_lead_max=len(rla_forecast_tmp)
+                        nb_lead_max=len(rla_forecast_tmp)
+                else:
+                    rla_forecast_tmp = rla_forecast
+                    nb_lead_max =  len(rla_forecast)
+
+        log.info('nb_lead_max  {}'.format(nb_lead_max))
 
         for numvar, cvar in enumerate(cla_vars):
 
@@ -809,9 +813,6 @@ class writer_stat():
                     name_ascii = aname
 
                 if run_ini == True:
-                    #stat_all = np.nan*np.zeros((len(params_conf['cla_dates']), len(rla_forecast), len(rla_layers[0:-1]),\
-                    #                            len(params_conf['cla_metricname']), len(aname),\
-                    #                            len(cla_vars)))
                     stat_all = np.nan*np.zeros((len(params_conf['cla_dates']), nb_lead_max, len(rla_layers[0:-1]),\
                                                 len(params_conf['cla_metricname']), len(aname),\
                                                 len(cla_vars)))
@@ -829,6 +830,9 @@ class writer_stat():
                     rla_forecast_ref = rla_forecast_tmp
                     run_ini = False
 
+                ## Log
+                log.debug('Len leadtime_ref {}'.format(len(leadtime_ref)))
+                ##
                 ldt_ref = np.chararray(len(leadtime_ref), itemsize=14)
 
                 for l in range(len(leadtime_ref)):
@@ -851,6 +855,7 @@ class writer_stat():
                     else:
                         for y, lt in enumerate(lead_time):
                             w = np.where(ldt_ref == lt)[0][0]
+
                             if lt not in ['forecast','persistence']:
                                 stat_all[stat_day,w,0:1,:,:,numvar] = stat_tmp[y,:,:,:]
                             else:
@@ -1074,7 +1079,7 @@ class writer_stat():
         nc_fid = netCDF4.Dataset(filename, 'w')
 
         lead_time_type = ['skill_1D', 'skill_3D', 'skill_5D', 'skill_7D', 'skill_9D']
-        nfcst = nb_fcst/2
+        nfcst = nb_fcst//2
         lead_time = lead_time_type[0:nb_fcst]
         #  ********************** Add dimensions ***********************
         nc_fid.createDimension('areas', len(areas))

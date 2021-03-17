@@ -34,9 +34,9 @@ mode = os.getenv('mode')
 os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 os.chdir(pbsworkdir)
 EXE = os.path.join(pbsworkdir,'../TEP_CLASS4_kdtree_multiproc.py')
-try : os.remove(os.path.join(pbsworkdir,"OK.flag")) 
+try : os.remove(os.path.join(pbsworkdir,"OK.flag"))
 except : pass
-dir_bin="/home/cszczypta/anaconda3/envs/env_py27/bin/"
+dir_bin="/data/rd_exchange2/qualif/anaconda/envs/env_py38/bin/"
 
 
 # **************************** Python launcher *********************************

@@ -3,6 +3,7 @@ import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 import utilities
+import param.Def_param_bulletin as params
 import xarray as xr
 import dask
 
@@ -81,6 +82,7 @@ def read_mask(params_conf):
         rla_name = nc.variables['area_names'][:]
         area_name = utilities.pull_names(rla_name)
         cla_area = list(cla_areaini)
+        cla_area = [var.decode("utf-8") for var in cla_area]
         CMEMS_area = True
         rla_maskvalues = None
     else:
@@ -281,6 +283,8 @@ def read_drifter_filt(file):
             position_qc, time_qc, dc_reference = read_drifter(file)
     ncdata = xr.open_dataset(file)
     variables = ncdata.data_vars
+    lon = ncdata['LONGITUDE_FILTR'].values
+    lat = ncdata['LATITUDE_FILTR'].values
     ll_var = False
     if 'EWCT_FILTR' and 'NSCT_FILTR' in variables.keys():
         ll_var = True
@@ -335,3 +339,24 @@ def read_depth(filename):
     rla_depth = nc.variables[variable][:]
 
     return rla_depth
+
+def read_GODAE_profile(varname, filename):
+    '''
+       Read GODAE profile
+    '''
+    ncdata = xr.open_dataset(filename)
+    variables = ncdata.data_vars
+    depth = ncdata['depth'].values
+    if varname == 'votemper':
+        index = 0
+    elif varname == 'vosaline':
+        index = 1
+    tab_hdct = ncdata['best_estimate'].values
+    tab_hdct = tab_hdct[:,index,:]
+    tab_fcst = ncdata['forecast'].values
+    tab_fcst = tab_fcst[:,index,:,:]
+    tab_pers = ncdata['persistence'].values
+    tab_pers = tab_pers[:,index,:,:]
+    observations = ncdata['observation'][:,index,:].values
+
+    return depth, tab_hdct, tab_fcst, tab_pers, observations

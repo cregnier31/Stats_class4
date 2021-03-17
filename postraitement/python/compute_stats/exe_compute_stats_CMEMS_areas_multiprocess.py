@@ -6,22 +6,20 @@ import sys, os, getopt, glob, re
 ## Scientific utilities
 import numpy as np
 ## MO Local modules
-sys.path.append('../../module/')
-sys.path.append('../module/')
+from os.path import dirname
+sys.path.append(dirname(__file__)+'/../../../modules/')
 import geomlib
 import stats
 import cl4_reader
 import reader
-import loader
 import utils
-from loader import input_params, read_input_files
+from loader_post import input_params, read_input_files
 import param.Def_param_bulletin as params
 import arithm
 import supobs
 from supobs import toolkitStats
 from supobs import Statslib
 from writer_stat import writer_stat
-sys.path.append('../../../script/')
 from Logger import Logger
 ## Multiprocess
 from mpi4py import MPI
@@ -125,12 +123,12 @@ if len(cla_filechck) == 0:
 comm = MPI.COMM_WORLD
 ndates = len(params_conf['cla_dates'])
 irest  = np.mod(ndates, comm.size)
-ntask  = ndates / comm.size
-istart = ntask*comm.rank
-iend   = istart + ntask - 1
+ntask  = int(ndates / comm.size)
+istart = int(ntask*comm.rank)
+iend   = int(istart + ntask - 1)
 cla_dt = params_conf['cla_dates'][istart:iend+1]
-iend_tot = ntask*comm.size-1
-nb_fcst_max = 0 
+iend_tot = int(ntask*comm.size-1)
+nb_fcst_max = 0
 if irest > 0 and comm.rank < irest:
     cla_dt.append(params_conf['cla_dates'][iend_tot+comm.rank+1])
 
@@ -195,16 +193,17 @@ if params_conf['daily_off'] == 'on':
             # ******************  Read observations and model values  ******************
             dict_inputs = cl4_reader.read_inputfile(cvar, params_conf['cexp'], cl_cl4file, params_conf, log)
             if not dict_inputs:
-                log.info("BEST FCST PERS are missing!!")
+                log.info("BEST FCST PERS are missing!! var: {}  file: {}".format(cvar,cl_cl4file))
                 continue
             nb_fcst = dict_inputs['nb_fcst']
-            if nb_fcst > nb_fcst_max : nb_fcst_max = nb_fcst
+            if nb_fcst != None:
+               if nb_fcst > nb_fcst_max : nb_fcst_max = nb_fcst
             lead_time = dict_inputs['lead_time']
             yout = dict_inputs['yout']
 
             # ---> Passe au jour suivant si pas de hindcast <---
-            if np.isnan(dict_inputs['best']).all(): 
-                log.info("Best estimate is nan!!")
+            if np.isnan(dict_inputs['best']).all():
+                log.info("Best estimate is nan {} {}!!".format(cdate,cvar))
                 continue
             # **********************  Variable initialisation  **********************
             if nb_fcst == None:
@@ -212,7 +211,7 @@ if params_conf['daily_off'] == 'on':
             elif nb_fcst == 1:
                 fmax = 1
             else:
-                fmax = nb_fcst/2
+                fmax = nb_fcst//2
 
             if params_conf['CMEMS_area'] == True:
                 stat_tmp = np.nan*np.zeros((dict_inputs['yout'], len(dict_inputs['tab_profs']) -1,\
@@ -273,6 +272,7 @@ if params_conf['daily_off'] == 'on':
 
                     # *********************************  Find observations in area  *****************************
                     if params_conf['cla_area'][area_mask] == 'GLO':
+                        log.debug(' GLobal area {}')
                         iobs = np.arange(len(dict_inputs['latobs']))
                     else:
                         region = params_conf['area_name'][area_mask]
@@ -414,7 +414,7 @@ if params_conf['daily_off'] == 'on':
         comm = MPI.COMM_WORLD
         nareas = len(aname)
         irest  = np.mod(nareas, comm.size)
-        ntask  = nareas / comm.size
+        ntask  = int(nareas / comm.size)
         istart = ntask*comm.rank
         iend   = istart + ntask - 1
         cla_ar = params_conf['cmems_basin'][istart:iend+1].tolist()
@@ -472,11 +472,11 @@ else:
 
 comm = MPI.COMM_WORLD
 irest  = np.mod(nareas,comm.size)
-ntask  = nareas / comm.size
-istart = ntask*comm.rank
-iend   = istart + ntask - 1
+ntask  = int(nareas / comm.size)
+istart = int(ntask*comm.rank)
+iend   = int(istart + ntask - 1)
 cla_zone = params_conf['cla_area'][istart:iend+1]
-iend_tot = ntask*comm.size-1
+iend_tot = int(ntask*comm.size-1)
 if irest > 0 and comm.rank < irest:
     cla_zone.append(params_conf['cla_area'][iend_tot+comm.rank+1])
 

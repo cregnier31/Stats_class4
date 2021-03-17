@@ -512,7 +512,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_exist) :
                     rla_rms_diff[:,num_col,imask] = rla_fcstrmse[:,0] ; rla_mean_diff[:,num_col,imask] = rla_fcstbias[:,0] ; rla_cor_ano[:,num_col,imask] = rla_fcstcorano[:,0]
                     num_col = num_col + 1
                 else :
-                    for numF in range(0,nb_fcst/2) :
+                    for numF in range(0,nb_fcst//2) :
                         rla_mean[:,num_col,imask] = rla_fcstmean[:,numF*2] ; ila_indice_box[:,num_col,imask] = ila_fcstnobs[:,numF*2] ; rla_rms[:,num_col,imask] = rla_fcstrms[:,numF*2]
                         rla_rms_diff[:,num_col,imask] = rla_fcstrmse[:,numF*2] ; rla_mean_diff[:,num_col,imask] = rla_fcstbias[:,numF*2] ; rla_cor_ano[:,num_col,imask] = rla_fcstcorano[:,numF*2]
                         num_col = num_col + 1
@@ -522,7 +522,7 @@ for cl_cl4file,cdate in zip(cla_cl4files,cla_dates_exist) :
                     rla_rms_diff[:,num_col,imask] = rla_persrmse[:,0] ; rla_mean_diff[:,num_col,imask] = rla_persbias[:,0] ; rla_cor_ano[:,num_col,imask] = rla_perscorano[:,0]
                     num_col = num_col + 1
                 else:
-                    for numP in range(0,nb_pers/2) :
+                    for numP in range(0,nb_pers//2) :
                         rla_mean[:,num_col,imask] = rla_persmean[:,numP*2]; ila_indice_box[:,num_col,imask] = ila_persnobs[:,numP*2] ; rla_rms[:,num_col,imask] = rla_persrms[:,numP*2]
                         rla_rms_diff[:,num_col,imask] = rla_persrmse[:,numP*2] ; rla_mean_diff[:,num_col,imask] = rla_persbias[:,numP*2] ; rla_cor_ano[:,num_col,imask] = rla_perscorano[:,numP*2]
                         num_col = num_col + 1 

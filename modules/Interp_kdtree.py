@@ -30,6 +30,7 @@ class interp_KDtree(object):
     def __init__(self, level=2):
         self.kdname = kd_tree_name
         self.log = Logger("interp_KDtree").run(level)
+        self.log_level = level
 
     def timeit(method):
         """
@@ -44,14 +45,14 @@ class interp_KDtree(object):
                 kw['log_time'][name] = int((te - ts) * 1000)
             else:
                 print ('%r  %2.2f s' % \
-                         (method.__name__, (te - ts)))
+                             (method.__name__, (te - ts)))
             return result
 
         return timed
-    
-    @timeit
+
+    #@timeit
     def tree_and_query(self, X1, Y1, lon_out, lat_out, nbpts_interp,\
-                       weight_file=None,save=False):
+                       weight_file=None,save=False, mask=None):
 
         """
             Compute tree and search weight files
@@ -59,9 +60,11 @@ class interp_KDtree(object):
 
         if len(X1.shape) > 1:
             X1, Y1 = X1, Y1
+            self.log.debug('Shape 1 > 1')
+            self.log.debug('Shape 1 {}'.format(np.shape(X1)))
         else:
            X1, Y1 = np.meshgrid(X1, Y1)
-
+           self.log.debug('Shape 1 = x {} y {}'.format(np.shape(X1), np.shape(Y1)))
         if isinstance(lon_out, np.float64) or isinstance(lon_out, np.float32):
            self.log.debug('lon_out is a float')
         else:
@@ -90,16 +93,17 @@ class interp_KDtree(object):
             self.log.debug('2D case')
             X2, Y2 = lon_out, lat_out
 
+        self.log.debug('Shape 2 = x {} y {}'.format(np.shape(X2), np.shape(Y2)))
         # Convert to cartesian
         xt, yt, zt = lon_lat_to_cartesian(X2.flatten(), Y2.flatten())
         ### Convert to cartesian
         xs, ys, zs = lon_lat_to_cartesian(X1.flatten(), Y1.flatten())
         if self.kdname == 'pykdtree':
-            coords = np.zeros((xs.size, 3), dtype=xs.dtype)
+            coords = np.zeros((xs.size, 3), dtype=float)
             coords[:, 0] = xs
             coords[:, 1] = ys
             coords[:, 2] = zs
-            coords2 =  np.zeros((xt.size, 3), dtype=xt.dtype)
+            coords2 =  np.zeros((xt.size, 3), dtype=float)
             coords2[:, 0] = xt
             coords2[:, 1] = yt
             coords2[:, 2] = zt
@@ -123,7 +127,7 @@ class interp_KDtree(object):
                 if self.kdname == 'pykdtree':
                     # --- pykdtree method ---
                     tree = KDTree(coords)
-                    d1, inds_idw1 = tree.query(coords2, k = nbpts_interp)
+                    d1, inds_idw1 = tree.query(coords2, k = nbpts_interp, mask = mask)
                 else:
                     # --- cKDTree method ---
                     tree = cKDTree(list(zip(xs, ys, zs)))

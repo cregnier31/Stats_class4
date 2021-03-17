@@ -1,9 +1,11 @@
 #!/bin/ksh 
 CONFIG="PSY4QV3R1"
-DATE1="20200725"
-DATE2="20200726"
+DATE1="20210302"
+DATE2="20210302"
 typedata="SLA"
 typemod="pgn"
 srcdata="GODAE"
+loglevel=1
 which python
-python ../TEP_CLASS4_kdtree.py --config=${CONFIG} --date1=${DATE1} --date2=${DATE2} --src=${srcdata} --data=${typedata} --typemod=${typemod}
+python ../TEP_CLASS4_kdtree.py --config=${CONFIG} --date1=${DATE1} --date2=${DATE2}\
+        	--src=${srcdata} --data=${typedata} --typemod=${typemod} --loglevel=${loglevel}

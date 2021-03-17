@@ -19,12 +19,14 @@ import getopt
 import datetime as dt
 import pandas as pd
 from datetime import date
-from sydate import SyDate
+#from sydate import SyDate
+from sytoolkit.sydate import SyDate
 from Logger import Logger
 from calendar import monthrange
-from Utils import date_range
+from lib_pyt.Utils import date_range
 from reader import *
 from ast import literal_eval
+from os.path import dirname
 #from Reader import read_lightout
 
 ##############################################################
@@ -46,6 +48,7 @@ class Loader(object):
         if type == "NC_CORIO": return LoaderNCcorio()
         if type == "NC_CORIO_ORIGIN": return LoaderNCcorio()
         if type == "NC_CHLORO": return LoaderNCChloro()
+        if type == "NC_BIOARGO": return LoaderNCBioArgo()
         if type == "NC_CLIM": return LoaderNCClim()
         if type == "NC_INSCLIM": return LoaderInsituClim()
         if type == "NC_GODAE": return LoaderNCgodae()
@@ -58,6 +61,7 @@ class Loader(object):
         if type == "INPUT": return InputLoader()
         if type == "INPUT_DATA": return InputDataLoader()
         if type == "PGN_coords": return PGN_coords_Loader()
+        if type == "PGN_coords_clim": return PGN_coords_clim_Loader()
         if type == "DRIFTER_CMEMS": return LoaderCMEMSDrifter()
         if type == "alleges_coords": return alleges_coords()
         assert 0, "Format not known: " + type
@@ -77,6 +81,8 @@ class Loader(object):
             var_lon = 'lon' ; var_lat = 'lat'
         elif 'LON' in nc.variables:
             var_lon = 'LON' ; var_lat = 'LAT'
+        elif 'Lon' in nc.variables:
+            var_lon = 'Lon' ; var_lat = 'Lat'
         elif 'LONGITUDE' in nc.variables:
             var_lon = 'LONGITUDE' ; var_lat = 'LATITUDE'
         elif 'Longitude' in nc.variables:
@@ -120,22 +126,41 @@ class InputDataLoader(Loader):
         else:
             # Case Global without qc
             log.info("GLOBAL MODE => SELECT ALL ")
-            selector = Selector(param_dict['data_format'], param_dict['data_type']).factory(
-                param_dict['data_origin'])
+            #selector = Selector(param_dict['data_format'], param_dict['data_type']).factory(
+            #    param_dict['data_origin'])
             if param_dict['data_origin'] == "Microwat":
                 lon, lat, juld = Loader.factory(
                     param_dict['data_format']).read_pos(fichier)
-            else:
-                lon, lat, obs_value = Loader.factory(param_dict['data_format'])\
-                .read_pos_and_value(fichier)
-            nb_obs = int(np.shape(lat)[0])
-            if param_dict['write_geojson']:
-                new_position = np.ndarray(
+                nb_obs = int(np.shape(lat)[0])
+                position = np.ndarray(
                     shape=(nb_obs, 2), dtype=float, order='F')
-                new_position[:, 0] = lon
-                new_position[:, 1] = lat
+                position[:, 0] = lon
+                position[:, 1] = lat
+            elif param_dict['data_type'] ==  "AMSR" :
+                position=Loader.factory(param_dict['data_format']).read_pos_amsr(fichier)
+            else :
+                position=Loader.factory(param_dict['data_format']).read_pos(fichier)
+            #else:
+            #    lon, lat, obs_value = Loader.factory(param_dict['data_format'])\
+            #    .read_pos_and_value(fichier)
+            #if param_dict['write_geojson']:
+            #    nb_obs = int(np.shape(lat)[0])
+            #    new_position = np.ndarray(
+            #        shape=(nb_obs, 2), dtype=float, order='F')
+            #    new_position[:, 0] = lon
+            #    new_position[:, 1] = lat
+            ## Create Geojson file for coloc verification with Qgis
+            #if param_dict['write_geojson'] : 
+            #    liste_type=['GLO','XB','CT','DC','BA','GL','ML','PF','TE','DB','FB','MO','TS']
+            #    for type_var in liste_type : 
+            #        ## Write files with positions of dataset
+            #        file_out=dirtmp+'Positions_'+type_var+'_'+data_format+'_'+data_type+'_D'+SyDate.__str__(date1)+'_'+SyDate.__str__(date2)+'.geojson'
+            #        Writer(log).write_geojson_fromdb(type_var,file_out,file_db)
+            #    file_out2=dirtmp+'Positions_coloc_'+data_type+'_'+data_format+'_'+data_type+'_D'+SyDate.__str__(date1)+'_'+SyDate.__str__(date2)+'.geojson'
+            #    Writer(log).write_geojson_fromdb('coloc',file_out2,file_db2)
 
-        return lon, lat, ll_interp
+        return position, ll_interp
+        #return lon, lat, ll_interp
 
 
 class LoaderNCChloro(Loader):
@@ -163,6 +188,34 @@ class LoaderNCChloro(Loader):
         nc.close()
 
         return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, _FillValue
+
+class LoaderNCBioArgo(Loader):
+
+    def read_pos_and_value(self,filename, varname='NITRATE_ADJUSTED'):
+        rla_lon, rla_lat, _FillValue, nc = \
+          self.generic_read_pos_and_value(filename, varname)
+        rla_value = nc.variables[varname][:, :, :]
+        nb_obs, nb_vars, nb_deps = np.shape(rla_value)
+        if 'depth' in nc.variables.keys():
+            rla_depth = nc.variables['depth'][:,0,:]
+        elif 'DEPH' in nc.variables.keys():
+            rla_depth = nc.variables['DEPH'][:,0,:]
+        elif 'DEPH_ADJUSTED' in nc.variables.keys():
+            rla_depth = nc.variables['DEPH_ADJUSTED'][:,0,:]
+        elif 'pres' in nc.variables.keys():
+            rla_depth = nc.variables['pres'][:,0,:]
+        elif 'PRES' in nc.variables.keys():
+            rla_depth = nc.variables['PRES'][:,0,:]
+        elif 'PRES_ADJUSTED' in nc.variables.keys():
+            rla_depth = nc.variables['PRES_ADJUSTED'][:,0,:]
+        else:
+            ## No depth: surface variable
+            nb_lats, nb_lons = np.shape(rla_value)
+            rla_depth = np.ndarray(shape=(nb_lats,nb_lons),dtype=float, order='F')
+            rla_depth[:,:] = 0
+        nc.close()
+
+        return np.float32(rla_lon), np.float32(rla_lat), np.float32(rla_value), nb_obs, np.float32(rla_depth), _FillValue
 
 class LoaderInsituClim(Loader):
     def __init__(self):
@@ -199,12 +252,12 @@ class LoaderNCClim(Loader):
         return rla_lon, rla_lat
 
 class InputLoader(Loader):
-    def load(self, options, level, log):
+    def load(self, options, level):
         """Loader for input options"""
         keywords = ['date1=', 'date2=', 'delta=', 'nbdate=', 'daterun=',
-        'config=', 'data=', 'src=', 'nbproc=', 'typemod=', 'schedule=', 'data_id=']
-        cla_opts = getopt.getopt(options, '', keywords)
-        log = Logger("InputLoader").run(level)
+        'config=', 'data=', 'src=', 'nbproc=', 'typemod=', 'schedule=',
+        'data_id=','loglevel=','daymax=']
+        cla_opts = getopt.getopt(options, 'd', keywords)
         ll_delta = None
         ll_date1 = None
         ll_date2 = None
@@ -215,6 +268,9 @@ class InputLoader(Loader):
         ll_src = None
         cl_daterun = None
         ll_data_id = None
+        ll_cycle = None
+        daymax = None
+        dask = False
         list_var = []
         nb_proc = 0
         cl_schedule = 'd'
@@ -258,6 +314,15 @@ class InputLoader(Loader):
             elif o in ['--data_id']:
                 ll_data_id = True
                 cl_data_id = p
+            elif o in ['--loglevel']:
+                level = int(p)
+            elif o in ['--daymax']:
+                daymax = p
+            elif o in ['-d']:
+                dask = True
+        # LOGGER
+        log = Logger("TEP_CLASS4").run(level)
+        log.info("Loglevel {}".format(log))
         list_var.append(ll_date1)
         list_var.append(ll_date2)
         list_var.append(ll_daterun)
@@ -285,55 +350,55 @@ class InputLoader(Loader):
             date1 = datetoday.gobackward(int(cl_delta))
             date2 = date1
         elif ll_date1 and ll_date2 and not ll_delta and not ll_daterun:
-            log.info("Case 2 Date1 Date2")
+            log.debug("Case 2 Date1 Date2")
             # Test LEN of input date
             datelen1 = len(cl_start_date)
             datelen2 = len(cl_end_date)
-            log.info("Lenght of date %i %i" % (datelen1, datelen2))
+            log.debug("Lenght of date %i %i" % (datelen1, datelen2))
             if datelen1 == datelen2 and datelen1 == 6:
-                log.info("Monthly values")
-                log.info("Values %s %s :" %
+                log.debug("Monthly values")
+                log.debug("Values %s %s :" %
                          (cl_start_date[0:4], cl_start_date[4:6]))
                 nb_day1 = monthrange(
                     int(cl_start_date[0:4]), int(cl_start_date[4:6]))[1]
                 cl_start_date2 = cl_start_date+"01"
                 cl_end_date2 = cl_start_date+str(nb_day1)
-                log.info(cl_start_date2)
-                log.info(cl_end_date2)
+                log.debug(cl_start_date2)
+                log.debug(cl_end_date2)
                 date1 = SyDate(cl_start_date2)
                 date2 = SyDate(cl_end_date2)
                 date1 = SyDate(cl_start_date2)
                 date2 = SyDate(cl_end_date2)
                 cl_schedule = 'm'
             elif datelen1 == datelen2 and datelen1 == 8:
-                log.info("Daily values")
+                log.debug("Daily values")
                 date1 = SyDate(cl_start_date)
                 date2 = SyDate(cl_end_date)
                 cl_schedule = 'd'
             elif datelen1 == datelen2 and datelen1 == 4:
-                log.info("Year values")
+                log.debug("Year values")
                 date1 = SyDate(cl_start_date+"0101")
                 date2 = SyDate(cl_end_date+"1231")
                 cl_schedule = 'y'
             else:
                 log.error("Input date must be in year month or day")
         elif ll_daterun and ll_nbdate and ll_delta:
-            log.info("Case 3 Backward run")
+            log.debug("Case 3 Backward run")
             jrun = SyDate(cl_daterun)
             date1 = jrun.gobackward(int(cl_delta))
             date2 = jrun.gobackward(int(cl_delta)-int(cl_nbdate)+1)
         elif ll_date1:
-            log.info("Only one date")
+            log.debug("Only one date")
             if len(str(cl_start_date)) == 4:
                 date1 = SyDate(cl_start_date+"0101")
                 date2 = SyDate(cl_start_date+"1231")
-                log.info("Year values")
+                log.debug("Year values")
                 cl_schedule = 'y'
             else:
-                log.info("Date must be a year")
+                log.debug("Date must be a year")
                 sys.exit(1)
         elif not ll_date1 and not ll_date2:
-            log.info("No date: last month")
+            log.debug("No date: last month")
             date_now = dt.datetime.now()
             if date_now.month == 1:
                 cl_start_date = str(date_now.year-1)+"1201"
@@ -352,7 +417,7 @@ class InputLoader(Loader):
             date1=SyDate(cl_start_date)
             date2=SyDate(cl_end_date)
         elif cl_daterun == "all" :
-            log.info("Need to find dates in file")
+            log.debug("Need to find dates in file")
             date1=None
             date2=None
         else :
@@ -363,12 +428,13 @@ class InputLoader(Loader):
                             (for example 1 week before today -14 and today -7)")
             sys.exit(1)
         if ll_date1 and ll_date2 :
-            log.info("Date1 %s Date2 %s " %(date1,date2))
+            log.debug("Date1 %s Date2 %s " %(date1,date2))
         confname='config_'+str(cl_config)+'_'+str(cl_src)+'_'+str(cl_data)+'.cfg'
+
         # Logger
-        log.info("Nombre de proc %i" %(nb_proc))
-        log.info("Type des fichiers d'entree %s " %(cl_typemod))
-        log.info("Schedule %s " %(cl_schedule))
+        log.debug("Nombre de proc %i" %(nb_proc))
+        log.debug("Type des fichiers d'entree %s " %(cl_typemod))
+        log.debug("Schedule %s " %(cl_schedule))
         log.info("Dates %s %s " %(date1,date2))
         log.info("Datatype %s " %(cl_data))
         log.info("Daterun %s " %(cl_daterun))
@@ -384,7 +450,8 @@ class InputLoader(Loader):
         param_dict['nb_proc'] = nb_proc
         param_dict['cl_typemod'] = cl_typemod
         param_dict['cl_data_id'] = cl_data_id
-
+        param_dict['daymax'] = daymax
+        param_dict['dask'] = dask
         # Create time vector between date1 and date2
         start_date = dt.datetime(year=int(str(param_dict['date1'])[0:4]),\
                                  month=int(str(param_dict['date1'])[4:6]),\
@@ -397,7 +464,7 @@ class InputLoader(Loader):
         vect_time = date_range(start_date, end_date, 1, 'days')
         param_dict['time_period'] = pd.to_datetime(vect_time).strftime('%Y%m%d')
 
-        return param_dict
+        return param_dict, log
 
 class NmlLoader(Loader):
     """Loader for namelists"""
@@ -409,17 +476,25 @@ class NmlLoader(Loader):
         if not db.sections():
             log.error("Configuration file not found {} ! ".format(filename))
             sys.exit(1)
+        param_dict['db'] = db
+        param_dict['dirhome'] = os.path.dirname(os.path.realpath(__file__))+'/../'
+        param_dict['nml_dir'] = param_dict['dirhome']+'NAMELIST/'
+        param_dict['dir_log'] = param_dict['dirhome']+'log/'
         # Add new parameters in the dictionnary
+        #if param_dict['data_type'] == "SLA":
+        param_dict['cl_msshFile'] = db.get('static','cl_msshFile')
+        param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
         param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
         param_dict['dirmodel'] = param_dict['dirmodel_pgn']
         param_dict['dirdata'] = db.get('input_dir', 'INPUTDATA')
+        param_dict['dirmodel_light'] = db.get('input_dir', 'DATA_IN_LIGHT')
         param_dict['dirmodel'] = db.get('input_dir', 'DATA_IN')
         param_dict['nb_level'] = int(db.get('GLOBAL', 'LEVELS'))
         param_dict['zoom'] = int(db.get('GLOBAL', 'zoom'))
         param_dict['write_geojson'] = int(db.get('GLOBAL', 'write_geojson'))
         if param_dict['write_geojson']:
             # Write Geojson file
-            log.info("Write Geojson file")
+            log.debug("Write Geojson file")
             # Db file for extracted positions
             file_db = 'CLASS4_shelf.db'
             file_db2 = 'Coloc_CLASS4_shelf.db'
@@ -432,12 +507,18 @@ class NmlLoader(Loader):
         param_dict['qc_level'] = int(db.get('GLOBAL','qc_level'))
         param_dict['do_qc'] = int(db.get('GLOBAL','do_qc'))
         param_dict['do_sort'] = int(db.get('GLOBAL','do_sort'))
-
+        param_dict['verif'] = literal_eval(db.get('GLOBAL','verif'))
+        param_dict['json'] = literal_eval(db.get('GLOBAL','ll_json'))
+        param_dict['maskname'] = db.get('static','maskname')
+        try:
+            param_dict['direxec'] = db.get('GLOBAL', 'DIRBIN')
+        except:
+            param_dict['direxec'] = os.path.dirname(os.path.realpath(__file__))+'/../bin/'
         #==========================================================================
         # Sort model values if necessary
         #==========================================================================
         if param_dict['do_sort']:
-            log.info('              Sort Values for interp               ')
+            log.debug('              Sort Values for interp               ')
             param_dict['sort_rep'] = param_dict.get('input_dir', 'DATA_SORT')
             file_template = param_dict['cl_config'] + \
             '_'+param_dict['daily_pref']+'_'
@@ -452,25 +533,28 @@ class NmlLoader(Loader):
                 log.error("Schedule not valid")
                 sys.exit(1)
         else:
-            log.info('              Input data already sorted               ')
+            log.debug('              Input data already sorted               ')
             param_dict['sort_rep'] = param_dict['dirmodel']
 
-        log.info('Sort rep : %s' % (param_dict['sort_rep']))
+        log.debug('Sort rep : %s' % (param_dict['sort_rep']))
         param_dict['do_decomp'] = int(db.get('GLOBAL', 'do_decomp'))
         param_dict['model_type'] = db.get('GLOBAL', 'MODELTYPE')
         param_dict['data_format'] = db.get('input_dir', 'DATA_FMT')
         param_dict['dirwork'] = db.get('output_dir', 'DIRTMP')
-        param_dict['dirwork'] = db.get('output_dir', 'DIRWORK')
+        if not os.path.exists(param_dict['dirwork']):
+            try:
+                os.makedirs(param_dict['dirwork'])
+            except OSError as exc:
+                if exc.errno == errno.EEXIST and os.path.isdir(param_dict['dirwork']):
+                    pass
+        #param_dict['dirwork'] = db.get('output_dir', 'DIRWORK')
         param_dict['diroutput'] = db.get('output_dir', 'DIROUTPUT')
         param_dict['diroutput2'] = db.get('output_dir', 'DIROUTPUT2')
-        param_dict['homedir'] = db.get('GLOBAL', 'DIRHOME')
         param_dict['dirclim'] = db.get('climato', 'DIRCLIM')
         param_dict['coord_clim'] = glob(param_dict['dirclim'] + "*.nc")[0]
         param_dict['dirtmp'] = param_dict['dirwork'] + 'ext-'
         param_dict['prefix_data'] = db.get('input_dir', 'PREFIX')
-        param_dict['nml_dir'] = db.get('GLOBAL', 'NAMELIST_DIR')
         param_dict['daily_pref'] = db.get('GLOBAL', 'DAILY_PREF')
-        param_dict['direxec'] = db.get('GLOBAL', 'EXEDIR')
         param_dict['data_origin'] = db.get('input_dir', 'DATA_ORIGIN')
         param_dict['cl_conf'] = db.get('GLOBAL', 'CONF')
         param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION')
@@ -480,7 +564,6 @@ class NmlLoader(Loader):
         param_dict['lead_time'] = db.get('input_dir', 'LEAD_TIME').split()
         param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
         param_dict['coloc_rep'] = db.get('output_dir', 'DIRCOLOC')
-        param_dict['dir_log'] = db.get('GLOBAL', 'DIRLOG')
         param_dict['gridtemp'] = db.get('GLOBAL', 'gridtemp')
         param_dict['gridsal'] = db.get('GLOBAL', 'gridsal')
         param_dict['type_run'] = db.get('GLOBAL', 'TYPE_RUN')
@@ -488,14 +571,17 @@ class NmlLoader(Loader):
         param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable'))
         param_dict['nb_points'] = int(db.get('GLOBAL', 'nb_points_interp'))
         param_dict['schedule'] = db.get('GLOBAL', 'SCHEDULE')
-        param_dict['ll_zip'] = db.get('GLOBAL', 'll_zip')
+        param_dict['ll_zip'] = literal_eval(db.get('GLOBAL', 'll_zip'))
+        param_dict['contact'] = db.get('GLOBAL','CONTACT')
+        param_dict['inst'] = db.get('GLOBAL','INSTITUTION')
+        param_dict['version'] = db.get('GLOBAL','VERSION')
+        param_dict['desc'] = db.get('GLOBAL','DESCRIPTION')
 
         if param_dict['zoom'] or param_dict['do_qc']:
             param_dict['lon_min'] = int(param_dict.get('GLOBAL', 'LONMIN'))
             param_dict['lon_max'] = int(param_dict.get('GLOBAL', 'LONMAX'))
             param_dict['lat_min'] = int(param_dict.get('GLOBAL', 'LATMIN'))
             param_dict['lat_max'] = int(param_dict.get('GLOBAL', 'LATMAX'))
-#        param_dict['dimension']=db.get('input_dir','DIMENSION')
         param_dict['coordinates'] = db.get('static', 'fic_coordinates')
         if param_dict['cl_data_id']:
             param_dict['dirwork'] = param_dict['dirwork']+str(cl_data_id)+'/'
@@ -505,7 +591,7 @@ class NmlLoader(Loader):
             param_dict['dirwork'] = param_dict['dirwork']
             param_dict['diroutput'] = param_dict['diroutput']
             date_ini = SyDate(str(param_dict['date1']))
-            param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
+            if param_dict['prefix_data'] == "L3mCHL": param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
         else:
             param_dict['dirwork'] = param_dict['dirwork']
             param_dict['diroutput'] = param_dict['diroutput']
@@ -516,20 +602,17 @@ class NmlLoader(Loader):
 class LoaderNCcorio(Loader):
 
     """Loader for coriolis dataset"""
+    def __init__(self):
+        self.varname_list = []
 
     def read_pos(self,filename):
-        # print 'read netcdf file : %s ' %(filename)
         nc = netCDF4.Dataset(filename,'r')
         variable = 'LONGITUDE'
         rla_lon = nc.variables[variable][:]
         # rla_lon[rla_lon <0] += 360.
         variable = 'LATITUDE'
         rla_lat = nc.variables[variable][:]
-        # nb_tot=len(rla_lon)
         n_profiles = len(rla_lon)
-        # n_profiles=386
-        # print n_profiles
-        # n_profiles=1000
         # position=np.ndarray(shape=(n_profiles,2))
         # position[:,0]=rla_lon[:] 
         # position[:,1]=rla_lat[:] 
@@ -546,6 +629,59 @@ class LoaderNCcorio(Loader):
         # np.set_printoptions(suppress=True)
         nc.close()
         return position
+
+    def read_pos_and_value(self,filename):
+
+        ll_pres=0
+        ll_depth=0
+        ll_temp=0
+        ll_psal=0
+        nc = netCDF4.Dataset(filename)
+        if  'DEPH' in nc.variables.keys(): ll_depth = 1
+        if  'PRES' in nc.variables.keys(): ll_pres = 1
+        if  'TEMP' in nc.variables.keys():
+            rla_temp =  nc.variables['TEMP'][:,:]
+            ll_temp = 1
+            self.varname_list.append('TEMP')
+            n_profiles, n_profs = np.shape(rla_temp)
+        if  'PSAL' in nc.variables.keys():
+            rla_temp =  nc.variables['PSAL'][:,:]
+            ll_psal = 1
+            self.varname_list.append('PSAL')
+            n_profiles, n_profs = np.shape(rla_temp)
+        if not ll_temp and ll_psal :
+            print ('PROF not valid with no TEMP and no PSAL')
+            sys.exit(1)
+        nb_variables = len(self.varname_list)
+        rla_obs = np.ndarray(shape=(n_profiles,n_profs, nb_variables))
+        for ind in range(nb_variables):
+            rla_obs[:,:,ind] = nc.variables[self.varname_list[ind]][:,:]
+            _FillValue = nc.variables[self.varname_list[ind]]._FillValue
+
+        print ('Nb variables {}'.format(nb_variables))
+
+        if ll_depth and ll_pres :
+            rla_depth = nc.variables['PRES'][:,:]
+        elif ll_depth and not ll_pres :
+            rla_depth = nc.variables['DEPH'][:,:]
+        elif ll_pres and not ll_depth :
+            rla_depth = nc.variables['PRES'][:,:]
+        else :
+            print ('Not pres and depth')
+            sys.exit(1)
+        #"if 'depth' in nc.variables.keys():
+        #"    rla_depth = nc.variables['depth'][:,0,:]
+        #"elif 'DEPH' in nc.variables.keys():
+        #"    rla_depth = nc.variables['DEPH_ADJUSTED'][:,0,:]
+        #"elif 'pres' in nc.variables.keys():
+        #"    rla_depth = nc.variables['pres'][:,0,:]
+        #"elif 'PRES' in nc.variables.keys():
+        #"    rla_depth = nc.variables['PRES'][:,0,:]
+        if 'LONGITUDE' in nc.variables.keys(): rla_lon =  nc.variables['LONGITUDE'][:]
+        if 'LATITUDE' in nc.variables.keys(): rla_lat =  nc.variables['LATITUDE'][:]
+        nc.close()
+
+        return np.float32(rla_lon), np.float32(rla_lat), np.float32(rla_obs), n_profiles, np.float32(rla_depth), _FillValue
 
 class LoaderSyntheticValue(Loader):
 
@@ -587,7 +723,6 @@ class LoaderNCgodae(Loader):
     """Loader for GODAE dataset"""
 
     def __init__(self):
-        print ('Init LoaderNCgodae')
         self.varname = 'observation'
 
     def read_pos(self,filename):
@@ -660,12 +795,47 @@ class PGN_coords_Loader(Loader):
     """Loader for PGN dataset"""
     def read_pos(self,filename):
         nc = netCDF4.Dataset(filename,'r')
-        variable = 'nav_lon'
-        rla_lon = nc.variables[variable][:,:]
-        variable = 'nav_lat'
-        rla_lat = nc.variables[variable][:,:]
+        variables = nc.variables
+        list_lon = ['x', 'X', 'lon', 'LON', 'lons', 'longitude', 'LONGITUDE', 'nav_lon']
+        list_lat = ['y', 'Y', 'lat', 'LAT', 'LATS', 'latitude', 'LATITUDE', 'nav_lat']
+        list_depth = [ 'deptht', 'depth', 'z', 'Z', 'DEPTH','nav_lev']
+        try:
+            lon_name = [ k for k in variables.keys() & set(list_lon)][0]
+            lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
+            depth_name = [ k for k in variables.keys() & set(list_depth)][0]
+        except:
+            print('lon lat or depth not defined')
+            raise
+        rla_lon = nc.variables[lon_name][:,:]
+        rla_lat = nc.variables[lat_name][:,:]
+        variable = 'tmask'
+        rla_mask = nc.variables[variable][:,:,:]
+        depth_mod =  nc.variables[depth_name][:]
+        nlat, nlon, ndepth = np.shape(rla_mask)
+        mask_tab = np.full((nlat,nlon,ndepth), True)
+        mask_tab = np.where(rla_mask == 1, False, mask_tab)
         nc.close()
-        return rla_lon,rla_lat
+        return rla_lon,rla_lat,mask_tab,depth_mod
+
+class PGN_coords_clim_Loader(Loader):
+
+    """Loader for PGN dataset"""
+    def read_pos(self,filename):
+        nc = netCDF4.Dataset(filename,'r')
+        variable = 'lon'
+        rla_lon = nc.variables[variable][:,:]
+        variable = 'lat'
+        rla_lat = nc.variables[variable][:,:]
+        variable = 'tmask'
+        rla_mask = nc.variables[variable][:,:,:]
+        variable = 'nav_lev'
+        depth_mod =  nc.variables[variable][:]
+        nlat, nlon, ndepth = np.shape(rla_mask)
+        mask_tab = np.full((nlat,nlon,ndepth), True)
+        mask_tab = np.where(rla_mask == 1, False, mask_tab)
+        nc.close()
+        return rla_lon,rla_lat,mask_tab,depth_mod
+
 
 class alleges_coords(Loader):
 
@@ -676,8 +846,16 @@ class alleges_coords(Loader):
         rla_lon = nc.variables[variable][:,:]
         variable = 'latitude'
         rla_lat = nc.variables[variable][:,:]
+        variable = 'depth'
+        rla_depth = nc.variables[variable][:]
+        variable = 'mask'
+        rla_mask = nc.variables[variable][:,:,:]
+        ndepth, nlat, nlon = np.shape(rla_mask)
+        print ("depth {} Lat {} Lon {}".format(ndepth,nlat, nlon))
+        mask_tab = np.full((ndepth,nlat,nlon), True)
+        mask_tab = np.where(rla_mask == 1, False, mask_tab)
         nc.close()
-        return rla_lon,rla_lat
+        return rla_lon,rla_lat,mask_tab,rla_depth
 
 class AsciiLoader(Loader):
 
@@ -688,7 +866,6 @@ class AsciiLoader(Loader):
         # data=np.genfromtxt(filename,usecols = (2,3),skip_header=1)
         data = np.genfromtxt(filename,usecols = (1,2),skip_header=1)
         position = np.array(data)
-        nc.close()
         return position
 
 class ColocLoader(Loader):
@@ -700,7 +877,6 @@ class ColocLoader(Loader):
         # data=np.genfromtxt(filename,usecols = (5,6))
         data = np.genfromtxt(filename,usecols = (15,16))
         position = np.array(data)
-        nc.close()
         return position
 
 class LoaderCMEMSDrifter(Loader):
@@ -714,7 +890,6 @@ class LoaderCMEMSDrifter(Loader):
             position_qc, time_qc, dc_reference = read_drifter_filt(filename)
         nb_obs = len(lon)
         _FillValue = np.nan
-        nc.close()
 
         return lon, lat, [u_filtr, v_filtr], nb_obs, depth,  _FillValue
-       
+

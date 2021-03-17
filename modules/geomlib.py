@@ -1,12 +1,9 @@
 import numpy as np
 import os, sys, re, math
 from scipy.spatial import Delaunay
-sys.path.append("/home/cregnier/python/module//lib/python3.5/site-packages/")
-sys.path.append("/home/cregnier/SVN/mo/LIB/LIB_PYT/")
 from shapely.geometry import Point, MultiPoint, MultiLineString, mapping
 from shapely.geometry.polygon import Polygon as ShapelyPolygon
 from shapely.ops import cascaded_union, polygonize
-#from Class_plot import Plot_map
 from matplotlib import path
 from shapely.geometry import Point as ShapelyPoint
 from geopy.distance import geodesic, great_circle

@@ -37,16 +37,16 @@ def cfg_ltime(cl_file, cexp, cvar):
         lead_time.append('persistence')
     if 'climatology' in nc.variables: lead_time.append('climatology')
     nc.close()
-    
+
     if 'best_estimate' in lead_time : yout += 1
     if 'forecast' in lead_time :
         if nb_fcst == 1 : yout += 1
         else:
-            for f in range(nb_fcst/2): yout += 1
+            for f in range(nb_fcst//2): yout += 1
     if 'persistence' in lead_time :
         if nb_fcst == 1 : yout += 1
         elif nb_fcst > 1 :
-            for f in range(nb_fcst/2): yout += 1
+            for f in range(nb_fcst//2): yout += 1
     if 'climatology' in lead_time : yout += 1
     if 'climatology' not in lead_time : yout += 1
     rla_forecast =  np.zeros((yout))
@@ -59,18 +59,18 @@ def cfg_ltime(cl_file, cexp, cvar):
         rla_forecast[num_col] = 336.
         num_col += 1
     if 'forecast' in lead_time and cexp == 'PHYS' and nb_fcst != None:
-        for f in range(nb_fcst/2):
+        for f in range(nb_fcst//2):
             rla_forecast[num_col] = (f*48.)+12.
             num_col += 1
     if 'persistence' in lead_time and cexp == 'BIO':
-        rla_forecast[num_col] = missing_value
+        rla_forecast[num_col] = -336.
         num_col += 1
     if 'persistence' in lead_time and cexp == 'PHYS' and nb_fcst != None:
-        for f in range(nb_fcst/2):
-            rla_forecast[num_col] = missing_value
+        for f in range(nb_fcst//2):
+            rla_forecast[num_col] = -(f*48.)-12.
             num_col += 1
     if 'climatology' in lead_time:
-        rla_forecast[num_col] = missing_value
+        rla_forecast[num_col] = 1.
     dict_inputs = {}
     dict_inputs['lead_time'] = lead_time
     dict_inputs['yout'] = yout
@@ -128,7 +128,7 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
         if 'salt    ' in cla_varname: varname_psal = 'salt    '
         if 'votemper' in cla_varname: varname_temp = 'votemper'
         if 'temp    ' in cla_varname: varname_temp = 'temp    '
-        if 'eastward_velocity ' in cla_varname : varname_u = 'eastward_velocity '
+        if 'eastward_velocity' in cla_varname : varname_u = 'eastward_velocity'
         if 'northward_velocity' in cla_varname: varname_v = 'northward_velocity'
 
     if cvar == 'PSAL' and varname_psal == 0:
@@ -374,7 +374,7 @@ def read_and_store_inputfiles(lead_time, cvar, cexp, num_date, cl_cl4file,
         if 'salt    ' in cla_varname: varname_psal = 'salt    '
         if 'votemper' in cla_varname: varname_temp = 'votemper'
         if 'temp    ' in cla_varname: varname_temp = 'temp    '
-        if 'eastward_velocity ' in cla_varname : varname_u = 'eastward_velocity '
+        if 'eastward_velocity' in cla_varname : varname_u = 'eastward_velocity'
         if 'northward_velocity' in cla_varname: varname_v = 'northward_velocity'
     if ll_arc:
         ind = np.where(rla_latobs > min_lat)[0]
