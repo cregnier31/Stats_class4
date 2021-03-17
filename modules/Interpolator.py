@@ -601,8 +601,12 @@ class Interpolator(object):
         """
         self.log.debug('Interp2D Read input file : {}'.format(file))
         self.log.debug('Variable : {}'.format(variable))
-        dataset_in = xr.open_dataset(file,decode_times=False)
-        var_in = dataset_in[variable]
+        try:
+            dataset_in = xr.open_dataset(file,decode_times=False)
+            var_in = dataset_in[variable]
+        except:
+            self.log.error("Missing File or variable {} in file {}".format(variable, file))
+            raise
         ll_single = False
         if depth > 0.5 :
             ## Find the 2 points that enclose the depth value
@@ -725,15 +729,23 @@ class Interpolator(object):
             tab_var_clim['vosaline'] = 'salinity'
             self.log.debug("Open clim file {}".format(file))
             #dataset_in = xr.open_dataset(file, decode_times=False)
-            dataset_in = xr.open_mfdataset(file,chunks={'time_counter':1,'deptht':'auto','y':'auto','x':'auto'},parallel=True,combine='by_coords')
-            var_in = dataset_in[variable][:, :, :].values
-            nc_file = Dataset(file,'r')
-            var_in = nc_file.variables[tab_var_clim[variable]][:, :, :]
+            try:
+                dataset_in = xr.open_mfdataset(file,chunks={'time_counter':1,'deptht':'auto','y':'auto','x':'auto'},parallel=True,combine='by_coords')
+                var_in = dataset_in[variable][:, :, :].values
+                nc_file = Dataset(file,'r')
+                var_in = nc_file.variables[tab_var_clim[variable]][:, :, :]
+            except:
+                self.log.error("Missing variable {} in file {}".format(variable, file))
+                raise
         else:
-            dataset_in = xr.open_dataset(file, decode_times=False)
-            nlons, nlats, ndepths, depth_mod = self.read_dims(dataset_in)
-            num_cores = 5
-            var_in = dataset_in[variable][time, :, :, :].values
+            try:
+                dataset_in = xr.open_dataset(file, decode_times=False)
+                nlons, nlats, ndepths, depth_mod = self.read_dims(dataset_in)
+                num_cores = 5
+                var_in = dataset_in[variable][time, :, :, :].values
+            except:
+                self.log.error("Missing variable {} in file {}".format(variable, file))
+                raise
         end = timer()
         self.log.debug('~~~~~~~~ Time elapsed read files : {} {}'.format
                         (str(end - start), " seconds ~~~~~~~~~~~~"))

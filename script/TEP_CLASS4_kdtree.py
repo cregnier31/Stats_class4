@@ -99,5 +99,4 @@ def main(level=2):
 # Set the level of logger
 #log_level = 2
 # Run the main code
-#main(log_level)
 main()

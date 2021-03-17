@@ -91,7 +91,8 @@ class Extractor(object):
          liste_tot : list of input data corresponding to a date
         """
         liste_tot = []
-        liste_file = glob(param_dict['dirdata']+'/*'+dateval+'*.nc')
+        YEAR = dateval[0:4]
+        liste_file = glob(param_dict['dirdata']+'/'+YEAR+'/*'+dateval+'*.nc')
         for file in liste_file:
             try:
                 filename = os.path.basename(file)

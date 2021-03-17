@@ -322,6 +322,7 @@ class InputLoader(Loader):
                 dask = True
         # LOGGER
         log = Logger("TEP_CLASS4").run(level)
+        log.info("Loglevel {}".format(log))
         list_var.append(ll_date1)
         list_var.append(ll_date2)
         list_var.append(ll_daterun)
