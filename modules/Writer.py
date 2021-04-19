@@ -36,6 +36,7 @@ class Writer():
             'aice': {'code': 'SEA_CONC', 'defaults': {'name': 'Sea ice concentration from AMSR2 brightness temperature'}},
             'current': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Currents from CMEMS drifting buoys 001_048'}},
             'DRIFTER_filtr': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Filtered Currents from CMEMS drifting buoys 001_048'}},
+            'DRIFTER': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Currents from CMEMS drifting buoys 001_048'}},
             'default': {'code': 'Default_code', 'defaults': {'name': 'Data for validation'}},
        }
 
@@ -182,13 +183,124 @@ class Writer():
         nc_fid.close()  # close the new file
 
 
+    def write_CMEMS_generic_files(self, filename, param_dict, dateval, model, variable):
+        nc_fid = Dataset(filename, 'r+')
+        dims = nc_fid.dimensions
+        ll_defined = False
+        if 'numobs' not in dims.keys(): nc_fid.createDimension('numobs', nb_obs)
+        if 'numfcsts' not in dims.keys(): nc_fid.createDimension('numfcsts', nb_vars)
+        if 'numdeps' not in dims.keys(): nc_fid.createDimension('numdeps', nb_vars)
+        if 'forecast' in param_dict.keys():
+            fcst_tab = param_dict['forecast']
+            #nb_obs, nb_vars, nb_fcst, nb_depths = np.shape(fcst_tab)
+            nc_fcst = nc_fid.createVariable(
+                'forecast', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
+            nc_fcst.setncatts(
+                {'long_name': u"Model forecast counterpart of obs. value"})
+            nc_fid.variables['forecast'][:, :, :, :] = fcst_tab[:, :, :, :]
+            ll_defined = True
+        if 'persistence' in param_dict.keys():
+            pers_tab = param_dict['persistence']
+            #nb_obs, nb_vars, nb_fcst, nb_depths = np.shape(pers_tab)
+            nc_pers = nc_fid.createVariable(
+                'persistence', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
+            nc_pers.setncatts(
+                {'long_name': u"Model persistence counterpart of obs. value"})
+            nc_fid.variables['persistence'][:, :, :, :] = pers_tab[:, :, :, :]
+            ll_defined = True
+        if 'smoc' in param_dict.keys():
+            smoc_tab = param_dict['smoc']
+            #nb_obs, nb_vars, nb_fcst = np.shape(smoc_tab)
+            nb_depths = 1
+            nc_smoc = nc_fid.createVariable(
+                'smoc_drift_best', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
+            nc_smoc.setncatts({'long_name': u"Eastward and Northward total velocity (Eulerian + Waves + Tide) (smoc drift)",'units': u"m s-1"})
+            nc_smoc.description = "GLOBAL_ANALYSIS_FORECAST_PHY_001_024 hourly mean merged surface currents from oceanic circulation, tides and waves"
+            nc_fid.variables['smoc_drift_best'][:, :, :] = smoc_tab[:, :, :]
+        if 'smoc_fcst' in param_dict.keys():
+            smoc_tab = param_dict['smoc_fcst']
+            #nb_obs, nb_vars, nb_fcst, nb_depths = np.shape(smoc_tab)
+            nb_depths = 1
+            nc_smoc = nc_fid.createVariable(
+                'smoc_drift_fcst', 'f4', ('numobs', 'numvars', 'numfcsts2', 'numdeps'), fill_value=self.fillvalue)
+            nc_smoc.setncatts({'long_name': u"Forecasts Eastward and Northward total velocity (Eulerian + Waves + Tide) (smoc drift)",'units': u"m s-1"})
+            nc_smoc.description = "GLOBAL_ANALYSIS_FORECAST_PHY_001_024 hourly mean merged surface currents from oceanic circulation, tides and waves"
+            nc_fid.variables['smoc_drift_fcst'][:, :, :] = smoc_tab[:, :, :, :]
+        if 'best' in param_dict.keys():
+            best_tab = param_dict['best']
+            #nb_obs, nb_vars, nb_fcst = np.shape(best_tab)
+            nb_depths = 1
+            nc_best = nc_fid.createVariable(
+                'best_estimate', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
+            nc_best.setncatts(
+                            {'long_name': u"Model best_estimate counterpart of obs. value"})
+            nc_fid.variables['best_estimate'][:, :, :] = best_tab[:, :, :]
+
+        if 'tides' in param_dict.keys():
+            tides_tab = param_dict['tides']
+            #nb_obs, nb_vars, nb_fcst = np.shape(tides_tab)
+            nb_depths = 1
+            nc_tides = nc_fid.createVariable(
+                'tides', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
+            nc_tides.setncatts({'long_name': u"Eastward and tide-induced velocity (Tide current)",'units': u"m s-1"})
+            nc_tides.description = "FES2014 model at 1/12 for tides"
+            nc_fid.variables['tides'][:, :, :] = tides_tab[:, :, :]
+        if 'stokes' in param_dict.keys():
+            stokes_tab = param_dict['stokes']
+            #nb_obs, nb_vars, nb_fcst = np.shape(stokes_tab)
+            nb_depths = 1
+            nc_stokes = nc_fid.createVariable(
+                'stokes_best', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
+            nc_stokes.setncatts({'long_name': u"Eastward and Northward wave-induced velocity (Stokes drift)",'units': u"m s-1"})
+            nc_stokes.description = "MFWAM waves model for Stokes drift - GLOBAL_ANALYSIS_FORECAST_WAV_001_027 CMEMS dataset"
+            nc_fid.variables['stokes_best'][:, :, :] = stokes_tab[:, :, :]
+        if 'stokes_fcst' in param_dict.keys():
+            stokes_tab = param_dict['stokes_fcst']
+            #nb_obs, nb_vars, nb_fcst, nb_depths = np.shape(stokes_tab)
+            nb_depths = 1
+            nc_stokes = nc_fid.createVariable(
+                'stokes_fcst', 'f4', ('numobs', 'numvars', 'numfcsts2', 'numdeps'), fill_value=self.fillvalue)
+            nc_stokes.setncatts({'long_name': u"Eastward and Northward wave-induced velocity (Stokes drift)",'units': u"m s-1"})
+            nc_stokes.description = "MFWAM waves model for Stokes drift - GLOBAL_ANALYSIS_FORECAST_WAV_001_027 CMEMS dataset"
+            nc_fid.variables['stokes_fcst'][:, :, :, :] = stokes_tab[:, :, :, :]
+        if 'clim' in param_dict.keys():
+            clim_tab = param_dict['clim']
+            nb_depths = 1
+            #nb_obs, nb_vars, nb_fcst = np.shape(stokes_tab)
+            nc_clim = nc_fid.createVariable('climatology','f4',('numobs','numvars','numdeps'),fill_value=self.fillvalue)
+            nc_clim.setncatts({'long_name': u"Climatology Lumpkin V3.05",'units': u"m s-1"})
+            nc_clim.setncatts({'comment': u"Monthly Means of Drifter Data"})
+            nc_fid.variables['climatology'][:, :, :] = clim_tab[:, :, :]
+
+        # Add global attributs
+        nc_fid.institution = 'MERCATOR OCEAN INTERNATIONAL'
+        nc_fid.contact = 'cregnier@mercator-ocean.fr'
+        nc_fid.obs_type = self.type_data.get(variable, {}).get('defaults').get('name')
+        nc_fid.time_interp = "daily average fields"
+        #nc_fid.description = "Drifting buoys from CMEMS product INSITU_GLO_NRT_OBSERVATIONS_"+cmems_prod
+        today = date.today()
+        yyyy = str(today)[0:4]
+        yyyy2 = dateval[0:4]
+        month = str(today)[5:7]
+        month2 = dateval[4:6]
+        day = str(today)[8:10]
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
+        nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.system = model
+        nc_fid.Conventions = 'CF-1.6'
+        nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
+        nc_fid.close()  # close the new file
+
     def write_CMEMS_files(self, filename, hdct_tab, fcst_tab, pers_tab, clim_tab, dateval, model, variable):
         nc_fid = Dataset(filename, 'r+')
         nb_obs, nb_vars, nb_fcst, nb_depths = np.shape(fcst_tab)
-        nc_fid.createDimension('numobs', nb_obs)
-        nc_fid.createDimension('numvars', nb_vars)
-        nc_fid.createDimension('numfcsts', nb_fcst) 
-        nc_fid.createDimension('numdeps', nb_depths)
+        dims = nc_fid.dimensions
+        #print ('Dimensions forecast {}'.format(np.shape(fcst_tab)))
+        #print ('Dimensions  {} {} {} {}'.format(nb_obs, nb_vars, nb_fcst, nb_depths))
+        if 'numobs' not in dims.keys(): nc_fid.createDimension('numobs', nb_obs)
+        if 'numfcsts' not in dims.keys(): nc_fid.createDimension('numfcsts', nb_vars)
+        if 'numdeps' not in dims.keys(): nc_fid.createDimension('numdeps', nb_vars)
         nc_best = nc_fid.createVariable(
             'best_estimate', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
         nc_best.setncatts(
@@ -410,7 +522,7 @@ class Writer():
         nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
         nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         nc_fid.system = model
-        print ('-------------------------------')
+        #print ('-------------------------------')
 
 ###
     def write_output(self, filename, tab_results, param_dict, dateval, ll_zip=True):
@@ -435,9 +547,11 @@ class Writer():
                     filename, tab_results['best'], dateval, param_dict['modele'], param_dict['data_type'])
 
         elif dataorigin == "CMEMS" :
-            self.write_CMEMS_files(
-                 filename, tab_results['best'], tab_results['forecast'],
-                 tab_results['persistence'], tab_results['clim'], dateval, param_dict['modele'], param_dict['data_type'])
+            self.write_CMEMS_generic_files(filename, tab_results,dateval, param_dict['modele'], param_dict['data_type'])
+            print (filename)
+            #self.write_CMEMS_files(
+            #     filename, tab_results['best'], tab_results['forecast'],
+            #     tab_results['persistence'], tab_results['clim'], dateval, param_dict['modele'], param_dict['data_type'])
 
         elif dataorigin == "GLOBCOLOUR" and param_dict['daily_pref'] == '7dAV':
             self.log.info("Write inside GLOBCOLOUR files")

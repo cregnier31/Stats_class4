@@ -121,7 +121,8 @@ class Interpolator(object):
         """
         best = {k for k, v in list_input_file.items() if "hdct" in k}
         clim = {k for k, v in list_input_file.items() if "clim" in k}
-        fcst = {k for k, v in list_input_file.items() if "fcst" in k}
+        #fcst = {k for k, v in list_input_file.items() if "fcst" in k}
+        fcst = {k for k, v in list_input_file.items() if k.startswith("fcst")}
         pers = {k for k, v in list_input_file.items() if "pers" in k}
         return len(best), len(fcst), len(pers), len(clim)
 
@@ -158,6 +159,7 @@ class Interpolator(object):
             lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = Loader.factory(
                 param_dict['data_format']).read_pos_and_value(data_file, varname=variable_obs)
         else:
+            self.log.info("Read pos and value : {}".format(param_dict['data_format']))
             lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = Loader.factory(
                 param_dict['data_format']).read_pos_and_value(data_file)
 
@@ -166,8 +168,9 @@ class Interpolator(object):
         ll_best = False
         nb_obs2, nb_profs = np.shape(depth)
         self.log.debug("Number of observations {} Profondeurs {}".format(nb_obs2, nb_profs))
+        #variable = param_dict['varname']
         variable = param_dict['varname']
-        self.log.info("Variables : {} ".format(variable))
+        #self.log.info("Variables : {} ".format(variable))
         if nb_best > 0:
             if param_dict['data_origin'] == "GLOBCOLOUR":
                 hdct_tab = np.ndarray(shape=(nb_obs, 1, 1), dtype=float, order='F')
@@ -204,7 +207,52 @@ class Interpolator(object):
         # Loop on lead times
         ll_coloc = False
         ll_light = False
+        ll_smoc = False
+        ll_smoc_fcst = False
+        ll_tides = False
+        ll_stokes = False
+        ll_stokes_fcst = False
+        ll_c_smoc =  False
+        ll_c_stokes =  False
+
         for i, key in enumerate(list_input_file.keys()):
+            variable = param_dict['varname']
+            if key.lower() == "smoc": 
+                variable = param_dict['varname_smoc']
+                ll_smoc = True
+                smoc_tab = np.ndarray(shape=(nb_obs,len(variable), nb_profs),
+                           dtype=float, order='F')
+                smoc_tab[:, :, :] = self.missing_value
+            if key.lower().startswith("smoc_fcst"):
+                variable = param_dict['varname_smoc']
+                ll_smoc_fcst = True
+                if not ll_c_smoc :
+                    nb_fcst2 = len(param_dict['lead_int2'])
+                    smoc_fcst_tab = np.ndarray(shape=(nb_obs,len(variable), nb_fcst2, nb_profs),
+                           dtype=float, order='F')
+                    smoc_fcst_tab[:, :, :, :] = self.missing_value
+                    ll_c_smoc = True
+            if key.lower() == "tides": 
+                variable = param_dict['varname_tides']
+                ll_tides = True
+                tides_tab = np.ndarray(shape=(nb_obs, len(variable), nb_profs),
+                           dtype=float, order='F')
+                tides_tab[:, :, :] = self.missing_value
+            if key.lower() == "stokes": 
+                variable = param_dict['varname_stokes']
+                ll_stokes = True
+                if not ll_c_stokes :
+                    stokes_tab = np.ndarray(shape=(nb_obs, len(variable), nb_profs),
+                               dtype=float, order='F')
+                    stokes_tab[:, :, :] = self.missing_value
+                    ll_c_stokes = True
+            if key.lower().startswith("stokes_fcst"): 
+                nb_fcst2 = len(param_dict['lead_int2'])
+                variable = param_dict['varname_stokes']
+                ll_stokes_fcst = True
+                stokes_fcst_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst2, nb_profs),
+                           dtype=float, order='F')
+                stokes_fcst_tab[:, :, :, :] = self.missing_value
             # Create weight file
             if key.lower() == "clim": ll_clim = True
             if key.lower() == "clim" and param_dict['data_type'].lower() == 'chloro':
@@ -219,6 +267,7 @@ class Interpolator(object):
                 nlon, nlat = self.search_dims(param_dict['coord_clim'])
                 tuple_coord = (nlon, nlat)
             elif key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr' \
+                or key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter' \
                 or key.lower() == "clim" and param_dict['data_type'].lower() == 'current':
                 ll_coloc = False
                 lon_mod, lat_mod = Loader.factory(
@@ -230,8 +279,12 @@ class Interpolator(object):
                 self.log.info("Lead time "+key)
                 if param_dict['coordinates']:
                     if param_dict['cl_typemod'].lower() == "pgn":
-                        lon_mod, lat_mod, mask_tab, depth_mod = Loader.factory('PGN_coords').\
-                            read_pos(param_dict['coordinates'])
+                        if ll_smoc or ll_tides or ll_stokes or ll_smoc_fcst or ll_stokes_fcst:
+                            lon_mod, lat_mod, mask_tab, depth_mod = Loader.factory('SMOC_coords').\
+                                read_pos(param_dict['coordinates_SMOC'])
+                        else:
+                            lon_mod, lat_mod, mask_tab, depth_mod = Loader.factory('PGN_coords').\
+                                read_pos(param_dict['coordinates'])
                     elif param_dict['cl_typemod'].lower() == "allege":
                         lon_mod, lat_mod, mask_tab, depth_mod = Loader.factory('alleges_coords').\
                             read_pos(param_dict['coordinates'])
@@ -246,7 +299,6 @@ class Interpolator(object):
                     self.log.error("No coordinates files")
                     # TODO read lon/lat from first file
                     sys.exit(1)
-                variable = param_dict['varname']
                 file_coloc_tmp = re.sub('.nc', '_Kdtree_' +
                                         param_dict['cl_typemod'].upper()+'_idw' +
                                         str(nb_ptsinterp) + 'pt.p', file_out)
@@ -306,12 +358,10 @@ class Interpolator(object):
                               (str(end - start), " seconds ~~~~~~~~~~~~"))
 
             # Interp model file for different lead times
-            self.log.debug('Variable to interpolate %s ' %
-                          (param_dict['varname']))
+            self.log.debug('Variable to interpolate {} '.format(variable))
             tab_results = {}
             list_file = []
             list_file = list_input_file[key]
-            self.log.debug("Variable {}".format(variable))
             self.log.debug("Work on {} variables".format(len(variable)))
             ## loop on variable
             for var in range(len(variable)):
@@ -319,7 +369,7 @@ class Interpolator(object):
                varname = variable[var]
                ll_miss = False
                try:
-                  file_input = list_input_file[key][var]
+                   file_input = list_input_file[key][var]
                except OSError:
                    self.log.error("Error {} Missing file for key {} var {}".format(sys.exc_info()[0], key, var))
                    self.log.error("Varname {}".format(varname))
@@ -340,6 +390,7 @@ class Interpolator(object):
                       if key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr':
                           depthval = 0
                           index_time=find_index_month(date)-1
+                      if ll_smoc or ll_tides or ll_stokes or ll_smoc_fcst or ll_stokes_fcst: depthval = 0
                       interp_values = self.interp_2D(weights, indexes,
                                                      file_input,
                                                      nb_ptsinterp,
@@ -454,6 +505,40 @@ class Interpolator(object):
                                json.dump(zip_val, outfile,indent=4)
                    else:
                        clim_tab[:, var, :] = interp_values
+               elif key == 'smoc':
+                  self.log.debug("Fead with smoc values")
+                  if ll_unique :
+                      smoc_tab[:, var, 0] = interp_values
+                  else:
+                      smoc_tab[:, var, :] = interp_values
+               elif key.startswith('smoc_fcst'):
+                  self.log.debug("Fead with smoc fcst values")
+                  indice = int(key[9])
+                  if ll_unique :
+                      smoc_fcst_tab[:, var, indice, 0] = interp_values
+                      self.log.debug("indice {}".format(indice))
+                      self.log.debug(" Var {}".format(var))
+                      self.log.debug("Values {}".format(smoc_fcst_tab[:, var, indice, 0]))
+                  else:
+                      smoc_fcst_tab[:, var, indice, :] = interp_values
+               elif key.startswith('stokes_fcst'):
+                  indice = int(key[11])
+                  self.log.debug("Fead Stokes forecast indice %i " % (indice))
+                  if ll_unique :
+                      stokes_fcst_tab[:, var, indice, 0] = interp_values
+                  else:
+                      stockes_fcst_tab[:, var, indice, :] = interp_values
+               elif key == 'stokes':
+                  if ll_unique :
+                      stokes_tab[:, var, 0] = interp_values
+                  else:
+                      stockes_tab[:, var, :] = interp_values
+               elif key[0:4] == 'tide':
+                  if ll_unique :
+                      tides_tab[:, var, 0] = interp_values
+                  else:
+                       tides_tab[:, var, :] = interp_values
+
         ####
         if ll_best:
             self.log.debug("Inside best data origin {}".format(param_dict['data_origin']))
@@ -473,6 +558,12 @@ class Interpolator(object):
                 clim_tab = clim_tab[:, 0, 0].reshape(
                     lat_obs.shape[0], lon_obs.shape[0])
             tab_results['clim'] = clim_tab
+        if ll_smoc: tab_results['smoc'] = smoc_tab
+        if ll_smoc_fcst: tab_results['smoc_fcst'] = smoc_fcst_tab
+        if ll_stokes: tab_results['stokes'] = stokes_tab
+        if ll_stokes_fcst: tab_results['stokes_fcst'] = stokes_fcst_tab
+        if ll_tides: tab_results['tides'] = tides_tab
+
         return tab_results, file_out
 
     def coloc_2D(self, lon_in, lon_out, lat_in, lat_out,
@@ -639,7 +730,6 @@ class Interpolator(object):
             else:
                var_in1 = var_in[time, ind_depth1, :, :].values
                var_in2 = var_in[time, ind_depth2, :, :].values
-
         if variable == "sossheig":
             var_in = np.where(var_in != fillvalue,  var_in - tab_mssh - rp_mssh_shift, var_in)
         if same_grid:
