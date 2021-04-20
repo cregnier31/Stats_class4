@@ -266,13 +266,13 @@ class writer_stat():
             if variable ==  'SLA':
                 nc_sla = nc_fid.createVariable('stats_sla','f', ('time','forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sla.parameter = 'Sea Level Anomaly'
-                nc_sla.reference = 'Profile observations from in-situ TAC'
+                nc_sla.reference = 'Satellite SLA observations from SL TAC'
                 nc_sla.units = 'meters'
                 nc_fid.variables['stats_sla'][:] = stat[:,:,0,:,:,index]
             if variable ==  'SST':
                 nc_sst = nc_fid.createVariable('stats_sst','f', ('time','forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sst.parameter = 'Sea Surface Temperature'
-                nc_sst.reference = 'Profile observations from in-situ TAC'
+                nc_sst.reference = 'SST from surface drifting buoys'
                 nc_sst.units = 'Kelvin'
                 nc_fid.variables['stats_sst'][:] = stat[:,:,0,:,:,index]
             if variable ==  'aice':
@@ -369,13 +369,13 @@ class writer_stat():
             if variable ==  'SLA':
                 nc_sla = nc_fid.createVariable('stats_sla','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sla.parameter = 'Sea Level Anomaly'
-                nc_sla.reference = 'Profile observations from in-situ TAC'
+                nc_sla.reference = 'Satellite SLA observations from SL TAC'
                 nc_sla.units = 'meters'
                 nc_fid.variables['stats_sla'][:] = stat[:,0,:,:,index]
             if variable ==  'SST':
                 nc_sst = nc_fid.createVariable('stats_sst','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sst.parameter = 'Sea Surface Temperature'
-                nc_sst.reference = 'Profile observations from in-situ TAC'
+                nc_sst.reference = 'SST from surface drifting buoys'
                 nc_sst.units = 'Kelvin'
                 nc_fid.variables['stats_sst'][:] = stat[:,0,:,:,index]
             if variable ==  'aice':
@@ -483,13 +483,13 @@ class writer_stat():
             if variable ==  'SLA':
                 nc_sla = nc_fid.createVariable('skill_sla','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sla.parameter = 'Sea Level Anomaly'
-                nc_sla.reference = 'Profile observations from in-situ TAC'
+                nc_sla.reference = 'Satellite SLA observations from SL TAC'
                 nc_sla.units = 'meters'
                 nc_fid.variables['skill_sla'][:] = stat[:,0,:,:,index]
             if variable ==  'SST':
                 nc_sst = nc_fid.createVariable('skill_sst','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sst.parameter = 'Sea Surface Temperature'
-                nc_sst.reference = 'Profile observations from in-situ TAC'
+                nc_sst.reference = 'SST from surface drifting buoys'
                 nc_sst.units = 'Kelvin'
                 nc_fid.variables['skill_sst'][:] = stat[:,0,:,:,index]
             if variable ==  'aice':
@@ -1287,13 +1287,13 @@ class writer_stat():
             if variable ==  'SLA':
                 nc_sla = nc_fid.createVariable('skill_sla','f', ('time','forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sla.parameter = 'Sea Level Anomaly'
-                nc_sla.reference = 'Profile observations from in-situ TAC'
+                nc_sla.reference = 'Satellite SLA observations from SL TAC'
                 nc_sla.units = 'meters'
                 nc_fid.variables['skill_sla'][:] = stat[:,:,0,:,:,index]
             if variable ==  'SST':
                 nc_sst = nc_fid.createVariable('skill_sst','f', ('time','forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sst.parameter = 'Sea Surface Temperature'
-                nc_sst.reference = 'Profile observations from in-situ TAC'
+                nc_sst.reference = 'SST from surface drifting buoys'
                 nc_sst.units = 'Kelvin'
                 nc_fid.variables['skill_sst'][:] = stat[:,:,0,:,:,index]
             if variable ==  'aice':

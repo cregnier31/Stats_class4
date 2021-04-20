@@ -271,6 +271,13 @@ class Writer():
             nc_clim.setncatts({'long_name': u"Climatology Lumpkin V3.05",'units': u"m s-1"})
             nc_clim.setncatts({'comment': u"Monthly Means of Drifter Data"})
             nc_fid.variables['climatology'][:, :, :] = clim_tab[:, :, :]
+        if 'bathy' in param_dict.keys():
+            bathy_tab = param_dict['bathy']
+            #nb_obs, nb_vars, nb_fcst = np.shape(stokes_tab)
+            nc_clim = nc_fid.createVariable('bathymetry','f4',('numobs','numdeps'),fill_value=self.fillvalue)
+            nc_clim.setncatts({'long_name': u"Bathymetrie from ORCA12 model",'units': u"m"})
+            nc_clim.setncatts({'comment': u"bathymetry_INDESO_V1.0_mskbdy"})
+            nc_fid.variables['bathymetry'][:, :] = bathy_tab[:, :]
 
         # Add global attributs
         nc_fid.institution = 'MERCATOR OCEAN INTERNATIONAL'
@@ -548,7 +555,6 @@ class Writer():
 
         elif dataorigin == "CMEMS" :
             self.write_CMEMS_generic_files(filename, tab_results,dateval, param_dict['modele'], param_dict['data_type'])
-            print (filename)
             #self.write_CMEMS_files(
             #     filename, tab_results['best'], tab_results['forecast'],
             #     tab_results['persistence'], tab_results['clim'], dateval, param_dict['modele'], param_dict['data_type'])

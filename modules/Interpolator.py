@@ -89,8 +89,8 @@ class Interpolator(object):
         Find the lon/lat dimensions of a file
         """
         nc = Dataset(filename,'r')
-        list_lon = ['x','lon','long','longitude','longitudes']
-        list_lat = ['y','lat','lati','latitude','latitudes']
+        list_lon = ['x','X','lon','long','longitude','longitudes']
+        list_lat = ['y','Y','lat','lati','latitude','latitudes']
         nlon = None
         nlat = None
         for dim in nc.dimensions.keys():
@@ -214,6 +214,7 @@ class Interpolator(object):
         ll_stokes_fcst = False
         ll_c_smoc =  False
         ll_c_stokes =  False
+        ll_bathy = False
 
         for i, key in enumerate(list_input_file.keys()):
             variable = param_dict['varname']
@@ -253,6 +254,11 @@ class Interpolator(object):
                 stokes_fcst_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst2, nb_profs),
                            dtype=float, order='F')
                 stokes_fcst_tab[:, :, :, :] = self.missing_value
+            if key.lower() == "bathy": 
+                ll_bathy = True
+                variable = param_dict['varname_bathy']
+                bathy_tab = np.ndarray(shape=(nb_obs,nb_profs), dtype=float, order='F')
+                bathy_tab[:, :] = self.missing_value
             # Create weight file
             if key.lower() == "clim": ll_clim = True
             if key.lower() == "clim" and param_dict['data_type'].lower() == 'chloro':
@@ -274,6 +280,11 @@ class Interpolator(object):
                     'NC_CLIM').read_pos(param_dict['coord_clim'])
                 variable = ['U', 'V']
                 nlon, nlat = self.search_dims(param_dict['coord_clim'])
+                tuple_coord = (nlon, nlat)
+            elif key.lower() == "bathy":
+                lon_mod, lat_mod = Loader.factory(
+                    'bathymetrie').read_pos(param_dict['bathy_file'])
+                nlon, nlat = self.search_dims(param_dict['bathy_file'])
                 tuple_coord = (nlon, nlat)
             else:
                 self.log.info("Lead time "+key)
@@ -314,7 +325,6 @@ class Interpolator(object):
             # Coloc file
             if not ll_coloc and len(np.unique(depth)) == 1 or \
                 key.lower() == "clim" and param_dict['data_type'].lower() == 'current':
-
                 ind = 0
                 TreeObj = interp_KDtree(level=self.log.level)
                 ## No mask with ice dataset create issues in the ANT
@@ -390,7 +400,7 @@ class Interpolator(object):
                       if key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr':
                           depthval = 0
                           index_time=find_index_month(date)-1
-                      if ll_smoc or ll_tides or ll_stokes or ll_smoc_fcst or ll_stokes_fcst: depthval = 0
+                      if ll_smoc or ll_tides or ll_stokes or ll_smoc_fcst or ll_stokes_fcst or ll_bathy: depthval = 0
                       interp_values = self.interp_2D(weights, indexes,
                                                      file_input,
                                                      nb_ptsinterp,
@@ -538,6 +548,8 @@ class Interpolator(object):
                       tides_tab[:, var, 0] = interp_values
                   else:
                        tides_tab[:, var, :] = interp_values
+               elif key[0:5] == 'bathy':
+                  bathy_tab[:, 0] = interp_values
 
         ####
         if ll_best:
@@ -563,6 +575,7 @@ class Interpolator(object):
         if ll_stokes: tab_results['stokes'] = stokes_tab
         if ll_stokes_fcst: tab_results['stokes_fcst'] = stokes_fcst_tab
         if ll_tides: tab_results['tides'] = tides_tab
+        if ll_bathy: tab_results['bathy'] = bathy_tab
 
         return tab_results, file_out
 

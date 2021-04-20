@@ -200,6 +200,8 @@ class SelectListModelData(Selector):
                 lead_fin = ['hdct', 'nwct']
             elif time == 'climatology':
                 lead_fin = ['clim']
+            elif time == 'bathymetrie':
+                lead_fin = ['bathy']
             elif time == 'clim_lev13_A5B2':
                 lead_fin = ['clim']
                 type_clim = "WOA13_A5B2"
@@ -270,6 +272,8 @@ class SelectListModelData(Selector):
                     elif directory == "smoc" or directory == "tides" or directory == "stokes":
                         dirmodel_new = dirmodel+'DAILY/SMOC/nwct/'
                         self.log.debug('Directory smoc: {}'.format(dirmodel_new))
+                    elif directory == "bathy":
+                        dirmodel_new =  param_dict['bathy_file']
                     elif time == 'smoc_fcst' or time == 'stokes_fcst':
                         dirmodel_new = dirmodel+'DAILY/SMOC/'
                         self.log.debug('Directory smoc/stokes fcst: {}'.format(dirmodel_new))
@@ -396,6 +400,9 @@ class SelectListModelData(Selector):
                                             #print (dirmodel_new+directory+"/SMOC_"+dateval+"*.nc")
                                             list_file.extend(list_file_tmp)
                                         directory="stokes_"+directory
+                                    elif time == "bathymetrie":
+                                        list_file_tmp = glob(dirmodel_new)
+                                        list_file.extend(list_file_tmp)
                                     else:
                                         for i in range(len(param_dict['gridtype'])):
                                             list_file_tmp = glob(dirmodel_new+directory+"/"+modele+"_"+ \

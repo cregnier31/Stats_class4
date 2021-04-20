@@ -66,6 +66,7 @@ class Loader(object):
         if type == "DRIFTER_CMEMS": return LoaderCMEMSDrifter()
         if type == "DRIFTER_CMEMS_filtr": return LoaderCMEMSDrifter_filtr()
         if type == "alleges_coords": return alleges_coords()
+        if type == "bathymetrie": return bathy_coords()
         assert 0, "Format not known: " + type
 
     def generic_read_pos_and_value(self,filename, varname):
@@ -594,6 +595,10 @@ class NmlLoader(Loader):
             param_dict['lead_int2'] = db.get('input_dir', 'LEAD_INT2').split()
         except:
             param_dict['lead_int2'] = ""
+        try:
+            param_dict['varname_bathy'] = db.get('GLOBAL', 'variable_bathy').split()
+        except:
+            param_dict['lead_int2'] = ""
 
         if param_dict['zoom'] or param_dict['do_qc']:
             param_dict['lon_min'] = int(param_dict.get('GLOBAL', 'LONMIN'))
@@ -605,6 +610,10 @@ class NmlLoader(Loader):
             param_dict['coordinates_SMOC'] = db.get('static','fic_coordinates_SMOC')
         except:
             param_dict['coordinates_SMOC'] = ""
+        try: 
+            param_dict['bathy_file'] = db.get('static','fic_bathy')
+        except:
+            param_dict['bathy_file'] = ""
         if param_dict['cl_data_id']:
             param_dict['dirwork'] = param_dict['dirwork']+str(cl_data_id)+'/'
             param_dict['diroutput'] = param_dict['diroutput']+str(cl_data_id)+'/'
@@ -878,6 +887,17 @@ class alleges_coords(Loader):
         mask_tab = np.where(rla_mask == 1, False, mask_tab)
         nc.close()
         return rla_lon,rla_lat,mask_tab,rla_depth
+
+class bathy_coords(Loader):
+    """Loader for Alleges Mask"""
+    def read_pos(self,filename):
+        nc = netCDF4.Dataset(filename,'r')
+        variable = 'nav_lon'
+        rla_lon = nc.variables[variable][:,:]
+        variable = 'nav_lat'
+        rla_lat = nc.variables[variable][:,:]
+        nc.close()
+        return rla_lon,rla_lat
 
 class AsciiLoader(Loader):
 
