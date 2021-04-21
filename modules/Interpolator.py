@@ -219,6 +219,7 @@ class Interpolator(object):
         tab_depth = {}
 
         for i, key in enumerate(list_input_file.keys()):
+            self.log.info("Lead time "+key)
             variable = param_dict['varname']
             if key.lower() == "smoc": 
                 variable = param_dict['varname_smoc']
@@ -289,7 +290,6 @@ class Interpolator(object):
                 nlon, nlat = self.search_dims(param_dict['bathy_file'])
                 tuple_coord = (nlon, nlat)
             else:
-                self.log.info("Lead time "+key)
                 if param_dict['coordinates']:
                     if param_dict['cl_typemod'].lower() == "pgn":
                         if key.lower() in list_2D_smoc or key.lower().startswith("stokes_fcst") or key.lower().startswith("smoc_fcst"):
