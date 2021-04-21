@@ -204,8 +204,9 @@ class Interpolator(object):
         self.log.debug('Number obs to coloc {} '.format(nb_obs2))
         file_coloc_tmp = os.path.basename(data_file)
         file_out = file_coloc_tmp
+        list_2D = ["smoc", "tides", "clim", "bathy", "stokes"]
+        list_2D_smoc = ["smoc", "tides", "stokes"]
         # Loop on lead times
-        ll_coloc = False
         ll_light = False
         ll_smoc = False
         ll_smoc_fcst = False
@@ -215,6 +216,7 @@ class Interpolator(object):
         ll_c_smoc =  False
         ll_c_stokes =  False
         ll_bathy = False
+        tab_depth = {}
 
         for i, key in enumerate(list_input_file.keys()):
             variable = param_dict['varname']
@@ -262,7 +264,6 @@ class Interpolator(object):
             # Create weight file
             if key.lower() == "clim": ll_clim = True
             if key.lower() == "clim" and param_dict['data_type'].lower() == 'chloro':
-                ll_coloc = False
                 lon_mod, lat_mod = Loader.factory(
                     'NC_CLIM').read_pos(param_dict['coord_clim'])
                 file_coloc_tmp = re.sub('.nc', '_Kdtree_CLIM_' +
@@ -275,13 +276,14 @@ class Interpolator(object):
             elif key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr' \
                 or key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter' \
                 or key.lower() == "clim" and param_dict['data_type'].lower() == 'current':
-                ll_coloc = False
+                self.log.debug("CLIM coordinates")
                 lon_mod, lat_mod = Loader.factory(
                     'NC_CLIM').read_pos(param_dict['coord_clim'])
                 variable = ['U', 'V']
                 nlon, nlat = self.search_dims(param_dict['coord_clim'])
                 tuple_coord = (nlon, nlat)
             elif key.lower() == "bathy":
+                self.log.debug("bathy coordinates")
                 lon_mod, lat_mod = Loader.factory(
                     'bathymetrie').read_pos(param_dict['bathy_file'])
                 nlon, nlat = self.search_dims(param_dict['bathy_file'])
@@ -290,10 +292,12 @@ class Interpolator(object):
                 self.log.info("Lead time "+key)
                 if param_dict['coordinates']:
                     if param_dict['cl_typemod'].lower() == "pgn":
-                        if ll_smoc or ll_tides or ll_stokes or ll_smoc_fcst or ll_stokes_fcst:
+                        if key.lower() in list_2D_smoc or key.lower().startswith("stokes_fcst") or key.lower().startswith("smoc_fcst"):
+                            self.log.debug("SMOC coordinates")
                             lon_mod, lat_mod, mask_tab, depth_mod = Loader.factory('SMOC_coords').\
                                 read_pos(param_dict['coordinates_SMOC'])
                         else:
+                            self.log.debug("PGN coordinates")
                             lon_mod, lat_mod, mask_tab, depth_mod = Loader.factory('PGN_coords').\
                                 read_pos(param_dict['coordinates'])
                     elif param_dict['cl_typemod'].lower() == "allege":
@@ -318,12 +322,11 @@ class Interpolator(object):
             same_grid = False
             if tuple_obs == tuple_coord:
                 same_grid = True
-                ll_coloc = True
                 weights =  None
                 indexes = None
             self.log.debug("Dimension tuples {} {} same_grid {}".format(tuple_obs,tuple_coord,same_grid))
             # Coloc file
-            if not ll_coloc and len(np.unique(depth)) == 1 or \
+            if len(np.unique(depth)) == 1 or \
                 key.lower() == "clim" and param_dict['data_type'].lower() == 'current':
                 ind = 0
                 TreeObj = interp_KDtree(level=self.log.level)
@@ -333,9 +336,8 @@ class Interpolator(object):
                                                       weight_file=weight_file,save=False)
                 weights = TreeObj.get_weight(d1)
 
-                ll_coloc = True
 
-            elif len(np.unique(depth)) > 1 and not ll_coloc :
+            elif len(np.unique(depth)) > 1:
                 ## Compte weight file
                 nb_obs, nb_profs = np.shape(depth)
                 maxdepth =  np.nanmax(depth)
@@ -362,7 +364,6 @@ class Interpolator(object):
                                                                     mask_tab[ind,:,:]) for ind in range(ind_max)))
                 tab_weight = np.asarray(weight)
                 tab_indexes = np.asarray(indexes)
-                ll_coloc = True
                 end = timer()
                 self.log.debug('~~~~~~~~ Time elapsed compute weight on levels: %s %s' %
                               (str(end - start), " seconds ~~~~~~~~~~~~"))
@@ -389,6 +390,8 @@ class Interpolator(object):
 
                if not ll_miss:
                   if len(np.unique(depth)) == 1:
+                      index_time=0
+                      if key.lower() == "clim": index_time=find_index_month(date)-1
                       self.log.debug("Unique depth for all the observations")
                       if len(np.shape(depth)) == 1 :
                           depthval = depth[0]
@@ -396,21 +399,22 @@ class Interpolator(object):
                           depthval = depth[0,0]
                       else:
                           self.log.error("Case not known")
-                      index_time=0
-                      if key.lower() == "clim" and param_dict['data_type'].lower() == 'drifter_filtr':
-                          depthval = 0
-                          index_time=find_index_month(date)-1
-                      if ll_smoc or ll_tides or ll_stokes or ll_smoc_fcst or ll_stokes_fcst or ll_bathy: depthval = 0
+                      ## Selection of the depth value
+                      if key.lower() in list_2D or key.lower().startswith("stokes_fcst") or key.lower().startswith("smoc_fcst"):
+                          tab_depth[key.lower()] = 0 
+                      else:
+                          tab_depth[key.lower()] = depthval 
+                      self.log.debug("Depth of interpolation {}".format(tab_depth[key.lower()]))
+                      self.log.debug("Index time {}".format(index_time))
                       interp_values = self.interp_2D(weights, indexes,
                                                      file_input,
                                                      nb_ptsinterp,
                                                      varname, param_dict, key=key,
-                                                     depth=depthval, fillvalue=_FillValue,
+                                                     depth=tab_depth[key.lower()], fillvalue=_FillValue,
                                                      time=index_time, nblon=nlon, nblat=nlat,
                                                      lon_mod=lon_mod, lat_mod=lat_mod,
                                                      missing_value=self.missing_value,
                                                      same_grid=same_grid)
-
                       if len(np.shape(obs_value)) ==  3:
                           if param_dict['data_type'].lower() == 'drifter_filtr' or param_dict['data_type'].lower() == 'drifter':
                              obs_value2 = np.array(obs_value)[var,:,:]
@@ -434,8 +438,6 @@ class Interpolator(object):
                                                      lon_mod=lon_mod, lat_mod=lat_mod,
                                                      missing_value=self.missing_value,
                                                      same_grid=same_grid)
-                      #interp_values = np.where(np.array(obs_value2).flatten() == _FillValue,
-                      #                                  self.missing_value, np.array(interp_values))
                       self.log.debug("Max value for the interpolation {}".format(np.nanmax(interp_values)))
                       ll_unique = True
                       ##
@@ -450,8 +452,6 @@ class Interpolator(object):
                                                      dateval=date, lon=lon_obs, lat=lat_obs, light=ll_light,
                                                      clim=ll_clim, depth_mod=depth_mod, fillvalue=self.missing_value)
                      if len(np.shape(obs_value)) ==  3: obs_value2 = np.array(obs_value)[:,var,:]
-                     #interp_values = np.where(np.array(obs_value2) == _FillValue,
-                     #                                   self.missing_value, np.array(interp_values))
                      ll_json = param_dict['json']
                      if ll_json:
                          for ind_prf in range(nb_obs2):
@@ -549,6 +549,7 @@ class Interpolator(object):
                   else:
                        tides_tab[:, var, :] = interp_values
                elif key[0:5] == 'bathy':
+                  self.log.debug('Key bathy {} :  {}'.format(key, interp_values))
                   bathy_tab[:, 0] = interp_values
 
         ####

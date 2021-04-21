@@ -586,7 +586,7 @@ class Extract_UVDrifters_filtr(Extractor):
         liste_tot=[]
         liste_file=glob(param_dict['dirdata']+'/'+daterun[0:4]+'/*'+daterun+'*.nc')
         if not liste_file:
-            self.log.error("Missing Drifters files")
+            self.log.error("Missing Drifters files {} {}".format(param_dict['dirdata'], daterun))
             sys.exit(1)
         self.log.info('Liste file UV drifters {}'.format(liste_file))
         nb_fcst = len(param_dict['lead_int'])
@@ -754,7 +754,7 @@ class Extract_UVDrifters(Extractor):
         liste_tot=[]
         liste_file=glob(param_dict['dirdata']+'/'+daterun[0:4]+'/*'+daterun+'*.nc')
         if not liste_file:  
-            self.log.error("Missing Drifters files")
+            self.log.error("Missing Drifters files {} {}".format(param_dict['dirdata'], daterun))
             sys.exit(1)
         self.log.info('Liste file UV drifters {}'.format(liste_file))
         nb_fcst = len(param_dict['lead_int'])
