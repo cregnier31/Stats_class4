@@ -275,7 +275,7 @@ class Writer():
             bathy_tab = param_dict['bathy']
             #nb_obs, nb_vars, nb_fcst = np.shape(stokes_tab)
             nc_clim = nc_fid.createVariable('bathymetry','f4',('numobs','numdeps'),fill_value=self.fillvalue)
-            nc_clim.setncatts({'long_name': u"Bathymetrie from ORCA12 model",'units': u"m"})
+            nc_clim.setncatts({'long_name': u"Bathymetry from ORCA12 model",'units': u"m"})
             nc_clim.setncatts({'comment': u"bathymetry_INDESO_V1.0_mskbdy"})
             nc_fid.variables['bathymetry'][:, :] = bathy_tab[:, :]
 
