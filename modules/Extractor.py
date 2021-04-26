@@ -47,7 +47,8 @@ class Extractor(object):
         if type == "CORA4.1_MERC": return Extract_cora4('.tgz',self.log)
         if type == "cora5.0_raw": return Extract_cora4('.tar.gz',self.log)
         if type == "CORA5.0": return Extract_cora4('.tgz', self.log)
-        if type == "CORA5.2": return Extract_cora4_1(self.log)
+        #if type == "CORA5.2": return Extract_cora4_1(self.log)
+        if type == "CORA5.2": return Extract_cora5_2(self.log)
         if type == "CORIO_ASSIM": return Extract_corio_cmems(self.log)
         if type == "CORIOLIS": return Extract_corio(self.log)
         if type == "CORIOLIS_RAW": return Extract_corio_raw(self.log)
@@ -370,6 +371,42 @@ class Extract_corio(Extractor):
             except IOError as e:
                 self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
                 sys.exit(1)
+
+        return liste_tot
+
+
+class Extract_cora5_2(Extractor):
+
+    """ Extract cora 5.2 file """
+
+    def __init__(self, log):
+        self.date = SyDate('19500101')
+        self.log = log
+
+    def run(self,date1,date2,dirdata,dirtmp,typedata,template,prefix):
+        valeurj_tmp = SyDate(str(date1))
+        valeurj = valeurj_tmp
+        valeurj2 = SyDate(str(date2))
+        liste_tot=[]
+        while  valeurj_tmp >= valeurj and valeurj_tmp <= valeurj2 :
+            dateval = str(valeurj_tmp)
+            #dateval=str(SyDate(str(self.date.setfromjulian(int(valeurj)))))
+            self.log.info('Day 5.2 %s ' % (dateval))
+            month=dateval[0:6]
+            year=dateval[0:4]
+            frame=dirdata+year+'/'+month+'/*'+dateval.strip()+'*.nc'
+            liste_file=glob(frame)
+            self.log.info('Liste file CORA %s ' % (liste_file))
+            for new_file in liste_file :
+                try :
+                    filename=os.path.basename(new_file)
+                    shutil.copy(new_file,dirtmp)
+                    self.log.info('copy file {}'.format(dirtmp+filename))
+                    liste_tot.append(dirtmp+filename)
+                except IOError as e:
+                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
+                    sys.exit(1)
+            valeurj_tmp=valeurj_tmp.goforward(1)
 
         return liste_tot
 
