@@ -587,15 +587,18 @@ class Extract_UVDrifters_filtr(Extractor):
         nc_time_qc.valid_max = 9
         nc_time_qc.flag_values = "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
         nc_time_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
-        nc_obs = nc_fid.createVariable('observation', 'f4',('numobs', 'numvars', 'numdeps'))
+        nc = Dataset(file, 'r')
+        missing_value =  nc.variables['EWCT_FILTR']._FillValue
+        nc_obs = nc_fid.createVariable('observation', 'f4',('numobs', 'numvars', 'numdeps'),fill_value=missing_value)
         nc_obs.setncatts({'long_name' : u"3-day filtered currents from in situ drifters",\
                                         "units" : u"m s-1",\
                                         'comment': u"3-day Lanczos filter" })
-        # Open Dataset
-        self.log.info("Open file {}".format(file))
         nc_file = xr.open_dataset(file, decode_times=False)
-        variables = nc_file.data_vars
-        nc_fid.variables['longitude'][:] = nc_file['LONGITUDE_FILTR'].values
+        #variables = nc_file.data_vars
+        nc_var = nc_fid.createVariable('varname', 'S1',('numvars','string_length'))
+        variables_vel = ['eastward_velocity ','northward_velocity']
+        nc_var.setncatts({'long_name': u"name of variables"})
+        nc_var[:] = netCDF4.stringtochar(np.array(variables_vel, 'S'))
         nc_fid.variables['latitude'][:] = nc_file['LATITUDE_FILTR'].values
         nc_fid.variables['obs_time'][:] = nc_file['TIME'].values
         nc_fid.variables['time_qc'][:] = nc_file['TIME_QC'].values
@@ -655,6 +658,9 @@ class Extract_UVDrifters(Extractor):
         self.fillvalue_b = -128 
 
     def rewrite(self, file, nb_fcst, nb_fcst2, file_new):
+        # Open Dataset
+        self.log.info("Open file {}".format(file))
+        nc_file = xr.open_dataset(file, decode_times=False)
         # Create File
         self.log.info("Write new file {}".format(file_new))
         self.nb_fcst = nb_fcst
@@ -670,17 +676,9 @@ class Extract_UVDrifters(Extractor):
         nc_lon = nc_fid.createVariable('longitude','f4',('numobs'))
         nc_lon.setncatts({'long_name': u"Longitudes",\
                                     'units': u"degrees_east"})
-        #nc_lon = nc_fid.createVariable('longitude_filtr','f4',('numobs'))
-        #nc_lon.setncatts({'long_name': u"Longitude of each location filtered over 3 days",\
-        #                            'units': u"degrees_east",\
-        #                            'comment': u"3-day Lanczos filter" })
         nc_lat = nc_fid.createVariable('latitude', 'f4',('numobs'))
         nc_lat.setncatts({'long_name': u"Latitudes",\
                                 'units': u"degrees_north"})
-        #nc_lat = nc_fid.createVariable('latitude_filtr', 'f4',('numobs'))
-        #nc_lat.setncatts({'long_name': u"Latitude of each location filtered over 3 days",\
-        #                        'units': u"degrees_north",\
-        #                        'comment': u"3-day Lanczos filter" })
         nc_depth = nc_fid.createVariable('depth','f4',('numobs', 'numdeps'))
         nc_depth.setncatts({'long_name': u"Depth",\
                             'standard_name': u"depth",\
@@ -708,13 +706,6 @@ class Extract_UVDrifters(Extractor):
         nc_obs_qc.flag_values = "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
         nc_obs_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
         
-        #nc_obsfiltr_qc  = nc_fid.createVariable('observation_filtr_qc', 'i1',('numobs','numvars'),fill_value=self.fillvalue_b)
-        #nc_obsfiltr_qc.long_name =  "Filtered observations quality flag"
-        #nc_obsfiltr_qc.valid_min = 0
-        #nc_obsfiltr_qc.valid_max = 9
-        #nc_obsfiltr_qc.flag_values = "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
-        #nc_obsfiltr_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
-        
         nc_plateform = nc_fid.createVariable('plateform_code','c',('numobs','string64'))
         nc_plateform.long_name = "Platform code"
         nc_plateform.standard_name = "platform"
@@ -733,21 +724,17 @@ class Extract_UVDrifters(Extractor):
         nc_time_qc.flag_values = "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
         nc_time_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
 
-        nc_obs = nc_fid.createVariable('observation', 'f4',('numobs', 'numvars', 'numdeps'))
+        nc = Dataset(file, 'r')
+        missing_value =  nc.variables['EWCT_FILTR']._FillValue
+        nc_obs = nc_fid.createVariable('observation', 'f4',('numobs', 'numvars', 'numdeps'),fill_value=missing_value)
         nc_obs.setncatts({'long_name' : u"currents from in situ drifters",\
                                         "units" : u"m s-1" })
-        #nc_obs = nc_fid.createVariable('observation_filtr', 'f4',('numobs', 'numvars', 'numdeps'))
-        #nc_obs.setncatts({'long_name' : u"3-day filtered currents from in situ drifters",\
-        #                                "units" : u"m s-1",\
-        #                                'comment': u"3-day Lanczos filter" })
-        # Open Dataset
-        self.log.info("Open file {}".format(file))
-        nc_file = xr.open_dataset(file, decode_times=False)
-        variables = nc_file.data_vars
+        nc_var = nc_fid.createVariable('varname', 'S1',('numvars','string_length'))
+        variables_vel = ['eastward_velocity ','northward_velocity']
+        nc_var.setncatts({'long_name': u"name of variables"})
+        nc_var[:] = netCDF4.stringtochar(np.array(variables_vel, 'S'))
         nc_fid.variables['longitude'][:] = nc_file['LONGITUDE'].values
         nc_fid.variables['latitude'][:] = nc_file['LATITUDE'].values
-        #nc_fid.variables['longitude_filtr'][:] = nc_file['LONGITUDE_FILTR'].values
-        #nc_fid.variables['latitude_filtr'][:] = nc_file['LATITUDE_FILTR'].values
         nc_fid.variables['obs_time'][:] = nc_file['TIME'].values
         nc_fid.variables['time_qc'][:] = nc_file['TIME_QC'].values
         nc_fid.variables['position_qc'][:] = nc_file['POSITION_QC'].values
@@ -757,17 +744,11 @@ class Extract_UVDrifters(Extractor):
         code_values2 = [var.decode("utf-8") for var in code_values]
         nc_fid.variables['plateform_code'][:] = code_values2
         u_cur = nc_file['EWCT'].values
-        #u_cur_filtr = nc_file['EWCT_FILTR'].values
         v_cur = nc_file['NSCT'].values
-        #v_cur_filtr = nc_file['NSCT_FILTR'].values
         nc_fid.variables['observation'][:,0,:] = u_cur[:,:]
         nc_fid.variables['observation'][:,1,:] = v_cur[:,:]
         nc_fid.variables['observation_qc'][:,0] = nc_file['EWCT_QC'].values
         nc_fid.variables['observation_qc'][:,1] = nc_file['NSCT_QC'].values
-        #nc_fid.variables['observation_filtr'][:,0,:] = u_cur_filtr[:,:]
-        #nc_fid.variables['observation_filtr'][:,1,:] = v_cur_filtr[:,:]
-        #nc_fid.variables['observation_filtr_qc'][:,0] = nc_file['EWCT_FILTR_QC'].values
-        #nc_fid.variables['observation_filtr_qc'][:,1] = nc_file['NSCT_FILTR_QC'].values
 
         # Add global attributs
         nc_fid.institution = 'MERCATOR OCEAN'
