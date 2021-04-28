@@ -102,6 +102,8 @@ elif params_conf['cexp'] == 'PHYS' and params_conf['percent'] == 'off':
                     cla_vars.extend(('PSAL','TEMP'))
                 elif var == "currents":
                     cla_vars.extend(('UVEL','VVEL'))
+                elif var == "currents-filtr":
+                    cla_vars.extend(('UVEL_filtr','VVEL_filtr'))
                 else:
                     cla_vars.append(var)
 
@@ -179,6 +181,9 @@ if params_conf['daily_off'] == 'on':
                 elif cvar in ['UVEL','VVEL']:
                     cl_file = params_conf['prefix']+'_'+cdate+'_'+params_conf['config_model']+\
                     '_'+params_conf['cgrid']+'_currents.nc'
+                elif cvar in ['UVEL_filtr','VVEL_filtr']:
+                    cl_file = params_conf['prefix']+'_'+cdate+'_'+params_conf['config_model']+\
+                    '_'+params_conf['cgrid']+'_currents-filtr.nc'
                 else:
                     cl_file = params_conf['prefix']+'_'+cdate+'_'+params_conf['config_model']+\
                     '_'+params_conf['cgrid']+'_'+cvar+'.nc'
@@ -510,6 +515,9 @@ if params_conf['bilan'] == 'on' and recomb == 'off' :
                 elif cvar in ['UVEL','VVEL']:
                     cl_file = params_conf['prefix']+'_'+cdate+'_'+params_conf['config_model']+\
                     '_'+params_conf['cgrid']+'_currents.nc'
+                elif cvar in ['UVEL_filtr','VVEL_filtr']:
+                    cl_file = params_conf['prefix']+'_'+cdate+'_'+params_conf['config_model']+\
+                    '_'+params_conf['cgrid']+'_currents-filtr.nc'
                 else:
                     cl_file = params_conf['prefix']+'_'+cdate+'_'+params_conf['config_model']+\
                             '_'+params_conf['cgrid']+'_'+cvar+'.nc'
@@ -521,7 +529,7 @@ if params_conf['bilan'] == 'on' and recomb == 'off' :
             log.info("Missing files")
             log.info(params_conf['dirNCin']+cl_file)
             continue
-        if params_conf['cexp'] == 'BIO' or cvar in ['SST', 'SLA','aice', 'UVEL', 'VVEL']:
+        if params_conf['cexp'] == 'BIO' or cvar in ['SST', 'SLA','aice', 'UVEL', 'VVEL', 'UVEL_filtr', 'VVEL_filtr']:
             tab_prof   = np.array([-0.5,0.5])
         else:
             tab_prof = np.array(rla_layers)

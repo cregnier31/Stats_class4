@@ -139,20 +139,21 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
         log.info("Pb with file %s : " %(str(ncfile)))
         log.info("Error: varname_temp not defined")
         sys.exit(1)
-    if cvar == 'UVEL' and varname_u == 0:
+    if cvar == 'UVEL' and varname_u == 0 or cvar == 'UVEL_filtr' and varname_u == 0:
         log.info("Pb with file %s : " %(str(ncfile)))
         log.info("Error: varname_u not defined")
         sys.exit(1)
-    if cvar == 'VVEL' and varname_v == 0:
+    if cvar == 'VVEL' and varname_v == 0 or cvar == 'VVEL_filtr' and varname_v == 0:
         log.info("Pb with file %s : " %(str(ncfile)))
         log.info("Error: varname_v not defined")
         sys.exit(1)
 
     if rla_depthobs.shape[1] == 1 and (rla_depthobs[:,0] == 0).all():
         tab_prof   = np.array([-0.5,0.5])
-    elif cvar == 'UVEL' or cvar == 'VVEL' :
+    elif cvar == 'UVEL' or cvar == 'VVEL' or cvar == 'UVEL_filtr' or cvar == 'VVEL_filtr':
         tab_prof   = np.array([-0.5,0.5])
-        rla_depthobs = np.expand_dims(rla_depthobs[:,1], axis=1)
+        if len(np.shape(rla_depthobs)) < 2 :
+            rla_depthobs = np.expand_dims(rla_depthobs[:,1], axis=1)
     elif params_conf['percent'] == 'on':
         tab_prof = params.tab_prof_model
     else:
@@ -161,9 +162,11 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
 
     # ******************  Read observation and model simulation values  ******************
 
+    log.info("Working with file {}".format(str(ncfile)))
     nc = netCDF4.Dataset(ncfile, 'r')
     ll_ice = False
     ll_currents = False
+    ll_currents2 = False
     ll_best = False
     ll_fcst = False
     ll_pers = False
@@ -193,15 +196,29 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
                 cl_qcvar = 'QC02'
                 cl_qcvar2 = 'QC07'
                 rla_qc_init2 = nc.variables[cl_qcvar2][:]
-            elif cvar in ['VVEL', 'UVEL']:
-                ll_currents = True
-                cl_qcvar = 'current_test_qc'
-                cl_qcvar2 = 'position_qc'
-                cl_qcvar3 = 'obs_qc'
-                cl_qcvar4 = 'current_test'
-                rla_qc_init2 = nc.variables[cl_qcvar2][:]
-                rla_qc_init3 = nc.variables[cl_qcvar3][:]
-                rla_qc_init4 = nc.variables[cl_qcvar4][:]
+            elif cvar in ['VVEL', 'UVEL', 'UVEL_filtr', 'VVEL_filtr']:
+                list_var = [*nc.variables.keys()]
+                ## New case for filtered data
+                liste1 = ['current_test_qc', 'position_qc', 'obs_qc', 'current_test']
+                liste2 = ['position_qc', 'observation_qc', 'time_qc','depth_qc' ]
+                if len(set(list_var).intersection(liste1)) == 4:
+                    ll_currents = True
+                    cl_qcvar = 'current_test_qc'
+                    cl_qcvar2 = 'position_qc'
+                    cl_qcvar3 = 'obs_qc'
+                    cl_qcvar4 = 'current_test'
+                    rla_qc_init2 = nc.variables[cl_qcvar2][:]
+                    rla_qc_init3 = nc.variables[cl_qcvar3][:]
+                    rla_qc_init4 = nc.variables[cl_qcvar4][:]
+                elif len(set(list_var).intersection(liste2)) == 4:
+                    ll_currents2 = True
+                    cl_qcvar = 'position_qc'
+                    cl_qcvar2 = 'observation_qc'
+                    cl_qcvar3 = 'time_qc'
+                    cl_qcvar4 = 'depth_qc'
+                    rla_qc_init2 = nc.variables[cl_qcvar2][:]
+                    rla_qc_init3 = nc.variables[cl_qcvar3][:]
+                    rla_qc_init4 = nc.variables[cl_qcvar4][:]
             else:
                 cl_qcvar = 'qc'
             rla_qc_init = nc.variables[cl_qcvar][:]
@@ -222,13 +239,18 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
         if cvar in ['SST','SLA','aice']: ivar = 0
         elif cvar == 'PSAL': ivar = np.where(np.array(cla_varname) == varname_psal)[0][0]
         elif cvar == 'TEMP': ivar = np.where(np.array(cla_varname) == varname_temp)[0][0]
-        elif cvar == 'UVEL': ivar = np.where(np.array(cla_varname) == varname_u)[0][0]
-        elif cvar == 'VVEL': ivar = np.where(np.array(cla_varname) == varname_v)[0][0]
+        elif cvar == 'UVEL' or cvar == 'UVEL_filtr': ivar = np.where(np.array(cla_varname) == varname_u)[0][0]
+        elif cvar == 'VVEL' or cvar == 'VVEL_filtr': ivar = np.where(np.array(cla_varname) == varname_v)[0][0]
         if ll_currents:
             rla_qc_var = rla_qc_init[:,:]
             rla_qc_var2 = rla_qc_init2[:]
             rla_qc_var3 = rla_qc_init3[:,:]
             rla_qc_var4 = rla_qc_init4[:,:]
+        elif ll_currents2:
+            rla_qc_var = rla_qc_init[:]
+            rla_qc_var2 = rla_qc_init2[:,:]
+            rla_qc_var3 = rla_qc_init3[:]
+            rla_qc_var4 = rla_qc_init4[:]
         else:
             rla_qc_var = rla_qc_init[:,ivar,:]
         if ll_ice : rla_qc_var2 = rla_qc_init2[:,ivar,:]
@@ -260,6 +282,11 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
                                | (rla_qc_init4[:,1] < 311))
             percent = round((len(qc_file[0])*100)/len(rla_lonobs),2)
             log.debug("File {} Currents : Percentage of bad values {}{} ".format(ncfile,percent,'%'))
+        elif ll_currents2:
+            qc_file = np.where((rla_qc_init != 1) | (rla_qc_init2[:,1] != 1) | (rla_qc_init3 != 1)
+                               | (rla_qc_init4 != 1))
+            percent = round((len(qc_file[0])*100)/len(rla_lonobs),2)
+            log.debug("File {} Currents2 : Percentage of bad values {}{} ".format(ncfile,percent,'%'))
         else:
             qcvalues = bad_qc[cvar]
             if len(qcvalues) == 1:
@@ -292,12 +319,13 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
                     del rla_persistence_tmp
 
     dict_inputs = {}
-    if cvar in ['VVEL', 'UVEL']:
-        rla_observation_var = np.expand_dims(rla_observation_var[:,1], axis=1)
-        rla_best_estimate_var = np.expand_dims(rla_best_estimate_var[:,1], axis=1)
-        rla_climatology_var = np.expand_dims(rla_climatology_var[:,1], axis=1)
-        rla_forecast_var = np.expand_dims(rla_forecast_var[:,:,1],axis=2)
-        rla_persistence_var = np.expand_dims(rla_persistence_var[:,:,1], axis=2)
+    if cvar in ['VVEL', 'UVEL', 'UVEL_filtr', 'VVEL_filtr']:
+        if ll_currents:
+            rla_observation_var = np.expand_dims(rla_observation_var[:,1], axis=1)
+            rla_best_estimate_var = np.expand_dims(rla_best_estimate_var[:,1], axis=1)
+            rla_climatology_var = np.expand_dims(rla_climatology_var[:,1], axis=1)
+            rla_forecast_var = np.expand_dims(rla_forecast_var[:,:,1],axis=2)
+            rla_persistence_var = np.expand_dims(rla_persistence_var[:,:,1], axis=2)
     dict_inputs['obs'] = rla_observation_var
     dict_inputs['best'] = rla_best_estimate_var
     dict_inputs['frcst'] = rla_forecast_var
@@ -393,11 +421,11 @@ def read_and_store_inputfiles(lead_time, cvar, cexp, num_date, cl_cl4file,
     if cvar == 'TEMP' and varname_temp == 0:
         log.error("Error: varname_temp not defined")
         sys.exit(1)
-    if cvar == 'UVEL' and varname_u == 0:
+    if cvar == 'UVEL' and varname_u == 0 or cvar == 'UVEL_filtr' and varname_u == 0:
         log.info("Pb with file %s : " %(str(ncfile)))
         log.info("Error: varname_u not defined")
         sys.exit(1)
-    if cvar == 'VVEL' and varname_v == 0:
+    if cvar == 'VVEL' and varname_v == 0 or cvar == 'VVEL_filtr' and varname_v == 0:
         log.info("Pb with file %s : " %(str(ncfile)))
         log.info("Error: varname_v not defined")
         sys.exit(1)
@@ -452,15 +480,26 @@ def read_and_store_inputfiles(lead_time, cvar, cexp, num_date, cl_cl4file,
                 cl_qcvar = 'QC02'
                 cl_qcvar2 = 'QC07'
                 rla_qc_init2 = nc.variables[cl_qcvar2][:]
-            elif cvar in ['VVEL', 'UVEL']:
-                ll_currents = True
-                cl_qcvar = 'current_test_qc'
-                cl_qcvar2 = 'position_qc'
-                cl_qcvar3 = 'obs_qc'
-                cl_qcvar4 = 'current_test'
-                rla_qc_init2 = nc.variables[cl_qcvar2][:]
-                rla_qc_init3 = nc.variables[cl_qcvar3][:]
-                rla_qc_init4 = nc.variables[cl_qcvar4][:]
+            elif cvar in ['VVEL', 'UVEL', 'UVEL_filtr', 'VVEL_filtr']:
+                list_var = [*nc.variables.keys()]
+                ## New case for filtered data
+                liste1 = ['current_test_qc', 'position_qc', 'obs_qc', 'current_test']
+                liste2 = ['position_qc', 'observation_qc', 'time_qc','depth_qc' ]
+                if len(set(list_var).intersection(liste1)) == 4:
+                    ll_currents = True
+                    cl_qcvar = 'current_test_qc'
+                    cl_qcvar2 = 'position_qc'
+                    cl_qcvar3 = 'obs_qc'
+                    cl_qcvar4 = 'current_test'
+                    rla_qc_init2 = nc.variables[cl_qcvar2][:]
+                    rla_qc_init3 = nc.variables[cl_qcvar3][:]
+                    rla_qc_init4 = nc.variables[cl_qcvar4][:]
+                elif len(set(list_var).intersection(liste2)) == 4:
+                    ll_currents2 = True
+                    cl_qcvar = 'position_qc'
+                    cl_qcvar2 = 'observation_qc'
+                    cl_qcvar3 = 'time_qc'
+                    cl_qcvar4 = 'depth_qc'
             else:
                 cl_qcvar = 'qc'
             rla_qc_init = nc.variables[cl_qcvar][:]
@@ -481,8 +520,8 @@ def read_and_store_inputfiles(lead_time, cvar, cexp, num_date, cl_cl4file,
         if cvar in ['SST','SLA','aice']: ivar = 0
         elif cvar == 'PSAL': ivar = np.where(np.array(cla_varname) == varname_psal)[0][0]
         elif cvar == 'TEMP': ivar = np.where(np.array(cla_varname) == varname_temp)[0][0]
-        elif cvar == 'UVEL': ivar = np.where(np.array(cla_varname) == varname_u)[0][0]
-        elif cvar == 'VVEL': ivar = np.where(np.array(cla_varname) == varname_v)[0][0]
+        elif cvar == 'UVEL' or cvar == 'UVEL_filtr': ivar = np.where(np.array(cla_varname) == varname_u)[0][0]
+        elif cvar == 'VVEL' or cvar == 'VVEL_filtr': ivar = np.where(np.array(cla_varname) == varname_v)[0][0]
         if ll_currents:
             rla_qc_var = rla_qc_init[:,:]
             rla_qc_var2 = rla_qc_init2[:]
@@ -590,12 +629,13 @@ def read_and_store_inputfiles(lead_time, cvar, cexp, num_date, cl_cl4file,
                     rla_persistence_tmp[w] = np.nan
                     rla_persistence_var[:,il,:] = rla_persistence_tmp
                     del rla_persistence_tmp
-    if cvar in ['VVEL', 'UVEL']:
-        rla_observation_var = np.expand_dims(rla_observation_var[:,1], axis=1)
-        rla_best_estimate_var = np.expand_dims(rla_best_estimate_var[:,1], axis=1)
-        rla_climatology_var = np.expand_dims(rla_climatology_var[:,1], axis=1)
-        rla_forecast_var = np.expand_dims(rla_forecast_var[:,:,1],axis=2)
-        rla_persistence_var = np.expand_dims(rla_persistence_var[:,:,1], axis=2)
+    if cvar in ['VVEL', 'UVEL', 'UVEL_filtr', 'VVEL_filtr']:
+        if ll_currents:
+            rla_observation_var = np.expand_dims(rla_observation_var[:,1], axis=1)
+            rla_best_estimate_var = np.expand_dims(rla_best_estimate_var[:,1], axis=1)
+            rla_climatology_var = np.expand_dims(rla_climatology_var[:,1], axis=1)
+            rla_forecast_var = np.expand_dims(rla_forecast_var[:,:,1],axis=2)
+            rla_persistence_var = np.expand_dims(rla_persistence_var[:,:,1], axis=2)
     if 'observation' in lead_time: dict_var[cvar]['observation'][str(num_date)] = rla_observation_var
     dict_var[cvar]['climatology'][str(num_date)] = rla_climatology_var
     if 'persistence' in lead_time: dict_var[cvar]['persistence'][str(num_date)] = rla_persistence_var
