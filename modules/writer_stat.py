@@ -289,7 +289,7 @@ class writer_stat():
                 nc_fid.variables['stats_zonal-velocity'][:] = stat[:,:,0,:,:,index]
             if variable ==  'UVEL_filtr':
                 nc_uvel = nc_fid.createVariable('stats_zonal-velocity-filtr','f', ('time','forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
-                nc_uvel.parameter = 'Zonal velocity at 15m depth filtered with a 3-day Lanczos filter'
+                nc_uvel.parameter = 'Zonal velocity at 15m (3-day Lanczos filter)'
                 nc_uvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
                 nc_uvel.units = 'm s-1'
                 nc_fid.variables['stats_zonal-velocity-filtr'][:] = stat[:,:,0,:,:,index]
@@ -301,7 +301,7 @@ class writer_stat():
                 nc_fid.variables['stats_meridional-velocity'][:] = stat[:,:,0,:,:,index]
             if variable ==  'VVEL_filtr':
                 nc_vvel = nc_fid.createVariable('stats_meridional-velocity-filtr','f', ('time','forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
-                nc_vvel.parameter = 'Meridional velocity at 15m depth filtered with a 3-day Lanczos filter'
+                nc_vvel.parameter = 'Meridional velocity at 15m (3-day Lanczos filter)'
                 nc_vvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
                 nc_vvel.units = 'm s-1'
                 nc_fid.variables['stats_meridional-velocity-filtr'][:] = stat[:,:,0,:,:,index]
@@ -404,7 +404,7 @@ class writer_stat():
                 nc_fid.variables['stats_zonal-velocity'][:] = stat[:,0,:,:,index]
             if variable ==  'UVEL_filtr':
                 nc_uvel = nc_fid.createVariable('stats_zonal-velocity-filtr','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
-                nc_uvel.parameter = 'Zonal velocity at 15m depth filtered with a 3-day Lanczos filter'
+                nc_uvel.parameter = 'Zonal velocity at 15m (3-day Lanczos filter)'
                 nc_uvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
                 nc_uvel.units = 'm s-1'
             if variable ==  'VVEL':
@@ -415,7 +415,7 @@ class writer_stat():
                 nc_fid.variables['stats_meridional-velocity'][:] = stat[:,0,:,:,index]
             if variable ==  'VVEL_filtr':
                 nc_vvel = nc_fid.createVariable('stats_meridional-velocity_filtr','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
-                nc_vvel.parameter = 'Meridional velocity at 15m depth filtered with a 3-day Lanczos filter'
+                nc_vvel.parameter = 'Meridional velocity at 15m (3-day Lanczos filter)'
                 nc_vvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
                 nc_vvel.units = 'm s-1'
                 nc_fid.variables['stats_meridional-velocity-filtr'][:] = stat[:,0,:,:,index]
