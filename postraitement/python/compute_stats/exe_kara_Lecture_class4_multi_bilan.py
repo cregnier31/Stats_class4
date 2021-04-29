@@ -37,7 +37,7 @@ os.chdir(pbsworkdir)
 EXE = os.path.join(pbsworkdir,'../exe_compute_stats_CMEMS_areas_multiprocess.py')
 try : os.remove(os.path.join(pbsworkdir,"OK.flag")) 
 except : pass
-dir_bin="/data/rd_exchange2/qualif/anaconda/envs/env_py38/bin/"
+dir_bin="/data/rd_exchange/qualif/anaconda3/envs/env_py38/bin"
 HDF5_USE_FILE_LOCKING = False
 
 # **************************** Python launcher *********************************

@@ -162,6 +162,7 @@ class SelectListModelData(Selector):
             self.log.debug('Lead Time  %s ' % (time))
             lead_fin = []
             lead_new = param_dict['lead_int']
+            lead_new2 = param_dict['lead_int2']
             cl_config_use = param_dict['cl_config']
             ll_single = False
             if  time == 'forecast':
@@ -199,11 +200,25 @@ class SelectListModelData(Selector):
                 lead_fin = ['hdct', 'nwct']
             elif time == 'climatology':
                 lead_fin = ['clim']
+            elif time == 'bathymetrie':
+                lead_fin = ['bathy']
             elif time == 'clim_lev13_A5B2':
                 lead_fin = ['clim']
                 type_clim = "WOA13_A5B2"
                 dirclim = param_dict.get('climato','DIRLEV')
                 type_clim = "WOA13_A5B2"
+            elif time == 'smoc':
+                lead_fin = ['smoc']
+            elif time == 'smoc_fcst':
+                lead_fin = ['fcst'+element for element in lead_new2 ]
+                dirmodel_new = dirmodel+'DAILY/SMOC/'
+            elif time == 'tides':
+                lead_fin = ['tides']
+            elif time == 'stokes':
+                lead_fin = ['stokes']
+            elif time == 'stokes_fcst':
+                lead_fin = ['fcst'+element for element in lead_new2 ]
+                dirmodel_new = dirmodel+'DAILY/SMOC/'
             else:
                 self.log.error('Lead time %s not expected ' %(time))
             config_d = re.sub("V", "QV", param_dict['cl_config'])
@@ -254,6 +269,14 @@ class SelectListModelData(Selector):
                             dirmodel_new = dirmodel+"DAILY/"+modele[:5]+"/"+modele.lower()+"/"
                     elif param_dict['data_origin'] == 'GLOBCOLOUR' and directory == 'clim':
                         dirmodel_new = param_dict['dirclim']
+                    elif directory == "smoc" or directory == "tides" or directory == "stokes":
+                        dirmodel_new = dirmodel+'DAILY/SMOC/nwct/'
+                        self.log.debug('Directory smoc: {}'.format(dirmodel_new))
+                    elif directory == "bathy":
+                        dirmodel_new =  param_dict['bathy_file']
+                    elif time == 'smoc_fcst' or time == 'stokes_fcst':
+                        dirmodel_new = dirmodel+'DAILY/SMOC/'
+                        self.log.debug('Directory smoc/stokes fcst: {}'.format(dirmodel_new))
                     else:
                         dirmodel_new = dirmodel+"DAILY/"+modele[:5]+"/"+modele.lower()+"/"
                 if datev.month < 10: month = '0' + str(datev.month)
@@ -343,8 +366,6 @@ class SelectListModelData(Selector):
                                     list_file = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
                                     param_dict['gridtype_clim']+".nc")
                         else:
-                            #list_file = glob(dirmodel_new+directory+"/"+modele+"_"+ \
-                            #param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype']+"*.nc")
                             list_file = []
                             if data_type.lower() == "nitrate" or data_type.lower() == "ph" or  data_type.lower() == "chl":
                                 for i in range(len(param_dict['gridtype'])):
@@ -363,10 +384,31 @@ class SelectListModelData(Selector):
                                         param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
                                         list_file.extend(list_file_tmp)
                                 else:
-                                    for i in range(len(param_dict['gridtype'])):
-                                        list_file_tmp = glob(dirmodel_new+directory+"/"+modele+"_"+ \
-                                        param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+                                    if directory == "smoc" or directory == "stokes" or directory == "tides":
+                                        for i in range (2):
+                                            list_file_tmp = glob(dirmodel_new+"SMOC_"+dateval+"*.nc")
+                                            list_file.extend(list_file_tmp)
+                                    elif time == "smoc_fcst":
+                                        for i in range (2):
+                                            list_file_tmp = glob(dirmodel_new+directory+"/SMOC_"+dateval+"*.nc")
+                                            #print (dirmodel_new+directory+"/SMOC_"+dateval+"*.nc")
+                                            list_file.extend(list_file_tmp)
+                                        directory="smoc_"+directory
+                                    elif time == "stokes_fcst":
+                                        for i in range (2):
+                                            list_file_tmp = glob(dirmodel_new+directory+"/SMOC_"+dateval+"*.nc")
+                                            #print (dirmodel_new+directory+"/SMOC_"+dateval+"*.nc")
+                                            list_file.extend(list_file_tmp)
+                                        directory="stokes_"+directory
+                                    elif time == "bathymetrie":
+                                        list_file_tmp = glob(dirmodel_new)
                                         list_file.extend(list_file_tmp)
+                                    else:
+                                        for i in range(len(param_dict['gridtype'])):
+                                            list_file_tmp = glob(dirmodel_new+directory+"/"+modele+"_"+ \
+                                            param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+                                            list_file.extend(list_file_tmp)
+                                        #print (list_file)
                                 self.log.debug(list_file)
                     elif typemod == "allege":
                         if directory == "clim":
@@ -437,13 +479,13 @@ class SelectListData(Selector):
             self.log.debug('========================================================')
             self.log.debug('              DATE Selection and extraction zoom or GODAE ')
             self.log.debug('========================================================')
-            self.log.debug('Prefix  %s ' %(param_dict['prefix_data']))
+            self.log.debug('Prefix  {} '.format(param_dict['prefix_data']))
             #list_files = Extractor().factory(param_dict['prefix_data']).run(param_dict['date1'],\
             #param_dict['date2'],param_dict['dirdata'],param_dict['dirwork'],param_dict['data_type'],param_dict['template'])
             list_files = Extractor(self.log).factory(param_dict['prefix_data']).run(daterun,param_dict['dirdata'],\
                          param_dict['dirwork'],param_dict['data_type'],param_dict['template'], len(param_dict['lead_int']))
         elif param_dict['do_decomp']:
-            self.log.debug('do decomp %s '%(param_dict['prefix_data']))
+            self.log.debug('do decomp {} '.format(param_dict['prefix_data']))
             list_files = Extractor(self.log).factory(param_dict['prefix_data']).run(
                 param_dict['date1'], param_dict['date2'], param_dict['dirdata'],\
                 param_dict['dirwork'], param_dict['data_type'], param_dict['template'], param_dict['prefix_data'])

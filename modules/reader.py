@@ -244,11 +244,14 @@ def read_drifter(file):
     if 'DEPH' in variables.keys():
         depth = ncdata['DEPH'].values
         depth_qc = ncdata['DEPH_QC'].values
+    elif 'depth' in variables.keys():
+        depth = ncdata['depth'].values
+        depth_qc = ncdata['depth_qc'].values
     elif 'PRES' in variables.keys():
         depth = ncdata['PRES'].values
         depth_qc = ncdata['PRES_QC'].values
     else:
-        print ('Missing Values DEPH or PRES')
+        print ('Missing Values DEPH or PRES or depth')
         sys.exit(1)
     if 'CURRENT_TEST' in variables.keys():
         current_test = ncdata['CURRENT_TEST'].values
@@ -267,9 +270,21 @@ def read_drifter(file):
         dc_reference =  ncdata['DC_REFERENCE'].values
     else:
         dc_reference =  None
-    lon = ncdata['LONGITUDE'].values
-    lat = ncdata['LATITUDE'].values
-    time = ncdata['TIME'].values
+    if 'LONGITUDE' in variables.keys():
+        lon = ncdata['LONGITUDE'].values
+    elif 'longitude' in variables.keys():
+        lon = ncdata['longitude'].values
+    if 'LATITUDE' in variables.keys():
+        lat = ncdata['LATITUDE'].values
+    elif 'latitude' in variables.keys():
+        lat = ncdata['latitude'].values
+    if 'TIME' in variables.keys():
+        time = ncdata['TIME'].values
+    elif 'time' in variables.keys():
+        time = ncdata['time'].values
+    elif 'obs_time' in variables.keys():
+        time = ncdata['obs_time'].values
+
     #lon_value = np.nanmean(lon)
     #lat_value = np.nanmean(lat)
     ncdata.close()
@@ -283,8 +298,14 @@ def read_drifter_filt(file):
             position_qc, time_qc, dc_reference = read_drifter(file)
     ncdata = xr.open_dataset(file)
     variables = ncdata.data_vars
-    lon = ncdata['LONGITUDE_FILTR'].values
-    lat = ncdata['LATITUDE_FILTR'].values
+    if 'LONGITUDE_FILTR' in variables.keys():
+        lon = ncdata['LONGITUDE_FILTR'].values
+    elif 'longitude_filtr' in variables.keys():
+        lon = ncdata['longitude_filtr'].values
+    if 'LATITUDE_FILTR' in variables.keys():
+        lat = ncdata['LATITUDE_FILTR'].values
+    elif 'latitude_filtr' in variables.keys():
+        lat = ncdata['latitude_filtr'].values
     ll_var = False
     if 'EWCT_FILTR' and 'NSCT_FILTR' in variables.keys():
         ll_var = True
@@ -292,7 +313,15 @@ def read_drifter_filt(file):
         v_filtr = ncdata['NSCT_FILTR'].values
         u_filtr_qc = ncdata['EWCT_FILTR_QC'].values
         v_filtr_qc = ncdata['NSCT_FILTR_QC'].values
+    elif 'observation_filtr':
+        ll_var = True
+        u_filtr = ncdata['observation_filtr'][:,0].values
+        v_filtr = ncdata['observation_filtr'][:,1].values
+        u_filtr_qc = ncdata['observation_filtr_qc'][:,0].values
+        v_filtr_qc = ncdata['observation_filtr_qc'][:,1].values
     else:
+        print ('Missing observations')
+        sys.exit(1)
         u_filtr = None ; v_filtr = None
         u_filtr_qc = None ; v_filtr_qc = None
     return lon, lat, depth, depth_qc, time, u, v, u_filtr, v_filtr, ll_var,\

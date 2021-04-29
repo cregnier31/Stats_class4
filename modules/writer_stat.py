@@ -266,13 +266,13 @@ class writer_stat():
             if variable ==  'SLA':
                 nc_sla = nc_fid.createVariable('stats_sla','f', ('time','forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sla.parameter = 'Sea Level Anomaly'
-                nc_sla.reference = 'Profile observations from in-situ TAC'
+                nc_sla.reference = 'Satellite SLA observations from SL TAC'
                 nc_sla.units = 'meters'
                 nc_fid.variables['stats_sla'][:] = stat[:,:,0,:,:,index]
             if variable ==  'SST':
                 nc_sst = nc_fid.createVariable('stats_sst','f', ('time','forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sst.parameter = 'Sea Surface Temperature'
-                nc_sst.reference = 'Profile observations from in-situ TAC'
+                nc_sst.reference = 'SST from surface drifting buoys'
                 nc_sst.units = 'Kelvin'
                 nc_fid.variables['stats_sst'][:] = stat[:,:,0,:,:,index]
             if variable ==  'aice':
@@ -287,12 +287,24 @@ class writer_stat():
                 nc_uvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
                 nc_uvel.units = 'm s-1'
                 nc_fid.variables['stats_zonal-velocity'][:] = stat[:,:,0,:,:,index]
+            if variable ==  'UVEL_filtr':
+                nc_uvel = nc_fid.createVariable('stats_zonal-velocity-filtr','f', ('time','forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
+                nc_uvel.parameter = 'Zonal velocity at 15m (3-day Lanczos filter)'
+                nc_uvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
+                nc_uvel.units = 'm s-1'
+                nc_fid.variables['stats_zonal-velocity-filtr'][:] = stat[:,:,0,:,:,index]
             if variable ==  'VVEL':
                 nc_vvel = nc_fid.createVariable('stats_meridional-velocity','f', ('time','forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_vvel.parameter = 'Meridional velocity at 15m depth'
                 nc_vvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
                 nc_vvel.units = 'm s-1'
                 nc_fid.variables['stats_meridional-velocity'][:] = stat[:,:,0,:,:,index]
+            if variable ==  'VVEL_filtr':
+                nc_vvel = nc_fid.createVariable('stats_meridional-velocity-filtr','f', ('time','forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
+                nc_vvel.parameter = 'Meridional velocity at 15m (3-day Lanczos filter)'
+                nc_vvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
+                nc_vvel.units = 'm s-1'
+                nc_fid.variables['stats_meridional-velocity-filtr'][:] = stat[:,:,0,:,:,index]
 
         #  ********************** Add global attributes ************************
 
@@ -369,13 +381,13 @@ class writer_stat():
             if variable ==  'SLA':
                 nc_sla = nc_fid.createVariable('stats_sla','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sla.parameter = 'Sea Level Anomaly'
-                nc_sla.reference = 'Profile observations from in-situ TAC'
+                nc_sla.reference = 'Satellite SLA observations from SL TAC'
                 nc_sla.units = 'meters'
                 nc_fid.variables['stats_sla'][:] = stat[:,0,:,:,index]
             if variable ==  'SST':
                 nc_sst = nc_fid.createVariable('stats_sst','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sst.parameter = 'Sea Surface Temperature'
-                nc_sst.reference = 'Profile observations from in-situ TAC'
+                nc_sst.reference = 'SST from surface drifting buoys'
                 nc_sst.units = 'Kelvin'
                 nc_fid.variables['stats_sst'][:] = stat[:,0,:,:,index]
             if variable ==  'aice':
@@ -390,12 +402,23 @@ class writer_stat():
                 nc_uvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
                 nc_uvel.units = 'm s-1'
                 nc_fid.variables['stats_zonal-velocity'][:] = stat[:,0,:,:,index]
+            if variable ==  'UVEL_filtr':
+                nc_uvel = nc_fid.createVariable('stats_zonal-velocity-filtr','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
+                nc_uvel.parameter = 'Zonal velocity at 15m (3-day Lanczos filter)'
+                nc_uvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
+                nc_uvel.units = 'm s-1'
             if variable ==  'VVEL':
                 nc_vvel = nc_fid.createVariable('stats_meridional-velocity','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_vvel.parameter = 'Meridional velocity at 15m depth'
                 nc_vvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
                 nc_vvel.units = 'm s-1'
                 nc_fid.variables['stats_meridional-velocity'][:] = stat[:,0,:,:,index]
+            if variable ==  'VVEL_filtr':
+                nc_vvel = nc_fid.createVariable('stats_meridional-velocity_filtr','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
+                nc_vvel.parameter = 'Meridional velocity at 15m (3-day Lanczos filter)'
+                nc_vvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
+                nc_vvel.units = 'm s-1'
+                nc_fid.variables['stats_meridional-velocity-filtr'][:] = stat[:,0,:,:,index]
 
         #  ********************** Add global attributes ************************
 
@@ -483,13 +506,13 @@ class writer_stat():
             if variable ==  'SLA':
                 nc_sla = nc_fid.createVariable('skill_sla','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sla.parameter = 'Sea Level Anomaly'
-                nc_sla.reference = 'Profile observations from in-situ TAC'
+                nc_sla.reference = 'Satellite SLA observations from SL TAC'
                 nc_sla.units = 'meters'
                 nc_fid.variables['skill_sla'][:] = stat[:,0,:,:,index]
             if variable ==  'SST':
                 nc_sst = nc_fid.createVariable('skill_sst','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sst.parameter = 'Sea Surface Temperature'
-                nc_sst.reference = 'Profile observations from in-situ TAC'
+                nc_sst.reference = 'SST from surface drifting buoys'
                 nc_sst.units = 'Kelvin'
                 nc_fid.variables['skill_sst'][:] = stat[:,0,:,:,index]
             if variable ==  'aice':
@@ -1287,13 +1310,13 @@ class writer_stat():
             if variable ==  'SLA':
                 nc_sla = nc_fid.createVariable('skill_sla','f', ('time','forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sla.parameter = 'Sea Level Anomaly'
-                nc_sla.reference = 'Profile observations from in-situ TAC'
+                nc_sla.reference = 'Satellite SLA observations from SL TAC'
                 nc_sla.units = 'meters'
                 nc_fid.variables['skill_sla'][:] = stat[:,:,0,:,:,index]
             if variable ==  'SST':
                 nc_sst = nc_fid.createVariable('skill_sst','f', ('time','forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_sst.parameter = 'Sea Surface Temperature'
-                nc_sst.reference = 'Profile observations from in-situ TAC'
+                nc_sst.reference = 'SST from surface drifting buoys'
                 nc_sst.units = 'Kelvin'
                 nc_fid.variables['skill_sst'][:] = stat[:,:,0,:,:,index]
             if variable ==  'aice':

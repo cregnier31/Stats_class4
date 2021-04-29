@@ -151,7 +151,7 @@ class NmlCreator_IAOOS(NmlCreator):
         else :
             prefix_var=listdir
         if schedule == 'm' : 
-            searchdir="MONTHLY_"+yearval 	
+            searchdir="MONTHLY_"+yearval
             daterun=dateval[0:6]
             template=dirmodel+searchdir+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
         elif type_run == 'free' :
@@ -357,9 +357,11 @@ class NmlCreator_CORIOLIS(NmlCreator):
                 ll_lightout=True
             else :
                 if type_run == "REA":
-                    YEAR = daterun[0:3]
+                    YEAR = daterun[0:2]
                     template=dirmodel+YEAR+'*/*/'+modele+'_1dAV_'+daterun+'*'+gridtemp+'*.nc'
                 elif type_run == "OPER":
+                    template = dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/hdct/"+modele+"_1dAV_"+daterun+"*"+gridtemp+"*.nc"
+                elif type_run == "OPER2":
                     template = dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
                 else:
                     #template=dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc'
@@ -410,6 +412,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
                 if type_file == 'allege' :
                     fic_psal=re.sub(gridtemp+"N.B",gridsal+"N.B",fic_temp)
                 else :
+                    log.debug('gridtemp {} gridsal {}'.format(gridtemp,gridsal))
                     fic_psal=re.sub(gridtemp,gridsal,fic_temp)
             else :
                 if listdir == 'CLIM_WOA13' :

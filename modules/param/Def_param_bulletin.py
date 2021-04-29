@@ -269,6 +269,8 @@ rg_EcartMax['SST'] = 8.
 rg_EcartMax['aice'] = 100.
 rg_EcartMax['UVEL'] = 10.
 rg_EcartMax['VVEL'] = 10.
+rg_EcartMax['UVEL_filtr'] = 10.
+rg_EcartMax['VVEL_filtr'] = 10.
 
 bad_qc = {}
 bad_qc['TEMP'] = [1., 9.]

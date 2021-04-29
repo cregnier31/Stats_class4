@@ -62,8 +62,11 @@ class Loader(object):
         if type == "INPUT_DATA": return InputDataLoader()
         if type == "PGN_coords": return PGN_coords_Loader()
         if type == "PGN_coords_clim": return PGN_coords_clim_Loader()
+        if type == "SMOC_coords": return SMOC_coords_Loader()
         if type == "DRIFTER_CMEMS": return LoaderCMEMSDrifter()
+        if type == "DRIFTER_CMEMS_filtr": return LoaderCMEMSDrifter_filtr()
         if type == "alleges_coords": return alleges_coords()
+        if type == "bathymetrie": return bathy_coords()
         assert 0, "Format not known: " + type
 
     def generic_read_pos_and_value(self,filename, varname):
@@ -576,6 +579,26 @@ class NmlLoader(Loader):
         param_dict['inst'] = db.get('GLOBAL','INSTITUTION')
         param_dict['version'] = db.get('GLOBAL','VERSION')
         param_dict['desc'] = db.get('GLOBAL','DESCRIPTION')
+        try: 
+            param_dict['varname_smoc'] = literal_eval(db.get('GLOBAL', 'variable_SMOC'))
+        except:
+            param_dict['varname_smoc'] = ""
+        try: 
+            param_dict['varname_stokes'] = literal_eval(db.get('GLOBAL', 'variable_stokes'))
+        except:
+            param_dict['varname_stokes'] = ""
+        try: 
+            param_dict['varname_tides'] = literal_eval(db.get('GLOBAL', 'variable_tides'))
+        except:
+            param_dict['varname_tides'] = ""
+        try:
+            param_dict['lead_int2'] = db.get('input_dir', 'LEAD_INT2').split()
+        except:
+            param_dict['lead_int2'] = ""
+        try:
+            param_dict['varname_bathy'] = db.get('GLOBAL', 'variable_bathy').split()
+        except:
+            param_dict['lead_int2'] = ""
 
         if param_dict['zoom'] or param_dict['do_qc']:
             param_dict['lon_min'] = int(param_dict.get('GLOBAL', 'LONMIN'))
@@ -583,6 +606,14 @@ class NmlLoader(Loader):
             param_dict['lat_min'] = int(param_dict.get('GLOBAL', 'LATMIN'))
             param_dict['lat_max'] = int(param_dict.get('GLOBAL', 'LATMAX'))
         param_dict['coordinates'] = db.get('static', 'fic_coordinates')
+        try:
+            param_dict['coordinates_SMOC'] = db.get('static','fic_coordinates_SMOC')
+        except:
+            param_dict['coordinates_SMOC'] = ""
+        try: 
+            param_dict['bathy_file'] = db.get('static','fic_bathy')
+        except:
+            param_dict['bathy_file'] = ""
         if param_dict['cl_data_id']:
             param_dict['dirwork'] = param_dict['dirwork']+str(cl_data_id)+'/'
             param_dict['diroutput'] = param_dict['diroutput']+str(cl_data_id)+'/'
@@ -857,6 +888,17 @@ class alleges_coords(Loader):
         nc.close()
         return rla_lon,rla_lat,mask_tab,rla_depth
 
+class bathy_coords(Loader):
+    """Loader for Alleges Mask"""
+    def read_pos(self,filename):
+        nc = netCDF4.Dataset(filename,'r')
+        variable = 'nav_lon'
+        rla_lon = nc.variables[variable][:,:]
+        variable = 'nav_lat'
+        rla_lat = nc.variables[variable][:,:]
+        nc.close()
+        return rla_lon,rla_lat
+
 class AsciiLoader(Loader):
 
     """Loader for ASCII dataset"""
@@ -879,10 +921,10 @@ class ColocLoader(Loader):
         position = np.array(data)
         return position
 
-class LoaderCMEMSDrifter(Loader):
+class LoaderCMEMSDrifter_filtr(Loader):
 
      """ 
-        Loader for CMEMS drifers
+        Loader for CMEMS drifters filtered
      """
      def read_pos_and_value(self,filename):
         lon, lat, depth, depth_qc, time, u, v, u_filtr, v_filtr, ll_var,\
@@ -892,4 +934,39 @@ class LoaderCMEMSDrifter(Loader):
         _FillValue = np.nan
 
         return lon, lat, [u_filtr, v_filtr], nb_obs, depth,  _FillValue
+
+class LoaderCMEMSDrifter(Loader):
+
+     """ 
+        Loader for CMEMS drifters
+     """
+     def read_pos_and_value(self,filename):
+        lon, lat, depth, depth_qc, time, u, v, ll_var,\
+            u_qc, v_qc, wind_u, wind_v, current_test, current_test_qc,\
+            position_qc, time_qc, dc_reference = read_drifter(filename)
+        nb_obs = len(lon)
+        _FillValue = np.nan
+
+        return lon, lat, [u, v], nb_obs, depth,  _FillValue
+
+class SMOC_coords_Loader(Loader):
+    """ 
+       SMOC coordinates 
+    """
+    def read_pos(self,filename):
+        nc = netCDF4.Dataset(filename,'r')
+        variable = 'longitude'
+        rla_lon = nc.variables[variable][:]
+        variable = 'latitude'
+        rla_lat = nc.variables[variable][:]
+        variable = 'depth'
+        rla_depth = nc.variables[variable][:]
+        variable = 'mask'
+        rla_mask = nc.variables[variable][:,:,:]
+        ndepth, nlat, nlon = np.shape(rla_mask)
+        #print ("depth {} Lat {} Lon {}".format(ndepth,nlat, nlon))
+        mask_tab = np.full((ndepth,nlat,nlon), True)
+        mask_tab = np.where(rla_mask == 1, False, mask_tab)
+        nc.close()
+        return rla_lon,rla_lat,mask_tab,rla_depth
 
