@@ -34,6 +34,7 @@ class Writer():
             'SLA': {'code': 'SLA_L3S', 'defaults': {'name': 'SLA CMEMS L3S'}},
             'chloro': {'code': 'CHLORO-A_L3S', 'defaults': {'name': 'log10-chlorophyll A Satellite'}},
             'aice': {'code': 'SEA_CONC', 'defaults': {'name': 'Sea ice concentration from AMSR2 brightness temperature'}},
+            'SIT-legos': {'code': 'SEA_SIT', 'defaults': {'name': 'Sea ice thickness at 20 Hz from LEGOS'}},
             'current': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Currents from CMEMS drifting buoys 001_048'}},
             'DRIFTER_filtr': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Filtered Currents from CMEMS drifting buoys 001_048'}},
             'DRIFTER': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Currents from CMEMS drifting buoys 001_048'}},
@@ -182,6 +183,38 @@ class Writer():
         nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
         nc_fid.close()  # close the new file
 
+    def write_LEGOS_generic_files(self, filename, param_dict, dateval, model, variable):
+        nc_fid = Dataset(filename, 'r+')
+        dims = nc_fid.dimensions
+        if 'forecast' in param_dict.keys():
+            fcst_tab = param_dict['forecast']
+            nb_obs, nb_dephs, nb_fcsts, nb_vars = np.shape(fcst_tab)
+            if 'numfcsts' not in dims.keys(): nc_fid.createDimension('numfcsts', nb_fcsts)
+            if 'numobs' not in dims.keys(): nc_fid.createDimension('numobs', nb_obs)
+            nc_fcst = nc_fid.createVariable(
+                'forecast', 'f4', ('numobs', 'numfcsts'), fill_value=self.fillvalue)
+            nc_fcst.setncatts(
+                {'long_name': u"Model forecast counterpart of obs. value"})
+            nc_fid.variables['forecast'][:, :] = fcst_tab[:, 0, :, 0]
+            ll_defined = True
+        # Add global attributs
+        nc_fid.institution = 'MERCATOR OCEAN INTERNATIONAL'
+        nc_fid.contact = 'cregnier@mercator-ocean.fr'
+        nc_fid.obs_type = self.type_data.get(variable, {}).get('defaults').get('name')
+        nc_fid.time_interp = "daily average fields"
+        #nc_fid.description = "Drifting buoys from CMEMS product INSITU_GLO_NRT_OBSERVATIONS_"+cmems_prod
+        today = date.today()
+        yyyy = str(today)[0:4]
+        yyyy2 = dateval[0:4]
+        month = str(today)[5:7]
+        month2 = dateval[4:6]
+        day = str(today)[8:10]
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
+        nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.system = model
+        nc_fid.Conventions = 'CF-1.6'
+        nc_fid.best_estimate_description = "analysis produced between 7 and 14 days behind real time"
 
     def write_CMEMS_generic_files(self, filename, param_dict, dateval, model, variable):
         nc_fid = Dataset(filename, 'r+')
@@ -552,6 +585,8 @@ class Writer():
         elif dataorigin == "BIOARGO":
                 self.write_BIOARGO_files(
                     filename, tab_results['best'], dateval, param_dict['modele'], param_dict['data_type'])
+        elif dataorigin == "LEGOS":
+            self.write_LEGOS_generic_files(filename, tab_results,dateval, param_dict['modele'], param_dict['data_type'])
 
         elif dataorigin == "CMEMS" :
             self.write_CMEMS_generic_files(filename, tab_results,dateval, param_dict['modele'], param_dict['data_type'])

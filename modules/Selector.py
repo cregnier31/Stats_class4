@@ -150,6 +150,8 @@ class SelectListModelData(Selector):
             param_dict['gridtype_light'] = ["TN.B", "SN.B"]
         elif data_type.lower() == "current":
             param_dict['gridtype'] = ["gridU", "gridV"]
+        elif data_type.lower() == "sit-legos":
+            param_dict['gridtype'] = ["icemod"]
         if typemod == "pgn":
             dirmodel = param_dict['dirmodel_pgn']
         elif typemod == "allege":

@@ -63,7 +63,8 @@ class Extractor(object):
         if type == "L3mCHL": return Extract_CHLORO(self.log)
         if type == "Microwat_Lband_Orbite_1day_Lband" or type == "Microwat_6.9GHz_Orbite_1day": return Extract_genericData(self.log)
         if type == "001_048" : return Extract_CMEMS_drifters(self.log)
-        if type == "sssdata_netcdf_good_FNAV" or "sssdata_netcdf_all": return Extract_SSSData(self.log)
+        if type == "sssdata_netcdf_good_FNAV" or type == "sssdata_netcdf_all": return Extract_SSSData(self.log)
+        if type == "Legos_SIT" : return Extract_Legos_SIT(self.log)
 
     def timelinespace(self, date1, date2):
         """
@@ -108,6 +109,30 @@ class Extractor(object):
                 sys.exit(1)
         return liste_tot
 
+class Extract_Legos_SIT(Extractor):
+    
+    """ Class to extract LEgos SIT l3 files """
+    def __init_(self, log):
+        self.log = log
+
+    def run_list(self, param_dict, daterun):
+        self.log.info("Inside Extract_Legos-SIT")
+        liste_tot=[]
+        liste_file=glob(param_dict['dirdata']+'/*'+daterun+'*.nc')
+        if not liste_file:
+            self.log.error("Missing Legos_SIT {} {}".format(param_dict['dirdata'], daterun))
+            sys.exit(1)
+        self.log.debug('Liste file Legos_SIT {}'.format(liste_file))
+        for file in liste_file:
+            try:
+                filename = os.path.basename(file)
+                shutil.copy(file, param_dict['dirwork']+filename)
+                liste_tot.append(param_dict['dirwork']+filename)
+            except IOError as e:
+                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                sys.exit(1)
+    
+        return liste_file
 
 class Extract_CMEMS_drifters(Extractor):
 
