@@ -197,6 +197,19 @@ class Writer():
                 {'long_name': u"Model forecast counterpart of obs. value"})
             nc_fid.variables['forecast'][:, :] = fcst_tab[:, 0, :, 0]
             ll_defined = True
+        elif 'best' in param_dict.keys():
+            hdct_tab = param_dict['best']
+            nb_obs, nb_dephs, nb_vars = np.shape(hdct_tab)
+            print (np.shape(hdct_tab))
+            if 'numobs' not in dims.keys(): nc_fid.createDimension('numobs', nb_obs)
+            varname = 'best_'+param_dict['varname']
+            nc_best = nc_fid.createVariable(
+                varname, 'f4', ('numobs'), fill_value=self.fillvalue)
+            nc_best.setncatts(
+                {'long_name': u"Model best estimate counterpart of obs. value"})
+            nc_fid.variables[varname][:] = hdct_tab[:, :, :]
+            ll_defined = True
+
         # Add global attributs
         nc_fid.institution = 'MERCATOR OCEAN INTERNATIONAL'
         nc_fid.contact = 'cregnier@mercator-ocean.fr'

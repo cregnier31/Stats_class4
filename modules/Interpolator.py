@@ -378,6 +378,7 @@ class Interpolator(object):
             for var in range(len(variable)):
                ## Get the correct file
                varname = variable[var]
+               tab_results['varname'] = varname
                ll_miss = False
                try:
                    file_input = list_input_file[key][var]

@@ -838,17 +838,18 @@ class PGN_coords_Loader(Loader):
         list_lon = ['x', 'X', 'lon', 'LON', 'lons', 'longitude', 'LONGITUDE', 'nav_lon']
         list_lat = ['y', 'Y', 'lat', 'LAT', 'LATS', 'latitude', 'LATITUDE', 'nav_lat']
         list_depth = [ 'deptht', 'depth', 'z', 'Z', 'DEPTH','nav_lev']
+        list_mask = [ 'tmask', 'mask']
         try:
             lon_name = [ k for k in variables.keys() & set(list_lon)][0]
             lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
             depth_name = [ k for k in variables.keys() & set(list_depth)][0]
+            mask_name = [ k for k in variables.keys() & set(list_mask)][0]
         except:
             print('lon lat or depth not defined')
             raise
         rla_lon = nc.variables[lon_name][:,:]
         rla_lat = nc.variables[lat_name][:,:]
-        variable = 'tmask'
-        rla_mask = nc.variables[variable][:,:,:]
+        rla_mask = nc.variables[mask_name][:,:,:]
         depth_mod =  nc.variables[depth_name][:]
         nlat, nlon, ndepth = np.shape(rla_mask)
         mask_tab = np.full((nlat,nlon,ndepth), True)
