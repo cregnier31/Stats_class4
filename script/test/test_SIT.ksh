@@ -3,6 +3,7 @@ CONFIG="000GLORYS4V2"
 DATE1="20110422"
 DATE2="20110422"
 typedata="SIT-legos"
+typedata="SNOW-legos"
 typemod="pgn"
 srcdata="LEGOS"
 loglevel=1

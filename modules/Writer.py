@@ -35,6 +35,7 @@ class Writer():
             'chloro': {'code': 'CHLORO-A_L3S', 'defaults': {'name': 'log10-chlorophyll A Satellite'}},
             'aice': {'code': 'SEA_CONC', 'defaults': {'name': 'Sea ice concentration from AMSR2 brightness temperature'}},
             'SIT-legos': {'code': 'SEA_SIT', 'defaults': {'name': 'Sea ice thickness at 20 Hz from LEGOS'}},
+            'SNOW-legos': {'code': 'SEA_SIT', 'defaults': {'name': 'Sea ice thickness at 20 Hz from LEGOS'}},
             'current': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Currents from CMEMS drifting buoys 001_048'}},
             'DRIFTER_filtr': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Filtered Currents from CMEMS drifting buoys 001_048'}},
             'DRIFTER': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Currents from CMEMS drifting buoys 001_048'}},
