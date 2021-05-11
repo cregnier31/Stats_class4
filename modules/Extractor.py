@@ -30,7 +30,7 @@ from netCDF4 import Dataset
 class Extractor(object):
 
     def __init__(self, log):
-        
+
         self.log = log
 
 
@@ -63,7 +63,8 @@ class Extractor(object):
         if type == "L3mCHL": return Extract_CHLORO(self.log)
         if type == "Microwat_Lband_Orbite_1day_Lband" or type == "Microwat_6.9GHz_Orbite_1day": return Extract_genericData(self.log)
         if type == "001_048" : return Extract_CMEMS_drifters(self.log)
-        if type == "sssdata_netcdf_good_FNAV" or "sssdata_netcdf_all": return Extract_SSSData(self.log)
+        if type == "sssdata_netcdf_good_FNAV" or type == "sssdata_netcdf_all": return Extract_SSSData(self.log)
+        if type == "Legos_SIT" : return Extract_Legos_SIT(self.log)
 
     def timelinespace(self, date1, date2):
         """
@@ -108,6 +109,30 @@ class Extractor(object):
                 sys.exit(1)
         return liste_tot
 
+class Extract_Legos_SIT(Extractor):
+
+    """ Class to extract LEgos SIT l3 files """
+    def __init_(self, log):
+        self.log = log
+
+    def run_list(self, param_dict, daterun):
+        self.log.info("Inside Extract_Legos-SIT")
+        liste_tot=[]
+        liste_file=glob(param_dict['dirdata']+'/*'+daterun+'*.nc')
+        if not liste_file:
+            self.log.error("Missing Legos_SIT {} {}".format(param_dict['dirdata'], daterun))
+            sys.exit(1)
+        self.log.debug('Liste file Legos_SIT {}'.format(liste_file))
+        for file in liste_file:
+            try:
+                filename = os.path.basename(file)
+                shutil.copy(file, param_dict['dirwork']+filename)
+                liste_tot.append(param_dict['dirwork']+filename)
+            except IOError as e:
+                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                sys.exit(1)
+
+        return liste_file
 
 class Extract_CMEMS_drifters(Extractor):
 
@@ -513,7 +538,7 @@ class Extract_ASCII(Extractor):
         return liste_tot
 
 class Extract_UVDrifters_filtr(Extractor):
-    
+
     """ Extract and reconstruct UV drifters """
 
     def __init__(self, log):
@@ -523,8 +548,11 @@ class Extract_UVDrifters_filtr(Extractor):
         self.nb_vars = 2
         self.nb_depths = 1
         self.fillvalue_b = -128 
-    
+
     def rewrite(self, file, nb_fcst, nb_fcst2, file_new):
+        """
+            Rewrite netcdf file to the right GODAE format
+        """
         # Create File
         self.log.info("Write new file {}".format(file_new))
         self.nb_fcst = nb_fcst
@@ -646,7 +674,7 @@ class Extract_UVDrifters_filtr(Extractor):
 
 
 class Extract_UVDrifters(Extractor):
-    
+
     """ Extract and reconstruct UV drifters """
 
     def __init__(self, log):
@@ -658,6 +686,9 @@ class Extract_UVDrifters(Extractor):
         self.fillvalue_b = -128 
 
     def rewrite(self, file, nb_fcst, nb_fcst2, file_new):
+        """
+            Rewrite netcdf file to the right GODAE format
+        """
         # Open Dataset
         self.log.info("Open file {}".format(file))
         nc_file = xr.open_dataset(file, decode_times=False)
@@ -771,7 +802,7 @@ class Extract_UVDrifters(Extractor):
     def run_list(self,param_dict, daterun):
         liste_tot=[]
         liste_file=glob(param_dict['dirdata']+'/'+daterun[0:4]+'/*'+daterun+'*.nc')
-        if not liste_file:  
+        if not liste_file:
             self.log.error("Missing Drifters files {} {}".format(param_dict['dirdata'], daterun))
             sys.exit(1)
         self.log.info('Liste file UV drifters {}'.format(liste_file))
@@ -793,7 +824,7 @@ class Extract_UVDrifters(Extractor):
 class Extract_GODAE(Extractor):
 
     """ Extract GODAE file """
-    
+
     def __init__(self, log):
         self.log = log
 
@@ -891,7 +922,7 @@ class Extract_GODAE(Extractor):
 class Extract_ARMOR(Extractor):
 
     """ Extract ARMOR file """
-    
+
     def __init__(self, log):
         self.log = log
 

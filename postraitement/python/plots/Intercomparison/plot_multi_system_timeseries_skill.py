@@ -16,8 +16,9 @@ from netCDF4 import Dataset
 import datetime as d
 import sys, os
 from glob import glob
-sys.path.append("../../module")
-sys.path.append("/home/cregnier/SVN/mo/LIB/LIB_PYT/")
+#sys.path.append("../../module")
+sys.path.append("/home/cregnier/Gitlab/TEP_CLASS4/modules")
+#sys.path.append("/home/cregnier/SVN/mo/LIB/LIB_PYT/")
 
 import matplotlib.pyplot as plt
 import param.Def_param_bulletin as params
@@ -56,7 +57,7 @@ dt_end_plot = '20190131'
 list_color = ['y','deeppink','dodgerblue','mediumpurple','pink','turquoise','darkorange']
 #list_color = ['deeppink','y','mediumpurple','pink','turquoise']
 window = 30
-nf = 60 # Hincast: 0 ; Forecast: nbre heures echeance (12, 60, etc.)
+nf = 12 # Hincast: 0 ; Forecast: nbre heures echeance (12, 60, etc.)
 
 
 # Definition des chemins, des systemes, des variables et de la periode
@@ -73,7 +74,7 @@ level_sla_stt = 0
 level_t_s = 0
 cla_areaini = params.liste_zone
 cla_depth = params.profondeur4
-print cla_depth
+print (cla_depth)
 # ~~~~~~~~~~~ Definition des dates ~~~~~~~~~~~~~~~~~
 
 dateCNESref   = d.datetime.strptime('19500101','%Y%m%d').toordinal()
@@ -93,7 +94,7 @@ for v, varname in enumerate(VAR):
 
     if varname in ['sla','sst']: level = level_sla_stt
     elif varname in ['temperature','salinity']: level = level_t_s
-    else: print 'level not define'
+    else: print ('level not define')
     for s, prod in enumerate(SYSTEM):
         if prod == "PSY4V3R1" or prod == "PSY3V3R3":
             dt_start_plot = "20130501"
@@ -106,14 +107,13 @@ for v, varname in enumerate(VAR):
         else:
             dt_end_plot = dt_end_plot_ini
 
-        print DATA_IN +prod+'/Stats_GODAE/NETCDF/0-500m/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_'+\
-                                prod+'_'+dt_start_plot+"_"+dt_end_plot+'_skill.nc'
+        print (DATA_IN +prod+'/Stats_GODAE/NETCDF/0-500m/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_'+\
+                                prod+'_'+dt_start_plot+"_"+dt_end_plot+'_skill.nc')
         filename = glob(os.path.join(DATA_IN +prod+'/Stats_GODAE/NETCDF/0-500m/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_'+\
                         prod+'_'+dt_start_plot+"_"+dt_end_plot+'_skill.nc'))[0]
         if not filename:
-            print "file not known"
+            print ("file not known")
             sys.exit(1)
-        print filename
         f1 = Dataset(filename, 'r', format='NETCDF4')
         if 'skill_'+varname in f1.variables:
             stat_var = f1.variables['skill_'+varname][:]
@@ -131,7 +131,7 @@ for v, varname in enumerate(VAR):
         vtime = (f1.variables['time'][:])/24 + dateCNESref
         fcst = f1.variables['forecasts'][:]
         f1.close()
-        print fcst
+        print (fcst)
         num_ech, name_ech = echeance(fcst, nf)
 
         PSS = np.where(np.array(metric_name) == 'PSS_skill_score')[0][0]
@@ -141,7 +141,7 @@ for v, varname in enumerate(VAR):
         if prod == "PSY4V3R1": prod = "PSY4"
         if prod == "PSY3V3R3": prod = "PSY3"
         dict[varname][prod] = {} ; dict_tmp[varname][prod] = {}
-        print prod
+        print (prod)
 
         for a, area in enumerate(area_name):
          # if area == "Full Domain":
@@ -206,7 +206,7 @@ if SINGLE_PLOT:
 # ************************************************************************
 #                Test pour tracer des multiplots
 # ************************************************************************
-print "Multiplot"
+print ("Multiplot")
 skill = 1
 if MULTI_PLOT == True:
     if GLO_AREA:
@@ -229,7 +229,8 @@ if MULTI_PLOT == True:
             else:
                 f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM[:-1], prof, dtst, dted, leg, list_color, splot, nb_var, skill)           
 
-        plt.savefig(PATH_OUT+cla_areaini[a]+'_skill_scores_'+dt_start_plot+'-'+dt_end_plot+'.png',dpi=200)
+        print (str(cla_areaini[a]),str(dt_start_plot),str(dt_end_plot))
+        plt.savefig(PATH_OUT+str(cla_areaini[a])+'_skill_scores_'+str(dt_start_plot)+'-'+str(dt_end_plot)+'.png',dpi=200)
         plt.close()
 
 

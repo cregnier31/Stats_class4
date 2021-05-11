@@ -9,7 +9,6 @@ Created on Wed Nov 28 09:13:09 2017
 #========================================== 
 
 import matplotlib
-#matplotlib.use('TkAgg')
 matplotlib.use('Agg')
 import numpy as np
 import numpy.ma as ma
@@ -17,8 +16,7 @@ from netCDF4 import Dataset
 import datetime as d
 import sys, os
 from glob import glob
-sys.path.append("../../module")
-sys.path.append("/home/cregnier/SVN/mo/LIB/LIB_PYT/")
+sys.path.append("../../../../modules/")
 
 import matplotlib.pyplot as plt
 import param.Def_param_bulletin as params
@@ -45,39 +43,53 @@ from utils import pull_names, echeance
 # Configuration du plot
 # ~~~~~~~~~~~~~~~~~~~~~~
 
-SINGLE_PLOT = False
-MULTI_PLOT = True
+SINGLE_PLOT = True
+MULTI_PLOT = False
 GLO_AREA = False
 CMEMS_AREA = True
 skill = 0
 dt_start_plot = '20130101'
-dt_start_plot_ini = '20130101'
-dt_end_plot_ini = '20190131'
-dt_end_plot = '20190131'
+dt_start_plot_ini = ['20130101','20130501','20130101','20130101','20130101','20160901','20130101']
+dt_end_plot = '20191002'
+dt_end_plot_ini = ['20191002','20191001','20190131','20190131','20191002','20190429','20191002']
 list_color = ['y','deeppink','dodgerblue','mediumpurple','pink','turquoise','darkorange']
 #list_color = ['deeppink','y','mediumpurple','pink','turquoise']
 window = 30
-nf = 0 # Hincast: 0 ; Forecast: nbre heures echeance (12, 60, etc.)
+nf = 12 # Hincast: 0 ; Forecast: nbre heures echeance (12, 60, etc.)
+
+if nf == 0 :
+    type_ech = "HINDCAST"
+elif nf == 12 :
+    type_ech = "FCST1D"
+elif nf == 60 :
+    type_ech = "FCST3D"
+elif nf == 108 :
+    type_ech = "FCST5D"
+else :
+    print ("Type not defined")
+    sys.exit(1)
 
 
 # Definition des chemins, des systemes, des variables et de la periode
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 PATH_IN = '/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V5/postraitement/python/plots/Intercomparison/'
-PATH_OUT = PATH_IN+'img/0-500m/new/'
+PATH_OUT = PATH_IN+'img/0-500m/'
 DATA_IN = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'
 #SYSTEM = ['FOAM','PSY4V3R1','HYCOM_RTOFS','BLK','GIOPS','NERSC']
-SYSTEM = ['FOAM','PSY4V3R1','ENSMEAN','HYCOM_RTOFS','BLK','GIOPS']
+SYSTEM = ['FOAM','PSY4V3R1','ENSMEAN','HYCOM_RTOFS','BLK','CGOFS','GIOPS']
 #VAR = ['seaice-concentration','salinity', 'temperature', 'sla', 'sst']
 VAR = ['salinity', 'temperature', 'sla', 'sst']
 level_sla_stt = 0
 level_t_s = 0
 cla_areaini = params.liste_zone
 cla_depth = params.profondeur4
-print cla_depth
+print (cla_depth)
 # ~~~~~~~~~~~ Definition des dates ~~~~~~~~~~~~~~~~~
 
 dateCNESref   = d.datetime.strptime('19500101','%Y%m%d').toordinal()
+dt_start_plot = "20130101"
+dt_end_plot = "20191002"
 dtst = d.datetime.strptime(dt_start_plot,'%Y%m%d')
 dted = d.datetime.strptime(dt_end_plot,'%Y%m%d')
 
@@ -94,27 +106,29 @@ for v, varname in enumerate(VAR):
 
     if varname in ['sla','sst']: level = level_sla_stt
     elif varname in ['temperature','salinity']: level = level_t_s
-    else: print 'level not define'
+    else: print ('level not define')
     for s, prod in enumerate(SYSTEM):
-        if prod == "PSY4V3R1" or prod == "PSY3V3R3":
-            dt_start_plot = "20130501"
-        elif prod == "NERSC":
-            dt_start_plot = "20140101"
-        else:
-            dt_start_plot = dt_start_plot_ini
-        if prod == "NERSC":
-            dt_end_plot = "20181115"
-        else:
-            dt_end_plot = dt_end_plot_ini
+        print ('system : %s' %(prod))
+        #if prod == "PSY4V3R1" or prod == "PSY3V3R3":
+        #    dt_start_plot = "20130501"
+        #elif prod == "NERSC":
+        #    dt_start_plot = "20140101"
+        #else:
+        dt_start_plot = dt_start_plot_ini[s]
+        #if prod == "NERSC":
+        #    dt_end_plot = "20181115"
+        #else:
+        #    dt_end_plot = dt_end_plot_ini
+        dt_end_plot = dt_end_plot_ini[s]
 
-        print DATA_IN +prod+'/Stats_GODAE/NETCDF/0-500m/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_'+\
-                                prod+'_'+dt_start_plot+"_"+dt_end_plot+'.nc'
+        print (DATA_IN +prod+'/Stats_GODAE/NETCDF/0-500m/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_'+\
+                                prod+'_'+dt_start_plot+"_"+dt_end_plot+'.nc')
         filename = glob(os.path.join(DATA_IN +prod+'/Stats_GODAE/NETCDF/0-500m/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_'+\
-                        prod+'_'+dt_start_plot+"_"+dt_end_plot+'.nc'))[0]
+                        prod+'_'+str(dt_start_plot)+"_"+str(dt_end_plot)+'.nc'))[0]
         if not filename:
-            print "file not known"
+            print ("file not known")
             sys.exit(1)
-        print filename
+        print (filename)
         f1 = Dataset(filename, 'r', format='NETCDF4')
         if 'stats_'+varname in f1.variables:
             stat_var = f1.variables['stats_'+varname][:]
@@ -145,10 +159,10 @@ for v, varname in enumerate(VAR):
         if prod == "PSY4V3R1": prod = "PSY4"
         if prod == "PSY3V3R3": prod = "PSY3"
         dict[varname][prod] = {} ; dict_tmp[varname][prod] = {}
-        print prod
 
         for a, area in enumerate(area_name):
-         # if area == "Full Domain":
+          #if area == "Full Domain":
+          #if area == "Indian Ocean":
             dict[varname][prod][area] = {}
             dict_tmp[varname][prod][area] = {}
             if ll_stat:
@@ -172,6 +186,7 @@ for v, varname in enumerate(VAR):
         v_time = np.array(dict[varname][prod][area]['time'])
         for a, area in enumerate(area_name):
           #if area == "Full Domain":
+          #if area == "Indian Ocean":
             MAT_TMP = np.zeros((len(v_time), 4))
             for t in range(len(v_time)):
                 MAT_TMP[t,0] = np.nanmedian(np.array(dict_tmp[varname][prod][area]['rmsd'])[t:t+int(window)])
@@ -191,8 +206,9 @@ for v, varname in enumerate(VAR):
 
 #SYSTEM = ['FOAM','PSY4','PSY3','HYCOM_RTOFS','BLK','GIOPS','NERSC']
 SYSTEM = ['FOAM','PSY4','ENSMEAN','HYCOM_RTOFS','BLK','GIOPS']
-SYSTEM = ['FOAM','PSY4','ENSMEAN','HYCOM_RTOFS','BLK','GIOPS']
+SYSTEM = ['FOAM','PSY4','ENSMEAN','HYCOM_RTOFS','BLK','CGOFS','GIOPS']
 if SINGLE_PLOT:
+    print ("Single_plot")
     if GLO_AREA:
         area_ini = ['Full Domain']
     elif CMEMS_AREA:
@@ -206,19 +222,20 @@ if SINGLE_PLOT:
             leg = True
             ax_fig = plt.subplot(1,1,1)
             if cla_areaini[a] == 'ARC':
-                f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof, dtst, dted, leg, list_color, splot, nb_var)
+                f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof, dtst, dted, leg, list_color, splot, nb_var, skill)
             else:
-                f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof, dtst, dted, leg, list_color, splot, nb_var)
+                f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof, dtst, dted, leg, list_color, splot, nb_var, skill)
 
-            plt.savefig(PATH_OUT+cla_areaini[a]+'_rmsd_bias_'+varname+'_'+dt_start_plot+'-'+dt_end_plot+'.png',dpi=200)
+            plt.savefig(PATH_OUT+str(cla_areaini[a].decode("utf-8"))+'_rmsd_bias_'+\
+                    varname+'_'+dt_start_plot+'-'+dt_end_plot+'.png',dpi=200)
             plt.close()
 
 
 # ************************************************************************
 #                Test pour tracer des multiplots
 # ************************************************************************
-print "Multiplot"
 if MULTI_PLOT == True:
+    print ("Multiplot")
     if GLO_AREA:
         area_ini = ['Full Domain']
     elif CMEMS_AREA:
@@ -238,8 +255,8 @@ if MULTI_PLOT == True:
                 f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof, dtst, dted, leg, list_color, splot, nb_var, skill)           
             else:
                 f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof, dtst, dted, leg, list_color, splot, nb_var, skill)           
-
-        plt.savefig(PATH_OUT+cla_areaini[a]+'_rmsd_bias_'+dt_start_plot+'-'+dt_end_plot+'.png',dpi=200)
+        print (str(dt_start_plot),str(type_ech),str(dt_end_plot),str(type_ech))
+        plt.savefig(PATH_OUT+str(type_ech)+'/'+str(cla_areaini[a].decode("utf-8"))+'_rmsd_bias_'+str(dt_start_plot)+'-'+str(dt_end_plot)+'_'+str(type_ech)+'.png',dpi=200)
         #plt.savefig(PATH_OUT+'GLO_rmsd_bias_'+dt_start_plot+'-'+dt_end_plot+'_0-500m.png',dpi=200)
         plt.close()
 

@@ -150,6 +150,8 @@ class SelectListModelData(Selector):
             param_dict['gridtype_light'] = ["TN.B", "SN.B"]
         elif data_type.lower() == "current":
             param_dict['gridtype'] = ["gridU", "gridV"]
+        elif data_type.lower() == "sit-legos" or data_type.lower() == "snow-legos":
+            param_dict['gridtype'] = "icemod"
         if typemod == "pgn":
             dirmodel = param_dict['dirmodel_pgn']
         elif typemod == "allege":
@@ -262,6 +264,7 @@ class SelectListModelData(Selector):
                                                              param_dict)
                     elif directory == 'hdct_all':
                         dirmodel_new = param_dict['dirmodel']+"/"
+                        self.log.debug("directory {}".format(dirmodel_new))
                     elif directory == 'fcst':
                         if param_dict['daily_pref'] == '7dAV':
                             dirmodel_new = dirmodel+"FORECAST/"
@@ -378,10 +381,15 @@ class SelectListModelData(Selector):
                                     list_file.extend(list_file_tmp)
 
                             else:
+                                self.log.debug("Type run {}".format(param_dict['type_run']))
                                 if param_dict['type_run'] == "REA":
                                     for i in range(len(param_dict['gridtype'])):
                                         list_file_tmp = glob(dirmodel_new+ "/"+modele+"_"+ \
                                         param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+                                        list_file.extend(list_file_tmp)
+                                elif param_dict['type_run'] == "free":
+                                        list_file_tmp = glob(dirmodel_new+modele+"_"+param_dict['daily_pref']+"_*_"+param_dict['gridtype']+\
+                                                '_'+dateval+"*.nc")
                                         list_file.extend(list_file_tmp)
                                 else:
                                     if directory == "smoc" or directory == "stokes" or directory == "tides":

@@ -67,6 +67,7 @@ class Loader(object):
         if type == "DRIFTER_CMEMS_filtr": return LoaderCMEMSDrifter_filtr()
         if type == "alleges_coords": return alleges_coords()
         if type == "bathymetrie": return bathy_coords()
+        if type == "Legos_SIT": return read_Legos_SIT()
         assert 0, "Format not known: " + type
 
     def generic_read_pos_and_value(self,filename, varname):
@@ -78,9 +79,10 @@ class Loader(object):
     def generic_read_pos(self, filename):
 
         nc = netCDF4.Dataset(filename, 'r')
+        ll_ravel = False
         if 'longitude' in nc.variables:
             var_lon = 'longitude' ; var_lat = 'latitude'
-        elif 'lon' in nc.variables:
+        elif 'lon' in nc.variables and not 'lon_20hz' in nc.variables:
             var_lon = 'lon' ; var_lat = 'lat'
         elif 'LON' in nc.variables:
             var_lon = 'LON' ; var_lat = 'LAT'
@@ -90,9 +92,15 @@ class Loader(object):
             var_lon = 'LONGITUDE' ; var_lat = 'LATITUDE'
         elif 'Longitude' in nc.variables:
             var_lon = 'Longitude' ; var_lat = 'Latitude'
-
-        rla_lon = nc.variables[var_lon][:]
-        rla_lat = nc.variables[var_lat][:]
+        elif 'lon_20hz' in nc.variables:
+            var_lon = 'lon_20hz' ; var_lat = 'lat_20hz'
+            ll_ravel = True
+        if ll_ravel:
+            rla_lon = np.ravel(nc.variables[var_lon][:,:])
+            rla_lat = np.ravel(nc.variables[var_lat][:,:])
+        else:
+            rla_lon = nc.variables[var_lon][:]
+            rla_lat = nc.variables[var_lat][:]
 
         return rla_lon, rla_lat, nc
 
@@ -830,17 +838,18 @@ class PGN_coords_Loader(Loader):
         list_lon = ['x', 'X', 'lon', 'LON', 'lons', 'longitude', 'LONGITUDE', 'nav_lon']
         list_lat = ['y', 'Y', 'lat', 'LAT', 'LATS', 'latitude', 'LATITUDE', 'nav_lat']
         list_depth = [ 'deptht', 'depth', 'z', 'Z', 'DEPTH','nav_lev']
+        list_mask = [ 'tmask', 'mask']
         try:
             lon_name = [ k for k in variables.keys() & set(list_lon)][0]
             lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
             depth_name = [ k for k in variables.keys() & set(list_depth)][0]
+            mask_name = [ k for k in variables.keys() & set(list_mask)][0]
         except:
             print('lon lat or depth not defined')
             raise
         rla_lon = nc.variables[lon_name][:,:]
         rla_lat = nc.variables[lat_name][:,:]
-        variable = 'tmask'
-        rla_mask = nc.variables[variable][:,:,:]
+        rla_mask = nc.variables[mask_name][:,:,:]
         depth_mod =  nc.variables[depth_name][:]
         nlat, nlon, ndepth = np.shape(rla_mask)
         mask_tab = np.full((nlat,nlon,ndepth), True)
@@ -899,6 +908,34 @@ class bathy_coords(Loader):
         nc.close()
         return rla_lon,rla_lat
 
+class read_Legos_SIT(Loader):
+    
+    """Loader LEGOS SIT files"""
+    def __init__(self):
+        self.varname = 'snow_depth_W99'
+
+    def read_pos_and_value(self,filename):
+        rla_lon, rla_lat, _FillValue, nc = \
+          self.generic_read_pos_and_value(filename, self.varname)
+        rla_value = nc.variables[self.varname][:]
+        if 'depth' in nc.variables.keys():
+            rla_depth = nc.variables['depth'][:]
+        elif 'DEPH' in nc.variables.keys():
+            rla_depth = nc.variables['DEPH'][:]
+        elif 'pres' in nc.variables.keys():
+            rla_depth = nc.variables['pres'][:]
+        elif 'PRES' in nc.variables.keys():
+            rla_depth = nc.variables['PRES'][:]
+        else:
+            ## No depth: surface variable
+            nb_obs = np.shape(rla_lon)[0]
+            nb_deps = 1
+            rla_depth = np.ndarray(shape=(nb_obs,nb_deps),dtype=float, order='F')
+            rla_depth[:,0] = 0
+        nc.close()
+        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, _FillValue
+
+    
 class AsciiLoader(Loader):
 
     """Loader for ASCII dataset"""
