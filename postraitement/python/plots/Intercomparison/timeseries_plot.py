@@ -39,7 +39,7 @@ def fmtFig(area, name_ech, splot='single', nb_var=1):
         fig.subplots_adjust(left = 0.06, bottom = 0.14,
                             right = 0.92, top = 0.89, wspace = 0.12, hspace = 0.3)
     else:
-        print '************ config not found ************'
+        print ('************ config not found ************')
         sys.exit()
     
     plt.suptitle(area+' - '+name_ech,fontsize=15.5+nb_var,color='red')   
@@ -67,7 +67,7 @@ def plotStat(fig, ax_fig, dict, varname, area, system, prof, datemin, datemax, l
 
     list_metric_aice = ['PCI','PCW','PCT','BIAS']
     for s, prod in enumerate(system):
-        if prod in ['PSY4','ENSMEAN','PSY3','FOAM','HYCOM_RTOFS','BLK','GIOPS','NERSC']: 
+        if prod in ['PSY4','ENSMEAN','PSY3','FOAM','HYCOM_RTOFS','BLK','GIOPS','NERSC','CGOFS']:
             name_lab = prod
             prod_name = prod
         elif prod == 0:
@@ -89,11 +89,20 @@ def plotStat(fig, ax_fig, dict, varname, area, system, prof, datemin, datemax, l
     if varname in ['sla','sst']:
         plt.title(varname.upper(), fontsize=13, fontweight="bold")
     else:
-        plt.title(varname.upper()+' (depth: '+prof+')', fontsize=13, fontweight="bold")
+        plt.title(varname.upper()+' (depth: '+str(prof.decode("utf-8"))+')', fontsize=13, fontweight="bold")
+    ##if varname in ['sla']:
+    ##    valmin = -0.05
+    ##    valmax = 0.1
+    ##if varname in ['sst']:
+    ##    valmin = -0.5
+    ##    valmax = 1.0
+
     plt.plot([datemin, datemax], [0,0], color = 'black', linestyle = '--', linewidth = 0.8)
     datemin = np.datetime64(datemin)
     datemax = np.datetime64(datemax)
     ax_fig.set_xlim(datemin, datemax)
+    #if varname in ['sla','sst']:
+    #    ax_fig.set_ylim(valmin, valmax)
     xax = ax_fig.get_xaxis()
     ax_fig.xaxis.set_major_locator(dates.YearLocator())
     ax_fig.set_xticklabels(ax_fig.get_xticks(), fontsize = 10)
