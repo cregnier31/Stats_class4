@@ -7,6 +7,9 @@ import utils
 import psutil
 import time
 from timeit import default_timer as timer
+##
+import cl4errors as cl4err
+##
 import sys
 
 __version__ = 0.1
@@ -124,29 +127,24 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
         varname_psal = 0 ; varname_temp = 0
         varname_u = 0 ; varname_v = 0
 
-        if 'vosaline' in cla_varname: varname_psal = 'vosaline'
-        if 'salt    ' in cla_varname: varname_psal = 'salt    '
-        if 'votemper' in cla_varname: varname_temp = 'votemper'
-        if 'temp    ' in cla_varname: varname_temp = 'temp    '
+        list_sal = ['vosaline',  'salt']
+        list_temp = ['votemper',  'temp']
+        if len(set(list_sal).intersection(cla_varname)) == 1: varname_psal =  list(set.intersection(set(list_sal), set(cla_varname)))
+        if len(set(list_temp).intersection(cla_varname)) == 1: varname_temp =  list(set.intersection(set(list_temp), set(cla_varname)))
         if 'eastward_velocity' in cla_varname : varname_u = 'eastward_velocity'
         if 'northward_velocity' in cla_varname: varname_v = 'northward_velocity'
-
     if cvar == 'PSAL' and varname_psal == 0:
-        log.info("Pb with file %s : " %(str(ncfile)))
-        log.info("Error: varname_psal not defined")
-        sys.exit(1)
+        log.error("Pb with file %s : " %(str(ncfile)))
+        raise cl4err.Class4FatalError("Error: varname_psal not defined")
     if cvar == 'TEMP' and varname_temp == 0:
-        log.info("Pb with file %s : " %(str(ncfile)))
-        log.info("Error: varname_temp not defined")
-        sys.exit(1)
+        log.error("Pb with file %s : " %(str(ncfile)))
+        raise cl4err.Class4FatalError("Error: varname_temp not defined")
     if cvar == 'UVEL' and varname_u == 0 or cvar == 'UVEL_filtr' and varname_u == 0:
         log.info("Pb with file %s : " %(str(ncfile)))
-        log.info("Error: varname_u not defined")
-        sys.exit(1)
+        raise cl4err.Class4FatalError("Error: varname_u not defined")
     if cvar == 'VVEL' and varname_v == 0 or cvar == 'VVEL_filtr' and varname_v == 0:
         log.info("Pb with file %s : " %(str(ncfile)))
-        log.info("Error: varname_v not defined")
-        sys.exit(1)
+        raise cl4err.Class4FatalError("Error: varname_v not defined")
 
     if rla_depthobs.shape[1] == 1 and (rla_depthobs[:,0] == 0).all():
         tab_prof   = np.array([-0.5,0.5])
@@ -294,8 +292,7 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
             elif len(qcvalues) >= 2:
                 qc_file = np.where(rla_qc_var >= int(qcvalues[0]))
             else:
-                log.error("No qc values")
-                sys.exit(1)
+                raise cl4err.Class4FatalError("Error: No qc values")
 
         if len(qc_file[0]) > 0:
             rla_observation_var[qc_file] = np.nan
@@ -416,19 +413,17 @@ def read_and_store_inputfiles(lead_time, cvar, cexp, num_date, cl_cl4file,
     log.debug("RSS memory information 1 : %s " %(str(meminfo)))
 
     if cvar == 'PSAL' and varname_psal == 0:
-        log.error("Error: varname_psal not defined")
-        sys.exit(1)
+        log.error("Pb with file : {}".format(str(cl_cl4file)))
+        raise cl4err.Class4FatalError("Error: varname_psal not defined")
     if cvar == 'TEMP' and varname_temp == 0:
-        log.error("Error: varname_temp not defined")
-        sys.exit(1)
+        log.error("Pb with file : {}".format(str(cl_cl4file)))
+        raise cl4err.Class4FatalError("Error: varname_temp not defined")
     if cvar == 'UVEL' and varname_u == 0 or cvar == 'UVEL_filtr' and varname_u == 0:
-        log.info("Pb with file %s : " %(str(ncfile)))
-        log.info("Error: varname_u not defined")
-        sys.exit(1)
+        log.error("Pb with file : {}".format(str(cl_cl4file)))
+        raise cl4err.Class4FatalError("Error: varname_u not defined")
     if cvar == 'VVEL' and varname_v == 0 or cvar == 'VVEL_filtr' and varname_v == 0:
-        log.info("Pb with file %s : " %(str(ncfile)))
-        log.info("Error: varname_v not defined")
-        sys.exit(1)
+        log.error("Pb with file : {}".format(str(cl_cl4file)))
+        raise cl4err.Class4FatalError("Error: varname_v not defined")
 
     dict_var[cvar]['depth_obs'][str(num_date)] = rla_depthobs
 
@@ -608,8 +603,7 @@ def read_and_store_inputfiles(lead_time, cvar, cexp, num_date, cl_cl4file,
             elif len(qcvalues) >= 2:
                 qc_file = np.where(rla_qc_var >= int(qcvalues[0]))
             else:
-                print ("No qc values")
-                sys.exit(1)
+                raise cl4err.Class4FatalError("Error: No qc values")
         if len(qc_file[0]) > 0:
             rla_observation_var[qc_file] = np.nan
         w = np.where(np.isnan(rla_observation_var))
