@@ -1,12 +1,9 @@
 import matplotlib
 import os, sys, getopt
-from os.path import dirname
-sys.path.append('/home/ext/mr/smer/regnierc/SAVE/python/module/')
-#sys.path.append(dirname(__file__)+'/../modules/')
-sys.path.append('/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V5/postraitement/python/module/')
-sys.path.append('/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V5/postraitement/python/module/supobs/')
+sys.path.append('../../modules/')
 import resource
 from mpi4py import MPI
+import dill
 from Logger import Logger
 import numpy as np
 import xarray as xr
@@ -19,16 +16,17 @@ from collections import Counter
 import netCDF4
 import datetime as dt
 from dateutil.relativedelta import relativedelta
-from interpolate import coloc_2D, search_orca, lon_lat_to_cartesian
+from interpolate import search_orca, lon_lat_to_cartesian
 from utils import compute_last_day_month
 from reader import read_moor, read_pos, read_depth
 from writer import write_data_colloc_files_daily, write_data_colloc_files 
 import dask
 import arithm
-from loader import load_db
+from loader_post import load_db
 import psutil
 from geomlib import CheckDistance
 #os.environ["OMP_NUM_THREADS"] = "3"
+from Interp_kdtree import interp_KDtree
 
 dask.config.set(scheduler="synchronous")
 
@@ -41,90 +39,6 @@ dask.config.set(scheduler="synchronous")
 
 
 # ~~~~~~~~~~~~~~~ Define creation of netCDF file or timeseries plot ~~~~~~~~~~~~~~~~~~~
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-#                                  FUNCTIONS
-#
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-def coloc_2D(lon_in, lon_out, lat_in, lat_out,
-             nbpts_interp, log):
-    """
-    -------------------
-    Coloc 2D
-    Compute weight file with KDTree Method and store it in
-    a pickle file
-    Arguments
-    --------------------
-    lon_in : input longitude array
-    lon_out : output longitude array
-    lat_in : input latitude array
-    lat_out : output latitude array
-    nbpts_interp : number points for interpolation
-        =>  1 = nearest
-        =>  >1 IDW method
-    log : logger object
-    Returns
-    --------------------
-    WEIGHT : weight values
-    inds_idw1 : index values in the grid
-    """  
-
-    # Read input grid
-    # Test size
-    if len(lon_in.shape) > 1:
-        X1, Y1 = lon_in, lat_in
-    else:
-        X1, Y1 = np.meshgrid(lon_in, lat_in)
-    # Convert to cartesian
-    xs, ys, zs = lon_lat_to_cartesian(X1.flatten(), Y1.flatten())
-    # Read output grid
-    X2, Y2 = lon_out, lat_out
-    if isinstance(X2, np.float64) or isinstance(X2, np.float32):
-        log.info('X2 is a float')
-    else:
-        global_step = (X2[len(X2)-1]-X2[0])/(len(X2)-1)
-        first_step = X2[1]-X2[0]
-        log.info('Step sizes %f %f ' % (global_step, first_step))
-    # 1D cases
-    if  lon_out.ndim  == 0:
-        log.info('1D not regular')
-        X2, Y2 = lon_out, lat_out
-    elif lon_out.ndim < 2:
-        if global_step == first_step:
-            # Regular
-            log.info('1D regular => convert to meshgrid')
-            X2, Y2 = np.meshgrid(lon_out, lat_out)
-        else:
-            # Irregular
-            log.info('1D not regular')
-            X2, Y2 = lon_out, lat_out
-    # Convert to cartesian
-    xt, yt, zt = lon_lat_to_cartesian(X2.flatten(), Y2.flatten())
-    if sys.version_info[0] >= 3:
-        tree = cKDTree(list(zip(xs, ys, zs)))
-        DIST, inds_idw1 = tree.query(
-            list(zip(xt, yt, zt)), k=nbpts_interp)
-    else:
-        tree = cKDTree(zip(xs, ys, zs))
-        DIST, inds_idw1 = tree.query(zip(xt, yt, zt), k=nbpts_interp)
-
-    ilat = []
-    ilon = []
-    for ind in inds_idw1:
-        inds = np.where(lon_in == lon_in.flatten()[ind]) 
-        if np.size(inds[0][:]) > 1:
-            w = np.where(lat_in[inds] == lat_in.flatten()[ind])
-            ilat.append(inds[0][w][0])
-            ilon.append(inds[1][w][0])
-        else: 
-            ilat.append(inds[0][0])
-            ilon.append(inds[1][0])
-
-    return ilat, ilon, DIST
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -166,14 +80,11 @@ dt_start = dt.date(YEAR,MONTH,1)
 dt_end = dt.date(YEAR,MONTH,DAY)
 
 ndays = (dt_end - dt_start).days + 1
-##ts = np.array([dt_start + dt.timedelta(i) for i in xrange(ndays)])
-## Modif
 ts = np.array([dt_start + dt.timedelta(i) for i in range(ndays)])
-
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Define configuration (path, date, etc.) ~~~~~~~~~~~~~~~~~~~~
 
-level = 1
+level = 2
 log = Logger('TEP_CLASS2').run(level)
 db_file = '../cfg/config_'+SYSTEM+'_CL2.cfg'
 
@@ -187,6 +98,7 @@ typemoor = params_conf.get('GLOBAL','typemoor')
 zone = params_conf.get('GLOBAL','ZONE')
 DIR_INTERP = params_conf.get('output_dir','DIR_INTERP')
 nb_ptsinterp = params_conf.get('GLOBAL','nb_ptsinterp') 
+save=False
 
 tab_daily_moor={}
 tab_daily_moor['TEMP']='votemper'
@@ -207,7 +119,6 @@ if tstp == 'hourly':
 elif tstp == 'daily':
     variable = tab_daily_moor[typemoor]
 
-print (variable)
 system = SYSTEM
  
 missing_value = 1e35
@@ -222,6 +133,8 @@ else:
 
 
 # ~~~~~~~~~~~~~~~~~~~ Read model grid point coordinates (lat/lon) ~~~~~~~~~~~~~~~~~~~~~
+## Init pickle
+MPI.pickle.__init__(dill.dumps, dill.loads)
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -247,13 +160,10 @@ if rank == 0:
     list_lon = []
     list_lat = []
     log.info ("Nb file total : %s" %(str(nb_files)))
-    print (glob(frame))
-    # moor =  os.path.basename(file).split('_')[4].split('.')[0]
     ind_moor = 0
     for f, file in enumerate(glob(frame)):
         moor =  os.path.basename(file).split('_')[3:][0]
-	#print (moor)
-	#moor = [''.join(var[0:])][0].split('.nc')[0]
+        log.debug (moor)
         lon_value, lat_value, depth, depth_qc, time, temp, ll_temp, temp_qc = read_moor(file, log)
         if typemoor == "TEMP":
            if ll_temp:
@@ -268,8 +178,11 @@ if rank == 0:
               ind_moor += 1
     nb_files = len(list_mooring)
     log.info ("Nb files %s : %s" %(typemoor, str(nb_files)))
+    if nb_files < 1: 
+        log.error ("Missing moorings")
+        sys.exit(1)
     collec = Counter(list_mooring)
-    #print (collec.most_common(10))
+    log.debug (collec.most_common(10))
 
     weight_file = DIR_INTERP+'weight_file_'+str(nb_ptsinterp)+'pts_'+str(nb_files)+'moorings_'+str(typemoor)+"_"+str(YEAR)+"_"+str(MONTH2)+".nc"
     log.info ("Interp Kdtree")
@@ -279,11 +192,6 @@ if rank == 0:
                                        int(nb_ptsinterp), weight_file=weight_file, save=save)
 
     ilat, ilon = TreeObj.get_ilonlat(lon_mod, lat_mod, idw)
-    #ilat, ilon, dist = coloc_2D(lon_mod, list_lat_lon[:,1], lat_mod, list_lat_lon[:,0],
-    #                            int(nb_ptsinterp), log)
-    
-#idw, dist = coloc_2D(lon_mod, list_lat_lon[:,1], lat_mod, list_lat_lon[:,0],
-    #                     weight_file, int(nb_ptsinterp), log)
     log.info ("Coloc 2D ok %s" %(str(nb_files)))
 
     for i in range(len(ilat)):
@@ -301,13 +209,13 @@ if rank == 0:
             path = dirdata_mod+'/'
             framefile = system+'_1hAV_'+t.strftime('%Y%m%d')+'*gridT*.nc'
             log.info ("Input hourly files directory: %s ; %s " %(path, framefile))
-            file_mod  = glob(dirdata_mod+'/'+system+'_1hAV_'+t.strftime('%Y%m%d')+'*gridT*.nc')
+            file_mod  = sorted(glob(dirdata_mod+'/'+system+'_1hAV_'+t.strftime('%Y%m%d')+'*gridT*.nc'))
         elif tstp == 'daily':
             file_mod  = glob(dirdata_mod+'/'+system+'_1dAV_'+t.strftime('%Y%m%d')+'*gridT*.nc')              
         if len(file_mod) == 0:
             log.info("File missing")
             if tstp == 'hourly':
-                file_mod  = glob(dirdata_mod+str(YEAR+1)+'/*/'+system+'_1hAV_'+t.strftime('%Y%m%d')+'*gridT*.nc')
+                file_mod  = sorted(glob(dirdata_mod+str(YEAR+1)+'/*/'+system+'_1hAV_'+t.strftime('%Y%m%d')+'*gridT*.nc'))
             if tstp == 'daily':
                 file_mod  = glob(dirdata_mod+str(YEAR+1)+'/*/'+system+'_1dAV_'+t.strftime('%Y%m%d')+'*gridT*.nc')     
         if len(file_mod) > 0 and file_mod[0] not in liste_file:
@@ -321,7 +229,7 @@ if rank == 0:
             lfc = []
             for t in ts:
                 if tstp == 'hourly':
-                    file_fcst = glob(path_fcst+'fcst'+str(fc)+'/*_1hAV_'+t.strftime('%Y%m%d')+'*gridT*.nc')
+                    file_fcst = sorted(glob(path_fcst+'fcst'+str(fc)+'/*_1hAV_'+t.strftime('%Y%m%d')+'*gridT*.nc'))
                 if len(file_fcst) > 0 and file_fcst[0] not in lfc:
                     lfc.append(file_fcst[0])
             liste_fcst[str(fc)] = lfc
@@ -335,8 +243,8 @@ if rank == 0:
         mfdataset_hdct = xr.open_mfdataset(liste_file, concat_dim='time_counter', autoclose=True)   
         time_mod = mfdataset_hdct.variables['time_counter'][:].values
     except Exception as exs:
-        print ("Execution mfdataset_hdct failed: %s", exs)
-        sys.exit(1)
+        log.error("Execution mfdataset_hdct failed: %s", exs)
+        raise
 
     log.info("Create mfdadaset HDCT OK")
 
@@ -350,10 +258,11 @@ if rank == 0:
                 mfdataset_fcst[str(fc)] = xr.open_mfdataset(liste_fcst[str(fc)], concat_dim='time_counter', autoclose=True) 
                 time_fcst[str(fc)] = mfdataset_fcst[str(fc)].variables['time_counter'][:].values  
             except Exception as exs:
-               print ("Execution mfdataset_fcst failed: %s", exs)
-               sys.exit(1)
+               log.error ("Execution mfdataset_fcst failed: %s", exs)
+               raise
+            log.info("Create mfdadaset FCST OK {}".format(fc))
             meminfo = psutil.Process().memory_info().rss / 2**20
-            print("RSS memory information : %s " %(str(meminfo)))
+            log.debug("RSS memory information : %s " %(str(meminfo)))
      
     log.info ("Create dataset ok ")
     # ~~~~~~~~ Read mooring coordinates and compute 2D collocation with the model grid ~~~~~~~~~
@@ -367,7 +276,7 @@ else:
     if len(forecast) > 0:
         mfdataset_fcst, time_fcst = None, None
 
-     
+log.debug ("Create broadcast ") 
 ind_dict = comm.bcast(ind_dict, root=0)
 depth_mod = comm.bcast(depth_mod, root=0)
 mfdataset_hdct = comm.bcast(mfdataset_hdct, root=0)
@@ -391,10 +300,8 @@ if irest > 0 and comm.rank < irest:
     cla_mr.append(list_file[iend_tot+comm.rank+1])
 
 for file in cla_mr:
-   # moor =  os.path.basename(file).split('_')[3].split('.')[0]
+
     moor =  os.path.basename(file).split('_')[3:][0]
-    #var =  os.path.basename(file).split('_')[3:]
-    #moor = var[0]
 
     if tstp == 'hourly':
         nc_file_out = path_data+moor+'_MOD_TS_GLOMFC-PU_'+str(YEAR)+MONTH2+'_TEMP.nc'
@@ -491,21 +398,15 @@ for file in cla_mr:
 		#
                 try: 
                     meminfo = psutil.Process().memory_info().rss / 2**20
-                    print("RSS memory information : {} ".format(str(meminfo)))
+                    log.debug("RSS memory information : {} ".format(str(meminfo)))
                     mfd_fcst = mfdataset_fcst[str(fcst)]
-                    #print ("Indices")
-                    #print (ilon,ilat)
-                    #print (np.array(ind_time_fcst[str(fcst)]))
-                    #print (ind_depth)
-                    #print ("----------")
                     ds_fcst = mfd_fcst.sel(x=ilon, y=ilat, time_counter=np.array(ind_time_fcst[str(fcst)]), deptht=ind_depth)               
                     values_temp[:,fc+1] = ds_fcst.variables[variable][:].values
                     meminfo = psutil.Process().memory_info().rss / 2**20
-                    print("RSS memory information : %s " %(str(meminfo)))
                 except Exception as exs:
-                    print ("Pb during mfdataset construction fcst :%s " %(exs))
-                    log.info("Create mfdadaset FCST NOK {}".format(fc))
-                    sys.exit(1)
+                    log.error("Pb during mfdataset construction fcst :%s " %(exs))
+                    log.error("Create mfdadaset FCST NOK {}".format(fc))
+                    raise
                 for tc, timec in enumerate(vect_time): 
                     w = np.where(np.array(vt_fcst[str(fcst)]) == timec)           
                     if len(w[0]) == 0:

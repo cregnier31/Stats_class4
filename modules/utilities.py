@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import os, sys
+import os, sys, re
 
 if sys.version_info[0] >= 3:
     import configparser as ConfigParser
@@ -14,6 +14,23 @@ def load_db():
         print ("Configuration file not found !")
         sys.exit(1)
     return db
+
+def conv_geojson(file):
+    """
+       Convert a text position file to a geojson file with the same name but different extension
+    """
+    filename=os.path.basename(file).split('.')[0]+".geojson"
+    data = open(file,'r')
+    liste_position=[]
+    pos=np.ndarray(shape=(2),dtype=float, order='F')
+    for line in data:
+       lon=float(line.split()[0])
+       lat=float(line.split()[1])
+       pos[0]=lon
+       pos[1]=lat
+       liste_position.append(tuple(pos))
+    with open(filename, 'w') as outfile:
+           json.dump(MultiPoint(liste_position), outfile)
 
 
 def pull_names(name_data):
@@ -53,4 +70,30 @@ def searchcell(array, value):
         return np.nan
     else:
         return idx-1
+
+def compute_last_day_month(y,m):
+    return (dt.date(y+int(m/12),m%12+1,1)-dt.date(y,m,1)).days
+
+def find_index_month(date):
+    dateval = pd.to_datetime(date)
+    index = dateval.month
+    return index
+
+def lon_lat_to_cartesian(lon, lat, R = 1):
+    """
+     calculates lon, lat coordinates of a point on a sphere with
+     radius R
+    """
+    lon_r = np.radians(lon)
+    lat_r = np.radians(lat)
+    x =  R * np.cos(lat_r) * np.cos(lon_r)
+    y = R * np.cos(lat_r) * np.sin(lon_r)
+    z = R * np.sin(lat_r)
+    return x,y,z
+
+
+class nf(float):
+    def __repr__(self):
+        s = f'{self:.1f}'
+        return f'{self:.0f}' if s[-1] == '0' else s
 
