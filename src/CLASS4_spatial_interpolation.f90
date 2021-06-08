@@ -153,7 +153,10 @@ PROGRAM SPATIAL_INTERPOLATION
        cl_modelVarname_S, &
        cl_outputVarname_T, &
        cl_outputVarname_S, &
+       cl_input_typemod, &
        cl_input_type, &
+       cl_meshfile, &
+
        il_nbfile
 #endif
      !
@@ -290,13 +293,16 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
   !---------------------------------------------------------------------
   ! Recherche des dimensions du fichier modele
   !
-  IF (TRIM(cd_input_modtype) .EQ. "NETCDF") THEN
+#if defined key_debug
+WRITE(0,*) ' Function interpolate_3D_model_field type: ',TRIM(cd_input_type)
+#endif
+  IF (TRIM(cd_input_type) .EQ. "NETCDF") THEN
 #if defined key_debug
      WRITE(0,*) ' Function inquire_model_Netcdf',TRIM(cd_modelFileT)
 #endif
       cl_file=cd_modelFileT
       cl_varname=cd_modelVarname_T
-  ELSE IF (TRIM(cd_input_modtype) .EQ. "ALLEGE") THEN
+  ELSE IF (TRIM(cd_input_type) .EQ. "ALLEGE") THEN
 #if defined key_debug
      WRITE(0,*) ' Function inquire_model_file_allege ',TRIM(cd_meshfile)
 #endif
@@ -312,6 +318,7 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                           cl_depthvarname)
 #if defined key_debug
      WRITE(0,*) ' Function inquire_model_file OK '
+     WRITE(0,*) 'cd_input_type :',cd_input_type
 #endif
   !
   !------------------------------------------------------------------------
@@ -464,6 +471,9 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
            ENDDO              
            CLOSE(il_fic)
         ELSE IF (TRIM(cd_input_type) .EQ. "NETCDF") THEN
+#if defined key_debug
+        WRITE(0,*) 'read_coriolis_file NETCDF '
+#endif
            CALL read_coriolis_file(cl_inputFile, &
                                    cd_inputVarname_T, &
                                    cd_inputVarname_S, &
@@ -494,8 +504,8 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
 #endif
 #if defined key_debug
         WRITE(0,*) 'read_inputfile ok ::',cl_inputFile,ll_isDepth,ll_isPres
-!        WRITE(0,*) 'Prof T ::',rla_depthvalue_T(:,10)
-!        WRITE(0,*) 'Prof S ::',rla_depthvalue_S(:,10)
+        WRITE(0,*) 'Prof T ::',rla_depthvalue_T(:,10)
+        WRITE(0,*) 'Prof S ::',rla_depthvalue_S(:,10)
 #endif
         !
         !
@@ -513,7 +523,7 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
 #if defined key_debug
         WRITE(0,*),'read_coloc_file ::',cl_colocFile
 #endif
-#if defined key_cputime                                                                                      
+#if defined key_cputime
      il_t1=0
      il_t2=0
      CALL SYSTEM_CLOCK(count=il_t1)
@@ -524,7 +534,7 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                              ila_yindex, &
                              rla_poids, &
                              cla_positionqc)
-#if defined key_cputime                                                                                      
+#if defined key_cputime
      CALL SYSTEM_CLOCK(count=il_t2, count_rate=il_ir)
      WRITE(0,*) "Temps read_coloc_file :",REAL(il_t2 - il_t1) / il_ir
 #endif
@@ -544,13 +554,14 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
         WRITE(0,*),'Debut Read File '
         WRITE(0,*),'read_model_file T ',cd_modelFileT
         WRITE(0,*),'read_mode_field S ',cd_modelFileS
+        WRITE(0,*),'cd_input_modtype ',cd_input_modtype
 #endif
-#if defined key_cputime                                                                                      
+#if defined key_cputime 
      il_t1=0
      il_t2=0
      CALL SYSTEM_CLOCK(count=il_t1)
 #endif
-        IF (TRIM(cd_input_modtype) .EQ. "NETCDF") THEN
+        IF (TRIM(cd_input_modtype) .EQ. "NETCDF" .or. TRIM(cd_input_modtype) .EQ. 'PGN' ) THEN
 #if defined key_debug
     WRITE(0,*) 'Read model file NETCDF'
 #endif
@@ -602,7 +613,7 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
 #if defined key_debug
         WRITE(0,*),'interp_model_field OK ',TRIM(cl_tmp)
 #endif
-#if defined key_cputime                                                                                      
+#if defined key_cputime
      il_t1=0
      il_t2=0
      CALL SYSTEM_CLOCK(count=il_t1)
@@ -628,19 +639,20 @@ SUBROUTINE interpolate_3D_model_field(cd_modelFileT, &
                                 TRIM(cl_tmp),&
                                 rla_poids,&
                                 rl_fillvalue)
-#if defined key_cputime                                                                                      
+#if defined key_cputime
      CALL SYSTEM_CLOCK(count=il_t2, count_rate=il_ir)
      WRITE(0,*) "Temps interp_model_file :",REAL(il_t2 - il_t1) / il_ir
 #endif
 #if defined key_debug
        WRITE(0,*),'interp_model_field ok'
-       WRITE(0,*),'rla_modelValueT :: ',rla_modelvalue_T(1,1,:)
-       WRITE(0,*),'rla_interpValueT :: ',rla_interpValueT(:,1)
-       WRITE(0,*),'rla_modelValueS :: ',rla_modelvalue_S(1,1,:)
-       WRITE(0,*),'rla_depthvalue_interp_T :: ',rla_depthvalue_T(:,1)
-       WRITE(0,*),'rla_depthvalue_interp_S :: ',rla_depthvalue_S(:,1)
-       WRITE(0,*),'rla_modelvalue:: ',rla_modeldepth(:)
-       WRITE(0,*),'rla_interpValueS :: ',rla_interpValueS(:,1)
+       WRITE(0,*),'rla_modelValueT :: ',rla_modelvalue_T(1,1,1:20)
+       WRITE(0,*),'rla_interpValueT :: ',rla_interpValueT(1:20,1)
+       WRITE(0,*),'rla_modelValueS :: ',rla_modelvalue_S(1,1,1:20)
+       WRITE(0,*),'rla_depthvalue_interp_T :: ',rla_depthvalue_T(1:20,1)
+       WRITE(0,*),'rla_depthvalue_interp_S :: ',rla_depthvalue_S(1:20,1)
+       WRITE(0,*),'rla_modelvalue:: ',rla_modeldepth(1:20)
+       WRITE(0,*),'rla_interpValueS :: ',rla_interpValueS(1:20,1)
+       STOP
 #endif
         !
         !

@@ -187,6 +187,27 @@ class NmlCreator_IAOOS(NmlCreator):
             template_sal=searchdir+'*M'+monthval+'*sal*.nc'
             model_varname_T="temperature"
             model_varname_S="vosaline"
+        elif listdir == 'CLIM_WOA18_8594':
+            output_varname_T='TMLEV18'
+            output_varname_S='SMLEV18'
+            template_temp=searchdir+'*M'+monthval+'*temp*.nc'
+            template_sal=searchdir+'*M'+monthval+'*sal*.nc'
+            model_varname_T="temperature"
+            model_varname_S="vosaline"
+        elif listdir == 'CLIM_WOA18_95A4':
+            output_varname_T='TMLEV18'
+            output_varname_S='SMLEV18'
+            template_temp=searchdir+'*M'+monthval+'*temp*.nc'
+            template_sal=searchdir+'*M'+monthval+'*sal*.nc'
+            model_varname_T="temperature"
+            model_varname_S="vosaline"
+        elif listdir == 'CLIM_WOA18_A5B7':
+            output_varname_T='TMLEV18'
+            output_varname_S='SMLEV18'
+            template_temp=searchdir+'*M'+monthval+'*temp*.nc'
+            template_sal=searchdir+'*M'+monthval+'*sal*.nc'
+            model_varname_T="temperature"
+            model_varname_S="vosaline"
         elif listdir == 'CLIM_MED' :
             output_varname_T='TMMED'
             output_varname_S='SMMED'
@@ -395,6 +416,16 @@ class NmlCreator_CORIOLIS(NmlCreator):
             model_varname_T="temperature"
             #model_varname_S="vosaline"
             model_varname_S="salinity"
+        elif listdir == 'CLIM_WOA18_8594' or listdir == 'CLIM_WOA18_95A4' or listdir == 'CLIM_WOA18_A5B7':
+            ll_lightout=True
+            template=searchdir+'*M'+monthval+'*_TEMP.nc'
+            #template=searchdir+'*M'+monthval+'*_tempinsitu.nc'
+            output_varname_T='TMLEV18'
+            output_varname_S='SMLEV18'
+            model_varname_T="temperature"
+            #model_varname_S="vosaline"
+            model_varname_S="salinity"
+
         elif listdir == 'CLIM_MED' :
             output_varname_T='TMMED'
             output_varname_S='SMMED'
@@ -415,7 +446,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
                     log.debug('gridtemp {} gridsal {}'.format(gridtemp,gridsal))
                     fic_psal=re.sub(gridtemp,gridsal,fic_temp)
             else :
-                if listdir == 'CLIM_WOA13' :
+                if listdir == 'CLIM_WOA13' or listdir == 'CLIM_WOA18_8594' or listdir == 'CLIM_WOA18_95A4' or listdir == 'CLIM_WOA18_A5B7' :
                     fic_psal=re.sub('TEMP','PSAL',fic_temp)
                     #fic_psal=re.sub('tempinsitu','sal',fic_temp)
                 else :

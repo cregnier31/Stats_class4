@@ -7,6 +7,7 @@ import cl4_reader
 import datetime as dt
 from numba import jit
 from timeit import default_timer as timer
+import cl4errors as cl4err
 
 ########################################################
 #     Class Writer to write output file in NetCDF
@@ -866,7 +867,10 @@ class writer_stat():
                         stat_all[stat_day,:,:,:,:,numvar] = stat_tmp
                     else:
                         for y, lt in enumerate(lead_time):
-                            w = np.where(ldt_ref == lt)[0][0]
+                            try:
+                                w = np.where(ldt_ref == lt)[0][0]
+                            except:
+                                raise cl4err.Class4FatalError("Pb with leadtime file {} {} {} {} {} {}".format(y, lt, cl_cl4file, ldt_ref, lead_time,lead_time))
                             if lt not in ['forecast','persistence']:
                                 stat_all[stat_day,w,:,:,:,numvar] = stat_tmp[y,:,:,:]
                             else:
@@ -877,8 +881,11 @@ class writer_stat():
                         stat_all[stat_day,:,0:1,:,:,numvar] = stat_tmp
                     else:
                         for y, lt in enumerate(lead_time):
-                            w = np.where(ldt_ref == lt)[0][0]
-
+                            try:
+                                w = np.where(ldt_ref == lt)[0][0]
+                            except:
+                                #log.info("Pb with leatime ldt_ref {} lead_time {} file {}".format(ldt_ref, lead_time, cl_cl4file))
+                                raise cl4err.Class4FatalError("Pb with leadtime file {} {} {} {} {} {}".format(y, lt, cl_cl4file, ldt_ref, lead_time,lead_time))
                             if lt not in ['forecast','persistence']:
                                 stat_all[stat_day,w,0:1,:,:,numvar] = stat_tmp[y,:,:,:]
                             else:

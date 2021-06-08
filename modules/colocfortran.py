@@ -248,6 +248,10 @@ class ColocFortran(object):
                     dirclim3 = self.params['db'].get('climato','DIRLEV')
                     lead_fin = ['clim3']
                     sort_rep = dirclim3
+                elif time == 'CLIM_WOA18_8594' or time == 'CLIM_WOA18_95A4' or time == 'CLIM_WOA18_A5B7':
+                    dirclim3 = self.params['db'].get('climato','DIRLEV')
+                    lead_fin = ['clim3']
+                    sort_rep = dirclim3
                 elif time == 'CLIM_MED' :
                     dirclim = self.params['db'].get('climato','DIRCLIM')
                     lead_fin = ['clim']

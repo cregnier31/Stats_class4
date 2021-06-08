@@ -459,7 +459,7 @@ class InputLoader(Loader):
         param_dict['cl_schedule'] = cl_schedule
         param_dict['cl_src'] = cl_src
         param_dict['nb_proc'] = nb_proc
-        param_dict['cl_typemod'] = cl_typemod
+        param_dict['cl_typemod'] = cl_typemod.upper()
         param_dict['cl_data_id'] = cl_data_id
         param_dict['daymax'] = daymax
         param_dict['dask'] = dask
