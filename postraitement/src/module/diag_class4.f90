@@ -188,6 +188,10 @@ CONTAINS
          il_ind=ip_TMLEV13
         CASE ('SMLEV13')
          il_ind=ip_SMLEV13
+        CASE ('TMLEV18')
+         il_ind=ip_TMLEV18
+        CASE ('SMLEV18')
+         il_ind=ip_SMLEV18
         CASE('TMARV11')
          il_ind=ip_TMARV11
         CASE('SMARV11')
@@ -800,6 +804,10 @@ END SUBROUTINE definir_classe_profondeur
               rl_diff2=rgpa_TMLEV09(il_i,id_IndProf)-rl_temp
               il_count_clim=1
             ENDIF
+            IF (lg_TMLEV18) THEN        
+              rl_diff2=rgpa_TMLEV18(il_i,id_IndProf)-rl_temp
+              il_count_clim=1
+            ENDIF
             IF (lg_TMMED) THEN
               rl_diff2=rgpa_TMMED(il_i,id_IndProf)-rl_temp
               il_count_clim=1
@@ -847,6 +855,9 @@ END SUBROUTINE definir_classe_profondeur
                   rl_temp=rga_TempVal(il_i,id_IndProf)
                CASE( ip_TMLEV13)
                   rl_var = rgpa_TMLEV13(il_i,id_IndProf) 
+                  rl_temp=rga_TempVal(il_i,id_IndProf)
+               CASE( ip_TMLEV18)
+                  rl_var = rgpa_TMLEV18(il_i,id_IndProf) 
                   rl_temp=rga_TempVal(il_i,id_IndProf)
                CASE( ip_TMMED)
                   rl_var = rgpa_TMMED(il_i,id_IndProf) 
@@ -1062,6 +1073,8 @@ END SUBROUTINE definir_classe_profondeur
               rl_var = rgpa_SMLEV09(il_i,id_IndProf)
             CASE( ip_SMLEV13)
               rl_var = rgpa_SMLEV13(il_i,id_IndProf)
+            CASE( ip_SMLEV18)
+              rl_var = rgpa_SMLEV18(il_i,id_IndProf)
             CASE( ip_SMMED)
               rl_var = rgpa_SMMED(il_i,id_IndProf)
             CASE(ip_SMARV)

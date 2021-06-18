@@ -205,8 +205,10 @@ CONTAINS
     lg_TMLEV98=.FALSE.
     lg_TMLEV09=.FALSE.
     lg_TMLEV13=.FALSE.
+    lg_TMLEV18=.FALSE.
     lg_SMLEV09=.FALSE.
     lg_SMLEV13=.FALSE.
+    lg_SMLEV18=.FALSE.
     lg_SMARV=.FALSE.
     lg_SMARV11=.FALSE.
     lg_TMARV=.FALSE.
@@ -858,6 +860,10 @@ CONTAINS
           CALL MIOL_read_field_NC(cd_filename,cl_TMLEV13,rgpa_TMLEV13)
           lg_TMLEV13=.TRUE.
        ENDIF
+       IF (COUNT( iga_IndParam(:,ip_TMLEV18) > 0 ) > 0) THEN
+          CALL MIOL_read_field_NC(cd_filename,cl_TMLEV18,rgpa_TMLEV18)
+          lg_TMLEV18=.TRUE.
+       ENDIF
        IF (COUNT( iga_IndParam(:,ip_SMLEV09) > 0 ) > 0) THEN
           CALL MIOL_read_field_NC(cd_filename,cl_SMLEV09,rgpa_SMLEV09)
           lg_SMLEV09=.TRUE.
@@ -865,6 +871,10 @@ CONTAINS
        IF (COUNT( iga_IndParam(:,ip_SMLEV13) > 0 ) > 0) THEN
           CALL MIOL_read_field_NC(cd_filename,cl_SMLEV13,rgpa_SMLEV13)
           lg_SMLEV13=.TRUE.
+       ENDIF
+       IF (COUNT( iga_IndParam(:,ip_SMLEV18) > 0 ) > 0) THEN
+          CALL MIOL_read_field_NC(cd_filename,cl_SMLEV18,rgpa_SMLEV18)
+          lg_SMLEV18=.TRUE.
        ENDIF
        IF (COUNT( iga_IndParam(:,ip_TMMED) > 0 ) > 0) THEN
           CALL MIOL_read_field_NC(cd_filename,cl_TMMED,rgpa_TMMED)
@@ -877,7 +887,7 @@ CONTAINS
        IF (COUNT( iga_IndParam(:,ip_TMARV) > 0 ) > 0) THEN
           CALL MIOL_read_field_NC(cd_filename,cl_TMARV,rgpa_TMARV)
           lg_TMARV=.TRUE.
-       ENDIF            
+       ENDIF
         IF (COUNT( iga_IndParam(:,ip_TMARV11) > 0 ) > 0) THEN
           CALL MIOL_read_field_NC(cd_filename,cl_TMARV11,rgpa_TMARV11)
           lg_TMARV11=.TRUE.
@@ -1042,8 +1052,10 @@ CONTAINS
     lg_TMLEV98=.FALSE.
     lg_TMLEV09=.FALSE.
     lg_TMLEV13=.FALSE.
+    lg_TMLEV18=.FALSE.
     lg_SMLEV09=.FALSE.
     lg_SMLEV13=.FALSE.
+    lg_SMLEV18=.FALSE.
     lg_SMARV=.FALSE.
     lg_SMARV11=.FALSE.
     lg_TMARV=.FALSE.
@@ -1732,8 +1744,8 @@ CONTAINS
        IF (COUNT( iga_IndParam(:,ip_TMARV) > 0 ) > 0) THEN
           CALL MIOL_read_field_NC(cd_filename,cl_TMARV,rgpa_TMARV)
           lg_TMARV=.TRUE.
-       ENDIF            
-        IF (COUNT( iga_IndParam(:,ip_TMARV11) > 0 ) > 0) THEN
+       ENDIF
+       IF (COUNT( iga_IndParam(:,ip_TMARV11) > 0 ) > 0) THEN
           CALL MIOL_read_field_NC(cd_filename,cl_TMARV11,rgpa_TMARV11)
           lg_TMARV11=.TRUE.
        ENDIF

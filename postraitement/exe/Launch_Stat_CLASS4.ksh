@@ -34,7 +34,7 @@ if [ $# -ne 5 ] ;then
     usage
 fi
 case "${CONFIG}" in
-        GLORYS2V4|GLORYS12V1|GLORYS12V1-free|GLO4|FOAM|CGLORS|ORAS5|ENSEMBLE|PSY2V4R3|PSY2V4R2|PSY3V3R3|PSY3V3R1|PSY4V2R1|PSY4V3R1|PSY4V2R2|PSY2V4R4)
+        GLORYS2V4|GLORYS12V1|GLORYS12V1-free|GLORYS12V1-light|GLORYS12V1-light2|GLO4|FOAM|CGLORS|ORAS5|ENSEMBLE|PSY2V4R3|PSY2V4R2|PSY3V3R3|PSY3V3R1|PSY4V2R1|PSY4V3R1|PSY4V2R2|PSY2V4R4)
                 ;;
         *)
         usage
@@ -63,11 +63,11 @@ $( sed -e "s/__NBPROC__/1/" $PBS_HEADER )
 _EOF_
 echo "echo \$(date) STATS CLASS4 for JRUN ${JRUN}" >> ${job_script}
 cat >> ${job_script} <<_EOF_ 
-${dir_bin}python ${PROGDIR}/traitement_class4_WEEKLY.py $JRUN $CONFIG $GRID_TYPE
+${dir_bin}python ${PROGDIR}/traitement_class4_WEEKLY.py $JRUN $CONFIG $GRID_TYPE  $MACHINE $DAYMAX
 _EOF_
     qsub ${job_script}
 elif [ "${MACHINE}" == "local" ]; then
-    echo "Launch local"
+    echo "Launch local" 
     python ${PROGDIR}/traitement_class4_WEEKLY.py $JRUN $CONFIG $GRID_TYPE $MACHINE $DAYMAX
 else
     echo "Machine not known"

@@ -17,7 +17,7 @@ MODULE table_ARGO
   INTEGER(KIND=4)              :: ig_nprof  ! nbre de profil (dimension) dans fichier NetCDF Coriolis
   INTEGER(KIND=4)              :: ig_nlevels ! nbre de profondeur (dimension) dans fichier NetCDF Coriolis
 
-  INTEGER(KIND=4),PARAMETER    :: ip_ParamTot = 36
+  INTEGER(KIND=4),PARAMETER    :: ip_ParamTot = 38
   INTEGER(KIND=4),PARAMETER    :: &
        &  ip_TEMP=1,&
        &  ip_PSAL=2,&
@@ -54,8 +54,10 @@ MODULE table_ARGO
        &  ip_TMLEV98=33,&
        &  ip_SMLEV98=34,&
        &  ip_TMLEV13=35,&
-       &  ip_SMLEV13=36
-        
+       &  ip_SMLEV13=36,&
+       &  ip_TMLEV18=37,&
+       &  ip_SMLEV18=38
+
 
  ! Liste des parametres usuels des fichiers CLASS 4
   CHARACTER(len=IP_STRING16),DIMENSION(ip_ParamTot) :: cga_param
@@ -85,7 +87,7 @@ MODULE table_ARGO
   CHARACTER(len=IP_STRING8),DIMENSION(:,:),POINTER     :: cgpa_PLATFORM_NUMBER
   CHARACTER(len=IP_STRING4),DIMENSION(:,:),POINTER     :: cgpa_DATA_STATE_INDICATOR
   LOGICAL :: lg_DATA_STATE_INDICATOR,lg_DEPH,lg_PRES,lg_PSAL,lg_PERS3D_TEMP,lg_PERS3D_PSAL,lg_PERS6D_TEMP,lg_PERS6D_PSAL,&
-             lg_PERS_TEMP,lg_PERS_PSAL,lg_SMLEV05,lg_SMLEV98,lg_SMLEV09,lg_TMLEV05,lg_TMLEV98,lg_TMLEV09,lg_PLAT,&
+             lg_PERS_TEMP,lg_PERS_PSAL,lg_SMLEV18, lg_TMLEV18, lg_SMLEV05,lg_SMLEV98,lg_SMLEV09,lg_TMLEV05,lg_TMLEV98,lg_TMLEV09,lg_PLAT,&
              lg_STATION_PARAMETERS,lg_INST_REFERENCE,lg_WMO_INST_TYPE,lg_JULD_QC,lg_POSITION_QC,lg_TEMP,&
              lg_DATA_MODE,lg_LON,lg_LAT,lg_JULD,lg_HDCT_TEMP,lg_HDCT_PSAL,lg_ANA_TEMP,lg_ANA_PSAL,&
              lg_FCST1D_TEMP,lg_FCST1D_PSAL,lg_FCST3D_TEMP,lg_FCST3D_PSAL,lg_FCST5D_TEMP,lg_FCST5D_PSAL,&
@@ -122,6 +124,7 @@ MODULE table_ARGO
   CHARACTER(LEN=255)                                 :: cl_SMMED='SMMED', cl_TMARV='TMARV', cl_SMARV='SMARV', cl_TMARV11='TMARV11', cl_SMARV11='SMARV11'
   CHARACTER(LEN=255)                                 :: cl_PERS_TEMP='PERS_TEMP',cl_PERS_PSAL='PERS_PSAL'
   CHARACTER(LEN=255)                                 :: cl_TMLEV09='TMLEV09',cl_SMLEV09='SMLEV09',cl_TMLEV13='TMLEV13',cl_SMLEV13='SMLEV13'
+  CHARACTER(LEN=255)                                 :: cl_TMLEV18='TMLEV18',cl_SMLEV18='SMLEV18'
   CHARACTER(LEN=255)                                 :: cg_filename
   CHARACTER(LEN=255), DIMENSION(:), POINTER          :: clpa_dimname
 
@@ -140,7 +143,7 @@ MODULE table_ARGO
   REAL(KIND=4),DIMENSION(:,:),POINTER                :: rgpa_PERS_TEMP,rgpa_PERS_PSAL,rgpa_TMLEV98,rgpa_SMLEV98
   REAL(KIND=4),DIMENSION(:,:),POINTER                :: rgpa_TMLEV05,rgpa_SMLEV05,rgpa_TMMED
   REAL(KIND=4),DIMENSION(:,:),POINTER                :: rgpa_SMMED,rgpa_TMARV,rgpa_SMARV,rgpa_TMARV11,rgpa_SMARV11
-  REAL(KIND=4),DIMENSION(:,:),POINTER                :: rgpa_TMLEV09,rgpa_SMLEV09,rgpa_TMLEV13,rgpa_SMLEV13
+  REAL(KIND=4),DIMENSION(:,:),POINTER                :: rgpa_TMLEV09,rgpa_SMLEV09,rgpa_TMLEV13,rgpa_SMLEV13,rgpa_TMLEV18,rgpa_SMLEV18
   INTEGER(kind=4),DIMENSION(:),ALLOCATABLE           :: iga_BathyProfil
   REAL(KIND=4),DIMENSION(:,:),ALLOCATABLE            :: rga_DepthVal,rga_PresVal
   REAL(KIND=4),DIMENSION(:,:),ALLOCATABLE            :: rga_TempVal 
@@ -196,6 +199,8 @@ CONTAINS
     cga_param(ip_SMLEV98)=     'SMLEV98     ' 
     cga_param(ip_TMLEV13)=     'TMLEV13     ' 
     cga_param(ip_SMLEV13)=     'SMLEV13     ' 
+    cga_param(ip_TMLEV18)=     'TMLEV18     ' 
+    cga_param(ip_SMLEV18)=     'SMLEV18     ' 
 
 
    !** variable par defaut des tableaux valide:

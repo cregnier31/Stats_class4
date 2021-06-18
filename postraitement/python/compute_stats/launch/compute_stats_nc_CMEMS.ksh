@@ -186,7 +186,7 @@ elif [ $# -eq 10 ] ;then
 fi
 
 case "${config}" in
-        FOAM|GIOPS|GIOPS|BLK|PSY3V3R3|HYCOM_RTOFS|PSY4V2R2|PSY4V3R1|BIOMER4|FREEBIORYS2|NERSC|BIOMER4V2|ENSMEAN)
+        FOAM|GIOPS|GIOPS|CGOFS|BLK|PSY3V3R3|HYCOM_RTOFS|PSY4V2R2|PSY4V3R1|BIOMER4|FREEBIORYS2|NERSC|BIOMER4V2|ENSMEAN)
                 ;;
         *)
         echo "Config not found: Define a new environment_config.cfg file"

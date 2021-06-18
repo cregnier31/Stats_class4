@@ -23,6 +23,7 @@ resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM
 ## Test input parameters
 if len(sys.argv) != 6:
     print('Usage: traitement_class4.py <daterun> <MODELE_TYPE> <gridtype><Machine><daymax>') 
+    print (len(sys.argv))
     sys.exit(1)
 else:
     DATERUN=sys.argv[1]
@@ -165,13 +166,17 @@ else:
 # CORA et CORIOLIS possèdent un parameterint et ARMOR possède un PARAMETERINT et un parameterint2
 #====================================================================================================
 
-if TYPEDATANAME ==  "CORA" :       
+if TYPEDATANAME ==  "CORA" :
   TYPEDATA="1"
   PREFIX="ext-CO" 
-elif TYPEDATANAME ==  "CORA4.1" :       
+elif TYPEDATANAME ==  "CORA4.1" :
   TYPEDATA="1"
   PREFIX="CO" 
   print("Cora4.1")
+elif TYPEDATANAME ==  "CORA5.2" :
+  TYPEDATA="2"
+  PREFIX="CO" 
+  print("Cora5.2")
 elif TYPEDATANAME ==  "CORIOLIS" :
   TYPEDATA="1"
   PREFIX="CO" 
@@ -252,7 +257,7 @@ for object in files[:] :
        ## Cas CORA
        elif TYPEDATANAME ==  "CORA" :
           datefic=int(Obj.d2j(object.split('_')[2].split('.')[0]))
-       elif TYPEDATANAME ==  "CORA4.1" :
+       elif TYPEDATANAME ==  "CORA4.1" or TYPEDATANAME ==  "CORA5.2":
           datefic=int(Obj.d2j(object.split('_')[2].split('.')[0]))
        if datefic >= julcorstart and datefic <= julcorend :
          new_files.append(object)
@@ -475,7 +480,8 @@ if  date_next <= dayvalmax :
     JRUN=SyDate(str(date_next))
     log.info('Launch run %s '.format(JRUN))
     if MACHINE == 'kara' :
-        code_lancement=HOMEDIR+'exe/Launch_Stat_CLASS4_'+MACHINE+'.ksh '+str(JRUN)+' '+MODELE_TYPE+' '+GRID+' '+MACHINE
+        log.info("Path {}".format(HOMEDIR+'/Launch_Stat_CLASS4.ksh '))
+        code_lancement=HOMEDIR+'/Launch_Stat_CLASS4.ksh '+str(JRUN)+' '+MODELE_TYPE+' '+GRID+' '+MACHINE+' '+DAYMAX
     elif MACHINE == 'local' :
         code_lancement='python '+HOMEDIR+'/traitement_class4_WEEKLY.py '+str(JRUN)+' '+MODELE_TYPE+' '+GRID+' '+MACHINE+' '+DAYMAX
     try:
