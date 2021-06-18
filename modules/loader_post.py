@@ -215,12 +215,16 @@ def load_param(db_file):
         'GLOBAL', 'systemh')
     params_conf['nb_fcst'] = params_conf['db'].get(
         'GLOBAL', 'nb_fcst')
+    params_conf['nb_fcst_smoc'] = params_conf['db'].get(
+        'GLOBAL', 'nb_fcst_smoc')
     params_conf['nb_pers'] = params_conf['db'].get(
         'GLOBAL', 'nb_pers')
     params_conf['model'] = params_conf['db'].get(
         'GLOBAL', 'model')
     params_conf['DIRDATA'] = params_conf['db'].get(
         'input_dir', 'DIRDATA')
+    params_conf['DIRDATA_filtr'] = params_conf['db'].get(
+        'input_dir', 'DIRDATA_filtr')
     params_conf['TYPE'] = params_conf['db'].get(
         'input_dir', 'TYPE')
     params_conf['dirdata_smoc'] = params_conf['db'].get(

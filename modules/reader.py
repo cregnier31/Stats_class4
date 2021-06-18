@@ -225,7 +225,9 @@ def read_drifter_pos(file):
 
 def read_drifter(file):
     ncdata = xr.open_dataset(file)
-    variables = ncdata.data_vars
+    #variables = ncdata.data_vars
+    nc = netCDF4.Dataset(file, 'r')
+    variables = nc.variables
     ll_var = False
     if 'EWCT' and 'NSCT' in variables.keys():
         ll_var = True
@@ -298,6 +300,7 @@ def read_drifter_filt(file):
             position_qc, time_qc, dc_reference = read_drifter(file)
     ncdata = xr.open_dataset(file)
     variables = ncdata.data_vars
+    
     if 'LONGITUDE_FILTR' in variables.keys():
         lon = ncdata['LONGITUDE_FILTR'].values
     elif 'longitude_filtr' in variables.keys():

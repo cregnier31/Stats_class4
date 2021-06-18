@@ -1,12 +1,8 @@
 # @Authors: "C. Szczypta & C.Regnier
 import os, sys, getopt
-sys.path.append('/home/cregnier/DEV/My_git/lib_pyt/src/')
-sys.path.append('/home/cregnier/python/src/sytoolkit/')
-sys.path.append('../postraitement/python/module/')
-sys.path.append('../../postraitement/python/module/')
-sys.path.append('../../postraitement/python/module/supobs/')
 import resource
 from mpi4py import MPI
+sys.path.append('../../modules/')
 from Logger import Logger
 import numpy as np
 import xarray as xr
@@ -20,10 +16,11 @@ from reader import read_pos, read_pos_reg, read_drifter, read_drifter_pos, read_
 from utils import compute_last_day_month, find_index_month
 from interpolate import search_orca, search_regular
 from writer import write_data_colloc_files, write_cl4_files
-from loader import load_param
+from loader_post import load_param
 from geojson import FeatureCollection, dump
 from geomlib import CheckDistance
 from Interp_kdtree import interp_KDtree
+import cl4errors as cl4err
 
 if sys.version_info[0] >= 3:
     import pickle
@@ -44,7 +41,8 @@ else:
 # ~~~~~~~~~~~~~~~ Define creation of netCDF file or timeseries plot ~~~~~~~~~~~~~~~~~~~
 
 nc_file = True
-ll_check = True
+ll_check = False
+#=True
 features_hdct = []
 features_smoc = []
 features_clim = []
@@ -101,6 +99,7 @@ params_dict = load_param(deb_file)
 system =  params_dict['system']
 systemh = params_dict['systemh']
 nb_fcst = int(params_dict['nb_fcst'])
+nb_fcst2 = int(params_dict['nb_fcst_smoc'])
 nb_pers = int(params_dict['nb_pers'])
 model =   params_dict['model']
 path_data = params_dict['path_data']
@@ -126,7 +125,7 @@ for num_proc in range(comm.size):
             lon_mod_reg, lat_mod_reg = read_pos_reg(params_dict['coordinates_reg'])
             log.debug("Read ok reg")
         except IOError:
-            log.error("Open Error")
+            log.error("Open Error coordinates_reg")
             sys.exit(1)
         try:
             lon_clim, lat_clim = read_pos_clim(params_dict['coordinates_clim'])
@@ -159,7 +158,7 @@ for num_proc in range(comm.size):
         list_lat = []
         list_drift = []
         list_file = []
-        start = timer()
+        #start = timer()
         for f, file in enumerate(glob(DIRDATA+str(YEAR)+str(MONTH2)+'/'+frame)):
             list_file.append(file)
             if TYPE == "013_030":
@@ -175,16 +174,16 @@ for num_proc in range(comm.size):
                 list_drift.append(drifter)
 
         log.debug("Read drifter OK")
-        end = timer()
-        log.debug('~~~~~~~~ Time elapsed Read : %s %s' %
-                        (str(end - start), " seconds ~~~~~~~~~~~~"))
+        # end = timer()
+        #log.debug('~~~~~~~~ Time elapsed Read : %s %s' %
+        #                (str(end - start), " seconds ~~~~~~~~~~~~"))
 
         # ~~~~~~~~ Interpolate drifters positions on orca grid ~~~~~~~~~
 
         nb_ptsinterp = int(params_dict['nb_ptsinterp'])
         DIR_INTERP = params_dict['DIR_INTERP']
         weight_file = DIR_INTERP+'weight_file_'+str(nb_ptsinterp)+'pts_'+str(nb_files)+'drifters_'+str(YEAR)+"_"+str(MONTH2)+".nc"
-        start = timer()
+        #start = timer()
         save=False
         TreeObj = interp_KDtree()
         log.debug('Interpolate on irregular grid')
@@ -208,16 +207,16 @@ for num_proc in range(comm.size):
         dist_clim, idw_clim  = TreeObj.tree_and_query(lon_clim, lat_clim,
                                                       np.array(list_lon), np.array(list_lat),\
                                                       nb_ptsinterp, weight_file=weight_file, save=save)
-        end = timer()
-        log.debug('~~~~~~~~ Time elapsed coloc : %s %s' %
-                    (str(end - start), " seconds ~~~~~~~~~~~~"))
+        #end = timer()
+        #log.debug('~~~~~~~~ Time elapsed coloc : %s %s' %
+        #            (str(end - start), " seconds ~~~~~~~~~~~~"))
         log.debug('Process Coloc terminated')
 
 comm.Barrier()
 
 # ******************************** CREATE NETCDF FILE *********************************
 
-log.debug('Creation of CLASS4 file')
+log.info('Creation of CLASS4 file')
 
 if nc_file:
 
@@ -233,7 +232,12 @@ if nc_file:
         iend   = istart + ntask - 1
         cla_df = list_file[istart:iend+1]
         iend_tot = ntask*comm.size-1
+        log.info("Nb drifters {}".format(ndrift))
+        log.info("istart {} iend {}".format(istart, iend))
+        log.info("Nb tasks {}".format(ntask))
+        log.info("cla_df {} iend {}".format(cla_df, iend))
         if irest > 0 and comm.rank < irest:
+            log.info("irest > 0 comm.rank < irest ; irest comm.rank {} {}".format(irest,comm.rank))
             cla_df.append(list_file[iend_tot+comm.rank+1])
     else:
         cla_df = list_file
@@ -248,17 +252,20 @@ if nc_file:
         index_drift = [i for i,val in enumerate(list_drift) if val==drifter]
         list_drift_2 = np.array(list_drift)[index_drift]
         ## get ilat /ilon
-        start = timer()
+        #start = timer()
         ilat_reg, ilon_reg = search_regular(idw_reg[index_drift], lon_mod_reg, lat_mod_reg)
         ilat_clim, ilon_clim = search_regular(idw_clim[index_drift], lon_clim, lat_clim)
         ilat, ilon = search_orca(idw[index_drift], lon_mod, lat_mod)
-        end = timer()
-        log.debug('~~~~~~~~ Time search : %s %s' %
-                    (str(end - start), " seconds ~~~~~~~~~~~~"))
+        #end = timer()
+        #log.debug('~~~~~~~~ Time search : %s %s' %
+        #            (str(end - start), " seconds ~~~~~~~~~~~~"))
         ## read drifter value
-        lon_value, lat_value, depth, depth_qc, time, u_ewct, v_nsct,\
-                ll_var, u_qc, v_qc, wind_u, wind_v, current_test, \
-                current_test_qc, position_qc, time_qc, dc_reference = read_drifter(file)
+        try:
+            lon_value, lat_value, depth, depth_qc, time, u_ewct, v_nsct,\
+                    ll_var, u_qc, v_qc, wind_u, wind_v, current_test, \
+                    current_test_qc, position_qc, time_qc, dc_reference = read_drifter(file)
+        except:
+            raise cl4err.Class4FatalError("Pb with drifter file {}".format(file))  
         w_depth15 = np.where(np.array(depth) == 15.)
         ndim1, ndim2 = np.shape(depth)
         w_depth0= np.array([ i for i in np.arange(0,ndim1)])
@@ -414,21 +421,32 @@ if nc_file:
                 log.debug(dir_mod+system_tmp+'_1dAV_'+value+'*gridU*.nc')
 
                 if len(file_mod_U) > 0 and len(file_mod_V) > 0:
-                    speed_U = xr.open_dataset(file_mod_U[0])
-                    speed_V = xr.open_dataset(file_mod_V[0])
-                    values_u15 = speed_U.vozocrtx.isel(x=xr.DataArray(ilon_val, dims=['point']),\
-                                y=xr.DataArray(ilat_val, dims=['point']),time_counter=0).values
-                    values_v15 = speed_V.vomecrty.isel(x=xr.DataArray(ilon_val, dims=['point']),\
-                                y=xr.DataArray(ilat_val, dims=['point']),time_counter=0).values
-                    values_u0 = speed_U.vozocrtx.isel(x=xr.DataArray(ilon_val, dims=['point']),\
-                                y=xr.DataArray(ilat_val, dims=['point']),time_counter=0, deptht=0).values
-                    values_v0 = speed_V.vomecrty.isel(x=xr.DataArray(ilon_val, dims=['point']),\
-                                y=xr.DataArray(ilat_val, dims=['point']),time_counter=0, deptht=0).values
-                    depth_modU = speed_U.variables['deptht'][:].values
-                    depth_modV = speed_V.variables['deptht'][:].values
-                    ndepths, ntimes = np.shape(values_u15)
-                    values_u15_interp = np.nan*np.zeros(ntimes)
-                    values_v15_interp = np.nan*np.zeros(ntimes)
+                    start = timer()
+                    #speed_U = xr.open_dataset(file_mod_U[0])
+                    #speed_V = xr.open_dataset(file_mod_V[0])
+                    try:
+                        speed_U = xr.open_mfdataset(file_mod_U[0],chunks={'time_counter':1,'deptht':'auto','y':'auto','x':'auto'},parallel=True,combine='by_coords')
+                        speed_V = xr.open_mfdataset(file_mod_V[0],chunks={'time_counter':1,'deptht':'auto','y':'auto','x':'auto'},parallel=True,combine='by_coords')
+                        values_u15 = speed_U.vozocrtx.isel(x=xr.DataArray(ilon_val, dims=['point']),\
+                                    y=xr.DataArray(ilat_val, dims=['point']),time_counter=0).values
+                        values_v15 = speed_V.vomecrty.isel(x=xr.DataArray(ilon_val, dims=['point']),\
+                                    y=xr.DataArray(ilat_val, dims=['point']),time_counter=0).values
+                        values_u0 = values_u15[0,:]
+                        values_v0 = values_v15[0,:]
+		        #values_u0 = speed_U.vozocrtx.isel(x=xr.DataArray(ilon_val, dims=['point']),\
+                        #            y=xr.DataArray(ilat_val, dims=['point']),time_counter=0, deptht=0).values
+                        #values_v0 = speed_V.vomecrty.isel(x=xr.DataArray(ilon_val, dims=['point']),\
+                        #            y=xr.DataArray(ilat_val, dims=['point']),time_counter=0, deptht=0).values
+                        depth_modU = speed_U.variables['deptht'][:].values
+                        depth_modV = speed_V.variables['deptht'][:].values
+                        ndepths, ntimes = np.shape(values_u15)
+                        values_u15_interp = np.nan*np.zeros(ntimes)
+                        values_v15_interp = np.nan*np.zeros(ntimes)
+                    except:
+                        log.debug("Pb with file {}".format(file_mod_U[0]))
+                        log.debug("Pb with file {}".format(file_mod_V[0]))
+                        raise
+
                     ## Interp current at 15m depth
                     for timestep in range(ntimes):
                         log.debug('   Vertical interpolation    ')
@@ -473,6 +491,10 @@ if nc_file:
                     ##
                     speed_V.close()
                     speed_U.close()
+                    end = timer()
+                    log.debug("Read Ok {} rank {}".format(value,comm.rank))
+                    log.debug('~~~~~~~~ Time elapsed Read : {} {} {}'.format
+                             (str(end - start), " seconds ~~~~~~~~~~~~",comm.rank))
                 else:
                     log.debug("File not found forecast for date %s %s" %(str(value),str(dir_mod+system_tmp)))
                     log.debug(dir_mod+system_tmp+'_1dAV_'+value+'*gridU*.nc')
@@ -536,20 +558,32 @@ if nc_file:
                         DATA_SAVE_smoc[:, 0] = values_usmoc
                         DATA_SAVE_smoc[:, 1] = values_vsmoc
                     else:
-                        log.debug("Missing file SMOC for date %s" %(value))
-                        #sys.exit(1)
+                        log.info("Missing file SMOC for date %s" %(value))
+                        sys.exit(1)
                 ini+=1
             # ~~~~~~~~~~~~~ Save the Class2 (model/mooring) in a netcdf file ~~~~~~~~~~~~~~~~~~
             log.debug('Write file %s %s' %(str(drifter), str(value) ))
             if np.isnan(np.nanmean(DATA_SAVE_best)) == True and np.isnan(np.nanmean(DATA_SAVE_best)) == True: continue
+            start = timer()
             write_cl4_files(nc_file_out, lat_val_tmp, lon_val_tmp, id_drift, DATA_SAVE_obs, DATA_SAVE_best,\
                             DATA_SAVE_fcst, DATA_SAVE_pers, DATA_SAVE_stokes, DATA_SAVE_tides, DATA_SAVE_smoc, \
                             vector_time_tmp, u_qc_tmp, v_qc_tmp, depth_tmp, depth_qc_tmp,\
                             current_test_tmp, current_test_qc_tmp, position_qc_tmp,\
                             time_qc_tmp, dc_reference_tmp, u_wind_tmp, v_wind_tmp,\
                             DATA_SAVE_clim, nb_fcst, model, TYPE)
+            end = timer()
+            log.debug('~~~~~~~~ Time elapsed Write : {} {} {}'.format
+                               (str(end - start), " seconds ~~~~~~~~~~~~",comm.rank))
             log.debug('Write file ok %s ' %(nc_file_out))
     comm.Barrier()
 
-if comm.rank == 0 :
-    log.info('Process terminated')
+log.info('Process terminated rank {}'.format(comm.rank))
+sys.stdout.flush()
+#if comm.rank == 0 :
+#    log.info('Process terminated rank 0 {}'.format(comm.rank))
+#    sys.stdout.flush()
+#else :
+#    log.info('Process terminated rank {}'.format(comm.rank))
+#    sys.stdout.flush()
+#
+
