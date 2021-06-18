@@ -525,6 +525,10 @@ class NmlLoader(Loader):
             param_dict['direxec'] = db.get('GLOBAL', 'DIRBIN')
         except:
             param_dict['direxec'] = os.path.dirname(os.path.realpath(__file__))+'/../bin/'
+        try:
+            param_dict['over'] = literal_eval(db.get('GLOBAL', 'over'))
+        except:
+            param_dict['over'] = False
         #==========================================================================
         # Sort model values if necessary
         #==========================================================================
@@ -562,6 +566,10 @@ class NmlLoader(Loader):
         param_dict['diroutput'] = db.get('output_dir', 'DIROUTPUT')
         param_dict['diroutput2'] = db.get('output_dir', 'DIROUTPUT2')
         param_dict['dirclim'] = db.get('climato', 'DIRCLIM')
+        try:
+            param_dict['dirclim2'] = db.get('climato', 'DIRCLIM2')
+        except:
+            param_dict['dirclim2'] = ""
         param_dict['coord_clim'] = glob(param_dict['dirclim'] + "*.nc")[0]
         param_dict['dirtmp'] = param_dict['dirwork'] + 'ext-'
         param_dict['prefix_data'] = db.get('input_dir', 'PREFIX')

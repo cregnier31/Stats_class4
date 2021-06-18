@@ -345,9 +345,10 @@ class ColocFortran(object):
                   cl_date2=SyDate.__str__(dayvalmax)[0:6]
                   self.log.info("Launch date :  {}".format(cl_date))
                   self.log.info("Launch params :  {} {} {} {}".format(self.params['cl_config'],cl_date2,self.params['nb_proc'],self.params['cl_src']))
-                  code_lancement=self.params['dirhome']+'script/launch/Launcher_KARA_cycle_CORA.ksh '+self.params['cl_config']+\
+                  code_lancement=self.params['dirhome']+'script/launch/Launcher_KARA_cycle_CORA-fortran.ksh '+self.params['cl_config']+\
                           '  '+cl_date+' '+cl_date2+' '+str(self.params['nb_proc'])+' '+self.params['cl_src']+' '+str(dayvalmax)
 
+                  self.log.info("Code lancement {}".format(code_lancement))
               elif schedule == "WEEKLY" :
                   cl_daterun=SyDate.__str__(date_next)
                   cl_date2=SyDate.__str__(dayvalmax)
@@ -360,10 +361,10 @@ class ColocFortran(object):
                   code_lancement=self.params['dirhome']+'script/Launcher_KARA_cycle_CORIO.ksh '+self.params['cl_config']+'  '+cl_daterun+' '+cl_date2+' '+self.params['nb_proc']
               else :
                   log.error("Schedule not found %s" %(schedule))
-              print(code_lancement)
               try:
                    os.system(code_lancement)
                    self.log.info("Lancement date run {} ok ".format(cl_date))
+                   self.log.info("Lancement date run {} ".format(code_lancement))
               except:
                  self.log.error('Probleme execution')
                  sys.exit(1)

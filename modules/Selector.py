@@ -497,6 +497,11 @@ class SelectListData(Selector):
             list_files = Extractor(self.log).factory(param_dict['prefix_data']).run(
                 param_dict['date1'], param_dict['date2'], param_dict['dirdata'],\
                 param_dict['dirwork'], param_dict['data_type'], param_dict['template'], param_dict['prefix_data'])
+        elif param_dict['over']:
+            self.log.debug('inside over {} '.format(param_dict['prefix_data']))
+            list_files = Extractor(self.log).factory(param_dict['prefix_data']).run_over(
+                param_dict['date1'], param_dict['date2'], param_dict['diroutput'],\
+                param_dict['dirwork'], param_dict['data_type'], param_dict['template'], param_dict['prefix_data'])
         else:
             self.log.debug('========================================================')
             self.log.debug('              DATE Selection and extraction  %s         ' %(param_dict['prefix_data']))
