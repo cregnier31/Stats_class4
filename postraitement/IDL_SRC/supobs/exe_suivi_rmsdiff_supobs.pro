@@ -15,7 +15,6 @@
 @param
 @param_class4
 @compile
-
 ;@config_PSY2V4R4
 ;@config_PSY3V3R3
 ;@config_PSY2V4R4
@@ -24,7 +23,8 @@
 ;@config_GLORYS2V3
 ;@config_PSY4V3R1
 ;@config_GLORYS12V1
-@config_GLORYS12V1-free
+;@config_GLORYS12V1-free
+@config_GLORYS12V1-clim
 ;@config_GLO4
 ;@config_GLORYS2V1
 ;@config_MJM105b
@@ -58,6 +58,7 @@ COMMON param_CLASS4,variable_name,valeurs_cmax,$
 
 file_mask=fichier_mask
 
+print, file_mask
 
 ;; Filtrage ou non de la série temporelle
 lissage='yes'
@@ -77,8 +78,8 @@ clear,titre,units
 SPAWN,'mkdir -p '+fic_out+'/File_ASCII/'
 
 ;; List files
-SPAWN,'ls '+dir_stats_MERC+ ' | grep  rms_diff_R | grep '+modele,filelist 
-SPAWN,'ls '+dir_stats_MERC+ ' | grep  rms_diff_R | grep '+modele+ ' | cut -f4 -d_ | cut -f2 -dR | cut -f1 -d.',day 
+SPAWN,'ls '+dir_stats_MERC+ ' | grep  rms_diff_R2004 | grep '+modele,filelist 
+SPAWN,'ls '+dir_stats_MERC+ ' | grep  rms_diff_R2004 | grep '+modele+ ' | cut -f4 -d_ | cut -f2 -dR | cut -f1 -d.',day 
 
 PRINT,filelist,day
 print,dir_stats_MERC
@@ -124,6 +125,11 @@ CASE modele OF  & $
           ENDCASE & $
  
           'GLORYS12V1-free':BEGIN & $
+         liste_region=strarr(14) & $
+         liste_region(*)=liste_zone(*) & $
+          ENDCASE & $
+
+          'GLORYS12V1-light':BEGIN & $
          liste_region=strarr(14) & $
          liste_region(*)=liste_zone(*) & $
           ENDCASE & $

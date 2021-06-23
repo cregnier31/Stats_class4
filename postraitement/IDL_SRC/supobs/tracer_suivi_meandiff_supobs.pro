@@ -299,6 +299,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
 	         	strtrim(variable_name(il_ind+2)) eq 'SMARV11' or strtrim(variable_name(il_ind+2)) eq 'TMARV11' or $
 			strtrim(variable_name(il_ind+2)) eq 'SMLEV05' or strtrim(variable_name(il_ind+2)) eq 'TMLEV05' or $
 			strtrim(variable_name(il_ind+2)) eq 'SMLEV13' or strtrim(variable_name(il_ind+2)) eq 'TMLEV13' or $
+			strtrim(variable_name(il_ind+2)) eq 'SMLEV18' or strtrim(variable_name(il_ind+2)) eq 'TMLEV18' or $
 			strtrim(variable_name(il_ind+2)) eq 'SMLEV05' or strtrim(variable_name(il_ind+2)) eq 'TMLEV05' or $
 		      	strtrim(variable_name(il_ind+2)) eq 'SMLEV09' or strtrim(variable_name(il_ind+2)) eq 'TMLEV09' ) THEN BEGIN
 		        print,'-------------------------------------------------'
@@ -369,6 +370,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
 			 or strtrim(variable_name(il_ind+2)) eq 'SMARV' or strtrim(variable_name(il_ind+2)) eq 'TMARV' $
 			 or strtrim(variable_name(il_ind+2)) eq 'SMARV11' or strtrim(variable_name(il_ind+2)) eq 'TMARV11' $
 		         or strtrim(variable_name(il_ind+2)) eq 'SMLEV' or strtrim(variable_name(il_ind+2)) eq 'TMLEV' $ 
+		         or strtrim(variable_name(il_ind+2)) eq 'SMLEV18' or strtrim(variable_name(il_ind+2)) eq 'TMLEV18' $ 
 			 or strtrim(variable_name(il_ind+2)) eq 'SMLEV09' or strtrim(variable_name(il_ind+2)) eq 'TMLEV09' ) THEN BEGIN
 			 il_ind3=il_ind3+1
 			 tab_ASCII(0,*)=TRANSPOSE(numx1)

@@ -30,6 +30,7 @@ nfichiers=N_ELEMENTS(filelist)
 fichier1=filelist(nfichiers-1)
 file3=fic_mask
 print,'Fichier MASK :: ',file3
+print, 'dir_output :: ',dirname_out
 file=fichier1
 nb_prof=N_ELEMENTS(tab_prof)
 ;; Reconstitution profondeur
@@ -127,7 +128,6 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
      ; while i le 1 do begin
         file=filelist(i)
         dirin=dir_stats_MERC
-        print,file
         rms_diff=ncdf_lec(file,iodir=dirin,var='rms_diff', /nostruct) & rms_diff=transpose(rms_diff)
         indice=ncdf_lec(file,iodir=dirin,var='indice_box', /nostruct) & indice=transpose(indice)
         indice_tot(*,*,*,i)=indice
@@ -140,7 +140,10 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
       ii=WHERE(indice_tot(*,*,*,*) GT 0)
       IF (ii(0) NE -1) THEN BEGIN 
          rms_difftot(ii)=rms_difftot(ii)/indice_tot(ii)
-      ENDIF
+      ENDIF ELSE BEGIN
+          print, "indice box are missing"
+          STOP
+      ENDELSE
 
       vect_val=intarr(taille)
       ; On enleve PSAL et TEMP
@@ -314,6 +317,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
 	         	strtrim(variable_name(il_ind+2)) eq 'SMARV' or strtrim(variable_name(il_ind+2)) eq 'TMARV' or $
 	         	strtrim(variable_name(il_ind+2)) eq 'SMARV11' or strtrim(variable_name(il_ind+2)) eq 'TMARV11' or $
 			strtrim(variable_name(il_ind+2)) eq 'SMLEV13' or strtrim(variable_name(il_ind+2)) eq 'TMLEV13' or $
+			strtrim(variable_name(il_ind+2)) eq 'SMLEV18' or strtrim(variable_name(il_ind+2)) eq 'TMLEV18' or $
 			strtrim(variable_name(il_ind+2)) eq 'SMLEV05' or strtrim(variable_name(il_ind+2)) eq 'TMLEV05' or $
 		      	strtrim(variable_name(il_ind+2)) eq 'SMLEV09' or strtrim(variable_name(il_ind+2)) eq 'TMLEV09' ) THEN BEGIN
 		        print,'-------------------------------------------------'
@@ -385,6 +389,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
 			 or strtrim(variable_name(il_ind+2)) eq 'SMARV' or strtrim(variable_name(il_ind+2)) eq 'TMARV' $
 			 or strtrim(variable_name(il_ind+2)) eq 'SMARV11' or strtrim(variable_name(il_ind+2)) eq 'TMARV11' $
 		         or strtrim(variable_name(il_ind+2)) eq 'SMLEV13' or strtrim(variable_name(il_ind+2)) eq 'TMLEV13' $ 
+		         or strtrim(variable_name(il_ind+2)) eq 'SMLEV18' or strtrim(variable_name(il_ind+2)) eq 'TMLEV18' $ 
 			 or strtrim(variable_name(il_ind+2)) eq 'SMLEV09' or strtrim(variable_name(il_ind+2)) eq 'TMLEV09' ) THEN BEGIN
 			 il_ind3=il_ind3+1
 			 print,'INDICE : ',il_ind3-1
