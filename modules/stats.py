@@ -12,7 +12,7 @@ __author__ = "C.SZCZYPTA"
 
 
 def compute_stats_and_extend(dict_inputs, dict_var, dict, cvar,
-                             num_date, area_mask, OBS, CLIM, BEST, FCST, PERS):
+                             num_date, area_mask, OBS, CLIM, BEST, FCST, PERS, SMOC):
     """
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                  COMPUTE STATS DIFFERENT LEAD TIME
@@ -32,6 +32,7 @@ def compute_stats_and_extend(dict_inputs, dict_var, dict, cvar,
     CLIM: extended array for climatology
     FCST: extended array for forecasts
     PERS: extended array for persistency
+    SMOC: extended array for SMOC
     --------------------
     """
 
@@ -51,6 +52,12 @@ def compute_stats_and_extend(dict_inputs, dict_var, dict, cvar,
                 rla_clim = rla_climatology_var[iobs, :]
             else:
                 rla_clim = np.nan*np.zeros((np.size(rla_obs[:, 0]), 1))
+            if 'smoc_drift' in lead_time:
+                rla_smoc_var = dict_var[cvar]['smoc'][str(
+                    num_date)]
+                rla_smoc = rla_smoc_var[iobs,:]
+            else:
+                rla_smoc = np.nan*np.zeros((np.shape(rla_obs[:,0]), 1))
         else:
             rla_obs = rla_observation_var[iobs]
             if 'climatology' in lead_time:
@@ -59,6 +66,20 @@ def compute_stats_and_extend(dict_inputs, dict_var, dict, cvar,
                 rla_clim = rla_climatology_var[iobs]
             else:
                 rla_clim = np.nan*np.zeros((np.shape(rla_obs), 1))
+            if 'smoc_drift' in lead_time:
+                rla_smoc_var = dict_var[cvar]['smoc'][str(
+                    num_date)]
+                rla_smoc = rla_smoc_var[iobs]
+            else:
+                rla_smoc = np.nan*np.zeros((np.shape(rla_obs), 1))
+
+        if time == 'smoc_drift':
+            rla_depthobs = dict_var[cvar]['depth_obs'][str(num_date)]
+            val_box_depth, obs_box_depth, clim_box_depth =\
+                supobs.Statslib.extract_CL4var(rla_smoc, rla_obs, rla_clim,
+                                               rla_depthobs[iobs, :], depthmin, depthmax)
+            SMOC.extend(val_box_depth)
+
         if time == 'best_estimate':
             rla_best_estimate_var = dict_var[cvar]['best_estimate'][str(
                 num_date)]
@@ -124,7 +145,7 @@ def compute_stats_and_extend(dict_inputs, dict_var, dict, cvar,
                 PERS_tmp[:, numF] = np.array(PER)
             PERS.extend(PERS_tmp)
 
-    return OBS, CLIM, BEST, FCST, PERS
+    return OBS, CLIM, BEST, FCST, PERS, SMOC
 
 
 def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
@@ -411,6 +432,24 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
             else:
                 rla_var = dict_inputs['clim'][iobs]
 
+            rla_mean_obs, rla_rms_obs, rla_mean_prod, rla_rms_prod, rla_rmse, rla_cor, ila_nobs =\
+                supobs.Statslib.statlayer_CL4var(rla_var,
+                                                 rla_obs,
+                                                 rla_clim,
+                                                 dict_inputs['rla_depthobs'][iobs, :],
+                                                 dict_inputs['tab_profs'])
+
+            stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
+                                                    rla_mean_obs, rla_rms_obs, rla_mean_prod,
+                                                    rla_rms_prod, rla_rmse, rla_cor, dict_inputs['tab_profs'], yout)
+
+            del ila_nobs, rla_mean_obs, rla_rms_obs, rla_mean_prod, rla_rms_prod, rla_rmse, rla_cor
+
+        elif time == 'smoc_drift':
+            if len(np.shape(dict_inputs['smoc'])) == 2:
+                rla_var = dict_inputs['smoc'][iobs, :]
+            else:
+                rla_var = dict_inputs['smoc'][iobs]
             rla_mean_obs, rla_rms_obs, rla_mean_prod, rla_rms_prod, rla_rmse, rla_cor, ila_nobs =\
                 supobs.Statslib.statlayer_CL4var(rla_var,
                                                  rla_obs,

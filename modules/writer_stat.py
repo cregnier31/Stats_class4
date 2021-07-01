@@ -551,8 +551,10 @@ class writer_stat():
 
     def write_daily_files(self, filename, areas, cla_metricname, fcst, layer, stat, CMEMS_area, lead_time, params_conf):
 
-        nc_fid = netCDF4.Dataset(filename, 'w')
-
+        try:
+            nc_fid = netCDF4.Dataset(filename, 'w')
+        except IOError as e:
+            raise e("Pb writing file {}".format(filename))
 
         #  ********************** Add dimensions ************************
 
@@ -851,6 +853,7 @@ class writer_stat():
                         for f in range(nb_fcst_max):
                             leadtime_ref.append('persistence')
                     if 'climatology' in lead_time: leadtime_ref.append('climatology')
+                    if 'smoc_drift' in lead_time: leadtime_ref.append('smoc_drift')
                     rla_forecast_ref = rla_forecast_tmp
                     run_ini = False
 
@@ -870,7 +873,7 @@ class writer_stat():
                             try:
                                 w = np.where(ldt_ref == lt)[0][0]
                             except:
-                                raise cl4err.Class4FatalError("Pb with leadtime file {} {} {} {} {} {}".format(y, lt, cl_cl4file, ldt_ref, lead_time,lead_time))
+                                raise cl4err.Class4FatalError("Pb with leadtime file {} {} {} {} {}".format(y, lt, cl_cl4file, ldt_ref, lead_time))
                             if lt not in ['forecast','persistence']:
                                 stat_all[stat_day,w,:,:,:,numvar] = stat_tmp[y,:,:,:]
                             else:
@@ -885,7 +888,7 @@ class writer_stat():
                                 w = np.where(ldt_ref == lt)[0][0]
                             except:
                                 #log.info("Pb with leatime ldt_ref {} lead_time {} file {}".format(ldt_ref, lead_time, cl_cl4file))
-                                raise cl4err.Class4FatalError("Pb with leadtime file {} {} {} {} {} {}".format(y, lt, cl_cl4file, ldt_ref, lead_time,lead_time))
+                                raise cl4err.Class4FatalError("Pb with leadtime file {} {} {} {} {} {}".format(y, lt, cl_cl4file, ldt_ref, lead_time, ldt_ref))
                             if lt not in ['forecast','persistence']:
                                 stat_all[stat_day,w,0:1,:,:,numvar] = stat_tmp[y,:,:,:]
                             else:

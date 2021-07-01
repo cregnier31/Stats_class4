@@ -173,6 +173,10 @@ profondeur4[1] ='500-1000m'
 profondeur4[2] ='1000-2000m'
 profondeur4[3] ='2000-5000m'
 
+profondeur5    = np.chararray(2,itemsize=25)
+profondeur5[0] ='0-5000m'
+profondeur5[1] ='5000-6000m'
+
 profondeur_surf  = np.chararray(1,itemsize=25)
 profondeur_surf[0] = '0-0m'
 
@@ -271,6 +275,8 @@ rg_EcartMax['UVEL'] = 10.
 rg_EcartMax['VVEL'] = 10.
 rg_EcartMax['UVEL_filtr'] = 10.
 rg_EcartMax['VVEL_filtr'] = 10.
+rg_EcartMax['USMOC'] = 10.
+rg_EcartMax['VSMOC'] = 10.
 
 bad_qc = {}
 bad_qc['TEMP'] = [1., 9.]

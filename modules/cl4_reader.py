@@ -39,6 +39,7 @@ def cfg_ltime(cl_file, cexp, cvar):
     if 'persistence' in nc.variables:
         lead_time.append('persistence')
     if 'climatology' in nc.variables: lead_time.append('climatology')
+    if 'smoc_drift' in nc.variables: lead_time.append('smoc_drift')
     nc.close()
 
     if 'best_estimate' in lead_time : yout += 1
@@ -51,6 +52,7 @@ def cfg_ltime(cl_file, cexp, cvar):
         elif nb_fcst > 1 :
             for f in range(nb_fcst//2): yout += 1
     if 'climatology' in lead_time : yout += 1
+    if 'smoc_drift' in lead_time : yout += 1
     if 'climatology' not in lead_time : yout += 1
     rla_forecast =  np.zeros((yout))
     rla_forecast[:] = missing_value
@@ -73,6 +75,8 @@ def cfg_ltime(cl_file, cexp, cvar):
             rla_forecast[num_col] = -(f*48.)-12.
             num_col += 1
     if 'climatology' in lead_time:
+        rla_forecast[num_col] = 1.
+    if 'smoc_drift' in lead_time:
         rla_forecast[num_col] = 1.
     dict_inputs = {}
     dict_inputs['lead_time'] = lead_time
@@ -107,6 +111,7 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
     rla_persistence_var = np.nan
     rla_forecast_var = np.nan
     rla_climatology_var = np.nan
+    rla_SMOC_var = np.nan
     rg_EcartMax = params.rg_EcartMax
     bad_qc = params.bad_qc
     dict_inputs = cfg_ltime(ncfile, cexp, cvar)
@@ -148,7 +153,8 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
 
     if rla_depthobs.shape[1] == 1 and (rla_depthobs[:,0] == 0).all():
         tab_prof   = np.array([-0.5,0.5])
-    elif cvar == 'UVEL' or cvar == 'VVEL' or cvar == 'UVEL_filtr' or cvar == 'VVEL_filtr':
+    elif cvar == 'UVEL' or cvar == 'VVEL' or cvar == 'UVEL_filtr' or cvar == 'VVEL_filtr'\
+        or cvar == 'USMOC' or cvar == 'VSMOC':
         tab_prof   = np.array([-0.5,0.5])
         if len(np.shape(rla_depthobs)) < 2 :
             rla_depthobs = np.expand_dims(rla_depthobs[:,1], axis=1)
@@ -169,6 +175,7 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
     ll_fcst = False
     ll_pers = False
     ll_clim = False
+    ll_smoc = False
     for time in lead_time:
         if time == 'observation' and cexp == 'BIO': run_name = cvar.upper()
         else: run_name = time
@@ -186,6 +193,9 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
         if time == 'climatology':
             rla_climatology_init = supobs.toolkitStats.read_CL4_all_values(nc,run_name,cvar,ncfile)
             ll_clim = True
+        if time == 'smoc_drift':
+            rla_smoc_init = supobs.toolkitStats.read_CL4_all_values(nc,run_name,cvar,ncfile)
+            ll_smoc = True
         if cexp == 'PHYS':
             if cvar in ['SST', 'SLA', 'PSAL', 'TEMP']:
                 cl_qcvar = 'qc'
@@ -194,7 +204,7 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
                 cl_qcvar = 'QC02'
                 cl_qcvar2 = 'QC07'
                 rla_qc_init2 = nc.variables[cl_qcvar2][:]
-            elif cvar in ['VVEL', 'UVEL', 'UVEL_filtr', 'VVEL_filtr']:
+            elif cvar in ['VVEL', 'UVEL', 'UVEL_filtr', 'VVEL_filtr','USMOC','VSMOC']:
                 list_var = [*nc.variables.keys()]
                 ## New case for filtered data
                 liste1 = ['current_test_qc', 'position_qc', 'obs_qc', 'current_test']
@@ -237,8 +247,8 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
         if cvar in ['SST','SLA','aice']: ivar = 0
         elif cvar == 'PSAL': ivar = np.where(np.array(cla_varname) == varname_psal)[0][0]
         elif cvar == 'TEMP': ivar = np.where(np.array(cla_varname) == varname_temp)[0][0]
-        elif cvar == 'UVEL' or cvar == 'UVEL_filtr': ivar = np.where(np.array(cla_varname) == varname_u)[0][0]
-        elif cvar == 'VVEL' or cvar == 'VVEL_filtr': ivar = np.where(np.array(cla_varname) == varname_v)[0][0]
+        elif cvar == 'UVEL' or cvar == 'UVEL_filtr' or cvar == 'USMOC': ivar = np.where(np.array(cla_varname) == varname_u)[0][0]
+        elif cvar == 'VVEL' or cvar == 'VVEL_filtr' or cvar == 'VSMOC': ivar = np.where(np.array(cla_varname) == varname_v)[0][0]
         if ll_currents:
             rla_qc_var = rla_qc_init[:,:]
             rla_qc_var2 = rla_qc_init2[:]
@@ -261,6 +271,7 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
             elif len(rla_best_estimate_init.shape) == 3 and 'best_estimate' in lead_time:
                 rla_best_estimate_var = rla_best_estimate_init[:,ivar,:]
         if 'climatology' in lead_time: rla_climatology_var = rla_climatology_init[:,ivar,:]
+        if 'smoc_drift' in lead_time: rla_smoc_var = rla_smoc_init[:,ivar]
 
 
     # ***************  quality control ***************
@@ -316,11 +327,12 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
                     del rla_persistence_tmp
 
     dict_inputs = {}
-    if cvar in ['VVEL', 'UVEL', 'UVEL_filtr', 'VVEL_filtr']:
+    if cvar in ['VVEL', 'UVEL', 'UVEL_filtr', 'VVEL_filtr','USMOC','VSMOC']:
         if ll_currents:
             rla_observation_var = np.expand_dims(rla_observation_var[:,1], axis=1)
             rla_best_estimate_var = np.expand_dims(rla_best_estimate_var[:,1], axis=1)
             rla_climatology_var = np.expand_dims(rla_climatology_var[:,1], axis=1)
+            rla_smoc_var = np.expand_dims(rla_smoc_var[:], axis=1)
             rla_forecast_var = np.expand_dims(rla_forecast_var[:,:,1],axis=2)
             rla_persistence_var = np.expand_dims(rla_persistence_var[:,:,1], axis=2)
     dict_inputs['obs'] = rla_observation_var
@@ -328,6 +340,7 @@ def read_inputfile(cvar, cexp, ncfile, params_conf, log):
     dict_inputs['frcst'] = rla_forecast_var
     dict_inputs['pers'] = rla_persistence_var
     dict_inputs['clim'] = rla_climatology_var
+    if 'smoc_drift' in lead_time: dict_inputs['smoc'] = rla_smoc_var
     dict_inputs['tab_profs'] = tab_prof
     dict_inputs['lonobs'] = rla_lonobs
     dict_inputs['latobs'] = rla_latobs
@@ -449,6 +462,7 @@ def read_and_store_inputfiles(lead_time, cvar, cexp, num_date, cl_cl4file,
     ll_fcst = False
     ll_pers = False
     ll_clim = False
+    ll_smoc = False
     ll_currents = False
     for time in lead_time:
         if time == 'observation' and cexp == 'BIO': run_name = cvar.upper()
@@ -467,6 +481,9 @@ def read_and_store_inputfiles(lead_time, cvar, cexp, num_date, cl_cl4file,
         if time == 'climatology':
             rla_climatology_init = supobs.toolkitStats.read_CL4_all_values(nc,run_name,cvar,cl_cl4file)
             ll_clim = True
+        if time == 'smoc_drift':
+            rla_smoc_init = supobs.toolkitStats.read_CL4_all_values(nc,run_name,cvar,cl_cl4file)
+            ll_smoc = True
         if cexp == 'PHYS':
             if cvar in ['SST', 'SLA', 'PSAL', 'TEMP']:
                 cl_qcvar = 'qc'
@@ -515,8 +532,8 @@ def read_and_store_inputfiles(lead_time, cvar, cexp, num_date, cl_cl4file,
         if cvar in ['SST','SLA','aice']: ivar = 0
         elif cvar == 'PSAL': ivar = np.where(np.array(cla_varname) == varname_psal)[0][0]
         elif cvar == 'TEMP': ivar = np.where(np.array(cla_varname) == varname_temp)[0][0]
-        elif cvar == 'UVEL' or cvar == 'UVEL_filtr': ivar = np.where(np.array(cla_varname) == varname_u)[0][0]
-        elif cvar == 'VVEL' or cvar == 'VVEL_filtr': ivar = np.where(np.array(cla_varname) == varname_v)[0][0]
+        elif cvar == 'UVEL' or cvar == 'UVEL_filtr' or cvar == 'USMOC': ivar = np.where(np.array(cla_varname) == varname_u)[0][0]
+        elif cvar == 'VVEL' or cvar == 'VVEL_filtr' or cvar == 'VSMOC': ivar = np.where(np.array(cla_varname) == varname_v)[0][0]
         if ll_currents:
             rla_qc_var = rla_qc_init[:,:]
             rla_qc_var2 = rla_qc_init2[:]
@@ -554,6 +571,7 @@ def read_and_store_inputfiles(lead_time, cvar, cexp, num_date, cl_cl4file,
                 else:
                     rla_best_estimate_var = rla_best_estimate_init[:,ivar,:]
         if 'climatology' in lead_time: rla_climatology_var = rla_climatology_init[:,ivar,:]
+        if 'smoc_drift' in lead_time: rla_smoc_var = rla_smoc_init[:,ivar,:]
         if not ll_clim : 
             rla_climatology_var = rla_observation_var.copy()
             rla_climatology_var[:] = np.nan
