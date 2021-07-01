@@ -50,8 +50,8 @@ CMEMS_AREA = True
 skill = 0
 dt_start_plot = '20130101'
 dt_start_plot_ini = ['20130101','20130501','20130101','20130101','20130101','20160901','20130101']
-dt_end_plot = '20191002'
-dt_end_plot_ini = ['20191002','20191001','20190131','20190131','20191002','20190429','20191002']
+dt_end_plot = '20210501'
+dt_end_plot_ini = ['20210501','20210501','20210531','20210325','20210501','20210501','20210501']
 list_color = ['y','deeppink','dodgerblue','mediumpurple','pink','turquoise','darkorange']
 #list_color = ['deeppink','y','mediumpurple','pink','turquoise']
 window = 30
@@ -73,8 +73,8 @@ else :
 # Definition des chemins, des systemes, des variables et de la periode
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-PATH_IN = '/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V5/postraitement/python/plots/Intercomparison/'
-PATH_OUT = PATH_IN+'img/0-500m/'
+PATH_IN = '/home/cregnier/Gitlab/TEP_CLASS4/postraitement/python/plots/Intercomparison/'
+PATH_OUT = PATH_IN+'img/0-5000m/'
 DATA_IN = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'
 #SYSTEM = ['FOAM','PSY4V3R1','HYCOM_RTOFS','BLK','GIOPS','NERSC']
 SYSTEM = ['FOAM','PSY4V3R1','ENSMEAN','HYCOM_RTOFS','BLK','CGOFS','GIOPS']
@@ -89,10 +89,10 @@ print (cla_depth)
 
 dateCNESref   = d.datetime.strptime('19500101','%Y%m%d').toordinal()
 dt_start_plot = "20130101"
-dt_end_plot = "20191002"
+dt_end_plot = "20210531"
 dtst = d.datetime.strptime(dt_start_plot,'%Y%m%d')
 dted = d.datetime.strptime(dt_end_plot,'%Y%m%d')
-
+prof = "0-5000"
 
 # Lecture des stats pour les differents systemes 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

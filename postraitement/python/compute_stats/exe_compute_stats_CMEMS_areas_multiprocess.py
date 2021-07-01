@@ -101,9 +101,9 @@ elif params_conf['cexp'] == 'PHYS' and params_conf['percent'] == 'off':
                 if var == "profile":
                     cla_vars.extend(('PSAL','TEMP'))
                 elif var == "currents":
-                    cla_vars.extend(('UVEL','VVEL'))
+                    cla_vars.extend(('UVEL','VVEL','USMOC','VSMOC'))
                 elif var == "currents-filtr":
-                    cla_vars.extend(('UVEL_filtr','VVEL_filtr'))
+                    cla_vars.extend(('UVEL_filtr','VVEL_filtr','USMOC','VSMOC'))
                 else:
                     cla_vars.append(var)
 
@@ -178,15 +178,16 @@ if params_conf['daily_off'] == 'on':
                 if cvar in ['PSAL','TEMP']:
                     cl_file = params_conf['prefix']+'_'+cdate+'_'+params_conf['config_model']+\
                     '_'+params_conf['cgrid']+'_profile.nc'
-                elif cvar in ['UVEL','VVEL']:
+                elif cvar in ['UVEL','VVEL','USMOC','VSMOC']:
                     cl_file = params_conf['prefix']+'_'+cdate+'_'+params_conf['config_model']+\
                     '_'+params_conf['cgrid']+'_currents.nc'
-                elif cvar in ['UVEL_filtr','VVEL_filtr']:
+                elif cvar in ['UVEL_filtr','VVEL_filtr','USMOC','VSMOC']:
                     cl_file = params_conf['prefix']+'_'+cdate+'_'+params_conf['config_model']+\
                     '_'+params_conf['cgrid']+'_currents-filtr.nc'
                 else:
                     cl_file = params_conf['prefix']+'_'+cdate+'_'+params_conf['config_model']+\
                     '_'+params_conf['cgrid']+'_'+cvar+'.nc'
+            log.debug('|   Path: {} {}'.format(params_conf['dirNCin'], cl_file))
             cla_filechck = glob.glob(os.path.join(params_conf['dirNCin'],cl_file))
 
             if len(cla_filechck) != 1: continue
@@ -512,10 +513,10 @@ if params_conf['bilan'] == 'on' and recomb == 'off' :
                 if cvar in ['PSAL','TEMP']:
                     cl_file = params_conf['prefix']+'_'+cdate+'_'+params_conf['config_model']+\
                             '_'+params_conf['cgrid']+'_profile.nc'
-                elif cvar in ['UVEL','VVEL']:
+                elif cvar in ['UVEL','VVEL','USMOC','VSMOC']:
                     cl_file = params_conf['prefix']+'_'+cdate+'_'+params_conf['config_model']+\
                     '_'+params_conf['cgrid']+'_currents.nc'
-                elif cvar in ['UVEL_filtr','VVEL_filtr']:
+                elif cvar in ['UVEL_filtr','VVEL_filtr','USMOC','VSMOC']:
                     cl_file = params_conf['prefix']+'_'+cdate+'_'+params_conf['config_model']+\
                     '_'+params_conf['cgrid']+'_currents-filtr.nc'
                 else:
@@ -529,7 +530,8 @@ if params_conf['bilan'] == 'on' and recomb == 'off' :
             log.info("Missing files")
             log.info(params_conf['dirNCin']+cl_file)
             continue
-        if params_conf['cexp'] == 'BIO' or cvar in ['SST', 'SLA','aice', 'UVEL', 'VVEL', 'UVEL_filtr', 'VVEL_filtr']:
+        if params_conf['cexp'] == 'BIO' or cvar in ['SST', 'SLA','aice',
+                'UVEL', 'VVEL', 'UVEL_filtr', 'VVEL_filtr','USMOC','VSMOC']:
             tab_prof   = np.array([-0.5,0.5])
         else:
             tab_prof = np.array(rla_layers)
@@ -609,7 +611,7 @@ if params_conf['bilan'] == 'on' and recomb == 'off' :
             dict[area_mask] = {}
             for depthmin,depthmax in zip(tab_prof[:-1],tab_prof[1:]):
 
-                OBS = [] ; CLIM = [] ; BEST = [] ; FCST = [] ; PERS = []
+                OBS = [] ; CLIM = [] ; BEST = [] ; FCST = [] ; PERS = [], SMOC =[]
                 dict_inputs['depthmin'] = depthmin
                 dict_inputs['depthmax'] = depthmax
                 log.debug('DEPTH: {0} {1} {2}{3}'.format(depthmin, '-',depthmax, 'm'))
@@ -657,9 +659,9 @@ if params_conf['bilan'] == 'on' and recomb == 'off' :
 
                     # ***************  Compute Stats at each lead time ***************
 
-                    OBS, CLIM, BEST, FCST, PERS  = stats.compute_stats_and_extend(dict_inputs, dict_var, dict,\
+                    OBS, CLIM, BEST, FCST, PERS, SMOC  = stats.compute_stats_and_extend(dict_inputs, dict_var, dict,\
                                                                                   cvar, num_date, area_mask, OBS, CLIM,\
-                                                                                  BEST, FCST, PERS)
+                                                                                  BEST, FCST, PERS, SMOC)
 
                 if params_conf['cexp'] == 'PHYS':
                     stat_bilan, stat_PSS_skill, stat_CSS_skill = stats.compute_stats_bilan_skill(dict_inputs, stat_bilan, \

@@ -566,7 +566,7 @@ END SUBROUTINE definir_classe_profondeur
           IF ( iga_BathyProfil(ib_p) .LE. rg_BathySeuil ) THEN
 #if defined key_debug
     WRITE(0,*) 'STATS TEMP '
-#endif          
+#endif 
              !** STATISTIQUES sur la TEMPERATURE
              !** si il y a des valeurs valides dans le profil de temperature
              IF ( iga_MesTempVal(ib_p) > 0 .and. il_IndReg > 0 ) THEN
@@ -579,6 +579,7 @@ END SUBROUTINE definir_classe_profondeur
                 !   !   WRITE(17,'(a,1x,f10.2,5x)')'Longitude ::',dgpa_LONGITUDE(ib_p)
                 !   !   WRITE(17,'(a,1x,f10.2,5x)')'Latitude ::',dgpa_LATITUDE(ib_p)
                 !ENDDO
+
                 DO il_s=1,ig_ParamStat,2
                    il_k = iga_IndParamStat(il_s)
                    IF ( iga_IndParam(ib_p,il_k) > 0) THEN
@@ -786,9 +787,10 @@ END SUBROUTINE definir_classe_profondeur
        IF ( rga_DepthVal(il_i,id_IndProf) > rd_DepthMin .AND. &
             & rga_DepthVal(il_i,id_IndProf) .LE. rd_DepthMax .AND. &
             & rga_DepthVal(il_i,id_IndProf) .NE. rg_DepthVal_Def ) THEN
-!#if defined key_debug
-!    WRITE(0,*) 'test sur la profondeur ::',rga_DepthVal(il_i,id_IndProf),rd_DepthMin,rd_DepthMax ,rg_DepthVal_Def
-!#endif
+#if defined key_debug
+    WRITE(0,*) 'test sur la profondeur ::',rga_DepthVal(il_i,id_IndProf),rd_DepthMin,rd_DepthMax ,rg_DepthVal_Def
+    CALL EXIT(1)
+#endif
          rl_diff2=9999.
          rl_diff3=9999.
          IF ( id_var == 1 ) THEN
@@ -1069,13 +1071,13 @@ END SUBROUTINE definir_classe_profondeur
               rl_var = rgpa_SMLEV98(il_i,id_IndProf)
             CASE(ip_SMLEV05)
                rl_var = rgpa_SMLEV05(il_i,id_IndProf)
-            CASE( ip_SMLEV09)
+            CASE(ip_SMLEV09)
               rl_var = rgpa_SMLEV09(il_i,id_IndProf)
-            CASE( ip_SMLEV13)
+            CASE(ip_SMLEV13)
               rl_var = rgpa_SMLEV13(il_i,id_IndProf)
-            CASE( ip_SMLEV18)
+            CASE(ip_SMLEV18)
               rl_var = rgpa_SMLEV18(il_i,id_IndProf)
-            CASE( ip_SMMED)
+            CASE(ip_SMMED)
               rl_var = rgpa_SMMED(il_i,id_IndProf)
             CASE(ip_SMARV)
               rl_var = rgpa_SMARV(il_i,id_IndProf)

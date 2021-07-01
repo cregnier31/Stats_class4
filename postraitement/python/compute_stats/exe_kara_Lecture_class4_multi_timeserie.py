@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 #SBATCH -J CLASS4_multi
 #SBATCH -p multi
-#SBATCH -N 2
+#SBATCH -N 4
 #SBATCH -e CLASS4_job%j.e
 #SBATCH -o CLASS4_job%j.o
 #SBATCH -q qosmulti
 #SBATCH --exclusive
-#SBATCH --ntasks-per-node=30
+#SBATCH --ntasks-per-node=10
 #SBATCH --time=06:00:00
 
 import shlex,subprocess
@@ -38,13 +38,13 @@ nblevel = os.getenv('nblevel')
 os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 os.chdir(pbsworkdir)
 EXE = os.path.join(pbsworkdir,'../exe_compute_stats_CMEMS_areas_multiprocess.py')
-try : os.remove(os.path.join(pbsworkdir,"OK.flag")) 
+try : os.remove(os.path.join(pbsworkdir,"OK.flag"))
 except : pass
 dir_bin="/data/rd_exchange/qualif/anaconda3/envs/env_py38/bin/"
 HDF5_USE_FILE_LOCKING = False
 
 # **************************** Python launcher *********************************
-nb_procs = 60
+nb_procs = 40
 #nb_procs = 120
 nb_process = nb_procs
 if fmt_mask == None:

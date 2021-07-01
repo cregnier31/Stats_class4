@@ -174,7 +174,7 @@ elif TYPEDATANAME ==  "CORA4.1" :
   PREFIX="CO" 
   print("Cora4.1")
 elif TYPEDATANAME ==  "CORA5.2" :
-  TYPEDATA="2"
+  TYPEDATA="1"
   PREFIX="CO" 
   print("Cora5.2")
 elif TYPEDATANAME ==  "CORIOLIS" :
@@ -492,6 +492,7 @@ if  date_next <= dayvalmax :
         sys.exit(1)
 
 else :
+    JRUN=SyDate(str(date_next))
     log.error('Dépassement de JMAX : {} {} '.format(JRUN,DAYMAX))
     sys.exit(1)
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #SBATCH -J CLASS4_STATS_bilan
 #SBATCH -p multi
-#SBATCH -N 2
+#SBATCH -N 4
 #SBATCH -e CLASS4_job%j.e
 #SBATCH -o CLASS4_job%j.o
 #SBATCH -q qosmulti
@@ -29,19 +29,20 @@ fmt_mask = os.getenv('fmt_mask')
 bilan = os.getenv('bilan')
 fmt_ascii = os.getenv('fmt_ascii')
 daily_off = os.getenv('daily_off')
+percent = os.getenv('percent')
+nblevel = os.getenv('nblevel')
 debug = 0
-print fmt_mask
 # **************************** Environnement ***********************************
 os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 os.chdir(pbsworkdir)
 EXE = os.path.join(pbsworkdir,'../exe_compute_stats_CMEMS_areas_multiprocess.py')
 try : os.remove(os.path.join(pbsworkdir,"OK.flag")) 
 except : pass
-dir_bin="/data/rd_exchange/qualif/anaconda3/envs/env_py38/bin"
+dir_bin="/data/rd_exchange/qualif/anaconda3/envs/env_py38/bin/"
 HDF5_USE_FILE_LOCKING = False
 
 # **************************** Python launcher *********************************
-nb_procs = 4
+nb_procs = 8
 nb_process = nb_procs
 if fmt_mask == None:
     os.system(dir_bin+"mpirun -np "+str(nb_process)+" "+dir_bin+"python %s --day1=%s --day2=%s --cfg=%s --type=%s" \
