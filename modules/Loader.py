@@ -68,6 +68,7 @@ class Loader(object):
         if type == "alleges_coords": return alleges_coords()
         if type == "bathymetrie": return bathy_coords()
         if type == "Legos_SIT": return read_Legos_SIT()
+        if type == "2ease_coords": return ease_coords_Loader()
         assert 0, "Format not known: " + type
 
     def generic_read_pos_and_value(self,filename, varname):
@@ -82,7 +83,7 @@ class Loader(object):
         ll_ravel = False
         if 'longitude' in nc.variables:
             var_lon = 'longitude' ; var_lat = 'latitude'
-        elif 'lon' in nc.variables and not 'lon_20hz' in nc.variables:
+        elif 'lon' in nc.variables and not 'lon_20hz' in nc.variables and not 'lon_20_ku' in nc.variables:
             var_lon = 'lon' ; var_lat = 'lat'
         elif 'LON' in nc.variables:
             var_lon = 'LON' ; var_lat = 'LAT'
@@ -94,6 +95,9 @@ class Loader(object):
             var_lon = 'Longitude' ; var_lat = 'Latitude'
         elif 'lon_20hz' in nc.variables:
             var_lon = 'lon_20hz' ; var_lat = 'lat_20hz'
+            ll_ravel = True
+        elif 'lon_20_ku' in nc.variables:
+            var_lon = 'lon_20_ku' ; var_lat = 'lat_20_ku'
             ll_ravel = True
         if ll_ravel:
             rla_lon = np.ravel(nc.variables[var_lon][:,:])
@@ -267,7 +271,7 @@ class InputLoader(Loader):
         """Loader for input options"""
         keywords = ['date1=', 'date2=', 'delta=', 'nbdate=', 'daterun=',
         'config=', 'data=', 'src=', 'nbproc=', 'typemod=', 'schedule=',
-        'data_id=','loglevel=','daymax=']
+        'data_id=','loglevel=','daymax=','dirinput=','diroutput=']
         cla_opts = getopt.getopt(options, 'd', keywords)
         ll_delta = None
         ll_date1 = None
@@ -282,6 +286,8 @@ class InputLoader(Loader):
         ll_cycle = None
         daymax = None
         dask = False
+        ll_input = False
+        ll_output = False
         list_var = []
         nb_proc = 0
         cl_schedule = 'd'
@@ -298,8 +304,8 @@ class InputLoader(Loader):
                 cl_end_date = p
             elif o in ['--typemod']:
                 cl_typemod = p
-                if cl_typemod not in ['pgs', 'pgn', 'allege']:
-                    print ("input data type not known : must be pgn pgs or allege")
+                if cl_typemod not in ['pgs', 'pgn', 'allege','2ease']:
+                    print ("input data type not known : must be pgn pgs allege 2ease :{}".format(cl_typemod))
                     sys.exit(1)
             elif o in ['--daterun']:
                 ll_daterun = True
@@ -331,6 +337,12 @@ class InputLoader(Loader):
                 daymax = p
             elif o in ['-d']:
                 dask = True
+            elif o in ['--dirinput']:
+                dirinput = p
+                ll_input = True
+            elif o in ['--diroutput']:
+                diroutput = p
+                ll_output = True
         # LOGGER
         log = Logger("TEP_CLASS4").run(level)
         log.info("Loglevel {}".format(log))
@@ -463,6 +475,8 @@ class InputLoader(Loader):
         param_dict['cl_data_id'] = cl_data_id
         param_dict['daymax'] = daymax
         param_dict['dask'] = dask
+        if ll_input : param_dict['dirdata'] = dirinput
+        if ll_output : param_dict['diroutput'] =  diroutput
         # Create time vector between date1 and date2
         start_date = dt.datetime(year=int(str(param_dict['date1'])[0:4]),\
                                  month=int(str(param_dict['date1'])[4:6]),\
@@ -497,7 +511,7 @@ class NmlLoader(Loader):
         param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
         param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
         param_dict['dirmodel'] = param_dict['dirmodel_pgn']
-        param_dict['dirdata'] = db.get('input_dir', 'INPUTDATA')
+        if 'dirdata' not in param_dict.keys(): param_dict['dirdata'] = db.get('input_dir', 'INPUTDATA')
         param_dict['dirmodel_light'] = db.get('input_dir', 'DATA_IN_LIGHT')
         param_dict['dirmodel'] = db.get('input_dir', 'DATA_IN')
         param_dict['nb_level'] = int(db.get('GLOBAL', 'LEVELS'))
@@ -563,8 +577,11 @@ class NmlLoader(Loader):
                 if exc.errno == errno.EEXIST and os.path.isdir(param_dict['dirwork']):
                     pass
         #param_dict['dirwork'] = db.get('output_dir', 'DIRWORK')
-        param_dict['diroutput'] = db.get('output_dir', 'DIROUTPUT')
-        param_dict['diroutput2'] = db.get('output_dir', 'DIROUTPUT2')
+        if 'diroutput' not in param_dict.keys(): param_dict['diroutput'] = db.get('output_dir', 'DIROUTPUT')
+        try:
+            param_dict['diroutput2'] = db.get('output_dir', 'DIROUTPUT2')
+        except:
+            param_dict['diroutput2'] = ""
         param_dict['dirclim'] = db.get('climato', 'DIRCLIM')
         try:
             param_dict['dirclim2'] = db.get('climato', 'DIRCLIM2')
@@ -865,6 +882,29 @@ class PGN_coords_Loader(Loader):
         nc.close()
         return rla_lon,rla_lat,mask_tab,depth_mod
 
+
+class ease_coords_Loader(Loader):
+
+    """Loader for 2 ease stereopolar grid"""
+    def read_pos(self,filename):
+        nc = netCDF4.Dataset(filename,'r')
+        variables = nc.variables
+        list_lon = ['x', 'X', 'lon', 'LON', 'lons', 'longitude', 'LONGITUDE', 'nav_lon']
+        list_lat = ['y', 'Y', 'lat', 'LAT', 'LATS', 'latitude', 'LATITUDE', 'nav_lat']
+        try:
+            lon_name = [ k for k in variables.keys() & set(list_lon)][0]
+            lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
+        except:
+            print('lon lat or depth not defined')
+            raise
+        rla_lon = nc.variables[lon_name][:,:]
+        rla_lat = nc.variables[lat_name][:,:]
+        depth_mod = 0
+        mask_tab = np.nan
+        nc.close()
+        return rla_lon,rla_lat,mask_tab,depth_mod
+
+
 class PGN_coords_clim_Loader(Loader):
 
     """Loader for PGN dataset"""
@@ -920,9 +960,16 @@ class read_Legos_SIT(Loader):
     
     """Loader LEGOS SIT files"""
     def __init__(self):
-        self.varname = 'snow_depth_W99'
+        self.varname_list = ['snow_depth_W99','radar_freeboard_20hz']
 
     def read_pos_and_value(self,filename):
+
+        try:
+            nc = netCDF4.Dataset(filename, 'r')
+            if len(set(nc.variables).intersection(self.varname_list)) == 1: self.varname =  list(set.intersection(set(self.varname_list), set(nc.variables)))[0]
+            nc.close()
+        except:
+            raise cl4err.Class4FatalError("Pb read_Legos_SIT varname missing {}".format(self.varname_list))
         rla_lon, rla_lat, _FillValue, nc = \
           self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][:]

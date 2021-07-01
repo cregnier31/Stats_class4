@@ -47,7 +47,6 @@ class Extractor(object):
         if type == "CORA4.1_MERC": return Extract_cora4('.tgz',self.log)
         if type == "cora5.0_raw": return Extract_cora4('.tar.gz',self.log)
         if type == "CORA5.0": return Extract_cora4('.tgz', self.log)
-        #if type == "CORA5.2": return Extract_cora4_1(self.log)
         if type == "CORA5.2": return Extract_cora5_2(self.log)
         if type == "CORIO_ASSIM": return Extract_corio_cmems(self.log)
         if type == "CORIOLIS": return Extract_corio(self.log)
@@ -111,17 +110,17 @@ class Extractor(object):
 
 class Extract_Legos_SIT(Extractor):
 
-    """ Class to extract LEgos SIT l3 files """
+    """ Class to extract Legos SIT l3 files """
     def __init_(self, log):
         self.log = log
 
     def run_list(self, param_dict, daterun):
-        self.log.info("Inside Extract_Legos-SIT")
         liste_tot=[]
         liste_file=glob(param_dict['dirdata']+'/*'+daterun+'*.nc')
+        self.log.info("Liste file {} {} ".format(liste_file, daterun))
         if not liste_file:
             self.log.error("Missing Legos_SIT {} {}".format(param_dict['dirdata'], daterun))
-            sys.exit(1)
+            raise
         self.log.debug('Liste file Legos_SIT {}'.format(liste_file))
         for file in liste_file:
             try:
@@ -129,8 +128,7 @@ class Extract_Legos_SIT(Extractor):
                 shutil.copy(file, param_dict['dirwork']+filename)
                 liste_tot.append(param_dict['dirwork']+filename)
             except IOError as e:
-                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                sys.exit(1)
+                raise ("I/O error({0}): {1}".format(e.errno, e.strerror))
 
         return liste_file
 
