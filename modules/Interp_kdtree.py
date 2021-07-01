@@ -27,10 +27,9 @@ class interp_KDtree(object):
     """
        Class to compute weight file using kdtree
     """
-    def __init__(self, level=2):
+    def __init__(self, log):
         self.kdname = kd_tree_name
-        self.log = Logger("interp_KDtree").run(level)
-        self.log_level = level
+        self.log = log
 
     def timeit(method):
         """
@@ -69,9 +68,13 @@ class interp_KDtree(object):
            self.log.debug('lon_out is a float')
         else:
             if len(lon_out)> 1 and lon_out.ndim < 2:
-                global_step = float("{0:.2f}".format((lon_out[len(lon_out)-1]-lon_out[0])/(len(lon_out)-1)))
-                first_step = float("{0:.2f}".format(lon_out[1]-lon_out[0]))
-                self.log.debug('Step sizes %f %f ' % (global_step, first_step))
+                try:
+                    lon_out_tmp = lon_out[~lon_out.mask]
+                    global_step = float("{0:.2f}".format((lon_out_tmp[len(lon_out_tmp)-1]-lon_out_tmp[0])/(len(lon_out_tmp)-1)))
+                    first_step = float("{0:.2f}".format(lon_out_tmp[1]-lon_out_tmp[0]))
+                    self.log.debug('Step sizes %f %f ' % (global_step, first_step))
+                except Exception as e:
+                    raise ("Problem during formatting {}".format(e))
             else:
                 self.log.debug('Only one step')
 
@@ -109,7 +112,7 @@ class interp_KDtree(object):
             coords2[:, 2] = zt
         ## Compute weight file
         if os.path.exists(weight_file):
-            print ("load existing tree :%s "%(weight_file))
+            #print ("load existing tree :%s "%(weight_file))
             if sys.version_info[0] >=  3:
                 with open(weight_file, 'rb') as f:
                     zip_var = pickle.load(f)

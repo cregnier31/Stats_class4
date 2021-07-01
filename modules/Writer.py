@@ -205,7 +205,6 @@ class Writer():
         elif 'best' in param_dict.keys():
             hdct_tab = param_dict['best']
             nb_obs, nb_dephs, nb_vars = np.shape(hdct_tab)
-            print (np.shape(hdct_tab))
             if 'numobs' not in dims.keys(): nc_fid.createDimension('numobs', nb_obs)
             varname = 'best_'+param_dict['varname']
             nc_best = nc_fid.createVariable(

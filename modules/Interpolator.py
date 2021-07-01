@@ -320,7 +320,7 @@ class Interpolator(object):
                                         param_dict['cl_typemod'].upper()+'_idw' +
                                         str(nb_ptsinterp) + 'pt.p', file_out)
             weight_file = param_dict['coloc_rep'] + file_coloc_tmp
-            self.log.debug("Weight_file : {} ".format(weight_file))
+            self.log.debug("Weight_file: {} ".format(weight_file))
             same_grid = False
             if tuple_obs == tuple_coord:
                 same_grid = True
@@ -331,7 +331,7 @@ class Interpolator(object):
             if len(np.unique(depth)) == 1 or \
                 key.lower() == "clim" and param_dict['data_type'].lower() == 'current':
                 ind = 0
-                TreeObj = interp_KDtree(level=self.log.level)
+                TreeObj = interp_KDtree(self.log) #level=self.log.level)
                 ## No mask with ice dataset create issues in the ANT
                 d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
                                                      lon_obs, lat_obs, nb_ptsinterp,\
@@ -354,7 +354,7 @@ class Interpolator(object):
                 self.log.debug('maxindex {}'.format(ind_tot))
                 self.log.debug('maxindex {} {}'.format(ind_depth, depth_mod[ind_depth]))
                 ## Compute weight
-                TreeObj = interp_KDtree(level=4)
+                TreeObj = interp_KDtree(self.log)
                 tab_weight = np.nan*np.zeros((nb_obs,nb_ptsinterp,ind_max),dtype=float)
                 tab_indexes = np.ndarray(shape=(nb_obs, nb_ptsinterp,ind_max), dtype=int, order='F')
                 start = timer()
