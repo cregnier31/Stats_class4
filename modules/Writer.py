@@ -35,7 +35,11 @@ class Writer():
             'chloro': {'code': 'CHLORO-A_L3S', 'defaults': {'name': 'log10-chlorophyll A Satellite'}},
             'aice': {'code': 'SEA_CONC', 'defaults': {'name': 'Sea ice concentration from AMSR2 brightness temperature'}},
             'SIT-legos': {'code': 'SEA_SIT', 'defaults': {'name': 'Sea ice thickness at 20 Hz from LEGOS'}},
-            'SNOW-legos': {'code': 'SEA_SIT', 'defaults': {'name': 'Sea ice thickness at 20 Hz from LEGOS'}},
+            'SNOW-legos': {'code': 'SEA_SIT', 'defaults': {'name': 'Snow thickness at 20 Hz from LEGOS'}},
+            'SIVOLU': {'code': 'SEA_SIT', 'defaults': {'name': 'Sea ice volume at 20 Hz from LEGOS'}},
+            'SNVOLU': {'code': 'SEA_SIT', 'defaults': {'name': 'Snow volume at 20 Hz from LEGOS'}},
+            'SICONC': {'code': 'SEA_SIT', 'defaults': {'name': 'Sea ice concentration at 20 Hz from LEGOS'}},
+            'KaKuYearSH': {'code': 'SEA_SIT', 'defaults': {'name': 'Sea ice climaatology'}},
             'current': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Currents from CMEMS drifting buoys 001_048'}},
             'DRIFTER_filtr': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Filtered Currents from CMEMS drifting buoys 001_048'}},
             'DRIFTER': {'code': 'CURRENT_ZONAL_DB', 'defaults': {'name': 'Currents from CMEMS drifting buoys 001_048'}},
@@ -636,7 +640,7 @@ class Writer():
         # Remove corresponding colloc file
         for file_coloc in glob(param_dict['coloc_rep'] + '*_'+dateval+'*.p'):
             if os.path.exists(file_coloc):
-                os.remove(file_coloc)   
+                os.remove(file_coloc)
 
         self.log.info('Creation file %s' % (filename))
         if ll_zip:
@@ -661,4 +665,5 @@ class Writer():
                     shutil.move(filename+'.gz', param_dict['diroutput'])
                 os.remove(filename)
                 self.log.info('File ok %s' % (filename))
-        shutil.move(filename, param_dict['diroutput'])
+        dest = os.path.join(param_dict['diroutput'],os.path.basename(filename))
+        shutil.move(filename, dest)

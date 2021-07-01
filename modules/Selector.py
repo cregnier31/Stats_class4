@@ -115,11 +115,15 @@ class SelectListModelData(Selector):
     def __init__(self, log):
         super(Selector)
         self.log = log
+        self.list_ice=['sit-legos','snow-legos','sivolu','snvolu','siconc','kaku',
+                       'kaku_unc','kakuyear','kakuyear_unc','kakuyearsh','kakuyearsh_unc',
+                       'kakush','kakush_unc']
 
     def run(self, param_dict, dateval):
         list = OrderedDict()
         data_type = param_dict['data_type']
         typemod = param_dict['cl_typemod'].lower()
+        self.log.info('Data type {}'.format(data_type))
         if data_type.lower() == "sst" or data_type.lower() == "ssthf":
             param_dict['gridtype'] = ["gridT"]
             param_dict['gridtype_clim'] = ["TEMP"]
@@ -150,12 +154,17 @@ class SelectListModelData(Selector):
             param_dict['gridtype_light'] = ["TN.B", "SN.B"]
         elif data_type.lower() == "current":
             param_dict['gridtype'] = ["gridU", "gridV"]
-        elif data_type.lower() == "sit-legos" or data_type.lower() == "snow-legos":
+        elif data_type.lower() in self.list_ice:
             param_dict['gridtype'] = "icemod"
         if typemod == "pgn":
             dirmodel = param_dict['dirmodel_pgn']
         elif typemod == "allege":
             dirmodel = param_dict['dirmodel_light']
+        elif typemod == "2ease":
+            dirmodel = param_dict['dirmodel_pgn']
+        else:
+            raise ('typemod not known')
+
         MONTH = str(dateval)[4:6]
         self.log.info("Grid type {}".format(param_dict['gridtype']))
         # loop on lead time
@@ -388,9 +397,9 @@ class SelectListModelData(Selector):
                                         param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
                                         list_file.extend(list_file_tmp)
                                 elif param_dict['type_run'] == "free":
-                                        list_file_tmp = glob(dirmodel_new+modele+"_"+param_dict['daily_pref']+"_*_"+param_dict['gridtype']+\
+                                    list_file_tmp = glob(dirmodel_new+modele+"_"+param_dict['daily_pref']+"_*_"+param_dict['gridtype']+\
                                                 '_'+dateval+"*.nc")
-                                        list_file.extend(list_file_tmp)
+                                    list_file.extend(list_file_tmp)
                                 else:
                                     if directory == "smoc" or directory == "stokes" or directory == "tides":
                                         for i in range (2):
@@ -416,7 +425,6 @@ class SelectListModelData(Selector):
                                             list_file_tmp = glob(dirmodel_new+directory+"/"+modele+"_"+ \
                                             param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
                                             list_file.extend(list_file_tmp)
-                                        #print (list_file)
                                 self.log.debug(list_file)
                     elif typemod == "allege":
                         if directory == "clim":
@@ -431,6 +439,14 @@ class SelectListModelData(Selector):
                         else:
                             self.log.debug('Liste template')
                             list_file = template
+                    elif typemod == "2ease":
+                        list_file = []
+                        if param_dict['type_run']== "kaku":
+                            list_file_tmp = glob(dirmodel_new+"*"+dateval[:6]+"*.nc")
+                            self.log.debug('File {}'.format(dirmodel_new+"*"+dateval[:6]+"*.nc"))
+                            list_file.extend(list_file_tmp)
+                        else:
+                            raise ("type not known for 2ease files")
                     else:
                         self.log.debug('directory %s' % (dirmodel_new+'/'+year+'/'+month))
                         list_file = glob(dirmodel_new+"/"+year+'/'+month+'/'+modele+"_"+ \

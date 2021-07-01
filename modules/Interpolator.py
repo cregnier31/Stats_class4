@@ -48,7 +48,7 @@ class Interpolator(object):
             #client
             #   worker_options={"nthreads": 2},
             cluster = SSHCluster( ["fidjim05-sihpc","fidjim06-sihpc","fidjim07-sihpc","fidjim08-sihpc"],
-                                    connect_options={"known_hosts": "/home/smer/regnierc/.ssh/known_hosts" },                               
+                                    connect_options={"known_hosts": "/home/smer/regnierc/.ssh/known_hosts" },
                                    scheduler_options={"port": 0, "dashboard_address": ":8797"})
             client = Client(cluster)
             client
@@ -168,9 +168,8 @@ class Interpolator(object):
         ll_best = False
         nb_obs2, nb_profs = np.shape(depth)
         self.log.debug("Number of observations {} Profondeurs {}".format(nb_obs2, nb_profs))
-        #variable = param_dict['varname']
         variable = param_dict['varname']
-        #self.log.info("Variables : {} ".format(variable))
+        self.log.debug("Variables : {} ".format(variable))
         if nb_best > 0:
             if param_dict['data_origin'] == "GLOBCOLOUR":
                 hdct_tab = np.ndarray(shape=(nb_obs, 1, 1), dtype=float, order='F')
@@ -221,7 +220,7 @@ class Interpolator(object):
         for i, key in enumerate(list_input_file.keys()):
             self.log.info("Lead time "+key)
             variable = param_dict['varname']
-            if key.lower() == "smoc": 
+            if key.lower() == "smoc":
                 variable = param_dict['varname_smoc']
                 ll_smoc = True
                 smoc_tab = np.ndarray(shape=(nb_obs,len(variable), nb_profs),
@@ -236,13 +235,13 @@ class Interpolator(object):
                            dtype=float, order='F')
                     smoc_fcst_tab[:, :, :, :] = self.missing_value
                     ll_c_smoc = True
-            if key.lower() == "tides": 
+            if key.lower() == "tides":
                 variable = param_dict['varname_tides']
                 ll_tides = True
                 tides_tab = np.ndarray(shape=(nb_obs, len(variable), nb_profs),
                            dtype=float, order='F')
                 tides_tab[:, :, :] = self.missing_value
-            if key.lower() == "stokes": 
+            if key.lower() == "stokes":
                 variable = param_dict['varname_stokes']
                 ll_stokes = True
                 if not ll_c_stokes :
@@ -250,14 +249,14 @@ class Interpolator(object):
                                dtype=float, order='F')
                     stokes_tab[:, :, :] = self.missing_value
                     ll_c_stokes = True
-            if key.lower().startswith("stokes_fcst"): 
+            if key.lower().startswith("stokes_fcst"):
                 nb_fcst2 = len(param_dict['lead_int2'])
                 variable = param_dict['varname_stokes']
                 ll_stokes_fcst = True
                 stokes_fcst_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst2, nb_profs),
                            dtype=float, order='F')
                 stokes_fcst_tab[:, :, :, :] = self.missing_value
-            if key.lower() == "bathy": 
+            if key.lower() == "bathy":
                 ll_bathy = True
                 variable = param_dict['varname_bathy']
                 bathy_tab = np.ndarray(shape=(nb_obs,nb_profs), dtype=float, order='F')
@@ -306,6 +305,9 @@ class Interpolator(object):
                         self.log.debug('Read coords Alleges OK ')
                         ll_light = True
                         if key.lower() == "clim" : ll_light = False
+                    elif param_dict['cl_typemod'].lower() == "2ease":
+                        lon_mod, lat_mod, mask_tab, depth_mod = Loader.factory('2ease_coords').\
+                            read_pos(param_dict['coordinates'])
                     else:
                         self.log.error("Type mod not known")
                     nlon, nlat = self.search_dims(param_dict['coordinates'])
@@ -313,7 +315,7 @@ class Interpolator(object):
                 else:
                     self.log.error("No coordinates files")
                     # TODO read lon/lat from first file
-                    sys.exit(1)
+                    raise
                 file_coloc_tmp = re.sub('.nc', '_Kdtree_' +
                                         param_dict['cl_typemod'].upper()+'_idw' +
                                         str(nb_ptsinterp) + 'pt.p', file_out)
@@ -469,6 +471,7 @@ class Interpolator(object):
                    interp_values = np.ndarray(shape=(nb_obs, nb_profs),
                                          dtype=float, order='F')
                    interp_values[:, :] = self.missing_value
+
 
                if key[0:4] == 'fcst':
                    if len(key) > 4:
