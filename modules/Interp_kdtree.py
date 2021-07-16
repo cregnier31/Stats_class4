@@ -69,7 +69,10 @@ class interp_KDtree(object):
         else:
             if len(lon_out)> 1 and lon_out.ndim < 2:
                 try:
-                    lon_out_tmp = lon_out[~lon_out.mask]
+                    if ma.is_masked(lon_out):
+                        lon_out_tmp = lon_out[~lon_out.mask]
+                    else:
+                        lon_out_tmp = lon_out
                     global_step = float("{0:.2f}".format((lon_out_tmp[len(lon_out_tmp)-1]-lon_out_tmp[0])/(len(lon_out_tmp)-1)))
                     first_step = float("{0:.2f}".format(lon_out_tmp[1]-lon_out_tmp[0]))
                     self.log.debug('Step sizes %f %f ' % (global_step, first_step))
