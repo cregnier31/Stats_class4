@@ -546,7 +546,7 @@ END SUBROUTINE definir_classe_profondeur
           ENDIF
 #if defined key_debug
     WRITE(0,*) 'Call IdentifierBoite ok ::',rl_lon,rl_lat,rl_IDboite
-#endif          
+#endif
           rga_IDboite(ib_p)=rl_IDboite
           !** Attribution d un indice de boite
           il_IndReg=0
@@ -560,13 +560,13 @@ END SUBROUTINE definir_classe_profondeur
     WRITE(0,*) 'Coordonnées du point :  ',rl_lon,rl_lat
     WRITE(0,*) 'Valeur de la region :  ',il_IndReg
     WRITE(0,*) 'iga_MesTempVal(ib_p) :  ',iga_MesTempVal(ib_p)
-#endif          
-    
+#endif
+
           !** test sur la bathymetrie
           IF ( iga_BathyProfil(ib_p) .LE. rg_BathySeuil ) THEN
 #if defined key_debug
     WRITE(0,*) 'STATS TEMP '
-#endif          
+#endif
              !** STATISTIQUES sur la TEMPERATURE
              !** si il y a des valeurs valides dans le profil de temperature
              IF ( iga_MesTempVal(ib_p) > 0 .and. il_IndReg > 0 ) THEN
@@ -591,7 +591,7 @@ END SUBROUTINE definir_classe_profondeur
                                  & rga_StatProf(ib_p,il_s,il_i,4),1,cd_logdir)
                          !** Mise a jour des tableaux de resultats de statistiques par boite
                          iga_NbVal(il_IndReg,il_s,il_i)=iga_NbVal(il_IndReg,il_s,il_i)+&
-                              & iga_NbValProf(ib_p,il_s,il_i)    
+                              & iga_NbValProf(ib_p,il_s,il_i) 
                          rga_moy(il_IndReg,il_s,il_i)=rga_moy(il_IndReg,il_s,il_i)+&
                               & rga_StatProf(ib_p,il_s,il_i,1)
                          rga_rms(il_IndReg,il_s,il_i)=rga_rms(il_IndReg,il_s,il_i)+&
@@ -628,7 +628,7 @@ END SUBROUTINE definir_classe_profondeur
                 iga_NbProfPsalBoite(il_IndReg)=iga_NbProfPsalBoite(il_IndReg)+1
 #if defined key_debug
     WRITE(0,*) 'STATS PSAL '
-#endif          
+#endif
                 !** boucle sur PSAL et les indices de parametres associes a la salinite
               DO il_s=2,ig_ParamStat,2
                    il_k = iga_IndParamStat(il_s)
@@ -642,7 +642,7 @@ END SUBROUTINE definir_classe_profondeur
                                  & rga_StatProf(ib_p,il_s,il_i,4),2,cd_logdir)
                          !** Mise a jour des tableaux de resultats de statistiques par boite
                          iga_NbVal(il_IndReg,il_s,il_i)=iga_NbVal(il_IndReg,il_s,il_i)+&
-                              & iga_NbValProf(ib_p,il_s,il_i)    
+                              & iga_NbValProf(ib_p,il_s,il_i)
                          rga_moy(il_IndReg,il_s,il_i)=rga_moy(il_IndReg,il_s,il_i)+&
                               & rga_StatProf(ib_p,il_s,il_i,1)
                          rga_rms(il_IndReg,il_s,il_i)=rga_rms(il_IndReg,il_s,il_i)+&
@@ -651,8 +651,8 @@ END SUBROUTINE definir_classe_profondeur
                               & rga_StatProf(ib_p,il_s,il_i,3)
                          rga_rms_diff(il_IndReg,il_s,il_i)=rga_rms_diff(il_IndReg,il_s,il_i)+&
                               & rga_StatProf(ib_p,il_s,il_i,4)
-                   !      IF ( il_s .GT. 2) THEN 
-                   !         IF ( INT(iga_NbValProf(ib_p,il_s,il_i)) /= 0 ) THEN 
+                   !      IF ( il_s .GT. 2) THEN
+                   !         IF ( INT(iga_NbValProf(ib_p,il_s,il_i)) /= 0 ) THEN
                    !           rga_diff_loc(il_s,il_i,ib_p+ig_indi)=rga_StatProf(ib_p,il_s,il_i,3)/&
                    !              & INT(iga_NbValProf(ib_p,il_s,il_i))
                    !         ELSE
@@ -680,6 +680,7 @@ END SUBROUTINE definir_classe_profondeur
                 ENDDO
              ENDDO
 
+#if defined key_debug
           ELSE
           ! iga_NbProfRejetBathyBoite(il_IndReg) = iga_NbProfRejetBathyBoite(il_IndReg) + 1
              ! Ecriture dans le fichier de rejet de profil
@@ -689,7 +690,7 @@ END SUBROUTINE definir_classe_profondeur
                   iga_BathyProfil(ib_p),&
                   & TRIM(cgpa_PLATFORM_NUMBER(ib_p,1)),TRIM(cgpa_WMO_INST_TYPE(ib_p,1))
              CLOSE(50)
-
+#endif
           ENDIF ! fin test sur la bathy
 
        ENDIF ! fin test sur valeurs valides T/S dans le profil
@@ -756,7 +757,7 @@ END SUBROUTINE definir_classe_profondeur
     REAL(KIND=4)                :: rl_var,rl_diff,rl_diff2,rl_diff3,rl_temp
     CHARACTER(LEN=255)          :: cl_TEMPHighDeph,cl_PSALHighDeph
     LOGICAL                     :: ll_exist_PSAL,ll_exist_TEMP,ll_exist_HighTEMP,ll_exist_HighPSAL
-        
+
     !
     !*---------------------------------------------------------------------------
     !
@@ -795,16 +796,16 @@ END SUBROUTINE definir_classe_profondeur
             rl_temp=rga_TempVal(il_i,id_IndProf)
 #if defined key_computePot
             rl_temp=rga_TempPotVal(il_i,id_IndProf)
-#endif        
+#endif
             IF (lg_TMLEV05) THEN
               rl_diff2=rgpa_TMLEV05(il_i,id_IndProf)-rl_temp
               il_count_clim=1
             ENDIF
-            IF (lg_TMLEV09) THEN        
+            IF (lg_TMLEV09) THEN
               rl_diff2=rgpa_TMLEV09(il_i,id_IndProf)-rl_temp
               il_count_clim=1
             ENDIF
-            IF (lg_TMLEV18) THEN        
+            IF (lg_TMLEV18) THEN
               rl_diff2=rgpa_TMLEV18(il_i,id_IndProf)-rl_temp
               il_count_clim=1
             ENDIF
@@ -883,6 +884,7 @@ END SUBROUTINE definir_classe_profondeur
                        ! note: on n ecrit pas les valeurs pour la colonne totale
                        ! (inutile car deja
                        ! dans un segment de profondeur)
+#if defined key_debug
                        IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
                           OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffTEMP),form='FORMATTED',&
                                & POSITION='APPEND',STATUS='old')
@@ -895,6 +897,7 @@ END SUBROUTINE definir_classe_profondeur
                                TRIM(cgpa_PLATFORM_NUMBER(id_IndProf,1)),TRIM(cgpa_WMO_INST_TYPE(id_IndProf,1))
                           CLOSE(50)
                        ENDIF
+#endif
                     ELSE
                       !* DEBUG
                       IF ( ABS( rl_diff)  > 15. ) THEN
@@ -928,9 +931,9 @@ END SUBROUTINE definir_classe_profondeur
                              !   CLOSE(50)
                              ! ENDIF
                               ig_StatNOK(id_IndDepth,id_param) =ig_StatNOK(id_IndDepth,id_param) + 1
-!#if defined key_debug
-!    WRITE(0,*) 'Diff TEMP NOK ::',rl_diff,rl_diff2,rl_diff3
-!#endif
+#if defined key_debug
+    WRITE(0,*) 'Diff TEMP NOK ::',rl_diff,rl_diff2,rl_diff3
+#endif
                        ELSE
 #if defined plot_high_depth
                           IF ( id_IndDepth > 40 .AND. id_IndDepth < 51 ) THEN  
@@ -969,9 +972,9 @@ END SUBROUTINE definir_classe_profondeur
                           dd_rms = dd_rms + rl_var*rl_var
                           dd_moy_diff = dd_moy_diff + rl_diff
                           dd_rms_diff = dd_rms_diff + rl_diff*rl_diff
-!#if defined key_debug
-!    WRITE(0,*) 'Diff TEMP OK ::',TRIM(cga_param(iga_IndParamStat(id_param))),rl_diff,rl_diff2,rl_diff3
-!#endif
+#if defined key_debug
+    WRITE(0,*) 'Diff TEMP OK ::',TRIM(cga_param(iga_IndParamStat(id_param))),rl_diff,rl_diff2,rl_diff3
+#endif
                     ENDIF  
                     !**
                   ENDIF
@@ -980,9 +983,9 @@ END SUBROUTINE definir_classe_profondeur
                   IF (rl_diff2 /= 9999. .AND. il_count_clim == 1.) THEN   
                      IF ( ABS(rl_diff).GE.rg_EcartTempMax .AND. ABS(rl_diff2).GE.rg_EcartTempMax) THEN
                          ig_StatNOK(id_IndDepth,id_param)=ig_StatNOK(id_IndDepth,id_param) + 1
-!#if defined key_debug
 !    WRITE(0,*) 'Diff TEMP NOK 1 clim::',rl_diff,rl_diff2
 !#endif
+#if defined key_debug
                          IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
                             OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffTEMP),form='FORMATTED',&
                                  & POSITION='APPEND',STATUS='old')
@@ -995,7 +998,8 @@ END SUBROUTINE definir_classe_profondeur
                                  TRIM(cgpa_PLATFORM_NUMBER(id_IndProf,1)),TRIM(cgpa_WMO_INST_TYPE(id_IndProf,1))
                             CLOSE(50)
                          ENDIF
-                    ELSE 
+#endif
+                    ELSE
                          ig_StatOK(id_IndDepth,id_param)=ig_StatOK(id_IndDepth,id_param) + 1
                          id_nval = id_nval + 1
                          dd_moy = dd_moy + rl_var
@@ -1010,6 +1014,7 @@ END SUBROUTINE definir_classe_profondeur
                      !**  Cas pas de clim on vire les valeurs abhérentes seulement
                      IF ( ABS(rl_diff).GE.rg_EcartTempMax) THEN
                           ig_StatNOK(id_IndDepth,id_param) =ig_StatNOK(id_IndDepth,id_param) + 1
+#if defined key_debug
                           IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
                             OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffTEMP),form='FORMATTED',&
                                  & POSITION='APPEND',STATUS='old')
@@ -1021,6 +1026,7 @@ END SUBROUTINE definir_classe_profondeur
                                   TRIM(cgpa_PLATFORM_NUMBER(id_IndProf,1)),TRIM(cgpa_WMO_INST_TYPE(id_IndProf,1))
                              CLOSE(50)
                           ENDIF
+#endif
                      ELSE
 !#if defined key_debug
 !    WRITE(0,*) 'Diff TEMP OK ::',rl_diff,rl_diff2,rl_diff3
@@ -1092,6 +1098,7 @@ END SUBROUTINE definir_classe_profondeur
                        ! Output: valeur a rejeter
                        ! note: on n ecrit pas les valeurs pour la colonne totale (inutile car deja
                        ! dans un segment de profondeur)
+#if defined key_debug
                        IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
                           OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffPSAL),form='FORMATTED',&
                                & POSITION='APPEND',STATUS='old')
@@ -1103,6 +1110,7 @@ END SUBROUTINE definir_classe_profondeur
                                TRIM(cgpa_PLATFORM_NUMBER(id_IndProf,1)),TRIM(cgpa_WMO_INST_TYPE(id_IndProf,1))
                           CLOSE(50)
                        ENDIF
+#endif
 !#if defined key_debug
 !    WRITE(0,*) 'Diff PSAL NOK ::',rl_diff,rl_diff2,rl_diff3
 !#endif
@@ -1185,6 +1193,7 @@ END SUBROUTINE definir_classe_profondeur
 !#if defined key_debug
 !    WRITE(0,*) 'Diff PSAL NOK 1 clim::',rl_diff,rl_diff2
 !#endif
+#if defined key_debug
                          IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
                             OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffTEMP),form='FORMATTED',&
                                  & POSITION='APPEND',STATUS='old')
@@ -1197,6 +1206,7 @@ END SUBROUTINE definir_classe_profondeur
                                  TRIM(cgpa_PLATFORM_NUMBER(id_IndProf,1)),TRIM(cgpa_WMO_INST_TYPE(id_IndProf,1))
                             CLOSE(50)
                          ENDIF
+#endif
                      ELSE
                          ig_StatOK(id_IndDepth,id_param)=ig_StatOK(id_IndDepth,id_param)+ 1
                          id_nval = id_nval + 1
@@ -1213,6 +1223,7 @@ END SUBROUTINE definir_classe_profondeur
                      !seulement
                      IF ( ABS(rl_diff).GE.rg_EcartSalMax) THEN
                           ig_StatNOK(id_IndDepth,id_param) =ig_StatNOK(id_IndDepth,id_param) + 1
+#if defined key_debug
                           IF ( id_IndDepth .LE. ig_NbDepthDef ) THEN
                            OPEN(unit=50,file=TRIM(cd_logdir)//TRIM(cg_FicDiffPSAL),form='FORMATTED',POSITION='APPEND',STATUS='old')
                            WRITE(50,FMT=700,advance="yes") TRIM(cg_filename),&
@@ -1222,6 +1233,7 @@ END SUBROUTINE definir_classe_profondeur
                                                           & TRIM(cgpa_PLATFORM_NUMBER(id_IndProf,1)),TRIM(cgpa_WMO_INST_TYPE(id_IndProf,1))
                            CLOSE(50)
                         ENDIF
+#endif
                      ELSE
                         ig_StatOK(id_IndDepth,id_param) = ig_StatOK(id_IndDepth,id_param) + 1
                         id_nval = id_nval + 1

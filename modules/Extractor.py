@@ -132,6 +132,31 @@ class Extract_Legos_SIT(Extractor):
 
         return liste_file
 
+    def run_over(self,date1,date2,dirdata,dirtmp,typedata,template,prefix):
+        valeurj_tmp = SyDate(str(date1))
+        valeurj = valeurj_tmp
+        valeurj2 = SyDate(str(date2))
+        liste_tot=[]
+        while  valeurj_tmp >= valeurj and valeurj_tmp <= valeurj2 :
+            dateval = str(valeurj_tmp)
+            self.log.info('Day 5.2 %s ' % (dateval))
+            month=dateval[0:6]
+            year=dateval[0:4]
+            frame=dirdata+'/*'+dateval.strip()+'*.nc'
+            liste_file=glob(frame)
+            self.log.info('Liste file CORA %s ' % (liste_file))
+            for new_file in liste_file :
+                try :
+                    filename=os.path.basename(new_file)
+                    shutil.copy(new_file,dirtmp)
+                    self.log.info('copy file {}'.format(dirtmp+filename))
+                    liste_tot.append(dirtmp+filename)
+                except IOError as e:
+                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
+                    sys.exit(1)
+            valeurj_tmp=valeurj_tmp.goforward(1)
+        ## TODO Finish the run_over for SIT files
+
 class Extract_CMEMS_drifters(Extractor):
 
     """ Class to extract CMEMS drifters """

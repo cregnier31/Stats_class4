@@ -442,7 +442,8 @@ CONTAINS
     PRINT *,'param use :: ',cga_param_use(:)
     PRINT *,'number of prof :: ',ig_nprof
     PRINT *,'number of param :: ',il_param
-!    PRINT *,'cgpa_STATION_PARAMETERS :: ',cgpa_STATION_PARAMETERS
+    PRINT *,'ig_param_use :: ',ig_param_use
+    !    PRINT *,'cgpa_STATION_PARAMETERS :: ',cgpa_STATION_PARAMETERS
 #endif
 !!$!** Debut modif
     !** Pour chaque profil recherche des parametres standards (parmi ceux
@@ -754,6 +755,9 @@ CONTAINS
     !
     !------------------------------------------------------------------------------
     !
+#if defined key_debug
+ PRINT *,'Before READ'
+#endif
     IF(ll_NPARAM.AND.ll_NPROF.AND.ll_C_PARAM.AND.ll_L_PARAM) THEN
 
 
@@ -764,20 +768,20 @@ CONTAINS
  PRINT *,'Beginning of READ'
 #endif
        IF (COUNT( iga_IndParam(:,ip_HDCST_TEMP) > 0 ) > 0) THEN
-          CALL MIOL_read_field_NC(cd_filename,cl_HDCST_TEMP,rgpa_HDCST_TEMP)   
+          CALL MIOL_read_field_NC(cd_filename,cl_HDCST_TEMP,rgpa_HDCST_TEMP)
           lg_HDCT_TEMP=.TRUE.
        ENDIF
        IF (COUNT( iga_IndParam(:,ip_HDCST_PSAL) > 0 ) > 0) THEN
           lg_HDCT_PSAL=.TRUE.
-          CALL MIOL_read_field_NC(cd_filename,cl_HDCST_PSAL,rgpa_HDCST_PSAL)    
+          CALL MIOL_read_field_NC(cd_filename,cl_HDCST_PSAL,rgpa_HDCST_PSAL)
        ENDIF
        IF (COUNT( iga_IndParam(:,ip_ANA_TEMP) > 0 ) > 0) THEN
           lg_ANA_TEMP=.TRUE.
-          CALL MIOL_read_field_NC(cd_filename,cl_ANA_TEMP,rgpa_ANA_TEMP)    
-       ENDIF   
+          CALL MIOL_read_field_NC(cd_filename,cl_ANA_TEMP,rgpa_ANA_TEMP)
+       ENDIF
        IF (COUNT( iga_IndParam(:,ip_ANA_PSAL) > 0 ) > 0)  THEN
           lg_ANA_PSAL=.TRUE.
-          CALL MIOL_read_field_NC(cd_filename,cl_ANA_PSAL,rgpa_ANA_PSAL)    
+          CALL MIOL_read_field_NC(cd_filename,cl_ANA_PSAL,rgpa_ANA_PSAL)
        ENDIF
        IF (COUNT( iga_IndParam(:,ip_FRCST1D_TEMP) > 0 ) > 0) THEN
           lg_FCST1D_TEMP=.TRUE.
@@ -863,6 +867,9 @@ CONTAINS
        IF (COUNT( iga_IndParam(:,ip_TMLEV18) > 0 ) > 0) THEN
           CALL MIOL_read_field_NC(cd_filename,cl_TMLEV18,rgpa_TMLEV18)
           lg_TMLEV18=.TRUE.
+#if defined key_debug
+       print *,'read_field TMLEV18'
+#endif
        ENDIF
        IF (COUNT( iga_IndParam(:,ip_SMLEV09) > 0 ) > 0) THEN
           CALL MIOL_read_field_NC(cd_filename,cl_SMLEV09,rgpa_SMLEV09)
@@ -875,6 +882,9 @@ CONTAINS
        IF (COUNT( iga_IndParam(:,ip_SMLEV18) > 0 ) > 0) THEN
           CALL MIOL_read_field_NC(cd_filename,cl_SMLEV18,rgpa_SMLEV18)
           lg_SMLEV18=.TRUE.
+#if defined key_debug
+       print *,'read_field SMLEV18'
+#endif
        ENDIF
        IF (COUNT( iga_IndParam(:,ip_TMMED) > 0 ) > 0) THEN
           CALL MIOL_read_field_NC(cd_filename,cl_TMMED,rgpa_TMMED)
@@ -1005,6 +1015,7 @@ CONTAINS
     id_stat = 0
 #if defined key_debug
     WRITE(0,*)  'READ profile ARMOR'
+    print *,'READ profile ARMOR'
 #endif
     !** Ouverture du fichier CORIOLIS ARGO      
     INQUIRE(FILE=cd_filename,EXIST=ll_tri_prof)
@@ -1618,6 +1629,9 @@ CONTAINS
     !
     !------------------------------------------------------------------------------
     !
+#if defined key_debug
+ PRINT *,'Before READ ARMOR'
+#endif
     IF(ll_NPARAM.AND.ll_NPROF.AND.ll_C_PARAM.AND.ll_L_PARAM) THEN
 
 
@@ -1849,7 +1863,7 @@ CONTAINS
     INTEGER(KIND=4) ,INTENT(IN)                        :: id_ficlog
     INTEGER(KIND=4) ,INTENT(IN)                        :: id_ficsynth
     INTEGER(KIND=4) ,INTENT(OUT)                       :: id_stat
-    LOGICAL                                            :: ll_exist_TEMP,ll_exist_PSAL,ll_depth_QC_OK
+    LOGICAL                                            :: ll_exist_TEMP,ll_exist_PSAL,ll_depth_QC_OK, ll_test
     !
     !*--------------------------------------------------------------------------
     !
@@ -2129,6 +2143,7 @@ CONTAINS
                             cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR. &
                             cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '2' .OR. &
                             cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '3' ) cgpa_TEMP_ADJUSTED_QC(:,ib_p) = '4' 
+#if defined key_debug
 !**           Ecriture fichier
                       INQUIRE(FILE=TRIM(cd_dirlog)//TRIM(cg_TEMP_badprof),EXIST=ll_exist_TEMP)
                       IF ( .NOT. ll_exist_TEMP) THEN
@@ -2142,6 +2157,7 @@ CONTAINS
                       WRITE(50,FMT=100,advance="yes") TRIM(cg_filename),ib_p,rl_nbvaleur_1,rl_nbvaleur_2,rl_div
                       CLOSE(50)
 !**
+#endif
                  if ( count (cgpa_TEMP_ADJUSTED_QC(:,ib_p) .EQ. '1' ) < 1  ) il_TEMP_NOK = il_TEMP_NOK + 1
                 ENDIF
                ! PRINT *,'Pourcentage mauvais :: ',rl_div*100
@@ -2176,6 +2192,7 @@ CONTAINS
                             cgpa_TEMP_QC(:,ib_p) .EQ. '1' .OR. &
                             cgpa_TEMP_QC(:,ib_p) .EQ. '2' .OR. &
                             cgpa_TEMP_QC(:,ib_p) .EQ. '3' ) cgpa_TEMP_QC(:,ib_p) = '4'
+#if defined key_debug
 !**           Ecriture fichier
                       INQUIRE(FILE=TRIM(cd_dirlog)//TRIM(cg_TEMP_badprof),EXIST=ll_exist_TEMP)
                       IF ( .NOT. ll_exist_TEMP) THEN
@@ -2188,8 +2205,8 @@ CONTAINS
                            & POSITION='APPEND',STATUS='old')
                       WRITE(50,FMT=100,advance="yes") TRIM(cg_filename),ib_p,rl_nbvaleur_1,rl_nbvaleur_2,rl_div
                       CLOSE(50)
-                      
 !**
+#endif
                  if ( count (cgpa_TEMP_QC(:,ib_p) .EQ. '1' ) < 1  ) il_TEMP_NOK = il_TEMP_NOK + 1
                 ENDIF
 !#if defined key_debug
@@ -2259,6 +2276,7 @@ CONTAINS
                             cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR. &
                             cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '2' .OR. &
                             cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '3')  cgpa_PSAL_ADJUSTED_QC(:,ib_p) = '4'
+#if defined key_debug
 !**           Ecriture fichier
                       INQUIRE(FILE=TRIM(cd_dirlog)//TRIM(cg_PSAL_badprof),EXIST=ll_exist_PSAL)
                       IF ( .NOT. ll_exist_PSAL) THEN
@@ -2272,6 +2290,8 @@ CONTAINS
                       WRITE(50,FMT=100,advance="yes") TRIM(cg_filename),ib_p,rl_nbvaleur_1,rl_nbvaleur_2,rl_div
                       CLOSE(50)
 !**
+#endif
+                  ll_test=.True.
                 ENDIF
                 WHERE ( cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '1' .OR. cgpa_PSAL_ADJUSTED_QC(:,ib_p) .EQ. '0' )
                    rga_PsalVal(:,ib_p) = rgpa_PSAL_ADJUSTED(:,ib_p)
@@ -2297,6 +2317,7 @@ CONTAINS
                             cgpa_PSAL_QC(:,ib_p) .EQ. '1' .OR. &
                             cgpa_PSAL_QC(:,ib_p) .EQ. '2' .OR. &
                             cgpa_PSAL_QC(:,ib_p) .EQ. '3') cgpa_PSAL_QC(:,ib_p) = '4'
+#if defined key_debug
 !**           Ecriture fichier
                       INQUIRE(FILE=TRIM(cd_dirlog)//TRIM(cg_PSAL_badprof),EXIST=ll_exist_PSAL)
                       IF ( .NOT. ll_exist_PSAL) THEN
@@ -2310,6 +2331,8 @@ CONTAINS
                       WRITE(50,FMT=100,advance="yes") TRIM(cg_filename),ib_p,rl_nbvaleur_1,rl_nbvaleur_2,rl_div
                       CLOSE(50)
 !**
+#endif
+                  ll_test=.True.
                 ENDIF
 		!PRINT *, 'cgpa_PSAL_QC(:,ib_p) :: ',cgpa_PSAL_QC(:,ib_p),ib_p
                 WHERE ( cgpa_PSAL_QC(:,ib_p) .EQ. '1' .OR. cgpa_PSAL_QC(:,ib_p) .EQ. '0' )
@@ -2341,6 +2364,7 @@ CONTAINS
             rga_PsalVal(:,ib_p)=rg_PsalVal_Def
           ENDIF ! fin de la gestion de la salinite
 
+#if defined key_debug
           !** Ecriture de la synthese
           WRITE(id_ficsynth,'(a8,1x,a4,2f9.3,1x,f11.5,1x,2I5)')&
                &TRIM(cgpa_PLATFORM_NUMBER(ib_p,1)),&
@@ -2349,7 +2373,8 @@ CONTAINS
                &rl_lat,&
                &dgpa_JULD(ib_p),&
                &iga_MesTempVal(ib_p),iga_MesPsalVal(ib_p)
-  
+#endif
+
 #if defined key_computePot
         !!** Correction potentielle
             DO il_i=1,ig_nlevels

@@ -43,16 +43,14 @@ from utils import pull_names, echeance
 # Configuration du plot
 # ~~~~~~~~~~~~~~~~~~~~~~
 
-SINGLE_PLOT = True
-MULTI_PLOT = False
+SINGLE_PLOT = False
+MULTI_PLOT = True
 GLO_AREA = False
 CMEMS_AREA = True
 skill = 0
-dt_start_plot = '20130101'
-dt_start_plot_ini = ['20130101','20130501','20130101','20130101','20130101','20160901','20130101']
-dt_end_plot = '20191002'
-dt_end_plot_ini = ['20191002','20191001','20190131','20190131','20191002','20190429','20191002']
-list_color = ['y','deeppink','dodgerblue','mediumpurple','pink','turquoise','darkorange']
+dt_start_plot_ini = ['20150101','20161101','20150101','20150101','20150101','20160901','20150101','20210110']
+dt_end_plot_ini = ['20210531','20210531','20210531','20210325','20210531','20200830','20210531','20210630']
+list_color = ['y','deeppink','dodgerblue','mediumpurple','pink','turquoise','darkorange','green']
 #list_color = ['deeppink','y','mediumpurple','pink','turquoise']
 window = 30
 nf = 12 # Hincast: 0 ; Forecast: nbre heures echeance (12, 60, etc.)
@@ -73,23 +71,24 @@ else :
 # Definition des chemins, des systemes, des variables et de la periode
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-PATH_IN = '/home/cregnier/SVN/mo/TEP/TEP_CLASS4/branches/V5/postraitement/python/plots/Intercomparison/'
-PATH_OUT = PATH_IN+'img/0-500m/'
+PATH_IN = '/home/cregnier/Gitlab/TEP_CLASS4/postraitement/python/plots/Intercomparison/'
+depth_comp="0-6000m"
+PATH_OUT = PATH_IN+'img/'+depth_comp+'/'
 DATA_IN = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'
 #SYSTEM = ['FOAM','PSY4V3R1','HYCOM_RTOFS','BLK','GIOPS','NERSC']
-SYSTEM = ['FOAM','PSY4V3R1','ENSMEAN','HYCOM_RTOFS','BLK','CGOFS','GIOPS']
+SYSTEM = ['FOAM','PSY4V3R1','ENSMEAN','HYCOM_RTOFS','BLK','CGOFS','GIOPS','CMCC']
 #VAR = ['seaice-concentration','salinity', 'temperature', 'sla', 'sst']
 VAR = ['salinity', 'temperature', 'sla', 'sst']
 level_sla_stt = 0
 level_t_s = 0
 cla_areaini = params.liste_zone
-cla_depth = params.profondeur4
+cla_depth = params.profondeur5
 print (cla_depth)
 # ~~~~~~~~~~~ Definition des dates ~~~~~~~~~~~~~~~~~
 
+dt_start_plot = "20150101"
+dt_end_plot = "20210630"
 dateCNESref   = d.datetime.strptime('19500101','%Y%m%d').toordinal()
-dt_start_plot = "20130101"
-dt_end_plot = "20191002"
 dtst = d.datetime.strptime(dt_start_plot,'%Y%m%d')
 dted = d.datetime.strptime(dt_end_plot,'%Y%m%d')
 
@@ -120,16 +119,19 @@ for v, varname in enumerate(VAR):
         #else:
         #    dt_end_plot = dt_end_plot_ini
         dt_end_plot = dt_end_plot_ini[s]
+        try:
+            filename = glob(os.path.join(DATA_IN +prod+'/Stats_GODAE/NETCDF/'+depth_comp+'/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_'+\
+                            prod+'_'+str(dt_start_plot)+"_"+str(dt_end_plot)+'.nc'))[0]
+        except Exception as e:
+            raise RuntimeError('Failed to open file {}'.format(DATA_IN +prod+'/Stats_GODAE/NETCDF/'+depth_comp+'/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_'+\
+                                                prod+'_'+str(dt_start_plot)+"_"+str(dt_end_plot)+'.nc')) from e
+        try:
+            f1 = Dataset(filename, 'r', format='NETCDF4')
+        except Exception as e:
+            raise RuntimeError('Failed to open file {} '.format(filename)) from e
 
-        print (DATA_IN +prod+'/Stats_GODAE/NETCDF/0-500m/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_'+\
-                                prod+'_'+dt_start_plot+"_"+dt_end_plot+'.nc')
-        filename = glob(os.path.join(DATA_IN +prod+'/Stats_GODAE/NETCDF/0-500m/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_'+\
-                        prod+'_'+str(dt_start_plot)+"_"+str(dt_end_plot)+'.nc'))[0]
-        if not filename:
-            print ("file not known")
-            sys.exit(1)
-        print (filename)
-        f1 = Dataset(filename, 'r', format='NETCDF4')
+        print ('File ok {}'.format(filename))
+
         if 'stats_'+varname in f1.variables:
             stat_var = f1.variables['stats_'+varname][:]
             stat_var = np.where(stat_var.mask, np.nan, stat_var)
@@ -204,9 +206,6 @@ for v, varname in enumerate(VAR):
 #             Test pour tracer plusieurs plots simples
 # ************************************************************************
 
-#SYSTEM = ['FOAM','PSY4','PSY3','HYCOM_RTOFS','BLK','GIOPS','NERSC']
-SYSTEM = ['FOAM','PSY4','ENSMEAN','HYCOM_RTOFS','BLK','GIOPS']
-SYSTEM = ['FOAM','PSY4','ENSMEAN','HYCOM_RTOFS','BLK','CGOFS','GIOPS']
 if SINGLE_PLOT:
     print ("Single_plot")
     if GLO_AREA:
@@ -234,6 +233,8 @@ if SINGLE_PLOT:
 # ************************************************************************
 #                Test pour tracer des multiplots
 # ************************************************************************
+SYSTEM = ['FOAM','PSY4','ENSMEAN','HYCOM_RTOFS','BLK','CGOFS','GIOPS','CMCC']
+
 if MULTI_PLOT == True:
     print ("Multiplot")
     if GLO_AREA:
@@ -256,6 +257,8 @@ if MULTI_PLOT == True:
             else:
                 f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof, dtst, dted, leg, list_color, splot, nb_var, skill)           
         print (str(dt_start_plot),str(type_ech),str(dt_end_plot),str(type_ech))
+        if not os.path.exists(PATH_OUT+str(type_ech)+'/'):
+            os.makedirs(PATH_OUT+str(type_ech)+'/')
         plt.savefig(PATH_OUT+str(type_ech)+'/'+str(cla_areaini[a].decode("utf-8"))+'_rmsd_bias_'+str(dt_start_plot)+'-'+str(dt_end_plot)+'_'+str(type_ech)+'.png',dpi=200)
         #plt.savefig(PATH_OUT+'GLO_rmsd_bias_'+dt_start_plot+'-'+dt_end_plot+'_0-500m.png',dpi=200)
         plt.close()

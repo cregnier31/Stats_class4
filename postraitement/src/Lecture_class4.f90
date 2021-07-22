@@ -284,7 +284,7 @@ PROGRAM Lecture_class4
      IF ( ig_typedata .EQ. 1) CALL read_profile(cla_inputFile(il_ji),il_ficlog,il_stat)
      IF ( ig_typedata .EQ. 2) CALL read_profile_ARMOR(cla_inputFile(il_ji),il_ficlog,il_stat)
 #if defined key_debug
-     WRITE(0,*)' READ PROFILE OK'
+     WRITE(0,*)' READ PROFILE OK ',ig_typedata
 #endif
      ig_FicLus = ig_FicLus + 1
      WRITE(il_ficlog,'(a,i4,a,i5)')'Fin de lecture du fichier num.',&
@@ -569,6 +569,7 @@ PROGRAM Lecture_class4
 
   CALL MIOL_close_file_NC(il_file_id)
 
+#if defined key_debug
   !** ecriture en ASCII des resultats
   !   ------------------------------
   CALL MIOL_getFreeLu(il_ficStatBoite)
@@ -594,6 +595,7 @@ PROGRAM Lecture_class4
      ENDDO ! il_s=1,ig_ParamStat
   ENDDO ! il_r=1,ig_nbregion
   CLOSE(il_ficStatBoite)
+#endif
 
 !   IF ( cl_input4 /= '' ) THEN
 !      cl_MeanDiffFicOut=TRIM(cl_input3)//TRIM(cl_input2)//'_mean_diff_loc_R'//TRIM(cl_input4)//'.nc'

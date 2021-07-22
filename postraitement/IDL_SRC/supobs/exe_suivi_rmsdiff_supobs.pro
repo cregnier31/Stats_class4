@@ -18,13 +18,13 @@
 ;@config_PSY2V4R4
 ;@config_PSY3V3R3
 ;@config_PSY2V4R4
-;@config_PSY4V2R2
 ;@config_IBI36V2R1
 ;@config_GLORYS2V3
 ;@config_PSY4V3R1
 ;@config_GLORYS12V1
 ;@config_GLORYS12V1-free
-@config_GLORYS12V1-clim
+;@config_GLORYS12V1-clim
+@config_PSY4V3R1
 ;@config_GLO4
 ;@config_GLORYS2V1
 ;@config_MJM105b
@@ -78,8 +78,9 @@ clear,titre,units
 SPAWN,'mkdir -p '+fic_out+'/File_ASCII/'
 
 ;; List files
-SPAWN,'ls '+dir_stats_MERC+ ' | grep  rms_diff_R2004 | grep '+modele,filelist 
-SPAWN,'ls '+dir_stats_MERC+ ' | grep  rms_diff_R2004 | grep '+modele+ ' | cut -f4 -d_ | cut -f2 -dR | cut -f1 -d.',day 
+print, dir_stats_MERC
+SPAWN,'ls '+dir_stats_MERC+ ' | grep  rms_diff_R | grep '+modele,filelist 
+SPAWN,'ls '+dir_stats_MERC+ ' | grep  rms_diff_R | grep '+modele+ ' | cut -f4 -d_ | cut -f2 -dR | cut -f1 -d.',day 
 
 PRINT,filelist,day
 print,dir_stats_MERC
@@ -92,12 +93,12 @@ CASE modele OF  & $
          liste_region(*)=liste_zone(*) & $
          ENDCASE & $
 
-	 'T321':BEGIN & $
+        'T321':BEGIN & $
          liste_region=strarr(13) & $
          liste_region(*)=liste_zone(*) & $
          ENDCASE & $
 
-	 'IBI36V2R1': BEGIN & $
+        'IBI36V2R1': BEGIN & $
          liste_region=strarr(3) & $
          liste_region=liste_zone_PSY2 & $
          ENDCASE & $
@@ -112,14 +113,14 @@ CASE modele OF  & $
          liste_region=liste_zone_PSY2 & $
          ENDCASE & $
 
-         'PSY4V2R2': BEGIN & $
+         'PSY4V3R1': BEGIN & $
          liste_region=strarr(14) & $
          liste_region(*)=liste_zone(*) & $
          ;liste_region=strarr(1) & $
          ;liste_region(*)='BALTIC' & $
          ENDCASE & $
 
-	 'GLORYS12V1':BEGIN & $
+         'GLORYS12V1':BEGIN & $
          liste_region=strarr(14) & $
          liste_region(*)=liste_zone(*) & $
           ENDCASE & $
@@ -139,27 +140,27 @@ CASE modele OF  & $
          liste_region(*)=liste_zone(*) & $
           ENDCASE & $
 
-	 'MJM105b':BEGIN & $
+         'MJM105b':BEGIN & $
          liste_region=strarr(13) & $
          liste_region(*)=liste_zone(*) & $
          ;liste_region=strarr(1) & $
          ;liste_region(0)='GLO' & $
          ENDCASE & $
 
-	 'T323':BEGIN & $
+         'T323':BEGIN & $
          liste_region=strarr(13) & $
          liste_region(*)=liste_zone(*) & $
          ;liste_region=strarr(1) & $
          ;liste_region(0)='GLO' & $
          ENDCASE & $
 
-	 'GLORYS2V3' :BEGIN & $
-	 liste_region=strarr(14) & $
+         'GLORYS2V3' :BEGIN & $
+         liste_region=strarr(14) & $
          liste_region(*)=liste_zone(*) & $
          ENDCASE & $
 
-	 'MJM105b' :BEGIN & $
-	 liste_region=strarr(13) & $
+         'MJM105b' :BEGIN & $
+         liste_region=strarr(13) & $
          liste_region(*)=liste_zone(*) & $
          ENDCASE & $
 
@@ -175,7 +176,6 @@ tracer_suivi_meandiff_supobs,modele,file_mask,$
 kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,$
 liste_region,tab_choix,OPER,tab_prof,lissage,NB_VALEURS,NB_VALEURS2,type_data=type_data
 ;;exit,/NO_CONFIRM
-;;STOP
 
 ;;;; Lancé du tracé de la rms diff et la mean diff sur les couches classiques
 ;;;; 0-50, 50-100, 100-150 ...

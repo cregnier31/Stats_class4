@@ -64,10 +64,10 @@ def plotStat(fig, ax_fig, dict, varname, area, system, prof, datemin, datemax, l
     """
 
     # ~~~~~~~~ Plot des time series ~~~~~~~~~~~
-
+    list_system = ['PSY4','ENSMEAN','PSY3','FOAM','HYCOM_RTOFS','BLK','GIOPS','NERSC','CGOFS','CMCC','PSY4V3R1']
     list_metric_aice = ['PCI','PCW','PCT','BIAS']
     for s, prod in enumerate(system):
-        if prod in ['PSY4','ENSMEAN','PSY3','FOAM','HYCOM_RTOFS','BLK','GIOPS','NERSC','CGOFS']:
+        if prod in list_system:
             name_lab = prod
             prod_name = prod
         elif prod == 0:
@@ -121,7 +121,7 @@ def plotStat(fig, ax_fig, dict, varname, area, system, prof, datemin, datemax, l
     if skill == 0:
         ax1 = ax_fig.twinx()
         ax_fig.grid(axis='y', color='grey', linestyle='--', alpha=0.5, linewidth = 0.3)
-        if system[0] in ['PSY4','PSY3','FOAM','HYCOM_RTOFS','BLK','GIOPS','NERSC']:
+        if system[0] in list_system:
             barlist=ax1.bar(np.array(dict[varname][system[0]][area]['time']), np.array(dict[varname][system[0]][area]['nb_obs']),alpha=0.14, width=1,linewidth=0,color="grey")   
         else:
             barlist=ax1.bar(np.array(dict[varname][str(int(system[0]))][area]['time']), np.array(dict[varname][str(int(system[0]))][area]['nb_obs']),alpha=0.14, width=1,linewidth=0,color="grey")   

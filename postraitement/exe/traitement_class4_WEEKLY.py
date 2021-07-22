@@ -21,16 +21,26 @@ from sytoolkit.sydate import SyDate
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 #
 ## Test input parameters
-if len(sys.argv) != 6:
-    print('Usage: traitement_class4.py <daterun> <MODELE_TYPE> <gridtype><Machine><daymax>') 
-    print (len(sys.argv))
-    sys.exit(1)
-else:
+if len(sys.argv) == 6:
     DATERUN=sys.argv[1]
     MODELE_TYPE=sys.argv[2]
     GRID=sys.argv[3]
     MACHINE=sys.argv[4]
     DAYMAX=sys.argv[5]
+    ll_debug = False
+elif len(sys.argv) == 7:
+    DATERUN=sys.argv[1]
+    MODELE_TYPE=sys.argv[2]
+    GRID=sys.argv[3]
+    MACHINE=sys.argv[4]
+    DAYMAX=sys.argv[5]
+    for o in sys.argv[1:]:
+        if o in ['-d']:
+            ll_debug = True
+else:
+    print('Usage: traitement_class4.py <daterun> <MODELE_TYPE> <gridtype><Machine><daymax>') 
+    print (len(sys.argv))
+    sys.exit(1)
 # =============
 # CONFIGURATION
 # =============
@@ -100,22 +110,22 @@ TYPEDATANAME=db.get('GLOBAL','DATATYPE')
 ## rm link files boxes
 if os.path.isfile(File_BOXES) :
    os.remove(File_BOXES)
-
-#os.remove("Stats_coriolis"+"*")
-if os.path.isfile("Test_coriolis.txt") : 
-  os.remove("Test_coriolis.txt")
-if os.path.isfile(DIR_LOG+'RejetProfilBathy.txt') :
-  os.remove(DIR_LOG+'RejetProfilBathy.txt')
-if os.path.isfile(DIR_LOG+'ResultStatBoite.txt') :
-  os.remove(DIR_LOG+'ResultStatBoite.txt')  
-if os.path.isfile(DIR_LOG+'ResultAnoTEMP.txt') :
-  os.remove(DIR_LOG+'ResultAnoTEMP.txt')
-if os.path.isfile(DIR_LOG+'ResultAnoPSAL.txt') :
-  os.remove(DIR_LOG+'ResultAnoPSAL.txt')
-#if os.path.isfile(DIR_LOG+ficlog) :
-#  os.remove(DIR_LOG+ficlog)
-if os.path.isfile(DIR_LOG+ficsynth) :
-  os.remove(DIR_LOG+ficsynth)
+if ll_debug:
+    #os.remove("Stats_coriolis"+"*")
+    if os.path.isfile("Test_coriolis.txt") : 
+      os.remove("Test_coriolis.txt")
+    if os.path.isfile(DIR_LOG+'RejetProfilBathy.txt') :
+      os.remove(DIR_LOG+'RejetProfilBathy.txt')
+    if os.path.isfile(DIR_LOG+'ResultStatBoite.txt') :
+      os.remove(DIR_LOG+'ResultStatBoite.txt')  
+    if os.path.isfile(DIR_LOG+'ResultAnoTEMP.txt') :
+      os.remove(DIR_LOG+'ResultAnoTEMP.txt')
+    if os.path.isfile(DIR_LOG+'ResultAnoPSAL.txt') :
+      os.remove(DIR_LOG+'ResultAnoPSAL.txt')
+    if os.path.isfile(DIR_LOG+ficlog) :
+      os.remove(DIR_LOG+ficlog)
+    if os.path.isfile(DIR_LOG+ficsynth) :
+      os.remove(DIR_LOG+ficsynth)
 
 # ==========================================
 # En fonction du type de grille 
@@ -174,7 +184,7 @@ elif TYPEDATANAME ==  "CORA4.1" :
   PREFIX="CO" 
   print("Cora4.1")
 elif TYPEDATANAME ==  "CORA5.2" :
-  TYPEDATA="2"
+  TYPEDATA="1"
   PREFIX="CO" 
   print("Cora5.2")
 elif TYPEDATANAME ==  "CORIOLIS" :
@@ -192,7 +202,7 @@ else :
 
 
 # Creation du lien symbolique
-try : 
+try :
    os.symlink(DIR_utils+'/'+name,DIR_utils+'/'+fic_boxes)
 except OSError as e:
    if e.errno == errno.EEXIST:
@@ -266,8 +276,10 @@ for object in files[:] :
 log.info("Fichiers :: %s "%(new_files))
 nb_fic=len(new_files)
 log.info("Nombre de fichiers apres tri %i" %(nb_fic))
+ficlog=re.sub('.log','_'+TYPEDATANAME+"_"+modele+"_gridtype"+GRID+"_R"+str(DATERUN)+'.log',ficlog)
+ficsynth=re.sub('.synth','_'+TYPEDATANAME+"_"+modele+"_gridtype"+GRID+"_R"+str(DATERUN)+'.synth',ficlog)
 # Write namelist
-fic_namelist=DIR_NAMELIST+"namelist_liste_corio.txt"
+fic_namelist=DIR_NAMELIST+"namelist_liste_corio_"+TYPEDATANAME+"_"+str(DATERUN)+".txt"
 try:
   # Creation fichier
   obFichier=open(fic_namelist,'w')
@@ -401,14 +413,15 @@ except:
 # =========================================
 #  Create files
 # =========================================
-obFichier=open(DIR_LOG+'RejetProfilBathy.txt','w')
-obFichier.close()
-obFichier=open(DIR_LOG+'ResultStatBoite.txt','w')
-obFichier.close()
-obFichier=open(DIR_LOG+'ResultAnoTEMP.txt','w')
-obFichier.close()
-obFichier=open(DIR_LOG+'ResultAnoPSAL.txt','w')
-obFichier.close()
+if ll_debug:
+    obFichier=open(DIR_LOG+'RejetProfilBathy.txt','w')
+    obFichier.close()
+    obFichier=open(DIR_LOG+'ResultStatBoite.txt','w')
+    obFichier.close()
+    obFichier=open(DIR_LOG+'ResultAnoTEMP.txt','w')
+    obFichier.close()
+    obFichier=open(DIR_LOG+'ResultAnoPSAL.txt','w')
+    obFichier.close()
 
 # ==========================================
 # Launch CLASS4 Statistics
@@ -443,12 +456,12 @@ if os.path.isfile(DIR_LOG+'ListeTEMPbadprof.txt') :
 if os.path.isfile(DIR_LOG+'ListePSALbadprof.txt') :
   shutil.move(DIR_LOG+'ListePSALbadprof.txt',DIR_CPT+'ListePSALbadprof_'+PeriodeName+'_'+modele+'_'+zone+'_gridtype'+GRID+'.txt')
 
-if os.path.isfile(DIR_LOG+ficlog) :
-   shutil.move(DIR_LOG+ficlog,DIR_CPT+'Lecture_class4_'+PeriodeName+'_'+modele+'_'+zone+'_gridtype'+GRID+'.log')
-
-if os.path.isfile(DIR_LOG+ficsynth) :
-   shutil.move(DIR_LOG+ficsynth,DIR_CPT+'Lecture_class4_'+PeriodeName+'_'+modele+'_'+zone+'_gridtype'+GRID+'.synth')
-
+#if os.path.isfile(DIR_LOG+ficlog) :
+#   shutil.move(DIR_LOG+ficlog,DIR_CPT+'Lecture_class4_'+PeriodeName+'_'+modele+'_'+zone+'_gridtype'+GRID+'.log')
+#
+#if os.path.isfile(DIR_LOG+ficsynth) :
+#   shutil.move(DIR_LOG+ficsynth,DIR_CPT+'Lecture_class4_'+PeriodeName+'_'+modele+'_'+zone+'_gridtype'+GRID+'.synth')
+#
 if os.path.isfile(DIR_LOG+'Bad_points_PSAL_CORIO.txt') :
    shutil.move(DIR_LOG+'Bad_points_PSAL_CORIO.txt',DIR_CPT+modele+'_R'+DATERUN+'_Bad_points_PSAL_CORIO.txt')
 
@@ -476,8 +489,8 @@ dayvalmax=SyDate(DAYMAX)
 date_next=SyDate(DATERUN).goforward(7)
 #jmax=Obj.d2j(DAYMAX)
 log.info('nextrun {} '.format(date_next))
+JRUN=SyDate(str(date_next))
 if  date_next <= dayvalmax :
-    JRUN=SyDate(str(date_next))
     log.info('Launch run %s '.format(JRUN))
     if MACHINE == 'kara' :
         log.info("Path {}".format(HOMEDIR+'/Launch_Stat_CLASS4.ksh '))
