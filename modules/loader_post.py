@@ -109,7 +109,7 @@ def input_params(arg, log):
     params_conf['percent'] = 'off'
     params_conf['nblevel'] = ''
     _DBFILE_ = './environment.cfg'
-    params_conf['missing_value'] = 1e35
+    params_conf['missing_value'] = netCDF4.default_fillvals['f4']) 
     for o, p in cla_opts[0]:
         if o in ['-s', '--day1']:
             cl_start_date = p

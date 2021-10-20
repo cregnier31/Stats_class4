@@ -23,6 +23,7 @@ from Writer import Writer
 from glob import glob
 from reader import read_GODAE_profile
 from netCDF4 import Dataset
+import netCDF4
 from timeit import default_timer as timer
 import dask
 from dask.distributed import Client, SSHCluster
@@ -41,7 +42,7 @@ class Interpolator(object):
 
     def __init__(self, log, dask=False):
         self.log = log
-        self.missing_value = 1.e35
+        self.missing_value = netCDF4.default_fillvals['f4'] 
         if dask:
             self.log.debug("Launch dask server")
             #client = Client(n_workers=2, threads_per_worker=2, processes=False)
@@ -165,6 +166,7 @@ class Interpolator(object):
 
         tuple_obs = (np.shape(lon_obs)[0], np.shape(lat_obs)[0])
 
+        self.log.debug(f"{lon_obs=}")
         ll_best = False
         nb_obs2, nb_profs = np.shape(depth)
         self.log.debug("Number of observations {} Profondeurs {}".format(nb_obs2, nb_profs))
@@ -384,8 +386,8 @@ class Interpolator(object):
                ll_miss = False
                try:
                    file_input = list_input_file[key][var]
-               except OSError:
-                   self.log.error("Error {} Missing file for key {} var {}".format(sys.exc_info()[0], key, var))
+               except IndexError as error:
+                   self.log.error(f"Error {error} Missing file for key {key} var {var}")
                    self.log.error("Varname {}".format(varname))
                    ll_miss = True
                    sys.exit(1)

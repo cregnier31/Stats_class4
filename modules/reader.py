@@ -300,7 +300,7 @@ def read_drifter_filt(file):
             position_qc, time_qc, dc_reference = read_drifter(file)
     ncdata = xr.open_dataset(file)
     variables = ncdata.data_vars
-    
+   
     if 'LONGITUDE_FILTR' in variables.keys():
         lon = ncdata['LONGITUDE_FILTR'].values
     elif 'longitude_filtr' in variables.keys():

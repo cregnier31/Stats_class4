@@ -2,6 +2,7 @@ import sys
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
+import netCDF4
 import define_config
 import param.Def_param_bulletin as params
 
@@ -186,7 +187,7 @@ def cfg_ltime(cl_file, cexp, cvar):
 
     lead_time = [] 
     yout = 0
-    missing_value = 1e35
+    missing_value = netCDF4.default_fillvals['f4']) 
     nb_fcst = None
 
     nc   = netCDF4.Dataset(cl_file,'r')

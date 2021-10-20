@@ -2,10 +2,10 @@
 CONFIG="PSY4QV3R1"
 DATE1="20210203"
 DATE2="20210131"
-DATE1="20210412"
-DATE2="20210413"
+DATE1="20210901"
+DATE2="20211010"
 typedata="DRIFTER_filtr"
-#typedata="DRIFTER"
+typedata="DRIFTER"
 typemod="pgn"
 srcdata="CMEMS_013_048"
 loglevel=1

@@ -59,7 +59,7 @@ def calculer_stats_MYO2(czoneFile,modele,tab_prof,\
    nb_prof_model = np.size(tab_prof_model)-1
    range_values  = np.zeros((2,nb_prof))
 
-   missing_value = 1e35
+   missing_value = netCDF4.default_fillvals['f4']
    dateCNESref   = dt.datetime.strptime('19500101','%Y%m%d').toordinal()
 
    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

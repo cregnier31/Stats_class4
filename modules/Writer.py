@@ -13,6 +13,7 @@ import json
 from Logger import Logger
 from datetime import date
 from netCDF4 import Dataset
+import netCDF4
 import gzip
 
 ##############################################################
@@ -27,7 +28,7 @@ class Writer():
 
     def __init__(self, log):
         self.log = log
-        self.fillvalue = 1.e35
+        self.fillvalue = netCDF4.default_fillvals['f4']
         self.type_data = {
             'profile': {'code': 'INSITU_profile', 'defaults': {'name': 'In Situ profiles from CMEMS'}},
             'SST': {'code': 'SST_DB', 'defaults': {'name': 'SST Drifting buoy'}},

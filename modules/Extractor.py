@@ -602,7 +602,7 @@ class Extract_UVDrifters_filtr(Extractor):
             Rewrite netcdf file to the right GODAE format
         """
         # Create File
-        self.log.info("Write new file {}".format(file_new))
+        self.log.info(f"Write new filtered file {file_new}")
         self.nb_fcst = nb_fcst
         self.nb_fcst2 = nb_fcst2
         nc_fid = Dataset(file_new, 'w', format='NETCDF4')
@@ -676,6 +676,7 @@ class Extract_UVDrifters_filtr(Extractor):
         nc_var.setncatts({'long_name': u"name of variables"})
         nc_var[:] = netCDF4.stringtochar(np.array(variables_vel, 'S'))
         nc_fid.variables['latitude'][:] = nc_file['LATITUDE_FILTR'].values
+        nc_fid.variables['longitude'][:] = nc_file['LONGITUDE_FILTR'].values
         nc_fid.variables['obs_time'][:] = nc_file['TIME'].values
         nc_fid.variables['time_qc'][:] = nc_file['TIME_QC'].values
         nc_fid.variables['position_qc'][:] = nc_file['POSITION_QC'].values
