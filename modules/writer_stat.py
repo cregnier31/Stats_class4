@@ -7,7 +7,9 @@ import cl4_reader
 import datetime as dt
 from numba import jit
 from timeit import default_timer as timer
+import time
 import cl4errors as cl4err
+import pickle
 
 ########################################################
 #     Class Writer to write output file in NetCDF
@@ -15,6 +17,28 @@ import cl4errors as cl4err
 __version__ = 0.1
 __date__  = "February 2019"
 __author__ = "C.SZCZYPTA"
+
+def timeit(func):
+    """
+        Function to time the execution of a function
+    """
+    def timed(*args, **kw):
+        ts = time.time()
+        result = func(*args, **kw)
+        #for arg in args:
+        #    print("another arg through *argv:", arg)
+        te = time.time()
+        filename = ""
+        if 'filename' in kw: filename = kw.get('filename', func.__name__.upper())
+        if 'logger' in kw:
+            level = kw.get('logger', func.__name__.upper())
+            if int(level) == 10 :
+                print (f'Time elapsed {func.__name__} : {(te - ts)} {filename}')
+        return result
+
+    return timed
+
+
 
 @jit
 def _compute_percentile(nb_fcst, nb_layers, nb_vars, stat_bias, nb_obs, stat_percent, params_conf):
@@ -523,17 +547,17 @@ class writer_stat():
                 nc_aice.units = '1'
                 nc_fid.variables['skill_seaice-concentration'][:] = stat[:,0,:,:,index]
             if variable ==  'UVEL':
-                nc_uvel = nc_fid.createVariable('stats_zonal-velocity','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
+                nc_uvel = nc_fid.createVariable('skill_zonal-velocity','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_uvel.parameter = 'Zonal velocity at 15m depth'
                 nc_uvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
                 nc_uvel.units = 'm s-1'
-                nc_fid.variables['stats_zonal-velocity'][:] = stat[:,0,:,:,index]
+                nc_fid.variables['skill_zonal-velocity'][:] = stat[:,0,:,:,index]
             if variable ==  'VVEL':
-                nc_vvel = nc_fid.createVariable('stats_meridional-velocity','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
+                nc_vvel = nc_fid.createVariable('skill_meridional-velocity','f', ('forecasts','surface','metrics','areas'), fill_value = params_conf['missing_value'])
                 nc_vvel.parameter = 'Meridional velocity at 15m depth'
                 nc_vvel.reference = 'Observations from AOML, CMEMS hourly product INSITU_GLO_NRT_OBSERVATIONS_013_048'
                 nc_vvel.units = 'm s-1'
-                nc_fid.variables['stats_meridional-velocity'][:] = stat[:,0,:,:,index]
+                nc_fid.variables['skill_meridional-velocity'][:] = stat[:,0,:,:,index]
 
         #  ********************** Add global attributes ************************
 
@@ -589,7 +613,8 @@ class writer_stat():
     #                         WRITE DAILY STATS IN TMP FILES
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def write_glob_files_area(self, filename, cla_metricname, fcst, layer, stat, lead_time, params_conf):
+    @timeit
+    def write_glob_files_area(self, filename, cla_metricname, fcst, layer, stat, lead_time, params_conf, **kwargs):
 
         nc_fid = netCDF4.Dataset(filename, 'w')
 
@@ -757,6 +782,50 @@ class writer_stat():
                 nc_fid.variables['stats_salinity'][:] = stat[:,:,:,index]
         nc_fid.close()
 
+    def write_stats_daily_pickle(self, params_conf, \
+                          cla_vars, rla_layers, rla_surface, rla_maskvalues, rla_forecast, lead_time, log):
+        """
+        """
+        run_ini = True
+
+        # ************************** Time vector **********************************
+
+        dateCNESref   = dt.datetime.strptime('19500101','%Y%m%d').toordinal()
+        ndays = len(params_conf['cla_dates'])
+        vector_time = np.zeros((ndays))
+        for il_ind, day in enumerate(params_conf['cla_dates']):
+            vector_time[il_ind] = (dt.datetime.strptime(day,'%Y%m%d').toordinal()-dateCNESref)*24
+
+        log.info("SAVE RESULTS IN A SINGLE FILE")
+
+        nb_fcst_max = 0
+
+        #*  First loop to count the number of max leadtimes
+        for numvar, cvar in enumerate(cla_vars):
+
+            # *************** Listing fichiers CLASS4 ***************
+            for datex in params_conf['cla_dates']:
+                log.info(datex)
+                cl_file = cvar+'_'+datex+'.p'
+                cla_filechck = glob(os.path.join(params_conf['dirout']+'TMP_'+params_conf['cla_dates'][0]+'_'+params_conf['cla_dates'][-1]+'/',cl_file))
+                if len(cla_filechck) != 1:
+                    log.info("missing file %s" %(datex))
+                    continue
+                else: cl_cl4file = cla_filechck[0]
+                stat_tmp, rla_forecast, aname, lead_time = cl4_reader.read_NC_tmp(cl_cl4file)
+                if 'forecast' in lead_time:
+                    tmp1 = np.where(rla_forecast == params_conf['missing_value'], 0, rla_forecast)
+                    nb_fcst = len(np.where(np.array(tmp1) > 0)[0])
+                    if nb_fcst > nb_fcst_max:
+                        nb_fcst_max = nb_fcst
+                        rla_forecast_tmp = rla_forecast[:]
+                        nb_lead_max=len(rla_forecast_tmp)
+                else:
+                    rla_forecast_tmp = rla_forecast
+                    nb_lead_max =  len(rla_forecast)
+
+        log.info('nb_lead_max  {}'.format(nb_lead_max))
+
 
     def write_stats_daily(self, params_conf, \
                           cla_vars, rla_layers, rla_surface, log):
@@ -912,6 +981,7 @@ class writer_stat():
             cl_resultsFileName = params_conf['prefix_fileout']+params_conf['cl_confres']+'_'+\
                 params_conf['cl_start_date']+'_'+params_conf['cl_end_date']+'.nc'
             cl_resultsFile = os.path.join(params_conf['dirout'],cl_resultsFileName)
+            log.info(f"SAVE FILE {cl_resultsFile}")
 
 
             # **************************  Write **********************************
@@ -934,7 +1004,96 @@ class writer_stat():
 
         else:
             return stat_all, rla_forecast, aname, lead_time
-        
+
+
+    def write_stats_BOX_dict(self, params_conf, cla_vars,\
+                        rla_layers, rla_surface, rla_maskvalues, rla_forecast, lead_time):
+
+        """
+            Write stats for global bins with dictionnary as input
+            input:
+            dict_bilan
+            run_ini: index run
+            params_conf: params configuration
+            cla_vars: input variables
+            output:
+        """
+
+        run_ini = True
+
+        for numvar, cvar in enumerate(cla_vars):
+
+            # *************** Listing fichiers CLASS4 ***************
+            for a, area_mask in enumerate(params_conf['cla_area']):
+                cl_file = 'glob_mean_quality_stats_'+cvar+'_'+str(area_mask)+'_'+params_conf['cl_start_date']+\
+                          '_'+params_conf['cl_end_date']+'.p'
+                cla_filechck = glob(os.path.join(params_conf['dirout']+'TMP_'+params_conf['cla_dates'][0]+'_'+params_conf['cla_dates'][-1]+'/',cl_file))
+                if len(cla_filechck) != 1: continue
+                else: cl_cl4file = cla_filechck[0]
+                with open(cl_cl4file, 'rb') as handle:
+                    stat_tmp = pickle.load(handle)
+                if run_ini == True:
+                    nb_fcst = len(rla_forecast)
+                    nb_layers =len(rla_layers[0:-1])
+                    nb_metrics = len(params_conf['cla_metricname'])
+                    #print (f'{nb_fcst =} {nb_layers =} {nb_metrics =}')
+                    stat_bilan = np.nan*np.zeros((nb_fcst, nb_layers, nb_metrics, len(params_conf['cla_area']),len(cla_vars)))
+                run_ini = False
+                if len(stat_tmp[0,:,0]) > 1:
+                    stat_bilan[:,:,:,a,numvar] = stat_tmp
+                    tab_prof = rla_layers
+                else:
+                    stat_bilan[:,0:1,:,a,numvar] = stat_tmp
+                    tab_prof = rla_surface
+
+                del stat_tmp
+            if params_conf['fmt_ascii'] == 'on':
+                writer_stat().write_ASCII_bilan(params_conf['dirASCIIout'], params_conf['config_model'], stat_bilan[:,:,:,:,numvar], \
+                                                tab_prof, params_conf['cla_area'], len(rla_forecast), \
+                                                params_conf['cla_metricname'], cvar, params_conf['cl_start_date'],\
+                                                param_conf['cl_end_date'])
+
+        # **********************  Save stats in netCDF format  **********************
+
+        w = np.where(np.isnan(stat_bilan) == True)
+        stat_bilan[w] = params_conf['missing_value']
+        w = np.where(stat_bilan > params_conf['missing_value'])
+        stat_bilan[w] = params_conf['missing_value']
+
+        cl_resultsFileName_bilan = 'glob_mean_quality_stats_'+params_conf['cl_confres']+'_'+\
+                                    params_conf['cl_start_date']+'_'+params_conf['cl_end_date']+'.nc'
+        if params_conf['ll_arc'] :
+            cl_resultsFileName_bilan = 'glob_mean_quality_stats_NH_polar_' +\
+            params_conf['cl_confres']+'_'+params_conf['cl_start_date']+'_'+params_conf['cl_end_date']+'.nc'
+        if params_conf['ll_ant']:
+            cl_resultsFileName_bilan = 'glob_mean_quality_stats_SH_polar_'+\
+                                    params_conf['cl_confres']+'_'+params_conf['cl_start_date']+\
+                                    '_'+params_conf['cl_end_date']+'.nc'
+        cl_resultsFile_bilan = os.path.join(params_conf['dirout'],cl_resultsFileName_bilan)
+
+
+        # **************************  Write **********************************
+
+        if params_conf['CMEMS_area'] == True:
+            aname = params_conf['cla_area_names']
+        else:
+            aname = np.arange((len(np.array(rla_maskvalues))))
+
+        if params_conf['cexp'] == 'BIO':
+            writer_stat().write_BIO_bilan(cl_resultsFile_bilan, params_conf['cl_contact'], params_conf['cl_confres'], params_conf['cl_fmt'],
+                                          cl_resultsFileName_bilan, params_conf['cl_institution'], params_conf['cl_ref'], aname,
+                                          params_conf['cla_metricname'][:], rla_forecast, rla_surface,
+                                          stat_bilan[:,:,:,:,:], params_conf['CMEMS_area'], cla_vars, params_conf)
+
+        if params_conf['cexp'] == 'PHYS':
+            writer_stat().write_PHYS_bilan(cl_resultsFile_bilan, params_conf['cl_contact'], params_conf['cl_confres'], params_conf['cl_fmt'],
+                                           cl_resultsFileName_bilan, params_conf['cl_institution'], params_conf['cl_ref'], aname,
+                                           params_conf['cla_metricname'][:], rla_forecast, rla_layers,
+                                           stat_bilan[:,:,:,:,:], rla_surface, params_conf['CMEMS_area'], cla_vars, params_conf)
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 
     def write_stats_BOX(self, params_conf, cla_vars,\
                         rla_layers, rla_surface, rla_maskvalues):
@@ -947,7 +1106,7 @@ class writer_stat():
             cla_vars: input variables
             output:
         """
- 
+
         run_ini = True
 
         for numvar, cvar in enumerate(cla_vars):
@@ -1216,6 +1375,7 @@ class writer_stat():
         cl_resultsFileName = params_conf['prefix_fileout']+params_conf['cl_confres']+'_'+\
             params_conf['cl_start_date']+'_'+params_conf['cl_end_date']+'_skills.nc'
         cl_resultsFile = os.path.join(params_conf['dirout'],cl_resultsFileName)
+        log.info(f"SAVE File {cl_resultsFile}")
         tab_fcst={}
         tab_fcst["skill_1D"] = 12
         tab_fcst["skill_2D"] = 36

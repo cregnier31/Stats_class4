@@ -2,15 +2,312 @@
 import numpy as np
 import sys
 import pandas as pd
-#import matplotlib
-#matplotlib.use('Agg')
-#from matplotlib import pyplot as plt
-#from Class_plot import Plot_map
 import datetime as dt
+import os, sys
+import getopt
+import shlex,subprocess
+from datetime import datetime
+import traceback
+import logging
+from loader_post import load_db
 
-__version__ = 0.1
-__date__ = "February 2019"
+
+__version__ = 0.2
+__date__ = "Octobre 2021"
 __author__ = "C.REGNIER"
+
+
+def mkdir(path):
+    '''
+        Create a directory, and parents if needed
+    '''
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+def loader(options):
+    '''
+                Input parameters settings
+    '''
+
+    tab_options ={}
+    list_typemod = ['BIO','PHYS']
+    tab_options['typemod'] = list_typemod
+    list_config = ['FOAM','GIOPS','CMCC','CGOFS','BLK','PSY3V3R3',\
+                   'HYCOM_RTOFS','PSY4V2R2','PSY4V3R1','BIOMER4',\
+                   'FREEBIORYS2','NERSC','BIOMER4V2','ENSMEAN','GLO12','GLO4']
+    tab_options['config'] = list_config
+    list_mask = ['basin','basin_pol','box','bins2d','bins2d_arc','bins2d_ant','bins4d']
+    tab_options['fmt_mask'] = list_mask
+    list_bilan, list_ascii, list_dailyoff, list_percent =  (['on','off'], ) * 4
+    tab_options['bilan'], tab_options['fmt_ascii'], tab_options['daily_off'], tab_options['percent'] =  (['on','off'], ) * 4
+    tab_options['day1'] = []
+    tab_options['day2'] = []
+    list_nblevel = ['50','75']
+    tab_options['nb_levels'] = list_nblevel
+    tab_conf ={}
+    list_options = ['config','day1','day2','typemod','fmt_mask','bilan','fmt_ascii','daily_off','percent','nb_levels']
+    ## Initialize dictionnary with None values
+    tab_conf = dict.fromkeys(list_options)
+    tab_conf['debug'] = False
+    try:
+        # the keyword
+        cla_opts = getopt.getopt(options,['empid='])
+        if len(cla_opts[1]) < 4 or len(cla_opts[1]) > 10:
+            usage(len(cla_opts[1]))
+            sys.exit()
+        for ind,var in enumerate(range(len(cla_opts[1]))):
+            if cla_opts[1][ind] == '-l':
+                tab_conf['debug'] = True
+            else:
+                tab_conf[list_options[ind]] = cla_opts[1][ind]
+                generic_test(tab_options[list_options[ind]],cla_opts[1][ind],list_options[ind])
+        test_days(tab_conf['day1'], tab_conf['day2'])
+        if len(cla_opts[1]) == 4:
+            usage1()
+        if len(cla_opts[1]) == 5:
+            usage2()
+        if len(cla_opts[1]) == 6:
+            usage3()
+        if len(cla_opts[1]) == 7:
+            usage4()
+        if len(cla_opts[1]) == 8:
+            usage5()
+        if len(cla_opts[1]) == 9:
+            usage6()
+        if len(cla_opts[1]) == 10:
+            usage7()
+
+    except getopt.GetoptError as err:
+        raise (f'Error {err} Missing options {keywords}')
+
+    tab_conf['pbsworkdir'] = os.path.dirname(os.path.realpath(__file__))
+    tab_conf['sub'] = tab_conf['pbsworkdir'] + '/../sub/'
+    _DBFILE_ = tab_conf['pbsworkdir'] + "/../postraitement/python/compute_stats/cfg/global_params.cfg"
+    db = load_db(_DBFILE_)
+    tab_conf['dir_bin'] = db.get('PARAMS', 'py_env') + 'bin/'
+
+    mkdir(tab_conf['sub'])
+
+    return tab_conf
+
+def generic_test(list_var,var,type_param):
+    """
+       Generic test for values
+    """
+    #print (f"{type_param=}")
+    if type_param == 'day1' or type_param == 'day2':
+        if not var: sys.exit(f'{type_param} is missing need {list_var}')
+        isValiDate(var, type_param)
+    else:
+        if not var or var not in list_var: sys.exit(f'{type_param} is missing need {list_var}')
+
+
+def convdatetime(var):
+    """
+       Convert date YYYYMMDD in a datetime value
+    """
+    try:
+        year = var[0:4]
+        month = var[4:6]
+        day = var[6:8]
+        datetime_val = datetime(int(year), int(month), int(day))
+    except Exception as e:
+        raise ValueError(f"Var {var} not a valid date for datetime , error {traceback.format_exc()}")
+    return datetime_val
+
+def test_days(day1, day2):
+    """
+        Test if a date2 > date 1
+    """
+    if convdatetime(day2) < convdatetime(day1): sys.exit(f"{day2} must be > at {day1}")
+
+def isValiDate(var, type_param):
+    """
+        Test if a date is valid or not
+    """
+    isValiDate = True
+    try:
+        datevalue = convdatetime(var)
+    except ValueError:
+        isValiDate = False
+        sys.exit(f"Value {var} for {type_param} not a valid date")
+
+    return isValiDate
+
+def create_launcher_multi(tab_conf, nbtasks='30', timecounter='06:00:00', batch='#SBATCH', nb_procs='2'):
+    ## Create qsub job
+    if tab_conf['fmt_mask'] == 'basin':
+        typejob = 'timeserie'
+    elif tab_conf['bilan'] != None:
+        typejob = 'bilan'
+    else:
+        typejob = 'others'
+    _DBFILE_ = tab_conf['pbsworkdir'] + "/../postraitement/python/compute_stats/cfg/environment_"+tab_conf['config']+".cfg"
+    EXE = os.path.join(tab_conf['pbsworkdir'],'../postraitement/python/compute_stats/exe_compute_stats_CMEMS_areas_multiprocess_2.py')
+    dir_bin  = tab_conf['dir_bin']
+    day1  = tab_conf['day1']
+    day2  = tab_conf['day2']
+    datatype = tab_conf['typemod']
+    fmt_mask = tab_conf['fmt_mask']
+    bilan = tab_conf['bilan']
+    fmt_ascii = tab_conf['fmt_ascii']
+    daily_off = tab_conf['daily_off']
+    percent = tab_conf['percent']
+    nblevel = tab_conf['nb_levels']
+    debug = tab_conf['debug']
+    nb_process = int(nb_procs)*int(nbtasks)
+
+    Jobfile = tab_conf['sub'] + 'Class4_post_' + typejob + '_'+ tab_conf['config'] + '_' +\
+              tab_conf['day1'] + '_' + tab_conf['day2'] + '.sub'
+    obFichier = open(Jobfile,'w+')
+    obFichier.write('#!/usr/bin/env python'+'\n')
+    obFichier.write(batch + ' -J '+'Class4_post_' + typejob + '_' + tab_conf['day1'] + '_' + tab_conf['day2'] + '\n')
+    obFichier.write(batch + ' -e CLASS4_postjob_' + tab_conf['config'] + '_' +\
+            tab_conf['day1'] + '_' + tab_conf['day2']+'_%j.e'+'\n')
+    obFichier.write(batch + ' -o CLASS4_postjob_' + tab_conf['config'] + '_' +\
+            tab_conf['day1'] + '_' + tab_conf['day2']+'_%j.o'+'\n')
+    obFichier.write(batch + ' -p multi'+'\n')
+    obFichier.write(batch + ' -N ' + nb_procs+'\n')
+    obFichier.write(batch + ' -q qosmulti'+'\n')
+    obFichier.write(batch + ' --exclusive'+'\n')
+    obFichier.write(batch + ' --ntasks-per-node='+ nbtasks +'\n')
+    obFichier.write(batch + ' --time='+ timecounter +'\n')
+    obFichier.write('HDF5_USE_FILE_LOCKING = False'+'\n')
+    obFichier.write('import os'+'\n')
+    codexe = tab_conf['dir_bin']+"mpirun -np "+str(nb_process)+" "+tab_conf['dir_bin']+f"python {EXE} --day1={day1} --day2={day2} --cfg={_DBFILE_} --type={datatype} --fmt_mask={fmt_mask} --bilan={bilan} --fmt_ascii={fmt_ascii} --daily_off={daily_off} --percent={percent} --nblevel={nblevel} --debug={debug}"
+    obFichier.write('codexe =' + "'" + codexe +"'"+'\n')
+    obFichier.write('os.system(codexe)'+'\n')
+    obFichier.close()
+
+    return Jobfile
+
+
+def launch_sbatch(Jobfile):
+
+    SUBEXE="/usr/bin/sbatch"
+    code_launch=f'{SUBEXE} {Jobfile}'
+    args   = shlex.split(code_launch)
+    print(args)
+    try :   subprocess.run(args)
+    except :
+        print (f'Launch {Jobfile} failed')
+        sys.exit(1)
+
+def usage1():
+    print(" *************************** DEFAULT CASE **************************")
+    print(" ")
+    print("     Save stats computed at the daily time step over CMEMS areas    ")
+    print("                     on netCDF format file                          ")
+    print(" ")
+    print(" ****************************************************************** ")
+
+def usage2():
+    print( " ")
+    print( " ------------------------------------------------------------------------------")
+    print( "     -->   Define the type of mask (default case : CMEMS areas)  <--           ")
+    print( "                Available masks : basin/basin_pol/box/bins2d/bins4d            ")
+    print( " ------------------------------------------------------------------------------")
+    print( " ")
+
+def usage3():
+    print( " ")
+    print( " ------------------------------------------------------------------------------")
+    print( "     -->   Define the type of mask (default case : CMEMS areas)  <--           ")
+    print( "                Available masks : basin/box/bins2d/bins4d                      ")
+    print( "                                     &                                         ")
+    print( "        -->   Activate/Deactivate save of stats computed over  <--             ")
+    print( "                       the whole considered period                             ")
+    print( " ------------------------------------------------------------------------------")
+    print( " " )
+
+def usage4():
+    print( " ")
+    print( " ------------------------------------------------------------------------------")
+    print( "     -->   Define the type of mask (default case : CMEMS areas)  <--           ")
+    print( "                Available masks : basin/box/bins2d/bins4d                      ")
+    print( "                                     &                                         ")
+    print( "        -->   Activate/Deactivate save of stats computed over  <--             ")
+    print( "                       the whole considered period                             ")
+    print( "                                     &                                         ")
+    print( "            -->   Activate/Deactivate save of stats on   <--                   ")
+    print( "                          ASCII format file                                    ")
+    print( " ------------------------------------------------------------------------------")
+    print( " ")
+
+def usage5():
+    print( " ")
+    print( " ------------------------------------------------------------------------------")
+    print( "     -->   Define the type of mask (default case : CMEMS areas)  <--           ")
+    print( "                Available masks : basin/box/bins2d/bins4d                      ")
+    print( "                                     &                                         ")
+    print( "        -->   Activate/Deactivate save of stats computed over  <--             ")
+    print( "                       the whole considered period                             ")
+    print( "                                     &                                         ")
+    print( "            -->   Activate/Deactivate save of stats on   <--                   ")
+    print( "                          ASCII format file                                    ")
+    print( "                                     &                                         ")
+    print( "     -->   Activate/Deactivate save of stats at the daily time step  <--       ")
+    print( " ------------------------------------------------------------------------------")
+    print( " ")
+
+def usage6():
+    print( " ")
+    print( " ------------------------------------------------------------------------------")
+    print( "     -->   Define the type of mask (default case : CMEMS areas)  <--           ")
+    print( "                Available masks : basin/box/bins2d/bins4d                      ")
+    print( "                                     &                                         ")
+    print( "        -->   Activate/Deactivate save of stats computed over  <--             ")
+    print( "                       the whole considered period                             ")
+    print( "                                     &                                         ")
+    print( "            -->   Activate/Deactivate save of stats on   <--                   ")
+    print( "                          ASCII format file                                    ")
+    print( "                                     &                                         ")
+    print( "     -->   Activate/Deactivate save of stats at the daily time step  <--       ")
+    print( "                                     &                                         ")
+    print( "     -->   Activate bias and percentile computation for temperature  <--       ")
+    print( "                             and salinity                                      ")
+    print( " ------------------------------------------------------------------------------")
+    print( " ")
+
+def usage7():
+    print( " ")
+    print( " ------------------------------------------------------------------------------")
+    print( "     -->   Define the type of mask (default case : CMEMS areas)  <--           ")
+    print( "                Available masks : basin/box/bins2d/bins4d                      ")
+    print( "                                     &                                         ")
+    print( "        -->   Activate/Deactivate save of stats computed over  <--             ")
+    print( "                       the whole considered period                             ")
+    print( "                                     &                                         ")
+    print( "            -->   Activate/Deactivate save of stats on   <--                   ")
+    print( "                          ASCII format file                                    ")
+    print( "                                     &                                         ")
+    print( "     -->   Activate/Deactivate save of stats at the daily time step  <--       ")
+    print( "                                     &                                         ")
+    print( "     -->   Activate bias and percentile computation for temperature  <--       ")
+    print( "                             and salinity                                      ")
+    print( "                                     &                                         ")
+    print( "     -->   Change the number of considered levels to compute profile  <--      ")
+    print( "                             T and S statistics                                ")
+    print( " ------------------------------------------------------------------------------")
+    print( " ")
+
+
+def usage(nb_args):
+    print ("              Incorrect number of Arguments"                 )
+    print (f"   nb of arguments {nb_args}                           <-- ")
+    print ("    arguments required                                  <-- ")
+    print ("    Value1 = Config                                         ")
+    print ("    Value2 = Day min                                        ")
+    print ("    Value3 = Day max                                        ")
+    print ("    Value4 = Type of data: BIO/PHYS"                         )
+    print ("                                                            ")
+    print (" -->              Optional argument                     <-- ")
+    print ("    Value5 = Type of mask: basin/box/bins2d/bins4d          ")
+    print ("    Value6 = Save global stats: on/off                      ")
+    print ("    Value7 = Save stats on ASCII fmt files: on/off          ")
+    print ("    Value8 = Save daily time step stats: on/off             ")
+    print ("    Value9 = Compute misfit and percentile (profile): on/off")
+    print ("    Value10 = Number of considered level profile            ")
 
 def pull_names(name_data):
     """

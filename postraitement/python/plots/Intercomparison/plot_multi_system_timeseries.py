@@ -49,7 +49,7 @@ GLO_AREA = False
 CMEMS_AREA = True
 skill = 0
 dt_start_plot_ini = ['20150101','20161101','20150101','20150101','20150101','20160901','20150101','20210110']
-dt_end_plot_ini = ['20210531','20210531','20210531','20210325','20210531','20200830','20210531','20210630']
+dt_end_plot_ini = ['20211231','20211231','20210531','20211231','20211231','20200830','20211231','20211231']
 list_color = ['y','deeppink','dodgerblue','mediumpurple','pink','turquoise','darkorange','green']
 #list_color = ['deeppink','y','mediumpurple','pink','turquoise']
 window = 30
@@ -72,7 +72,7 @@ else :
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 PATH_IN = '/home/cregnier/Gitlab/TEP_CLASS4/postraitement/python/plots/Intercomparison/'
-depth_comp="0-6000m"
+depth_comp="0-500m"
 PATH_OUT = PATH_IN+'img/'+depth_comp+'/'
 DATA_IN = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'
 #SYSTEM = ['FOAM','PSY4V3R1','HYCOM_RTOFS','BLK','GIOPS','NERSC']

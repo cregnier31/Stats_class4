@@ -65,8 +65,10 @@ def plotStat(fig, ax_fig, dict, varname, area, system, prof, datemin, datemax, l
 
     # ~~~~~~~~ Plot des time series ~~~~~~~~~~~
     list_system = ['PSY4','ENSMEAN','PSY3','FOAM','HYCOM_RTOFS','BLK','GIOPS','NERSC','CGOFS','CMCC','PSY4V3R1']
+    #list_system = ['PSY4','FOAM','HYCOM_RTOFS','BLK','GIOPS','NERSC','CMCC','PSY4V3R1']
     list_metric_aice = ['PCI','PCW','PCT','BIAS']
     for s, prod in enumerate(system):
+        print(f'{prod=}')
         if prod in list_system:
             name_lab = prod
             prod_name = prod

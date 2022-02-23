@@ -5,7 +5,7 @@ OPER='NO'
 modele='GLORYS12V1-light'
 ;; Choix de la période
 zone='T'
-dateval='19930101-20040301'
+dateval='19930101-20161231'
 type_data="CORA5"
 ;; Definition des path
 dir_mask='/home/cregnier/Gitlab/TEP_CLASS4/postraitement/static/'

@@ -23,6 +23,7 @@ class Logger(object):
                                       },
                 )
         self.stream = logging.StreamHandler()
+
     def run(self,level):
         log = logging.getLogger(self.name)
         ## Clean logger

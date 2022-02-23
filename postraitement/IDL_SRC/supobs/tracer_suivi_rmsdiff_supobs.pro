@@ -56,13 +56,12 @@ tab_e3t=ncdf_lec(file,iodir=dirin,var='e3t_0', /nostruct) & tab_e3t=transpose(ta
 
 nb_prof_model=N_ELEMENTS(tab_prof_model)
 nb_variables=N_ELEMENTS(variable_name)
-print,nb_variables/2
-print,variable_name
 ;print, 'Prof model :: ',tab_prof_model
 print, 'Prof  :: ',tab_prof
 print,'Taille :: ',nb_prof_model
-print,'File :: ',file
 ;print,'E3t :: ',tab_e3t
+print, tab_choix
+print, liste_zone
 FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN 
    FOR ind2=0,N_ELEMENTS(liste_zone)-1 DO BEGIN 
       PRINT,'choix, ZONE :: ',tab_choix(ind),'   ',liste_zone(ind2) 
@@ -82,7 +81,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;; Choix de la zone
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+      print,'ok'
       FIND=find_indice(boite,zone)
       indice_i=FIND(0)
       taille=N_ELEMENTS(FIND(*))
@@ -106,18 +105,18 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
       ;** Recherche des indice pour les boites
       indice2=0
       FOR indice=1,nb_prof-1 DO BEGIN
-	FIND2=WHERE(tab_prof_model GE tab_prof(indice-1) AND tab_prof_model LT tab_prof(indice), COUNT)
-	indice_ini=FIND2(0)
-	indice_fin=FIND2(N_ELEMENTS(FIND2)-1)
-	tab_indice_ini(indice2)=indice_ini
-	tab_indice_fin(indice2)=indice_fin
-	print ,'intervalle :: ',tab_prof(indice-1),tab_prof(indice)
-	print ,'Indices :: ',tab_indice_ini(indice2),tab_indice_fin(indice2)
-	print,'Profondeur modele :',tab_prof_model(tab_indice_ini(indice2)),tab_prof_model(tab_indice_fin(indice2))
-	print,'indice :',tab_indice_ini(indice2),tab_indice_fin(indice2)
-	print,'Pronfondeur : ',profondeur(indice2)
-	print,'indice2 :',indice2
-	indice2=indice2+1
+          FIND2=WHERE(tab_prof_model GE tab_prof(indice-1) AND tab_prof_model LT tab_prof(indice), COUNT)
+          indice_ini=FIND2(0)
+          indice_fin=FIND2(N_ELEMENTS(FIND2)-1)
+          tab_indice_ini(indice2)=indice_ini
+          tab_indice_fin(indice2)=indice_fin
+          print ,'intervalle :: ',tab_prof(indice-1),tab_prof(indice)
+          print ,'Indices :: ',tab_indice_ini(indice2),tab_indice_fin(indice2)
+          print,'Profondeur modele :',tab_prof_model(tab_indice_ini(indice2)),tab_prof_model(tab_indice_fin(indice2))
+          print,'indice :',tab_indice_ini(indice2),tab_indice_fin(indice2)
+          print,'Pronfondeur : ',profondeur(indice2)
+          print,'indice2 :',indice2
+          indice2=indice2+1
       ENDFOR
       ;; Dernière case du tableau => toute la colonne d'eau
       tab_indice_ini(indice2)=0
@@ -126,20 +125,20 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
       ; Normalisation par le nombre d'obs par boite
       while i le nfichiers-1 do begin
      ; while i le 1 do begin
-        file=filelist(i)
-        dirin=dir_stats_MERC
-        rms_diff=ncdf_lec(file,iodir=dirin,var='rms_diff', /nostruct) & rms_diff=transpose(rms_diff)
-        indice=ncdf_lec(file,iodir=dirin,var='indice_box', /nostruct) & indice=transpose(indice)
-        indice_tot(*,*,*,i)=indice
-        rms_difftot(*,*,*,i)=rms_diff(*,*,*,*)
-        il_nelem=N_ELEMENTS(rms_diff(1,*,1))
-	print,'fichier :',i,nfichiers-1,il_nelem
-	clear,indice,rms_diff
-        i=i+1
+          file=filelist(i)
+          dirin=dir_stats_MERC
+          rms_diff=ncdf_lec(file,iodir=dirin,var='rms_diff', /nostruct) & rms_diff=transpose(rms_diff)
+          indice=ncdf_lec(file,iodir=dirin,var='indice_box', /nostruct) & indice=transpose(indice)
+          indice_tot(*,*,*,i)=indice
+          rms_difftot(*,*,*,i)=rms_diff(*,*,*,*)
+          il_nelem=N_ELEMENTS(rms_diff(1,*,1))
+          print,'fichier :',i,nfichiers-1,il_nelem
+          clear,indice,rms_diff
+          i=i+1
       endwhile
       ii=WHERE(indice_tot(*,*,*,*) GT 0)
       IF (ii(0) NE -1) THEN BEGIN 
-         rms_difftot(ii)=rms_difftot(ii)/indice_tot(ii)
+          rms_difftot(ii)=rms_difftot(ii)/indice_tot(ii)
       ENDIF ELSE BEGIN
           print, "indice box are missing"
           STOP
@@ -160,9 +159,9 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
       nb_data(*,*,*)=0L
       prof=0L 
       fichier=0L
-	
+
       print,'Boucle'
-	
+
       WHILE prof le N_ELEMENTS(profondeur)-1 DO BEGIN
          FOR fichier=0,nfichiers-1 DO BEGIN
             FOR il_ind2=2,il_nelem-1 DO BEGIN
@@ -197,7 +196,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
       ; Valeurs des jours en jours juliens
       ndays=N_ELEMENTS(days)
       jours=fltarr(ndays)
-      
+
       FOR il_ind=0,ndays-1 DO BEGIN
 	  IF ( STRLEN(STRING(days(il_ind))) eq 6 ) THEN BEGIN
 	  ;  print,'passe ici', STRLEN(STRING(days(il_ind)))
@@ -270,9 +269,9 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
            ctot(7,*)=c8
            ctot(8,*)=c9
 	   ll_valide=0
-           ;; Boucle sur les variables 
+           ;; Boucle sur les variables
            FOR il_ind=il_begin,il_nelem-3,2 DO BEGIN 
-              clear,numx1,numx2   
+              clear,numx1,numx2 
               numx1=jours
               numx2=rms(prof,il_ind,*)
 	      nb_cumul=nbval_cumul(prof,il_ind,*)

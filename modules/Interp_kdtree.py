@@ -168,19 +168,18 @@ class interp_KDtree(object):
     @timeit
     def get_ilonlat(self, lon_in, lat_in, inds_idw1):
 
-    	ilat = []
-    	ilon = []
-    	for ind in inds_idw1:
-    	    inds = np.where(lon_in == lon_in.flatten()[ind]) 
-    	    if np.size(inds[0][:]) > 1:
-    	        w = np.where(lat_in[inds] == lat_in.flatten()[ind])
-    	        ilat.append(inds[0][w][0])
-    	        ilon.append(inds[1][w][0])
-    	    else: 
-    	        ilat.append(inds[0][0])
-    	        ilon.append(inds[1][0])
-
-    	return ilat, ilon
+        ilat = []
+        ilon = []
+        for ind in inds_idw1:
+            inds = np.where(lon_in == lon_in.flatten()[ind])
+            if np.size(inds[0][:]) > 1:
+                w = np.where(lat_in[inds] == lat_in.flatten()[ind])
+                ilat.append(inds[0][w][0])
+                ilon.append(inds[1][w][0])
+            else:
+                ilat.append(inds[0][0])
+                ilon.append(inds[1][0])
+        return ilat, ilon
 
     #@timeit
     def compute_interp(self, d1, inds_idw1, X2, nbpts_interp, var_in):

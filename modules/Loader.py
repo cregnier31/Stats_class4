@@ -27,7 +27,6 @@ from lib_pyt.Utils import date_range
 from reader import *
 from ast import literal_eval
 from os.path import dirname
-#from Reader import read_lightout
 
 ##############################################################
 # C.REGNIER Juin 2014

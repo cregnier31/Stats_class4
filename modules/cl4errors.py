@@ -1,10 +1,11 @@
 # -*- coding: UTF-8 -*-
-
+import traceback
 """ Exception classes for Class4 """
 
 __all__ = (
         'Class4Exception',
         'Class4FatalError',
+        'Class4TypeError',
 )
 
 # ==========
@@ -23,5 +24,14 @@ class Class4FatalError(Class4Exception):
         self.err = err
 
     def __str__(self):
-        return "Fatal error: {}".format(self.err)
+        return f"Fatal error {self.err}"
+        #return f"Fatal error: {traceback.format_exc()}"
 
+class Class4TypeError(Class4Exception):
+    """A fatal error occured, usually this means a direct exit."""
+    def __init__(self, err):
+        self.err = err
+
+    def __str__(self):
+        return f"Type error {self.err}"
+        #return f"Fatal error: {traceback.format_exc()}"

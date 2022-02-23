@@ -3,7 +3,10 @@ import sys
 import numpy as np
 import supobs
 from loader_post import stat_mod_obs, stat_mod_glob, stat_obs_glob
+import cl4errors as cl4err
+import traceback
 import arithm
+import time
 
 __version__ = 0.1
 __date__  = "February 2019"
@@ -11,8 +14,166 @@ __author__ = "C.SZCZYPTA"
 
 
 
+def my_decorator(func):
+    def wrapper_function(*args, **kwargs):
+        print("*"*10)
+        func(*args,  **kwargs)
+        print("*"*10)
+    return wrapper_function
+
+def timeit(func):
+    """
+        Function to time the execution of a function
+    """
+    def timed(*args, **kw):
+        ts = time.time()
+        result = func(*args, **kw)
+        #for arg in args:
+        #    print("another arg through *argv:", arg)
+        te = time.time()
+        filename = ""
+        if 'filename' in kw: filename = kw.get('filename', func.__name__.upper())
+        if 'logger' in kw:
+            level = kw.get('logger', func.__name__.upper())
+            if int(level) == 10 :
+                print (f'Time elapsed {func.__name__} : {(te - ts)} {filename}')
+        return result
+
+    return timed
+
+@timeit
+def compute_allstats_and_extend(dict_inputs, dict_var, dict, cvar,
+                                area_mask, OBS, CLIM, BEST, FCST, PERS, logger='',filename=""):
+    """
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                 COMPUTE STATS DIFFERENT LEAD TIME
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Arguments
+    --------------------
+    dict_inputs: input dictionnary
+    dict_var: dictionnary with concatenated arrays
+    dict:
+    cvar: input variable
+    num_date: date index
+    area_mask: mask index
+    Returns
+    --------------------
+    OBS: extended array for observations
+    BEST: extended array for best estimates
+    CLIM: extended array for climatology
+    FCST: extended array for forecasts
+    PERS: extended array for persistency
+    --------------------
+    """
+
+    lead_time = dict_inputs['lead_time']
+    nb_fcst = dict_inputs['nb_fcst']
+    depthmin = dict_inputs['depthmin']
+    depthmax = dict_inputs['depthmax']
+    iobs = dict[area_mask]
+    try:
+        for time in lead_time:
+            rla_observation_var = dict_var[cvar]['observation']
+            nb_obs, nb_profs = np.shape(rla_observation_var)
+            if len(np.shape(rla_observation_var)) == 2:
+                rla_obs = rla_observation_var[iobs, :]
+                if 'climatology' in lead_time:
+                    rla_climatology_var = dict_var[cvar]['climatology']
+                    rla_clim = rla_climatology_var[iobs, :]
+                else:
+                    rla_clim = np.nan*np.zeros((np.size(rla_obs[:, 0]), 1))
+            else:
+                rla_obs = rla_observation_var[iobs]
+                if 'climatology' in lead_time:
+                    rla_climatology_var = dict_var[cvar]['climatology']
+                    rla_clim = rla_climatology_var[iobs]
+                else:
+                    rla_clim = np.nan*np.zeros((np.shape(rla_obs), 1))
+            if time == 'best_estimate':
+                rla_best_estimate_var = dict_var[cvar]['best_estimate']
+                rla_depthobs = dict_var[cvar]['depth_obs']
+                if len(np.shape(rla_best_estimate_var)) == 2:
+                    rla_var = rla_best_estimate_var[iobs, :]
+                else:
+                    rla_var = rla_best_estimate_var[iobs]
+
+                if nb_profs == 1 and rla_depthobs[0,0] == 0:
+                    OBS.extend(np.squeeze(rla_obs))
+                    CLIM.extend(np.squeeze(rla_clim))
+                    BEST.extend(np.squeeze(rla_var))
+                else:
+                    val_box_depth, obs_box_depth, clim_box_depth =\
+                        supobs.Statslib.extract_CL4var(rla_var, rla_obs, rla_clim,
+                                                       rla_depthobs[iobs, :], depthmin, depthmax)
+
+                    OBS.extend(obs_box_depth)
+                    CLIM.extend(clim_box_depth)
+                    BEST.extend(val_box_depth)
+            if time == 'forecast':
+                rla_forecast_var = dict_var[cvar]['forecast']
+                if nb_fcst == 1:
+                    fmax = 1
+                else:
+                    fmax = nb_fcst//2
+                for numF in range(0, fmax):
+                    FCT = []
+                    if nb_fcst == 1 and len(np.shape(rla_forecast_var)) == 2:
+                        rla_var = rla_forecast_var[iobs, :]
+                    elif nb_fcst == 1 and len(np.shape(rla_forecast_var)) == 1:
+                        rla_var = rla_forecast_var[iobs]
+                    elif nb_fcst > 1 and len(np.shape(rla_forecast_var)) == 2:
+                        rla_var = rla_forecast_var[iobs, numF*2]
+                    else:
+                        rla_var = rla_forecast_var[iobs, numF*2, :]
+                    if nb_profs == 1 and rla_depthobs[0,0] == 0:
+                        FCT.extend(np.squeeze(rla_var))
+                    else:
+                        val_box_depth, obs_box_depth, clim_box_depth =\
+                            supobs.Statslib.extract_CL4var(rla_var, rla_obs, rla_clim,
+                                                           rla_depthobs[iobs, :], depthmin, depthmax)
+                        FCT.extend(val_box_depth)
+                    if numF == 0:
+                        FCST_tmp = np.nan*np.zeros((len(np.array(FCT)), fmax))
+                    FCST_tmp[:, numF] = np.array(FCT)
+                FCST.extend(FCST_tmp)
+            if time == 'persistence':
+                rla_persistence_var = dict_var[cvar]['persistence']
+                if nb_fcst == 1:
+                    fmax = 1
+                else:
+                    fmax = nb_fcst//2
+                for numF in range(0, fmax):
+                    PER = []
+                    if nb_fcst == 1 and len(np.shape(rla_persistence_var)) == 2:
+                        rla_var = rla_persistence_var[iobs, :]
+                    elif nb_fcst == 1 and len(np.shape(rla_persistence_var)) == 1:
+                        rla_var = rla_persistence_var[iobs]
+                    elif nb_fcst > 1 and len(np.shape(rla_persistence_var)) == 2:
+                        rla_var = rla_persistence_var[iobs, numF*2]
+                    else:
+                        rla_var = rla_persistence_var[iobs, numF*2, :]
+                    if nb_profs == 1 and rla_depthobs[0,0] == 0:
+                        PER.extend(np.squeeze(rla_var))
+                    else:
+                        val_box_depth, obs_box_depth, clim_box_depth =\
+                            supobs.Statslib.extract_CL4var(rla_var, rla_obs,
+                                                           rla_clim, rla_depthobs[iobs, :], depthmin, depthmax)
+                        PER.extend(val_box_depth)
+                    if numF == 0:
+                        PERS_tmp = np.nan*np.zeros((len(np.array(PER)), fmax))
+                    PERS_tmp[:, numF] = np.array(PER)
+                PERS.extend(PERS_tmp)
+    except TypeError as execs:
+        raise cl4err.Class4TypeError(f"Pb in compute_allstats_and_extend {traceback.format_exc()}")
+    except BaseException as execs:
+        raise cl4err.Class4FatalError(f"Pb in compute_allstats_and_extend {traceback.format_exc()}")
+
+
+    return OBS, CLIM, BEST, FCST, PERS
+
+@timeit
 def compute_stats_and_extend(dict_inputs, dict_var, dict, cvar,
-                             num_date, area_mask, OBS, CLIM, BEST, FCST, PERS):
+                             num_date, area_mask, OBS, CLIM, BEST, FCST, PERS, logger='',filename=""):
     """
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                  COMPUTE STATS DIFFERENT LEAD TIME
@@ -41,94 +202,110 @@ def compute_stats_and_extend(dict_inputs, dict_var, dict, cvar,
     depthmax = dict_inputs['depthmax']
     iobs = dict[area_mask][str(num_date)]
 
-    for time in lead_time:
-        rla_observation_var = dict_var[cvar]['observation'][str(num_date)]
-        if len(np.shape(rla_observation_var)) == 2:
-            rla_obs = rla_observation_var[iobs, :]
-            if 'climatology' in lead_time:
-                rla_climatology_var = dict_var[cvar]['climatology'][str(
-                    num_date)]
-                rla_clim = rla_climatology_var[iobs, :]
-            else:
-                rla_clim = np.nan*np.zeros((np.size(rla_obs[:, 0]), 1))
-        else:
-            rla_obs = rla_observation_var[iobs]
-            if 'climatology' in lead_time:
-                rla_climatology_var = dict_var[cvar]['climatology'][str(
-                    num_date)]
-                rla_clim = rla_climatology_var[iobs]
-            else:
-                rla_clim = np.nan*np.zeros((np.shape(rla_obs), 1))
-        if time == 'best_estimate':
-            rla_best_estimate_var = dict_var[cvar]['best_estimate'][str(
-                num_date)]
-            rla_depthobs = dict_var[cvar]['depth_obs'][str(num_date)]
-            if len(np.shape(rla_best_estimate_var)) == 2:
-                rla_var = rla_best_estimate_var[iobs, :]
-            else:
-                rla_var = rla_best_estimate_var[iobs]
-
-            val_box_depth, obs_box_depth, clim_box_depth =\
-                supobs.Statslib.extract_CL4var(rla_var, rla_obs, rla_clim,
-                                               rla_depthobs[iobs, :], depthmin, depthmax)
-            OBS.extend(obs_box_depth)
-            CLIM.extend(clim_box_depth)
-            BEST.extend(val_box_depth)
-        if time == 'forecast':
-            rla_forecast_var = dict_var[cvar]['forecast'][str(num_date)]
-            if nb_fcst == 1:
-                fmax = 1
-            else:
-                fmax = nb_fcst//2
-            for numF in range(0, fmax):
-                FCT = []
-                if nb_fcst == 1 and len(np.shape(rla_forecast_var)) == 2:
-                    rla_var = rla_forecast_var[iobs, :]
-                elif nb_fcst == 1 and len(np.shape(rla_forecast_var)) == 1:
-                    rla_var = rla_forecast_var[iobs]
-                elif nb_fcst > 1 and len(np.shape(rla_forecast_var)) == 2:
-                    rla_var = rla_forecast_var[iobs, numF*2]
+    try:
+        for time in lead_time:
+            rla_observation_var = dict_var[cvar]['observation'][str(num_date)]
+            if len(np.shape(rla_observation_var)) == 2:
+                nb_obs, nb_profs = np.shape(rla_observation_var)
+                rla_obs = rla_observation_var[iobs, :]
+                if 'climatology' in lead_time:
+                    rla_climatology_var = dict_var[cvar]['climatology'][str(
+                        num_date)]
+                    rla_clim = rla_climatology_var[iobs, :]
                 else:
-                    rla_var = rla_forecast_var[iobs, numF*2, :]
-                val_box_depth, obs_box_depth, clim_box_depth =\
-                    supobs.Statslib.extract_CL4var(rla_var, rla_obs, rla_clim,
-                                                   rla_depthobs[iobs, :], depthmin, depthmax)
-                FCT.extend(val_box_depth)
-                if numF == 0:
-                    FCST_tmp = np.nan*np.zeros((len(np.array(FCT)), fmax))
-                FCST_tmp[:, numF] = np.array(FCT)
-            FCST.extend(FCST_tmp)
-        if time == 'persistence':
-            rla_persistence_var = dict_var[cvar]['persistence'][str(
-                num_date)]
-            if nb_fcst == 1:
-                fmax = 1
+                    rla_clim = np.nan*np.zeros((np.size(rla_obs[:, 0]), 1))
             else:
-                fmax = nb_fcst//2
-            for numF in range(0, fmax):
-                PER = []
-                if nb_fcst == 1 and len(np.shape(rla_persistence_var)) == 2:
-                    rla_var = rla_persistence_var[iobs, :]
-                elif nb_fcst == 1 and len(np.shape(rla_persistence_var)) == 1:
-                    rla_var = rla_persistence_var[iobs]
-                elif nb_fcst > 1 and len(np.shape(rla_persistence_var)) == 2:
-                    rla_var = rla_persistence_var[iobs, numF*2]
+                rla_obs = rla_observation_var[iobs]
+                if 'climatology' in lead_time:
+                    rla_climatology_var = dict_var[cvar]['climatology'][str(
+                        num_date)]
+                    rla_clim = rla_climatology_var[iobs]
                 else:
-                    rla_var = rla_persistence_var[iobs, numF*2, :]
-                val_box_depth, obs_box_depth, clim_box_depth =\
-                    supobs.Statslib.extract_CL4var(rla_var, rla_obs,
-                                                   rla_clim, rla_depthobs[iobs, :], depthmin, depthmax)
-                PER.extend(val_box_depth)
-                if numF == 0:
-                    PERS_tmp = np.nan*np.zeros((len(np.array(PER)), fmax))
-                PERS_tmp[:, numF] = np.array(PER)
-            PERS.extend(PERS_tmp)
+                    rla_clim = np.nan*np.zeros((np.shape(rla_obs), 1))
+            if time == 'best_estimate':
+                rla_best_estimate_var = dict_var[cvar]['best_estimate'][str(
+                    num_date)]
+                rla_depthobs = dict_var[cvar]['depth_obs'][str(num_date)]
+                if len(np.shape(rla_best_estimate_var)) == 2:
+                    rla_var = rla_best_estimate_var[iobs, :]
+                else:
+                    rla_var = rla_best_estimate_var[iobs]
+                if len(np.shape(rla_observation_var)) == 2 and nb_profs == 1 and rla_depthobs[0,0] == 0 and np.size(rla_obs) != 0 :
+                    OBS.extend(np.squeeze(rla_obs))
+                    CLIM.extend(np.squeeze(rla_clim))
+                    BEST.extend(np.squeeze(rla_var))
+                else:
+                    val_box_depth, obs_box_depth, clim_box_depth =\
+                        supobs.Statslib.extract_CL4var(rla_var, rla_obs, rla_clim,
+                                                       rla_depthobs[iobs, :], depthmin, depthmax)
+                    OBS.extend(obs_box_depth)
+                    CLIM.extend(clim_box_depth)
+                    BEST.extend(val_box_depth)
+            if time == 'forecast':
+                rla_forecast_var = dict_var[cvar]['forecast'][str(num_date)]
+                if nb_fcst == 1:
+                    fmax = 1
+                else:
+                    fmax = nb_fcst//2
+                for numF in range(0, fmax):
+                    FCT = []
+                    if nb_fcst == 1 and len(np.shape(rla_forecast_var)) == 2:
+                        rla_var = rla_forecast_var[iobs, :]
+                    elif nb_fcst == 1 and len(np.shape(rla_forecast_var)) == 1:
+                        rla_var = rla_forecast_var[iobs]
+                    elif nb_fcst > 1 and len(np.shape(rla_forecast_var)) == 2:
+                        rla_var = rla_forecast_var[iobs, numF*2]
+                    else:
+                        rla_var = rla_forecast_var[iobs, numF*2, :]
+                    if len(np.shape(rla_observation_var)) == 2 and nb_profs == 1 and rla_depthobs[0,0] == 0:
+                        FCT.extend(np.squeeze(rla_var))
+                    else:
+                        val_box_depth, obs_box_depth, clim_box_depth =\
+                            supobs.Statslib.extract_CL4var(rla_var, rla_obs, rla_clim,
+                                                           rla_depthobs[iobs, :], depthmin, depthmax)
+                        FCT.extend(val_box_depth)
+                    if numF == 0:
+                        FCST_tmp = np.nan*np.zeros((len(np.array(FCT)), fmax))
+                    FCST_tmp[:, numF] = np.array(FCT)
+                FCST.extend(FCST_tmp)
+            if time == 'persistence':
+                rla_persistence_var = dict_var[cvar]['persistence'][str(
+                    num_date)]
+                if nb_fcst == 1:
+                    fmax = 1
+                else:
+                    fmax = nb_fcst//2
+                for numF in range(0, fmax):
+                    PER = []
+                    if nb_fcst == 1 and len(np.shape(rla_persistence_var)) == 2:
+                        rla_var = rla_persistence_var[iobs, :]
+                    elif nb_fcst == 1 and len(np.shape(rla_persistence_var)) == 1:
+                        rla_var = rla_persistence_var[iobs]
+                    elif nb_fcst > 1 and len(np.shape(rla_persistence_var)) == 2:
+                        rla_var = rla_persistence_var[iobs, numF*2]
+                    else:
+                        rla_var = rla_persistence_var[iobs, numF*2, :]
+                    if len(np.shape(rla_observation_var)) == 2 and nb_profs == 1 and rla_depthobs[0,0] == 0:
+                        PER.extend(np.squeeze(rla_var))
+                    else:
+                        val_box_depth, obs_box_depth, clim_box_depth =\
+                            supobs.Statslib.extract_CL4var(rla_var, rla_obs,
+                                                           rla_clim, rla_depthobs[iobs, :], depthmin, depthmax)
+                        PER.extend(val_box_depth)
+                    if numF == 0:
+                        PERS_tmp = np.nan*np.zeros((len(np.array(PER)), fmax))
+                    PERS_tmp[:, numF] = np.array(PER)
+                PERS.extend(PERS_tmp)
+    except TypeError as execs:
+        raise cl4err.Class4TypeError(f"Pb in compute_allstats_and_extend {traceback.format_exc()}")
+    except BaseException as execs:
+        raise cl4err.Class4FatalError(f"Pb in compute_allstats_and_extend {traceback.format_exc()}")
 
     return OBS, CLIM, BEST, FCST, PERS
 
 
-def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
-                        stat_PSS_skill, stat_CSS_skill, amask, yout, log):
+def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp,\
+                        stat_PSS_skill, stat_CSS_skill, amask, yout, log, logger='', filename=''):
     """
      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #         COMPUTE STATS FOR EACH BASIN AT DIFFERENT LEAD TIME
@@ -179,7 +356,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
                                                  rla_obs,
                                                  rla_clim,
                                                  dict_inputs['rla_depthobs'][iobs, :],
-                                                 dict_inputs['tab_profs'])
+                                                 dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
             log.debug('RMSE Hindcast {}'.format(rla_rmse))
             if ll_debug:
                 print(('RMSE {}'.format(rla_rmse)))
@@ -210,7 +387,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
                                                      rla_obs,
                                                      rla_clim,
                                                      dict_inputs['rla_depthobs'][iobs, :],
-                                                     dict_inputs['tab_profs'])
+                                                     dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
 
                 stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
@@ -242,7 +419,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
                                                      rla_obs,
                                                      rla_clim,
                                                      dict_inputs['rla_depthobs'][iobs, :],
-                                                     dict_inputs['tab_profs'])
+                                                     dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
 
                 stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
@@ -262,7 +439,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
                                                  rla_obs,
                                                  rla_clim,
                                                  dict_inputs['rla_depthobs'][iobs, :],
-                                                 dict_inputs['tab_profs'])
+                                                 dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
 
             stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                     rla_mean_obs, rla_rms_obs, rla_mean_prod,
@@ -296,7 +473,7 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, \
     return stat_tmp, stat_PSS_skill, stat_CSS_skill
 
 
-def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
+def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout, logger='', filename=''):
     """
      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #         COMPUTE STATS FOR EACH BASIN AT DIFFERENT LEAD TIME
@@ -337,7 +514,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
                                                  rla_obs,
                                                  rla_clim,
                                                  dict_inputs['rla_depthobs'][iobs, :],
-                                                 dict_inputs['tab_profs'])
+                                                 dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
 
             if ll_debug:
                 print (rla_rmse)
@@ -369,7 +546,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
                                                      rla_obs,
                                                      rla_clim,
                                                      dict_inputs['rla_depthobs'][iobs, :],
-                                                     dict_inputs['tab_profs'])
+                                                     dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
 
                 stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
@@ -397,7 +574,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
                                                      rla_obs,
                                                      rla_clim,
                                                      dict_inputs['rla_depthobs'][iobs, :],
-                                                     dict_inputs['tab_profs'])
+                                                     dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
 
                 stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
@@ -416,7 +593,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
                                                  rla_obs,
                                                  rla_clim,
                                                  dict_inputs['rla_depthobs'][iobs, :],
-                                                 dict_inputs['tab_profs'])
+                                                 dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
 
             stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                     rla_mean_obs, rla_rms_obs, rla_mean_prod,
@@ -430,7 +607,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout):
     return stat_tmp
 
 def compute_stats_bilan_skill(dict_inputs, stat_bilan, stat_PSS_skill, stat_CSS_skill, ilayer, OBS,
-                        BEST, FCST, PERS, CLIM, log):
+                        BEST, FCST, PERS, CLIM, log, logger='', filename=''):
     """
             COMPUTE GLOBAL STATS DIFFERENT LEAD TIME
 
@@ -582,9 +759,9 @@ def compute_stats_bilan_skill(dict_inputs, stat_bilan, stat_PSS_skill, stat_CSS_
         stat_CSS_skill[numF, ilayer] =  1  - (np.sqrt(stat_bilan[numF+1, ilayer, 5]) / np.sqrt(stat_bilan[2*nfcst+1, ilayer, 5]))
     return stat_bilan, stat_PSS_skill, stat_CSS_skill
 
-
+@timeit
 def compute_stats_bilan(dict_inputs, stat_bilan, ilayer, OBS,
-                        BEST, FCST, PERS, CLIM, log):
+                        BEST, FCST, PERS, CLIM, log, logger='', filename=''):
     """
             COMPUTE GLOBAL STATS DIFFERENT LEAD TIME
 
@@ -621,10 +798,9 @@ def compute_stats_bilan(dict_inputs, stat_bilan, ilayer, OBS,
                 rl_val1 = rla_meandiff/ila_nobs
                 rl_val2 = rla_mean_obs-rla_mean
                 diff = rl_val2 - rl_val1
-                if abs(diff) > 0.1:
-                    log.error("Probleme")
-                    log.info(rl_val1, rl_val2)
-                    sys.exit(1)
+                #if abs(diff) > 0.1:
+                #    log.error(f"Probleme {rl_val1} {rl_val2}")
+                #    sys.exit(1)
             else:
                 rla_mean = np.nan
                 rla_rms = np.nan
@@ -634,7 +810,7 @@ def compute_stats_bilan(dict_inputs, stat_bilan, ilayer, OBS,
                 rla_meandiff = np.nan
                 rla_rmsdiff = np.nan
 
-            log.info('HINDCAST')
+            #log.info('HINDCAST')
             #log.info(np.nanmin(rla_mean), np.nanmin(rla_rmse), np.nanmax(rla_rmse))
 
             stat_bilan, num_col = stat_mod_glob(stat_bilan, num_col, ilayer,

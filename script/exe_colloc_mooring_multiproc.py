@@ -240,7 +240,7 @@ if rank == 0:
     depth_mod = read_depth(liste_file[0])
     log.info("Create mfdadaset HDCT")
     try:
-        mfdataset_hdct = xr.open_mfdataset(liste_file, concat_dim='time_counter', autoclose=True)   
+        mfdataset_hdct = xr.open_mfdataset(liste_file, concat_dim='time_counter', autoclose=True)
         time_mod = mfdataset_hdct.variables['time_counter'][:].values
     except Exception as exs:
         log.error("Execution mfdataset_hdct failed: %s", exs)
@@ -255,18 +255,18 @@ if rank == 0:
             log.info("Create mfdadaset FCST {}".format(fc))
             log.info("Nb files {} ".format(len(liste_fcst[str(fc)])))
             try :
-                mfdataset_fcst[str(fc)] = xr.open_mfdataset(liste_fcst[str(fc)], concat_dim='time_counter', autoclose=True) 
-                time_fcst[str(fc)] = mfdataset_fcst[str(fc)].variables['time_counter'][:].values  
+                mfdataset_fcst[str(fc)] = xr.open_mfdataset(liste_fcst[str(fc)], concat_dim='time_counter', autoclose=True)
+                time_fcst[str(fc)] = mfdataset_fcst[str(fc)].variables['time_counter'][:].values
             except Exception as exs:
                log.error ("Execution mfdataset_fcst failed: %s", exs)
                raise
             log.info("Create mfdadaset FCST OK {}".format(fc))
             meminfo = psutil.Process().memory_info().rss / 2**20
             log.debug("RSS memory information : %s " %(str(meminfo)))
-     
+
     log.info ("Create dataset ok ")
     # ~~~~~~~~ Read mooring coordinates and compute 2D collocation with the model grid ~~~~~~~~~
-    
+
     list_file = []
     for file in glob(frame):
         list_file.append(file)

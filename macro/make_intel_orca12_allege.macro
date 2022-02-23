@@ -66,6 +66,7 @@ CPP_KEYS=-Dkey_orca_r12_allege -Dkey_log -Dkey_global #-Dkey_debug
 #CPP_KEYS= -Dkey_orca_r12  -Dkey_cputime
 CONFIG=ORCA12
 MODELE=PSY4V3R1
+#MODELE=GLORYS12V1-light
 #MODELE=GLORYS12V1
 # nom du preprocesseur
 # CPP=/lib/cpp

@@ -187,7 +187,7 @@ def cfg_ltime(cl_file, cexp, cvar):
 
     lead_time = [] 
     yout = 0
-    missing_value = netCDF4.default_fillvals['f4']) 
+    missing_value = netCDF4.default_fillvals['f4']
     nb_fcst = None
 
     nc   = netCDF4.Dataset(cl_file,'r')

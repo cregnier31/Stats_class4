@@ -269,7 +269,7 @@ def calculer_stats_MYO2(czoneFile,modele,tab_prof,\
 
 #-----------------------------------------------------------------------------------------------------------------------------------
 
-def statlayer_CL4var(rda_val, rda_observations, rda_climatology, rda_depthobs, rda_depth_layers ):
+def statlayer_CL4var(rda_val, rda_observations, rda_climatology, rda_depthobs, rda_depth_layers, ncfile='', echeance=''):
     """
 Returns mean, RMS, Bias (/observations), RMSE (/observations), number of observations of input array rda_val in depth layers
     """
@@ -326,14 +326,18 @@ Returns mean, RMS, Bias (/observations), RMSE (/observations), number of observa
                 ila_inds = np.where((rda_depthobs[iobs,:] >= depthmin) & (rda_depthobs[iobs,:] < depthmax))
                 if len(ila_inds[0]) > 0 and len(np.shape(rda_val)) == 2:
                     for ind in ila_inds[0]:
-                        val_box_depth[nobs] = rda_val[iobs,ind]
-                        obs_box_depth[nobs] = rda_observations[iobs,ind]
-                        clim_box_depth[nobs] = rda_climatology[iobs,ind]
-                        if np.isnan(val_box_depth[nobs]) or np.isnan(obs_box_depth[nobs]):
-                            val_box_depth[nobs] = np.nan
-                            obs_box_depth[nobs] = np.nan
-                            clim_box_depth[nobs] = np.nan
-                        nobs += 1
+                        try:
+                           val_box_depth[nobs] = rda_val[iobs,ind]
+                           obs_box_depth[nobs] = rda_observations[iobs,ind]
+                           clim_box_depth[nobs] = rda_climatology[iobs,ind]
+                           if np.isnan(val_box_depth[nobs]) or np.isnan(obs_box_depth[nobs]):
+                               val_box_depth[nobs] = np.nan
+                               obs_box_depth[nobs] = np.nan
+                               clim_box_depth[nobs] = np.nan
+                           nobs += 1
+                        except Exception as e:
+                             print(f"{ind=}, {iobs=} Dimension {np.shape(rda_climatology)}  File {ncfile=} {echeance=} Error {e}")
+                             sys.exit(1)
                 elif len(ila_inds[0]) > 0 and len(np.shape(rda_val)) != 2:
                     val_box_depth[nobs] = rda_val[iobs]
                     obs_box_depth[nobs] = rda_observations[iobs]

@@ -8,6 +8,7 @@ else:
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
+import logging
 import define_config
 import param.Def_param_bulletin as params
 import supobs
@@ -109,7 +110,8 @@ def input_params(arg, log):
     params_conf['percent'] = 'off'
     params_conf['nblevel'] = ''
     _DBFILE_ = './environment.cfg'
-    params_conf['missing_value'] = netCDF4.default_fillvals['f4']) 
+    params_conf['missing_value'] = netCDF4.default_fillvals['f4']
+
     for o, p in cla_opts[0]:
         if o in ['-s', '--day1']:
             cl_start_date = p
@@ -122,26 +124,50 @@ def input_params(arg, log):
         elif o in ['-c', '--cfg']:
             _DBFILE_ = p.strip()
         elif o in ['-d', '--daily_off']:
-            params_conf['daily_off'] = str(p)
+            if p == 'None':
+                params_conf['daily_off'] = 'on'
+            else:
+                params_conf['daily_off'] = str(p)
         elif o in ['-b', '--bilan']:
-            params_conf['bilan'] = str(p)
+            if p == 'None':
+                params_conf['bilan'] = 'off'
+            else:
+                params_conf['bilan'] = str(p)
         elif o in ['-f', '--fmt_ascii']:
-            params_conf['fmt_ascii'] = str(p)
+            if p == 'None':
+                params_conf['fmt_ascii'] = 'off'
+            else:
+                params_conf['fmt_ascii'] = str(p)
         elif o in ['-m', '--fmt_mask']:
-            params_conf['fmt_mask'] = str(p)
+            if p == 'None':
+                params_conf['fmt_mask'] = 'basin'
+            else:
+                params_conf['fmt_mask'] = str(p)
         elif o in ['-p', '--percent']:
-            params_conf['percent'] = str(p)
+            if p == 'None':
+                params_conf['percent'] = 'off'
+            else:
+                params_conf['percent'] = str(p)
         elif o in ['-p', '--nblevel']:
-            params_conf['nblevel'] = str(p)
+            if p == 'None':
+                params_conf['nblevel'] = ''
+            else:
+                params_conf['nblevel'] = str(p)
+                print (f'Level :: {p}')
         elif o in ['-l', '--debug']:
             debug = str(p)
             if p == "0":
                 log.setLevel(20)
             elif p == "1":
                 log.setLevel(10)
+            elif p == 'True':
+                log.setLevel(logging.DEBUG)
+            elif p == 'False':
+                log.setLevel(logging.INFO)
             else:
                 log.error("Not known : debug option should be 0 or 1")
 
+    log.info(f'{params_conf}')
 
     # *********************  Define input date / fmt date  *********************
 
@@ -186,7 +212,7 @@ def input_params(arg, log):
     params_conf['cl_ref'] = params_conf['db'].get('NETCDF', 'REF')
     params_conf['cl_fmt'] = params_conf['db'].get('NETCDF', 'FMT')
     params_conf['dir_static'] = params_conf['db'].get('NETCDF', 'DIR_MASK_IN')
-    params_conf['cla_metricname'] = params.cla_metricname2
+    params_conf['cla_metricname'] = params.cla_metricname
     params_conf['metric_percent'] = params.cla_metricname_Q
     params_conf['cmems_basin'] = params.liste_zone
 

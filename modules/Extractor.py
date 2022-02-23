@@ -893,7 +893,7 @@ class Extract_GODAE(Extractor):
         if typedata ==  "AMSR" : 
             liste_file=glob(dirdata+'/*'+daterun+'*.nc')
         else :
-            liste_file=glob(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')
+            liste_file=[glob(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')[0]]
         # liste_file=glob(dirdata+'/*[TS]*'+daterun+'*.nc')
         self.log.info('Liste file %s ' % (liste_file))
         for new_file in liste_file :
