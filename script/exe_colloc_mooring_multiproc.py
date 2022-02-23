@@ -186,7 +186,7 @@ if rank == 0:
 
     weight_file = DIR_INTERP+'weight_file_'+str(nb_ptsinterp)+'pts_'+str(nb_files)+'moorings_'+str(typemoor)+"_"+str(YEAR)+"_"+str(MONTH2)+".nc"
     log.info ("Interp Kdtree")
-    TreeObj = interp_KDtree()
+    TreeObj = interp_KDtree(log)
     dist, idw = TreeObj.tree_and_query(lon_mod, lat_mod,\
                                        np.array(list_lon), np.array(list_lat),\
                                        int(nb_ptsinterp), weight_file=weight_file, save=save)
@@ -235,8 +235,8 @@ if rank == 0:
             liste_fcst[str(fc)] = lfc
 	##
         if len(file_fcst) == 0:
-    	    log.error("Missing files for forecast")
-    	    sys.exit(1)
+            log.error("Missing files for forecast")
+            sys.exit(1)
     depth_mod = read_depth(liste_file[0])
     log.info("Create mfdadaset HDCT")
     try:

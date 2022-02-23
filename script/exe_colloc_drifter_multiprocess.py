@@ -185,7 +185,7 @@ for num_proc in range(comm.size):
         weight_file = DIR_INTERP+'weight_file_'+str(nb_ptsinterp)+'pts_'+str(nb_files)+'drifters_'+str(YEAR)+"_"+str(MONTH2)+".nc"
         #start = timer()
         save=False
-        TreeObj = interp_KDtree()
+        TreeObj = interp_KDtree(log)
         log.debug('Interpolate on irregular grid')
         dist, idw = TreeObj.tree_and_query(lon_mod, lat_mod, \
                                                np.array(list_lon), np.array(list_lat),\
@@ -194,7 +194,7 @@ for num_proc in range(comm.size):
 
         log.debug('Interpolate on regular grid')
         weight_file = DIR_INTERP+'weight_file_regular_'+str(nb_ptsinterp)+'pts_'+str(nb_files)+'drifters_'+str(YEAR)+"_"+str(MONTH2)+".nc"
-        TreeObj = interp_KDtree()
+        TreeObj = interp_KDtree(log)
         dist_reg, idw_reg = TreeObj.tree_and_query(lon_mod_reg, lat_mod_reg,\
                                                    np.array(list_lon), np.array(list_lat),\
                                                    nb_ptsinterp, weight_file=weight_file, save=save)
@@ -202,7 +202,7 @@ for num_proc in range(comm.size):
 
         log.debug('Interpolate on regular grid clim')
 
-        TreeObj = interp_KDtree()
+        TreeObj = interp_KDtree(log)
         weight_file = DIR_INTERP+'weight_file_regular_clim_'+str(nb_ptsinterp)+'pts_'+str(nb_files)+'drifters_'+str(YEAR)+"_"+str(MONTH2)+".nc"
         dist_clim, idw_clim  = TreeObj.tree_and_query(lon_clim, lat_clim,
                                                       np.array(list_lon), np.array(list_lat),\
