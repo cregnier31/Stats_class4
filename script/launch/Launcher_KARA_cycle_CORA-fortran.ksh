@@ -8,9 +8,10 @@ PROGDIR=${0%/*}; [ "${PROGDIR}" = "." \
         && PROGDIR=${PWD}
 
 
-if [ $# -lt 6 ]; then
+if [ $# -lt 7 ]; then
     echo "USAGE: ${PROGNAME} <CONFIG> <DATE1><DATE2><NB_PROC>><SRC><DAYMAX> "
-    echo "USAGE: ./${PROGNAME} GLORYS12V1-free 20050801 20050831 32 CORA5.2 20070101"
+    echo "USAGE: ./${PROGNAME} GLORYS12V1-free 20050801 20050831 32 CORA5.2 20070101 allege"
+    echo $#
     exit 1
 fi
 CONFIG=$1
@@ -21,7 +22,9 @@ SRC=$5
 DAYMAX=$6
 dir_sub="/home/cregnier/Gitlab/TEP_CLASS4/script/sub/"
 DIR_LOG="/kara/data1/cregnier/log/CORA5/"
-TYPEMOD='pgn'  ## allege
+TYPEMOD=$7
+
+#TYPEMOD='allege'
 ### 
 DATERUN=${DATE1}
 job_script="${dir_sub}/Launch_${DATERUN}_${CONFIG}_nbproc${NB_PROC}.pbs"

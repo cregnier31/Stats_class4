@@ -303,7 +303,7 @@ class InputLoader(Loader):
                 cl_end_date = p
             elif o in ['--typemod']:
                 cl_typemod = p
-                if cl_typemod not in ['pgs', 'pgn', 'allege','2ease']:
+                if cl_typemod not in ['pgs', 'pgn', 'allege','2ease', 'allege_new']:
                     print ("input data type not known : must be pgn pgs allege 2ease :{}".format(cl_typemod))
                     sys.exit(1)
             elif o in ['--daterun']:

@@ -53,6 +53,15 @@ class Selector(object):
         else:
             print("Type not known %s " %(type))
 
+    def get_template_alleges_new(self, dateval, param_dict):
+
+        """ Get the template for new model inputs  """
+
+        jdatemin = SyDate(dateval)
+        type_run = param_dict['type_run']
+        sys.exit(1)
+
+
     def get_template_alleges(self, dateval, param_dict):
 
         """ Get the template for model inputs  """
@@ -158,7 +167,7 @@ class SelectListModelData(Selector):
             param_dict['gridtype'] = "icemod"
         if typemod == "pgn":
             dirmodel = param_dict['dirmodel_pgn']
-        elif typemod == "allege":
+        elif typemod == "allege" or "allege_new":
             dirmodel = param_dict['dirmodel_light']
         elif typemod == "2ease":
             dirmodel = param_dict['dirmodel_pgn']
@@ -274,6 +283,12 @@ class SelectListModelData(Selector):
                     elif directory == 'hdct_all':
                         dirmodel_new = param_dict['dirmodel']+"/"
                         self.log.debug("directory {}".format(dirmodel_new))
+
+                    elif typemod == 'allege_new':
+                        self.log.debug("lightout new type")
+                        dirmodel_new = dirmodel+"/"
+                        template = self.get_template_alleges_new(dateval,
+                                                                 param_dict)
                     elif directory == 'fcst':
                         if param_dict['daily_pref'] == '7dAV':
                             dirmodel_new = dirmodel+"FORECAST/"

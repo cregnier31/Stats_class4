@@ -449,7 +449,7 @@ class Extract_cora5_2(Extractor):
                 try :
                     filename=os.path.basename(new_file)
                     shutil.copy(new_file,dirtmp)
-                    self.log.info('copy file {}'.format(dirtmp+filename))
+                    self.log.debug('copy file ok {}'.format(dirtmp+filename))
                     liste_tot.append(dirtmp+filename)
                 except IOError as e:
                     self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))

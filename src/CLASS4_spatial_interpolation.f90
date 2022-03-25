@@ -365,7 +365,7 @@ WRITE(0,*) ' Function interpolate_3D_model_field type: ',TRIM(cd_input_type)
               !* on incremente le compteur du nombre de lignes
                  il_nbrec=il_nbrec+1
               ENDIF
-           ENDDO              
+           ENDDO
            CLOSE(il_fic)
            il_nprof=1
            il_nlevels=il_nbrec
@@ -2108,7 +2108,7 @@ SUBROUTINE read_model_file(cd_fileT, &
      CASE default
         WRITE(0,*) 'Type non reconnu'
      ENDSELECT
-  ELSE IF (id_nbdim .EQ. 4) THEN
+  ELSE IF (id_nbdim .EQ. 4 .OR. id_nbdim .EQ. 5) THEN
      SELECT CASE (il_type_T)
      CASE (NF90_DOUBLE)
         call MIOL_read_field_NC(cd_fileT,cd_fieldname_T,rlpa_valueT_4D_R8)
@@ -2147,7 +2147,7 @@ SUBROUTINE read_model_file(cd_fileT, &
 !#endif
         ! Lecture des variables à traiter
         !
-        IF (id_nbdim .EQ. 4) THEN
+        IF (id_nbdim .EQ. 4 .OR. id_nbdim .EQ. 5) THEN
            DO il_jk=1,4
                 ila_indx(:)=ida_xindex(il_jk,il_ji)
                 ila_indy(:)=ida_yindex(il_jk,il_ji)
@@ -2531,7 +2531,6 @@ SUBROUTINE interp_model_field(rda_modelvalue_T, &
            PRINT *, 'valeur des yindex :: ',ida_yindex(1:4,il_ji)
            PRINT *, 'Position Lon , Lat du profil : ',rl_lon,rl_lat
 !           PRINT *, 'Nom du fichier d entrée :: ',TRIM(cd_Inputfile)
-#endif        
            cl_ficlog=TRIM(cg_ficlog)//'/Position_bad_profils_'//TRIM(cg_modele)//'_R'//TRIM(cg_rundate)//'.txt'
            INQUIRE(FILE=TRIM(cl_ficlog),EXIST=ll_exist_ficlog)
            IF ( .NOT. ll_exist_ficlog ) THEN
@@ -2546,6 +2545,8 @@ SUBROUTINE interp_model_field(rda_modelvalue_T, &
 	  ! WRITE(0,*) 'Ecriture fic log :: ',TRIM(cd_Inputfile),rl_lon,rl_lat,il_nbx,il_nby
            WRITE(il_ficlog,FMT=800,advance="yes") TRIM(cd_Inputfile),rl_lon,rl_lat,il_nbx,il_nby
            CLOSE(il_ficlog)
+#endif        
+           PRINT *,'les 4 index ne sont pas trouvés :: ',il_nbx,il_nby
         ENDIF
 
         !** Gestion du cas ou les fichiers sont abherents        
@@ -2883,7 +2884,7 @@ SUBROUTINE inquire_coriolis_file (cd_inputFile, &
   ld_lparam=.FALSE.
   ld_cparam=.FALSE.
   ld_parameterint=.FALSE.
-  !      
+  !
   !
   !------------------------------------------------------------------------
   !

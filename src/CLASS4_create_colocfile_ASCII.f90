@@ -432,8 +432,8 @@ PROGRAM COLOCALIZE
 #if defined key_debug
     WRITE(0,*) ' Fin de lecture '
 #endif
-  ELSE 
-      WRITE(0,*) 'Mask not Found'
+  ELSE
+      WRITE(0,*) 'Mask not Found :',cl_gridFile
       STOP
   ENDIF
   !** Generation du canevas

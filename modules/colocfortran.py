@@ -211,7 +211,7 @@ class ColocFortran(object):
                 self.log.info('Lead Time {}'.format(time))
                 lead_fin = []
                 lead_new=self.params['lead_int']
-                if self.params['cl_typemod'] == "allege":
+                if self.params['cl_typemod'].lower() == "allege" or self.params['cl_typemod'].lower() == "allege_new":
                     sort_rep = self.params['dirmodel_light']
                 else:
                     sort_rep = self.params['dirmodel']
@@ -257,7 +257,7 @@ class ColocFortran(object):
                     lead_fin = ['clim']
                     sort_rep = dirclim
                 else :
-                   self.log.error('Lead time {} not expected ' .format(time))
+                   self.log.error('interp_fortran Lead time {} not expected ' .format(time))
                 if self.params['data_type'] ==  "AMSR" :
                     exe = 'CLASS4_spatial_interpolation_'+self.params['data_origin']+'_AMSR.exe'
                 else :
@@ -265,11 +265,14 @@ class ColocFortran(object):
                 exe = os.path.join(self.params['direxec'],exe)
                 if self.params['data_origin'] == 'CORIOLIS' :
                     nml=os.path.join(self.params['nml_dir'],'interpolate_3D_%s_%s_%s_%s.nml' %(self.params['data_type'].upper(),self.params['cl_config'],time,dateval))
+                    self.log.debug('Case corio')
+                    self.log.debug(f"{self.params['cl_typemod']=}")
+                    self.log.debug(f"{sort_rep=}")
                     NmlCreator(self.params['cl_msshFile'],ll_mssh,ll_compute,self.params['rp_mssh_shift']).factory(self.params['data_origin'])\
                               .run(nml,cl_config_use,self.params['daily_pref'],self.params['data_type'],\
                               time,sort_rep,self.params['coloc_rep'],self.params['dirwork'],time,dateval,self.params['gridtemp'],\
                               self.params['gridsal'],self.params['cl_schedule'],self.params['type_run'],self.params['coordinates'],\
-                              self.params['cl_typemod'])
+                              self.params['cl_typemod'], self.params['cl_conf'])
                     if not os.path.exists(exe) :
                         self.log.error('Did not find executable {}'.format(exe))
                         sys.exit(1)
@@ -346,7 +349,8 @@ class ColocFortran(object):
                   self.log.info("Launch date :  {}".format(cl_date))
                   self.log.info("Launch params :  {} {} {} {}".format(self.params['cl_config'],cl_date2,self.params['nb_proc'],self.params['cl_src']))
                   code_lancement=self.params['dirhome']+'script/launch/Launcher_KARA_cycle_CORA-fortran.ksh '+self.params['cl_config']+\
-                          '  '+cl_date+' '+cl_date2+' '+str(self.params['nb_proc'])+' '+self.params['cl_src']+' '+str(dayvalmax)
+                          ' ' + cl_date + ' ' + cl_date2 + ' ' + str(self.params['nb_proc']) + ' '+self.params['cl_src'] + \
+                          ' ' + str(dayvalmax) + ' ' + self.params['cl_typemod'].lower()
 
                   self.log.info("Code lancement {}".format(code_lancement))
               elif schedule == "WEEKLY" :
