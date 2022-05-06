@@ -23,7 +23,8 @@ from datetime import date
 from sytoolkit.sydate import SyDate
 from Logger import Logger
 from calendar import monthrange
-from lib_pyt.libtools.utilities import date_range
+#from lib_pyt.libtools.utilities import date_range
+from lib_pyt.Utils import date_range
 from reader import *
 from ast import literal_eval
 from os.path import dirname
@@ -989,7 +990,7 @@ class read_Legos_SIT(Loader):
         nc.close()
         return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, _FillValue
 
-    
+
 class AsciiLoader(Loader):
 
     """Loader for ASCII dataset"""

@@ -263,7 +263,9 @@ module load openmpi/openmpi-1.8.5
 module load intel/intel-18
 workdir=/home/cregnier/Gitlab/TEP_CLASS4/postraitement/python/compute_stats/log
 cfgfile=../cfg/environment_${config}.cfg
-
+#dir_bin="/homelocal-px/px-116/sauvegarde/cregnier/Program_files/miniconda3/envs/py3_parcels_mpi2/bin/"
+#dir_bin="/data/rd_exchange/qualif/anaconda3/envs/py3_parcels/bin/"
+dir_bin=/data/rd_exchange/qualif/anaconda3/envs/env_py38/bin/
 logfile=${workdir}/CLASS4_${config}_${day1}-${day2}.log
 echo $cfgfile
 # Suppression du flag de controle fin de job
@@ -274,21 +276,20 @@ if [ "${daily_off}" == "off" ] ; then
 elif [ "${daily_off}" != "off" ] ; then
     exe="../exe_kara_Lecture_class4_multi_timeserie.py"
 fi
-
 if [ $# -eq 4 ] ;then
-  qsub -v day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata} $PWD/${exe}  >> $logfile
+  qsub -v dir_bin=$dir_bin,day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata} $PWD/${exe}  >> $logfile
 elif  [ $# -eq 5 ] ; then
-  qsub -v day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata},fmt_mask=${fmt_mask} $PWD/${exe}  >> $logfile
+  qsub -v dir_bin=$dir_bin,day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata},fmt_mask=${fmt_mask} $PWD/${exe}  >> $logfile
 elif  [ $# -eq 6 ] ; then
-  qsub -v day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata},fmt_mask=${fmt_mask},bilan=${bilan} $PWD/${exe}  >> $logfile
+  qsub -v dir_bin=$dir_bin,day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata},fmt_mask=${fmt_mask},bilan=${bilan} $PWD/${exe}  >> $logfile
 elif  [ $# -eq 7 ] ; then
-  qsub -v day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata},fmt_mask=${fmt_mask},bilan=${bilan},fmt_ascii=${fmt_ascii} $PWD/${exe}  >> $logfile
+  qsub -v dir_bin=$dir_bin,day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata},fmt_mask=${fmt_mask},bilan=${bilan},fmt_ascii=${fmt_ascii} $PWD/${exe}  >> $logfile
 elif  [ $# -eq 8 ] ; then
-  qsub -v day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata},fmt_mask=${fmt_mask},bilan=${bilan},fmt_ascii=${fmt_ascii},daily_off=${daily_off} $PWD/${exe}  >> $logfile
+  qsub -v dir_bin=$dir_bin,day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata},fmt_mask=${fmt_mask},bilan=${bilan},fmt_ascii=${fmt_ascii},daily_off=${daily_off} $PWD/${exe}  >> $logfile
 elif  [ $# -eq 9 ] ; then
-  qsub -v day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata},fmt_mask=${fmt_mask},bilan=${bilan},fmt_ascii=${fmt_ascii},daily_off=${daily_off},percent=${percent} $PWD/${exe}  >> $logfile
+  qsub -v dir_bin=$dir_bin,day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata},fmt_mask=${fmt_mask},bilan=${bilan},fmt_ascii=${fmt_ascii},daily_off=${daily_off},percent=${percent} $PWD/${exe}  >> $logfile
 else
-  qsub -v day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata},fmt_mask=${fmt_mask},bilan=${bilan},fmt_ascii=${fmt_ascii},daily_off=${daily_off},percent=${percent},nblevel=${nblevel} $PWD/${exe}  >> $logfile
+  qsub -v dir_bin=$dir_bin,day1=$day1,day2=$day2,cfg=$cfgfile,pbsworkdir=$PWD,type=${typedata},fmt_mask=${fmt_mask},bilan=${bilan},fmt_ascii=${fmt_ascii},daily_off=${daily_off},percent=${percent},nblevel=${nblevel} $PWD/${exe}  >> $logfile
 fi
 
 echo "Connection successful" >> $logfile

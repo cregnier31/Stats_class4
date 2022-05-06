@@ -1,13 +1,21 @@
 #!/bin/ksh
-day1="20200101"
-day2="20200101"
+day1="20170827"
+day2="20170827"
+day1="20200915"
+day2="20200915"
+#day1="20190129"
+#day2="20190129"
 
 ## Test different configurations
 config="PSY4V3R1"
 #config="BIOMER4V2"
 #config="PSY4V2R2"
-#config="HYCOM_RTOFS"
 #config="GIOPS"
+#config="BLK"
+#config="FOAM"
+#config="HYCOM_RTOFS"
+#config="ENSMEAN"
+
 #config="FOAM"
 cfgfile=./cfg/environment_${config}.cfg
 dir_bin="/data/rd_exchange/qualif/anaconda3/envs/env_py38/bin/"
@@ -21,7 +29,7 @@ fi
 daily_off="on"
 bilan="off"
 fmt_ascii="off"
-debug="0"
+debug="1"
 fmt_mask="basin"
 ${dir_bin}python ./exe_compute_stats_CMEMS_areas_multiprocess.py --day1=${day1} --day2=${day2} --cfg=${cfgfile} \
     --type=${typedata} --fmt_mask=${fmt_mask} --bilan=${bilan} --fmt_ascii=${fmt_ascii} --daily_off=${daily_off} \

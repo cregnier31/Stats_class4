@@ -1,7 +1,7 @@
 # Makefile for Fortran program Class 4
 # Modifs C.REGNIER Janvier 2010
-include ../../macro/make_intel.macro
-#include ../../macro/make_intel_orca12_allege.macro
+#include ../../macro/make_intel.macro
+include ../../macro/make_intel_orca12_allege.macro
 
 # Rules
 .SUFFIXES:.F90 .F .f90 .mod

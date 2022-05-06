@@ -17,7 +17,7 @@ DAYMAX=$5
 usage ()
 {
     echo "Nb d'argument incorrects :: "
-    echo "Necessite 3 arguments :: "
+    echo "Necessite 5 arguments :: "
     echo " Valeur1 = Date du RUN"
     echo " Valeur2 = CONFIG "
     echo " Valeur3 = Resolution de la grille "
@@ -34,7 +34,7 @@ if [ $# -ne 5 ] ;then
     usage
 fi
 case "${CONFIG}" in
-        GLORYS2V4|GLORYS12V1|GLORYS12V1-free|GLORYS12V1-light|GLORYS12V1-light2|GLO4|FOAM|CGLORS|ORAS5|ENSEMBLE|PSY2V4R3|PSY2V4R2|PSY3V3R3|PSY3V3R1|PSY4V2R1|PSY4V3R1|PSY4V2R2|PSY2V4R4)
+        GLO12V4-light|GLORYS2V4|GLORYS12V1|GLORYS12V1-free|GLORYS12V1-light|GLORYS12V1-light2|GLO4|FOAM|CGLORS|ORAS5|ENSEMBLE|PSY2V4R3|PSY2V4R2|PSY3V3R3|PSY3V3R1|PSY4V2R1|PSY4V3R1|PSY4V2R2|PSY2V4R4)
                 ;;
         *)
         usage

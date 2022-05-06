@@ -21,6 +21,7 @@ resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM
 # ********************** Source environnement *********************************
 
 pbsworkdir  = os.getenv('pbsworkdir')
+dir_bin  = os.getenv('dir_bin')
 cl_dateMinZone = os.getenv('day1')
 cl_dateMaxZone = os.getenv('day2')
 datatype = os.getenv('type')
@@ -38,9 +39,8 @@ nblevel = os.getenv('nblevel')
 os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 os.chdir(pbsworkdir)
 EXE = os.path.join(pbsworkdir,'../exe_compute_stats_CMEMS_areas_multiprocess.py')
-try : os.remove(os.path.join(pbsworkdir,"OK.flag")) 
+try : os.remove(os.path.join(pbsworkdir,"OK.flag"))
 except : pass
-dir_bin="/data/rd_exchange/qualif/anaconda3/envs/env_py38/bin/"
 HDF5_USE_FILE_LOCKING = False
 
 # **************************** Python launcher *********************************

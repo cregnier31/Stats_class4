@@ -310,21 +310,31 @@ class NmlCreator_CORIOLIS(NmlCreator):
         ## Find next daterun
         jdatemin=SyDate(dateval)
         daytogo=2-jdatemin.weekday()
+        self.log.debug(f"{daytogo=}")
+
         if daytogo > 0:
             first_date=jdatemin.goforward(daytogo)
+            if type_run == 'HINDCAST' or type_run == 'OPER':
+                daytogo2 = 7 + daytogo
+                first_date = jdatemin.goforward(daytogo2)
         else :
+            self.log.debug(f"{type_run=}")
             if type_run == 'RTR' or type_run == 'REA':
+                self.log.debug(f"Case RTR")
                 nbdate=7
             elif type_run == 'HINDCAST' or type_run == 'OPER':
+                self.log.debug(f"Case oper")
                 nbdate=14
             daytogo2=nbdate+daytogo
             first_date=jdatemin.goforward(daytogo2)
+            self.log.debug(f"{first_date=}")
            # first_date=jdatemin.gobackward(-daytogo)
         daterun=first_date
         if type_run == 'RTR' or  type_run == 'REA':
             date1=daterun.gobackward(7)
             date2=daterun
         elif type_run == 'HINDCAST' or  type_run == 'OPER':
+            self.log.debug(f"Case oper 2")
             date1=daterun.gobackward(14)
             date2=daterun.gobackward(7)
         if type_run == 'OPER':
@@ -370,37 +380,40 @@ class NmlCreator_CORIOLIS(NmlCreator):
             prefix_var=listdir
         self.log.debug(f"{schedule=}")
         if schedule == 'm' :
+            self.log.debug(f"MONTHLY {schedule=}")
             searchdir="MONTHLY_"+yearval
             daterun=dateval[0:6]
             if type_mod.lower() == 'allege' :
                 type_out='END'
-                ## Find next daterun
-                jdatemin=SyDate(dateval)
-                daytogo=2-jdatemin.weekday()
-                if daytogo > 0 :
-                    first_date=jdatemin.goforward(daytogo)
-                else :
-                    if type_run == 'RTR' or type_run == 'REA':
-                        nbdate=7
-                    elif type_run == 'HINDCAST' or type_run == 'OPER':
-                        nbdate=14
-                    daytogo2=nbdate+daytogo
-                    first_date=jdatemin.goforward(daytogo2)
-                   # first_date=jdatemin.gobackward(-daytogo)
-                daterun=first_date
-                if type_run == 'RTR' or type_run == 'REA':
-                    date1=daterun.gobackward(7)
-                    date2=daterun
-                elif type_run == 'HINDCAST' or type_run == 'OPER':
-                    date1=daterun.gobackward(14)
-                    date2=daterun.gobackward(7)
-                if type_run == 'OPER':
-                    type_run_tmp = 'hindcast'
-                elif type_run == 'RTR' or type_run == 'REA':
-                    type_run_tmp = type_run.lower()
-                else:
-                    self.log.error("Type run not known {}".format())
-                    sys.exit(1)
+                date1, date2, daterun, type_run_tmp, type_out = self.get_date_lightout(dateval, type_run)
+                self.log.debug(f"{date1=} {date2=} {daterun=}")
+                ### Find next daterun
+                #jdatemin=SyDate(dateval)
+                #daytogo=2-jdatemin.weekday()
+                #if daytogo > 0 :
+                #    first_date=jdatemin.goforward(daytogo)
+                #else :
+                #    if type_run == 'RTR' or type_run == 'REA':
+                #        nbdate=7
+                #    elif type_run == 'HINDCAST' or type_run == 'OPER':
+                #        nbdate=14
+                #    daytogo2=nbdate+daytogo
+                #    first_date=jdatemin.goforward(daytogo2)
+                #   # first_date=jdatemin.gobackward(-daytogo)
+                #daterun=first_date
+                #if type_run == 'RTR' or type_run == 'REA':
+                #    date1=daterun.gobackward(7)
+                #    date2=daterun
+                #elif type_run == 'HINDCAST' or type_run == 'OPER':
+                #    date1=daterun.gobackward(14)
+                #    date2=daterun.gobackward(7)
+                #if type_run == 'OPER':
+                #    type_run_tmp = 'hindcast'
+                #elif type_run == 'RTR' or type_run == 'REA':
+                #    type_run_tmp = type_run.lower()
+                #else:
+                #    self.log.error("Type run not known {}".format())
+                #    sys.exit(1)
 
                 template=dirmodel+'ALLEGES_'+type_run_tmp+'_'+str(date1)+'_'+str(date2)+'_R'+str(daterun)+'/'+type_out+'/'+gridtemp+'N.B.d*.50.0'
                 ll_lightout=True
@@ -490,7 +503,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
             model_varname_S='vosaline'
         ## List model
         #for file in glob.glob(dirmodel+searchdir+'/'+modele+'*'+daterun+'*'+gridtemp+'*.nc') : 
-        #self.log.debug('Template %s' %(template))
+        self.log.debug('Template %s' %(template))
         fic_temp = []
         fic_psal = []
         for file in glob.glob(template):

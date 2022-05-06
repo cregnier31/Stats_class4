@@ -24,7 +24,8 @@
 ;@config_GLORYS12V1
 ;@config_GLORYS12V1-free
 ;@config_GLORYS12V1-clim
-@config_PSY4V3R1
+@config_GLO12V4
+;@config_PSY4V3R1-light
 ;@config_GLO4
 ;@config_GLORYS2V1
 ;@config_MJM105b
@@ -36,7 +37,7 @@
 dirname_out=fic_out
 dirin=dir_stats_MERC
 
-; Definition des variables 
+; Definition des variables
 tab_choix=strarr(2)
 tab_choix(0)='SAL'
 tab_choix(1)='TEMP'
@@ -67,7 +68,7 @@ lissage='no'
 NB_VALEURS=2
 NB_VALEURS2=2
 
-; Compilation & Execution 
+; Compilation & Execution
 .compile tracer_suivi_rmsdiff_supobs
 .compile tracer_suivi_meandiff_supobs
 ;; choix du type de tracé 
@@ -88,7 +89,7 @@ print,liste_zone
 print,modele
 CASE modele OF  & $
 
-        'PSY3V3R3': BEGIN & $
+        'PSY4V3R1-light': BEGIN & $
          liste_region=strarr(14) & $
          liste_region(*)=liste_zone(*) & $
          ENDCASE & $
@@ -124,7 +125,7 @@ CASE modele OF  & $
          liste_region=strarr(14) & $
          liste_region(*)=liste_zone(*) & $
           ENDCASE & $
- 
+
           'GLORYS12V1-free':BEGIN & $
          liste_region=strarr(14) & $
          liste_region(*)=liste_zone(*) & $
@@ -159,6 +160,11 @@ CASE modele OF  & $
          liste_region(*)=liste_zone(*) & $
          ENDCASE & $
 
+         'GLO12V4-light' :BEGIN & $
+         liste_region=strarr(14) & $
+         liste_region(*)=liste_zone(*) & $
+         ENDCASE & $
+
          'MJM105b' :BEGIN & $
          liste_region=strarr(13) & $
          liste_region(*)=liste_zone(*) & $
@@ -175,7 +181,6 @@ dirin=dir_stats_MERC
 tracer_suivi_meandiff_supobs,modele,file_mask,$
 kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,$
 liste_region,tab_choix,OPER,tab_prof,lissage,NB_VALEURS,NB_VALEURS2,type_data=type_data
-;;exit,/NO_CONFIRM
 
 ;;;; Lancé du tracé de la rms diff et la mean diff sur les couches classiques
 ;;;; 0-50, 50-100, 100-150 ...
@@ -191,10 +196,11 @@ tracer_suivi_meandiff_supobs,modele,file_mask,$
 kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,$
 liste_region,tab_choix,OPER,tab_prof_2,lissage,NB_VALEURS,NB_VALEURS2,type_data=type_data
 
-exit,/NO_CONFIRM
 
 ;;;;;;;;;; Reanalyse
 ;;;; 0-100, 100-300, 300-800, 800-2000,0-2000
+dirname_out=fic_out
+dirin=dir_stats_MERC
 tracer_suivi_rmsdiff_supobs,modele,file_mask,$
 kind,filelist,dir_stats_MERC,day,valeurs_cmax2,valeurs_cmax2_sal,$
 liste_region,tab_choix,OPER,tab_prof_3,lissage,NB_VALEURS,NB_VALEURS2,type_data=type_data

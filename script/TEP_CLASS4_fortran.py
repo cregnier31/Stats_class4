@@ -76,7 +76,7 @@ def main(level=2):
     objColoc.interp_fortran()
 
     # =============================================================================
-    # PART-5 - Run loop 
+    # PART-5 - Run loop
     # =============================================================================
     if  param_dict['daymax'] : objColoc.runNext()
 # Run the main code
