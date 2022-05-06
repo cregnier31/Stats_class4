@@ -304,6 +304,44 @@ class NmlCreator_CORIOLIS(NmlCreator):
             sys.exit(1)
         return date1, date2, daterun
 
+    def get_date_lightout(self, dateval, type_run):
+        type_out='END'
+        self.log.debug("lightout type")
+        ## Find next daterun
+        jdatemin=SyDate(dateval)
+        daytogo=2-jdatemin.weekday()
+        if daytogo > 0:
+            first_date=jdatemin.goforward(daytogo)
+        else :
+            if type_run == 'RTR' or type_run == 'REA':
+                nbdate=7
+            elif type_run == 'HINDCAST' or type_run == 'OPER':
+                nbdate=14
+            daytogo2=nbdate+daytogo
+            first_date=jdatemin.goforward(daytogo2)
+           # first_date=jdatemin.gobackward(-daytogo)
+        daterun=first_date
+        if type_run == 'RTR' or  type_run == 'REA':
+            date1=daterun.gobackward(7)
+            date2=daterun
+        elif type_run == 'HINDCAST' or  type_run == 'OPER':
+            date1=daterun.gobackward(14)
+            date2=daterun.gobackward(7)
+        if type_run == 'OPER':
+            type_run_tmp = 'hindcast'
+        elif type_run == 'RTR' or type_run == 'REA':
+            type_run_tmp = type_run.lower()
+        else:
+            self.log.error("Type run not known {}".format())
+            sys.exit(1)
+        #self.log.debug(f"{date1=}")
+        #self.log.debug(f"{date2=}")
+        #self.log.debug(f"{daterun=}")
+        #self.log.debug(f"{daytogo=}")
+        return date1, date2, daterun, type_run_tmp, type_out
+
+
+
     def run(self, nml, modele, mean_type, type_data, outputVarname, \
             dirmodel, dircoloc, output, listdir, dateval, gridtemp, gridsal,\
             schedule, type_run, mesh_file, type_mod, cl_conf, type_file=None):
@@ -383,35 +421,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
         else :
             self.log.debug(f"schedule daily {type_mod}")
             if type_mod.lower() == 'allege' :
-                type_out='END'
-                self.log.debug("lightout type")
-                ## Find next daterun
-                jdatemin=SyDate(dateval)
-                daytogo=2-jdatemin.weekday()
-                if daytogo > 0:
-                    first_date=jdatemin.goforward(daytogo)
-                else :
-                    if type_run == 'RTR' or type_run == 'REA':
-                        nbdate=7
-                    elif type_run == 'HINDCAST' or type_run == 'OPER':
-                        nbdate=14
-                    daytogo2=nbdate+daytogo
-                    first_date=jdatemin.goforward(daytogo2)
-                   # first_date=jdatemin.gobackward(-daytogo)
-                daterun=first_date
-                if type_run == 'RTR' or  type_run == 'REA':
-                    date1=daterun.gobackward(7)
-                    date2=daterun
-                elif type_run == 'HINDCAST' or  type_run == 'OPER':
-                    date1=daterun.gobackward(14)
-                    date2=daterun.gobackward(7)
-                if type_run == 'OPER':
-                    type_run_tmp = 'hindcast'
-                elif type_run == 'RTR' or type_run == 'REA':
-                    type_run_tmp = type_run.lower()
-                else:
-                    self.log.error("Type run not known {}".format())
-                    sys.exit(1)
+                date1, date2, daterun, type_run_tmp, type_out = self.get_date_lightout(dateval, type_run)
                 template=dirmodel+'ALLEGES_'+type_run_tmp+'_'+str(date1)+'_'+str(date2)+'_R'+str(daterun)+'/'+type_out+'/'+gridtemp+'N.B.d*.50.0'
                 ll_lightout=True
             elif type_mod.lower() == 'allege_new' :
@@ -464,7 +474,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
             #model_varname_S="vosaline"
             model_varname_S="salinity"
         elif listdir == 'CLIM_WOA18_8594' or listdir == 'CLIM_WOA18_95A4' or listdir == 'CLIM_WOA18_A5B7':
-            ll_lightout=True
+            ll_lightout=False
             template=searchdir+'*M'+monthval+'*_TEMP.nc'
             #template=searchdir+'*M'+monthval+'*_tempinsitu.nc'
             output_varname_T='TMLEV18'
@@ -539,15 +549,14 @@ class NmlCreator_CORIOLIS(NmlCreator):
         obFichier.write('cl_outputVarname_T = '+"'"+output_varname_T+"'"+'\n')
         obFichier.write('cl_outputVarname_S = '+"'"+output_varname_S+"'"+'\n')
         obFichier.write('il_nbfile = '+str(nbfile)+'\n')
-        obFichier.write("cl_input_type = 'NETCDF'"+'\n')
+        obFichier.write('cl_input_type = NETCDF' + '\n')
         if  ll_lightout :
             type_file="ALLEGE"
-            obFichier.write('cl_input_typemod = '+"'"+type_file+"'"+'\n')
         else :
             type_file='NETCDF'
-            obFichier.write('cl_input_typemod = '+"'"+type_file+"'"+'\n')
-        obFichier.write('cl_meshfile = '+"'"+mesh_file+"'"+'\n')
-        obFichier.write('/'+'\n')
+        obFichier.write('cl_input_typemod = ' + "'" + type_file + "'" + '\n')
+        obFichier.write('cl_meshfile = ' + "'" + mesh_file + "'" + '\n')
+        obFichier.write('/' + '\n')
         for fichier2 in glob.glob(output+"*"+str(dateval)+"*.nc") :
             obFichier.write(fichier2+'\n')
         obFichier.close()
