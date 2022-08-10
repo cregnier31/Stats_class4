@@ -402,6 +402,7 @@ class SelectListModelData(Selector):
                                     list_file.extend(list_file_tmp)
                                 else:
                                     if directory == "smoc" or directory == "stokes" or directory == "tides":
+                                        self.log.debug(f'SMOC dir {dirmodel_new}SMOC_{dateval}*.nc')
                                         for i in range (2):
                                             list_file_tmp = glob(dirmodel_new+"SMOC_"+dateval+"*.nc")
                                             list_file.extend(list_file_tmp)
@@ -469,6 +470,7 @@ class SelectListModelData(Selector):
 
                 if not list_file:
                     self.log.error("Repertory %s" % (dirmodel_new))
+                    self.log.error("File missing for %s" %(directory))
                     self.log.error("File missing for %s" %(directory))
                     ll_miss = True
                     sys.exit(1)
