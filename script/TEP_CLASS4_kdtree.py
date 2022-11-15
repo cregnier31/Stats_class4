@@ -69,6 +69,7 @@ def main(level=2):
         log.info('========================================================')
         input_list_files, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], log).\
             factory("GLOBAL_INPUT_DATA").run(param_dict, dateval)
+
         if ll_miss:
             valeurj = valeurj.goforward(1)
             continue
@@ -85,9 +86,9 @@ def main(level=2):
                tab_results, file_out = Interpolator(log, dask=param_dict['dask']).read_and_interp(
                    file, input_model_file, param_dict, date=dateval)
                # Write output file
-               filename = param_dict['dirwork']+file_out
+               filename = param_dict['dirwork'] + file_out
                log.info("========================================================")
-               log.info('Write interp file  {} '.format((str(dateval))))
+               log.info(f'Write interp file for day {dateval} {filename}')
                log.info("========================================================")
                Writer(log).write_output(
                    filename, tab_results, param_dict, dateval,ll_zip=param_dict['ll_zip'])

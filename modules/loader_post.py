@@ -271,6 +271,14 @@ def load_param(db_file):
         'static', 'coordinates_reg')
     params_conf['coordinates_clim'] = params_conf['db'].get(
         'static', 'coordinates_clim')
+    try:
+        params_conf['coordinates_zgr'] = params_conf['db'].get('static', 'coordinates_zgr')
+    except:
+        params_conf['coordinates_zgr'] = ""
+    try:
+        params_conf['coordinates_hgr'] = params_conf['db'].get('static', 'coordinates_hgr')
+    except:
+        params_conf['coordinates_hgr'] = ""
 
     return params_conf
 

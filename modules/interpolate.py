@@ -3,6 +3,8 @@ import numpy as np
 from scipy.spatial import cKDTree
 from timeit import default_timer as timer
 from numba import jit
+from Interp_kdtree import interp_KDtree
+
 if sys.version_info[0] >= 3:
     import pickle
 else:
@@ -237,4 +239,33 @@ def coloc_2D(lon_in, lon_out, lat_in, lat_out,
 
 #    return ilat, ilon, DIST
     return inds_idw1, DIST
+
+
+def interpolate_drifters(log, params_dict, lon1, lat1,
+                         lon2, lat2, year, month, name):
+    nb_ptsinterp = int(params_dict['nb_ptsinterp'])
+    DIR_INTERP = params_dict['DIR_INTERP']
+    weight_file = DIR_INTERP + name + '_' + str(nb_ptsinterp) +\
+        'pts_drifters_' + str(year) + "_" +\
+        str(month) + ".nc"
+    start = timer()
+    save = False
+    TreeObj = interp_KDtree(log)
+    try:
+        log.debug(f'Interpolate {np.shape(lon1)}\
+                   on {np.shape(lon2)}')
+        dist, inds = TreeObj.tree_and_query(lon1, lat1,
+                                           lon2, lat2,
+                                           nb_ptsinterp,
+                                           weight_file=weight_file,
+                                           save=save)
+        log.debug('Interpolate on irregular grid ok')
+    except Exception:
+        raise
+    end = timer()
+    log.debug(f'~~~ Time elapsed coloc: {end-start} ~~~')
+    weight = TreeObj.get_weight(dist)
+
+   # return dist, idw
+    return weight, inds
 

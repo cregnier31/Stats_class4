@@ -11,6 +11,7 @@ from glob import glob
 import pandas as pd
 from scipy.spatial import cKDTree
 from collections import Counter
+from timeit import default_timer as timer
 
 #from pykdtree.kdtree import KDTree
 import netCDF4
@@ -112,8 +113,7 @@ tab_hourly_moor['PSAL']='sosaline'
 tab_hourly_moor['ZCUR']='sozocrtx'
 tab_hourly_moor['MCUR']='somecrty'
 
-log.info ('Launch mooring process')
-
+log.info ('Launch mooring process test')
 if tstp == 'hourly':
     variable = tab_hourly_moor[typemoor]
 elif tstp == 'daily':
@@ -141,6 +141,7 @@ rank = comm.Get_rank()
 log.info ('Read model coordinates')
 mod_coord = xr.open_dataset(coordinates)
 
+start = timer()
 if rank == 0:
     lon_mod, lat_mod = read_pos(coordinates, log)
 
@@ -150,7 +151,8 @@ if rank == 0:
 
     # ~~~~~~~~ Read mooring coordinates and compute 2D collocation with the model grid ~~~~~~~~~
 
-    frame = DIRDATA+str(YEAR)+str(MONTH2)+'/'+zone+'_*'+str(YEAR)+str(MONTH2)+'*.nc'  
+    frame = DIRDATA+str(YEAR)+str(MONTH2)+'/'+zone+'_*'+str(YEAR)+str(MONTH2)+'*.nc'
+    log.info(f'{frame =}')
     nb_files = 0
     for f, file in enumerate(glob(frame)):
         lon_value, lat_value, depth, depth_qc, time, temp, ll_temp, temp_qc = read_moor(file, log)
@@ -159,15 +161,16 @@ if rank == 0:
     list_mooring = []
     list_lon = []
     list_lat = []
-    log.info ("Nb file total : %s" %(str(nb_files)))
+    log.info (f"Nb file total {nb_files}")
     ind_moor = 0
+    start1 = timer()
     for f, file in enumerate(glob(frame)):
         moor =  os.path.basename(file).split('_')[3:][0]
         log.debug (moor)
         lon_value, lat_value, depth, depth_qc, time, temp, ll_temp, temp_qc = read_moor(file, log)
         if typemoor == "TEMP":
            if ll_temp:
-              ind_dict[moor] = {}           
+              ind_dict[moor] = {}
               list_mooring.append(moor)
               list_lat_lon[ind_moor,0] = lat_value
               list_lat_lon[ind_moor,1] = lon_value
@@ -177,13 +180,15 @@ if rank == 0:
               ind_dict[moor]['lon'] = lon_value   
               ind_moor += 1
     nb_files = len(list_mooring)
-    log.info ("Nb files %s : %s" %(typemoor, str(nb_files)))
-    if nb_files < 1: 
+    end1 = timer()
+    log.info(f'Nb files {typemoor}: {nb_files} Time {end1-start1}')
+    if nb_files < 1:
         log.error ("Missing moorings")
         sys.exit(1)
     collec = Counter(list_mooring)
     log.debug (collec.most_common(10))
 
+    start2 = timer()
     weight_file = DIR_INTERP+'weight_file_'+str(nb_ptsinterp)+'pts_'+str(nb_files)+'moorings_'+str(typemoor)+"_"+str(YEAR)+"_"+str(MONTH2)+".nc"
     log.info ("Interp Kdtree")
     TreeObj = interp_KDtree(log)
@@ -192,7 +197,8 @@ if rank == 0:
                                        int(nb_ptsinterp), weight_file=weight_file, save=save)
 
     ilat, ilon = TreeObj.get_ilonlat(lon_mod, lat_mod, idw)
-    log.info ("Coloc 2D ok %s" %(str(nb_files)))
+    end2 = timer()
+    log.info (f'Coloc 2D ok {nb_files} Time {end2-start2}')
 
     for i in range(len(ilat)):
         ind_dict[list_mooring[i]]['ind_lat'] = ilat[i]
@@ -211,17 +217,18 @@ if rank == 0:
             log.info ("Input hourly files directory: %s ; %s " %(path, framefile))
             file_mod  = sorted(glob(dirdata_mod+'/'+system+'_1hAV_'+t.strftime('%Y%m%d')+'*gridT*.nc'))
         elif tstp == 'daily':
-            file_mod  = glob(dirdata_mod+'/'+system+'_1dAV_'+t.strftime('%Y%m%d')+'*gridT*.nc')              
+            file_mod  = glob(dirdata_mod+'/'+system+'_1dAV_'+t.strftime('%Y%m%d')+'*gridT*.nc')
         if len(file_mod) == 0:
             log.info("File missing")
             if tstp == 'hourly':
                 file_mod  = sorted(glob(dirdata_mod+str(YEAR+1)+'/*/'+system+'_1hAV_'+t.strftime('%Y%m%d')+'*gridT*.nc'))
             if tstp == 'daily':
-                file_mod  = glob(dirdata_mod+str(YEAR+1)+'/*/'+system+'_1dAV_'+t.strftime('%Y%m%d')+'*gridT*.nc')     
+                file_mod  = glob(dirdata_mod+str(YEAR+1)+'/*/'+system+'_1dAV_'+t.strftime('%Y%m%d')+'*gridT*.nc')
         if len(file_mod) > 0 and file_mod[0] not in liste_file:
             liste_file.append(file_mod[0])
 
-    log.info ("List input file ok")
+    end3 = timer()
+    log.info (f'List input file ok Time {end3-end2}')
     log.info(liste_file)
     if len(forecast) > 0:
         liste_fcst = {}
@@ -233,7 +240,7 @@ if rank == 0:
                 if len(file_fcst) > 0 and file_fcst[0] not in lfc:
                     lfc.append(file_fcst[0])
             liste_fcst[str(fc)] = lfc
-	##
+        ##
         if len(file_fcst) == 0:
             log.error("Missing files for forecast")
             sys.exit(1)
@@ -246,7 +253,8 @@ if rank == 0:
         log.error("Execution mfdataset_hdct failed: %s", exs)
         raise
 
-    log.info("Create mfdadaset HDCT OK")
+    end4 = timer()
+    log.info(f'Create mfdadaset HDCT OK {end4-end3}')
 
     if len(forecast) > 0:
         mfdataset_fcst = {}
@@ -264,7 +272,8 @@ if rank == 0:
             meminfo = psutil.Process().memory_info().rss / 2**20
             log.debug("RSS memory information : %s " %(str(meminfo)))
 
-    log.info ("Create dataset ok ")
+    end5 = timer()
+    log.info (f"Create mfdataset OK fcst {end5-end4}")
     # ~~~~~~~~ Read mooring coordinates and compute 2D collocation with the model grid ~~~~~~~~~
 
     list_file = []
@@ -276,7 +285,9 @@ else:
     if len(forecast) > 0:
         mfdataset_fcst, time_fcst = None, None
 
-log.debug ("Create broadcast ") 
+end = timer()
+log.debug(f'~~~~~~~~ Read drifter value and MFDATASET  : {end - start} ~~~~~~~~ ')
+log.debug ("Create broadcast")
 ind_dict = comm.bcast(ind_dict, root=0)
 depth_mod = comm.bcast(depth_mod, root=0)
 mfdataset_hdct = comm.bcast(mfdataset_hdct, root=0)
@@ -301,6 +312,7 @@ if irest > 0 and comm.rank < irest:
 
 for file in cla_mr:
 
+    start = timer()
     moor =  os.path.basename(file).split('_')[3:][0]
 
     if tstp == 'hourly':
@@ -322,7 +334,6 @@ for file in cla_mr:
                 var_moor = np.array(temp)[:,w[ini]]
                 depth_moor = depth.data[w[ini]]
                 temp_qc = np.array(t_qc)[:,w[ini]]
-                        
     if len(var_moor) == 0: continue
     w = np.where(temp_qc != 1.)
     var_moor[w[0]] = np.nan
@@ -331,6 +342,8 @@ for file in cla_mr:
 
     if np.isnan(np.nanmean(temp)) == True: continue
 
+    end = timer()
+    log.info(f'~~~~~~~~ Init mooring  : {end - start} ~~~~~~~~ ')
     log.info ('Mooring: '+moor)
 
     # ****************************************************************************
@@ -361,6 +374,9 @@ for file in cla_mr:
         elif tstp == 'daily' and vtime[t].strftime('%Y%m%d') not in vect_time:
             vect_time.append(vtime[t].strftime('%Y%m%d'))  
 
+    end2 = timer()
+    log.info(f'~~~~~~~~ Step 2 Mooring  : {end2 - end} ~~~~~~~~ ')
+
     if tstp == 'hourly':
         ind_time = []
         for timevalue in time:
@@ -372,7 +388,7 @@ for file in cla_mr:
             vt_fcst = {}
             for fc in forecast:
                 ind_time_fcst_tmp = []
-                vt_fcst_tmp = []                
+                vt_fcst_tmp = []
                 for timevalue in time:
                     index_time_fcst = np.argmin(np.abs(time_fcst[str(fc)]-timevalue))
                     ind_time_fcst_tmp.append(time_fcst[str(fc)][index_time_fcst])
@@ -381,6 +397,8 @@ for file in cla_mr:
                     vt_fcst_tmp.append(pd.to_datetime(str(time_fcst[str(fc)][t])).strftime('%Y%m%d%H')) 
                 vt_fcst[str(fc)] = vt_fcst_tmp          
 
+    end3 = timer()
+    log.info(f'~~~~~~~~ Step 3 Mooring  : {end3 - end2} ~~~~~~~~ ')
     ndays = len(vect_time)
     vector_time = np.zeros((ndays))
     for il_ind, day in enumerate(np.array(vect_time)):
@@ -395,26 +413,26 @@ for file in cla_mr:
         values_temp[:,0] = ds.variables[variable][:].values
         if len(forecast) > 0:
             for fc,fcst in enumerate(forecast):
-		#
-                try: 
+                try:
                     meminfo = psutil.Process().memory_info().rss / 2**20
                     log.debug("RSS memory information : {} ".format(str(meminfo)))
                     mfd_fcst = mfdataset_fcst[str(fcst)]
-                    ds_fcst = mfd_fcst.sel(x=ilon, y=ilat, time_counter=np.array(ind_time_fcst[str(fcst)]), deptht=ind_depth)               
+                    ds_fcst = mfd_fcst.sel(x=ilon, y=ilat, time_counter=np.array(ind_time_fcst[str(fcst)]), deptht=ind_depth)
                     values_temp[:,fc+1] = ds_fcst.variables[variable][:].values
                     meminfo = psutil.Process().memory_info().rss / 2**20
                 except Exception as exs:
                     log.error("Pb during mfdataset construction fcst :%s " %(exs))
                     log.error("Create mfdadaset FCST NOK {}".format(fc))
                     raise
-                for tc, timec in enumerate(vect_time): 
-                    w = np.where(np.array(vt_fcst[str(fcst)]) == timec)           
+                for tc, timec in enumerate(vect_time):
+                    w = np.where(np.array(vt_fcst[str(fcst)]) == timec)
                     if len(w[0]) == 0:
                         values_temp[tc,fc+1] = np.nan
-                     
+    end4 = timer()
+    log.info(f'~~~~~~~~ Step 4 Mooring  : {end4 - end3} ~~~~~~~~ ')
 
     # ~~~~~~~~~~~~~ Save the Class2 (model/mooring) in a netcdf file ~~~~~~~~~~~~~~~~~~
-        
+
     if (tstp == 'hourly' and np.isnan(np.nanmean(values_temp[:,0])) == True) or (tstp == 'daily' and np.isnan(np.nanmean(values_temp)) == True): continue
 
     w_nan = np.where(np.isnan(values_temp)==True)
@@ -427,8 +445,11 @@ for file in cla_mr:
         else: write_data_colloc_files(nc_file_out, lat_value, lon_value, values_temp, vector_time, stt_date, end_date, depth_moor, missing_value)
         del nc_file_out, lat_value, lon_value, temp, values_temp, vector_time
     elif tstp == 'daily':
-        write_data_colloc_files_daily(nc_file_out, lat_value, lon_value, values_temp, vector_time, stt_date, end_date, depth_moor, ind_depth, missing_value)  
+        write_data_colloc_files_daily(nc_file_out, lat_value, lon_value, values_temp, vector_time, stt_date, end_date, depth_moor, ind_depth, missing_value)
         del nc_file_out, lat_value, lon_value, values_temp, vector_time, depth_moor, ind_depth
-                
+    end5 = timer()
+    log.info(f'~~~~~~~~ Step 5 Mooring  Write : {end5 - end4} ~~~~~~~~ ')
+    sys.exit(1)
+
 comm.Barrier()
 log.info ("End of Program")

@@ -134,17 +134,17 @@ class SelectListModelData(Selector):
         typemod = param_dict['cl_typemod'].lower()
         self.log.info('Data type {}'.format(data_type))
         if data_type.lower() == "sst" or data_type.lower() == "ssthf":
-            param_dict['gridtype'] = ["gridT"]
+            param_dict['gridtype'] =  [param_dict['gridtemp']]
             param_dict['gridtype_clim'] = ["TEMP"]
             param_dict['gridtype_light'] = ["TN.B"]
             param_dict['varname_clim'] = ["temperature"]
         elif data_type.lower() == "sss":
-            param_dict['gridtype'] = ["gridS"]
+            param_dict['gridtype'] =  [param_dict['gridsal']]
             param_dict['gridtype_clim'] = ["SAL"]
             param_dict['gridtype_light'] = ["SN.B"]
             param_dict['varname_clim'] = ["salinity"]
         elif data_type.lower() == "sla":
-            param_dict['gridtype'] = ["grid2D"]
+            param_dict['gridtype'] = [param_dict['grid2DT']]
             param_dict['gridtype_light'] = ["SLA.B"]
         elif data_type.lower() == "chloro":
             param_dict['gridtype'] = ["chl"]
@@ -153,18 +153,20 @@ class SelectListModelData(Selector):
         elif data_type.lower() == "ph":
             param_dict['gridtype'] = ["ph"]
         elif data_type.lower() == "aice":
-            param_dict['gridtype'] = ["icemod"]
+            param_dict['gridtype'] = [param_dict['gridice']]
         elif data_type.lower() == "drifter_filtr" or data_type.lower() == "drifter":
-            param_dict['gridtype'] = ["gridU", "gridV"]
+            param_dict['gridtype'] = [param_dict['gridu'], param_dict['gridv']]
             param_dict['gridtype_clim'] = ["current"]
         elif data_type.lower() == "profile":
-            param_dict['gridtype'] = ["gridT", "gridS"]
+            # param_dict['gridtype'] = ["gridT", "gridS"]
+            param_dict['gridtype'] = [param_dict['gridtemp'],param_dict['gridsal']]
             param_dict['gridtype_clim'] = ["TEMP", "PSAL"]
             param_dict['gridtype_light'] = ["TN.B", "SN.B"]
         elif data_type.lower() == "current":
-            param_dict['gridtype'] = ["gridU", "gridV"]
+            #param_dict['gridtype'] = ["gridU", "gridV"]
+            param_dict['gridtype'] = ["3DU-uo", "3DV-vo"]
         elif data_type.lower() in self.list_ice:
-            param_dict['gridtype'] = "icemod"
+            param_dict['gridtype'] = param_dict['gridice']
         if typemod == "pgn":
             dirmodel = param_dict['dirmodel_pgn']
         elif typemod == "allege" or "allege_new":
@@ -175,11 +177,11 @@ class SelectListModelData(Selector):
             raise ('typemod not known')
 
         MONTH = str(dateval)[4:6]
-        self.log.info("Grid type {}".format(param_dict['gridtype']))
+        self.log.info(f"Grid type {param_dict['gridtype']}")
         # loop on lead time
         for time in param_dict['lead_time']:
             list_tmp = []
-            self.log.debug('Lead Time  %s ' % (time))
+            self.log.debug(f'Lead Time {time}')
             lead_fin = []
             lead_new = param_dict['lead_int']
             lead_new2 = param_dict['lead_int2']
@@ -218,6 +220,8 @@ class SelectListModelData(Selector):
                 ll_single = True
             elif time == 'best_weekly':
                 lead_fin = ['hdct', 'nwct']
+            elif time == 'rtr':
+                lead_fin = ['rtr']
             elif time == 'climatology':
                 lead_fin = ['clim']
             elif time == 'bathymetrie':
@@ -241,6 +245,7 @@ class SelectListModelData(Selector):
                 dirmodel_new = dirmodel+'DAILY/SMOC/'
             else:
                 self.log.error('Lead time %s not expected ' %(time))
+                sys.exit(1)
             config_d = re.sub("V", "QV", param_dict['cl_config'])
             modele = cl_config_use
             param_dict['modele'] = modele
@@ -283,7 +288,6 @@ class SelectListModelData(Selector):
                     elif directory == 'hdct_all':
                         dirmodel_new = param_dict['dirmodel']+"/"
                         self.log.debug("directory {}".format(dirmodel_new))
-
                     elif typemod == 'allege_new':
                         self.log.debug("lightout new type")
                         dirmodel_new = dirmodel+"/"
@@ -415,6 +419,18 @@ class SelectListModelData(Selector):
                                     list_file_tmp = glob(dirmodel_new+modele+"_"+param_dict['daily_pref']+"_*_"+param_dict['gridtype']+\
                                                 '_'+dateval+"*.nc")
                                     list_file.extend(list_file_tmp)
+                                elif param_dict['type_run'] == "RTR":
+                                    #print(dirmodel_new + modele + "_" + param_dict['daily_pref'] + "_" +\
+                                    #      dateval+ '*' +param_dict['gridtype'] + "*.nc")
+                                    #list_file_tmp = glob(dirmodel_new + modele + "_" + param_dict['daily_pref'] + "_" +\
+                                    #                dateval+ '*' +param_dict['gridtype'] + "*.nc")
+                                    #list_file.extend(list_file_tmp)
+                                    for i, grid in enumerate(param_dict['gridtype']):
+                                        list_file_tmp = glob(f"{dirmodel_new}{modele}_{param_dict['daily_pref']}_"
+                                                              f"{dateval}*{param_dict['gridtype'][i]}*.nc")
+                                        list_file.extend(list_file_tmp)
+                                        #print(f"{dirmodel_new}{modele}_{param_dict['daily_pref']}_"
+                                        #      f"{dateval}*{param_dict['gridtype'][i]}*.nc")
                                 else:
                                     if directory == "smoc" or directory == "stokes" or directory == "tides":
                                         for i in range (2):
@@ -518,7 +534,7 @@ class SelectListData(Selector):
             self.log.debug('========================================================')
             self.log.debug('              DATE Selection and extraction zoom or GODAE ')
             self.log.debug('========================================================')
-            self.log.debug('Prefix  {} '.format(param_dict['prefix_data']))
+            self.log.debug(f"Prefix {param_dict['prefix_data']}")
             #list_files = Extractor().factory(param_dict['prefix_data']).run(param_dict['date1'],\
             #param_dict['date2'],param_dict['dirdata'],param_dict['dirwork'],param_dict['data_type'],param_dict['template'])
             list_files = Extractor(self.log).factory(param_dict['prefix_data']).run(daterun,param_dict['dirdata'],\
@@ -540,7 +556,7 @@ class SelectListData(Selector):
             self.log.debug('========================================================')
             list_files = Extractor(self.log).factory(param_dict['prefix_data']).run_list(param_dict, daterun)
         if not list_files:
-            self.log.error('Missing files {} {}'.format(param_dict['prefix_data'], param_dict['dirdata']))
+            self.log.error(f"Missing files {param_dict['prefix_data']} {param_dict['dirdata']}")
             ll_miss = True
         else:
             self.log.debug('List Files  %s ' % (list_files))

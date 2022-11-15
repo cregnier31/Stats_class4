@@ -42,7 +42,8 @@ class Interpolator(object):
 
     def __init__(self, log, dask=False):
         self.log = log
-        self.missing_value = netCDF4.default_fillvals['f4'] 
+        self.missing_value = netCDF4.default_fillvals['f4']
+        self.list_ssh = ["sossheig", "ssh"]
         if dask:
             self.log.debug("Launch dask server")
             #client = Client(n_workers=2, threads_per_worker=2, processes=False)
@@ -148,7 +149,7 @@ class Interpolator(object):
         nb_best, nb_fcst, nb_pers, nb_clim = self.check_dimensions(
             list_input_file)
         self.log.info("========================================================")
-        self.log.info(" Interp file")
+        self.log.info(f" Interp file {data_file}")
         self.log.info("========================================================")
         self.log.info("Dimensions best : {} fcst : {} pers : {} clim : {}"
                       .format(nb_best, nb_fcst, nb_pers, nb_clim))
@@ -362,6 +363,8 @@ class Interpolator(object):
                 start = timer()
                 ## Parallelize Loop on levels
                 num_cores=4
+                self.log.debug(f'Shape lon_mod {np.shape(lon_mod)} {np.shape(lon_obs)}')
+                ## Compute weight
                 with Parallel(n_jobs=num_cores, prefer="threads", verbose=10) as parallel:
                     weight, indexes  = zip(*parallel(delayed(self.compute_weight)(ind,TreeObj,lon_mod,lat_mod,np.array(lon_obs),\
                                                                     np.array(lat_obs), nb_ptsinterp,\
@@ -392,7 +395,6 @@ class Interpolator(object):
                    ll_miss = True
                    sys.exit(1)
                ll_unique = False
-
                if not ll_miss:
                   if len(np.unique(depth)) == 1:
                       index_time=0
@@ -557,7 +559,9 @@ class Interpolator(object):
                elif key[0:5] == 'bathy':
                   self.log.debug('Key bathy {} :  {}'.format(key, interp_values))
                   bathy_tab[:, 0] = interp_values
-
+               else:
+                   self.log.debug(f'Key not found {key}')
+                   sys.exit(1)
         ####
         if ll_best:
             self.log.debug("Inside best data origin {}".format(param_dict['data_origin']))
@@ -721,7 +725,12 @@ class Interpolator(object):
         ll_single = False
         if depth > 0.5 :
             ## Find the 2 points that enclose the depth value
-            depth_mod = dataset_in['deptht'][:].values
+            varname_depth = 'deptht'
+            if variable == 'uo':
+                varname_depth = 'depthu'
+            elif variable == 'vo':
+                varname_depth = 'depthv'
+            depth_mod = dataset_in[varname_depth][:].values
             ind_depth1, ind_depth2 = self.getnearpos(depth, depth_mod)
             w1, w2 = self.getweight(depth_mod[ind_depth1], depth_mod[ind_depth2], depth)
             self.log.debug("Index of depth value {} {} {} {}".format(ind_depth1, ind_depth2, depth_mod[ind_depth1], depth_mod[ind_depth2]))
@@ -729,10 +738,10 @@ class Interpolator(object):
         else:
             # Surface case
             ll_single = True
-
-        if variable == "sossheig":
+        if variable in self.list_ssh:
             cl_msshFile = param_dict['cl_msshFile']
             rp_mssh_shift = param_dict['rp_mssh_shift']
+            self.log.debug(f'{cl_msshFile=}')
             dataset_mssh = xr.open_dataset(cl_msshFile)
             tab_mssh = dataset_mssh['mssh'].values
 
@@ -750,7 +759,7 @@ class Interpolator(object):
             else:
                var_in1 = var_in[time, ind_depth1, :, :].values
                var_in2 = var_in[time, ind_depth2, :, :].values
-        if variable == "sossheig":
+        if variable in self.list_ssh:
             var_in = np.where(var_in != fillvalue,  var_in - tab_mssh - rp_mssh_shift, var_in)
         if same_grid:
             ## The output grid is the same than the input grid

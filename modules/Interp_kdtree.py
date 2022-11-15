@@ -73,8 +73,8 @@ class interp_KDtree(object):
                         lon_out_tmp = lon_out[~lon_out.mask]
                     else:
                         lon_out_tmp = lon_out
-                    global_step = float("{0:.2f}".format((lon_out_tmp[len(lon_out_tmp)-1]-lon_out_tmp[0])/(len(lon_out_tmp)-1)))
-                    first_step = float("{0:.2f}".format(lon_out_tmp[1]-lon_out_tmp[0]))
+                    global_step = float("{0:.4f}".format((lon_out_tmp[len(lon_out_tmp)-1]-lon_out_tmp[0])/(len(lon_out_tmp)-1)))
+                    first_step = float("{0:.4f}".format(lon_out_tmp[1]-lon_out_tmp[0]))
                     self.log.debug('Step sizes %f %f ' % (global_step, first_step))
                 except Exception as e:
                     raise ("Problem during formatting {}".format(e))
@@ -86,6 +86,8 @@ class interp_KDtree(object):
             self.log.debug('1D not regular')
             X2, Y2 = lon_out, lat_out
         elif lon_out.ndim < 2:
+            self.log.debug(f'lon_out.ndim < 2 {global_step} {first_step}')
+            self.log.debug(f'{lon_out_tmp[0:100]}')
             if global_step == first_step and first_step > 0:
                 # Regular
                 self.log.debug('1D regular => convert to meshgrid')

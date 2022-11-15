@@ -587,7 +587,10 @@ class NmlLoader(Loader):
             param_dict['dirclim2'] = db.get('climato', 'DIRCLIM2')
         except:
             param_dict['dirclim2'] = ""
-        param_dict['coord_clim'] = glob(param_dict['dirclim'] + "*.nc")[0]
+        try:
+            param_dict['coord_clim'] = glob(param_dict['dirclim'] + "*.nc")[0]
+        except:
+            param_dict['coord_clim'] = ""
         param_dict['dirtmp'] = param_dict['dirwork'] + 'ext-'
         param_dict['prefix_data'] = db.get('input_dir', 'PREFIX')
         param_dict['daily_pref'] = db.get('GLOBAL', 'DAILY_PREF')
@@ -602,6 +605,16 @@ class NmlLoader(Loader):
         param_dict['coloc_rep'] = db.get('output_dir', 'DIRCOLOC')
         param_dict['gridtemp'] = db.get('GLOBAL', 'gridtemp')
         param_dict['gridsal'] = db.get('GLOBAL', 'gridsal')
+        param_dict['gridu'] = db.get('GLOBAL', 'gridu')
+        param_dict['gridv'] = db.get('GLOBAL', 'gridv')
+        try:
+            param_dict['gridice'] = db.get('GLOBAL', 'gridice')
+        except:
+            param_dict['gridice'] = "icemod"
+        try:
+            param_dict['grid2DT'] = db.get('GLOBAL', 'grid2DT')
+        except:
+            param_dict['grid2DT'] = "grid2D"
         param_dict['type_run'] = db.get('GLOBAL', 'TYPE_RUN')
         param_dict['type_archi'] = db.get('GLOBAL', 'TYPE_ARCHI')
         param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable'))

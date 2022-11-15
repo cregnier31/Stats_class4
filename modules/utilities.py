@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os, sys, re
+from glob import glob 
+import xarray as xr
+
 
 if sys.version_info[0] >= 3:
     import configparser as ConfigParser
@@ -97,3 +100,29 @@ class nf(float):
         s = f'{self:.1f}'
         return f'{self:.0f}' if s[-1] == '0' else s
 
+
+def findListFiles(path, pfx, sfx, time, dt_start=np.nan, dt_end=np.nan):
+    liste_file = []
+    for t in time:
+        ffile = pfx + t.strftime('%Y%m%d') + '*' + sfx + '*.nc'
+        file_mod = sorted(glob(path+ffile))
+        if len(file_mod) == 0:
+            print ('File missing')
+        if np.isnan(dt_start) and np.isnan(dt_end):
+            if len(file_mod) > 0 and file_mod[0] not in liste_file:
+                liste_file.append(file_mod[0])
+        else:
+            if len(file_mod) > 0 and file_mod[0] not in liste_file and \
+            (int(t.strftime('%Y%m')) >= dt_start and int(t.strftime('%Y%m')) <= dt_end):
+                liste_file.append(file_mod[0])
+    return liste_file
+
+def readDataSet(list_f):
+    try:
+        mfdataset = xr.open_mfdataset(list_f, concat_dim='time_counter', \
+                    chunks={'time_counter':1,'y':'auto','x':'auto'},parallel=True,combine='by_coords')
+        time = mfdataset.variables['time_counter'][:].values
+    except Exception as exs:
+        log.error('Executation mfdataset failed: %s', exs)
+        raise
+    return mfdataset, time
