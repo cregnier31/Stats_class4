@@ -9,7 +9,7 @@ from shapely.geometry import Point as ShapelyPoint
 from geopy.distance import geodesic, great_circle
 from geojson import Point as Point_gjson
 from geojson import Feature, FeatureCollection, dump
-from decorators import decor_timeit
+#from decorators import decor_timeit
 
 __author__      = "L.ZAWADZKI and C.REGNIER"
 __version__ = 0.2
@@ -102,7 +102,7 @@ def create_hull(rla_lonmask_tmp, rla_latmask, alpha=0.4):
     path_poly = path.Path(list_points_simple)
     return path_poly
 
-@decor_timeit
+#@decor_timeit
 def search_points(fmt_mask, maskbox, maskval, rla_lonobs, rla_latobs,\
                   rla_lonmask_nan, rla_latmask, region, table_hull, **kwargs):
     """

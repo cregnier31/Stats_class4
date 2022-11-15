@@ -1,15 +1,18 @@
 import sys
 import numpy as np
+import numpy.ma as ma
 import netCDF4
 from netCDF4 import Dataset
 import utilities
 import param.Def_param_bulletin as params
 import xarray as xr
 import dask
+from glob import glob
+from utils import find_index_month
 
 __version__ = 0.1
 __date__ = "February 2019"
-__authors__ = "C.REGNIER & C.SZCZYPTA" 
+__authors__ = "C.REGNIER & C.SZCZYPTA"
 
 
 def read_mask_polar(params_conf):
@@ -300,7 +303,7 @@ def read_drifter_filt(file):
             position_qc, time_qc, dc_reference = read_drifter(file)
     ncdata = xr.open_dataset(file)
     variables = ncdata.data_vars
-   
+ 
     if 'LONGITUDE_FILTR' in variables.keys():
         lon = ncdata['LONGITUDE_FILTR'].values
     elif 'longitude_filtr' in variables.keys():
@@ -332,45 +335,49 @@ def read_drifter_filt(file):
             position_qc, time_qc, dc_reference
 
 
-def read_moor(file, log):
+def read_moor(file, varname, log):
     """
        Read Mooring files
     """
-    ncdata = xr.open_dataset(file)
-    variables = ncdata.data_vars
-    ll_temp = False
-    if 'TEMP' in variables.keys():
-        ll_temp = True
-        temp = ncdata['TEMP']
-        temp_qc = ncdata['TEMP_QC']
-    else:
-        temp = np.nan
-        temp_qc = np.nan
-    if 'DEPH' in ncdata.variables.keys():
-        depth = ncdata['DEPH'][0]
-        var_qc=[ var for var in ncdata.variables.keys() if var.startswith('DEP') and var.endswith('QC')] 
-        depth_qc = ncdata[var_qc].values
-    elif 'PRES' in variables.keys():
-        depth = ncdata['PRES'][0]
-        depth_qc = ncdata['PRES_QC'][0]
-    else:
-        log.info ('Missing Values DEPH or PRES')
-        sys.exit(1)
+    try:
+        ncdata = xr.open_dataset(file)
+        variables = ncdata.data_vars
+        ll_var = False
+        if varname in variables.keys():
+            ll_var = True
+            vardata = ncdata[varname]
+            vardata_qc = ncdata[varname+'_QC']
+        else:
+            vardata = np.nan
+            vardata_qc = np.nan
+        if 'DEPH' in ncdata.variables.keys():
+            depth = ncdata['DEPH'][0]
+            var_qc=[ var for var in ncdata.variables.keys() if var.startswith('DEP') and var.endswith('QC')] 
+            depth_qc = ncdata[var_qc].values
+        elif 'PRES' in variables.keys():
+            depth = ncdata['PRES'][0]
+            depth_qc = ncdata['PRES_QC'][0]
+        else:
+            log.info ('Missing Values DEPH or PRES')
+            sys.exit(1)
 
-    lon = ncdata['LONGITUDE']
-    lat = ncdata['LATITUDE']
-    time = ncdata['TIME'].values
-    lon_value = np.nanmean(lon)
-    lat_value = np.nanmean(lat)
-
-    return lon_value, lat_value, depth, depth_qc, time, temp, ll_temp, temp_qc
+        lon = ncdata['LONGITUDE']
+        lat = ncdata['LATITUDE']
+        time = ncdata['TIME'].values
+        lon_value = np.nanmean(lon)
+        lat_value = np.nanmean(lat)
+        return lon_value, lat_value, depth, depth_qc, time, vardata, ll_var, vardata_qc
+    except: return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, False, np.nan
 
 def read_depth(filename):
     nc = netCDF4.Dataset(filename,'r')
-    variable = 'deptht'
-    rla_depth = nc.variables[variable][:]
+    multidim = True
+    if 'deptht' in nc.variables.keys(): rla_depth = nc.variables['deptht'][:]
+    else: 
+        rla_depth = [0]
+        multidim = False
 
-    return rla_depth
+    return rla_depth, multidim
 
 def read_GODAE_profile(varname, filename):
     '''

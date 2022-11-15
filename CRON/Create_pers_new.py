@@ -1,9 +1,10 @@
-import os
+import os, sys
 import stat
 import shutil
 import logging
 import glob,sys,re
 import errno
+sys.path.append("/home/ext/mr/smer/regnierc/SAVE/LIB/Python/sytoolkit_sort_fcst/")
 from sytoolkit.sydate import SyDate
 import time
 from datetime import date
@@ -23,8 +24,8 @@ config_h=modele_type
 config_d=re.sub("V","QV",config_h)
 type_d=config_d[0:5]
 type=config_d[0:4]
-day1=SyDate("20190601")
-day2=SyDate("20190731")
+day1=SyDate("20220801")
+day2=SyDate("20221114")
 JJMIN=day1.tojulian()
 JJMAX=day2.tojulian()
 
@@ -32,8 +33,7 @@ config_type=modele_type.lower()
 config_type_daily=config_d.lower()
 print ("daily %s "%(config_type_daily))
 print ("hebdo %s "%(config_type))
-DIR_SORT="/sortref/calval/DATA/SORT/"
-DIR_SORT="/data/rd_exchange4/cregnier/SORT/"
+DIR_SORT="/scratch/work/regnierc/SORT/"
 DIR_SORT_DAILY=DIR_SORT+"DAILY/"+type_d+"/"+config_type_daily
 DIR_SORT_HEBDO=DIR_SORT+"HEBDO/"+type+"/"+config_type
 
@@ -71,7 +71,7 @@ while JJMIN <= JJMAX :
  file=DIR_NOWDAILY+config_d+"_1dAV_"+str(pers1)+"_*"
  #liste_grid=["gridT","gridS","grid2D"]
  #liste_grid=["icemod"] #,"gridU","gridV"]
- liste_grid=["gridU","gridV"]
+ liste_grid=["gridT", "gridU", "gridV"]
 # liste_grid=["grid2D"]
  for grid in liste_grid:
    if type_day == 3 : 
@@ -117,7 +117,7 @@ while JJMIN <= JJMAX :
    print ("loop !!")
    print (lst_pers1)
    print (lst_pers2)
-   for file in lst_pers1: 
+   for file in lst_pers1:
 ## Create link pers1
       print ("file %s "  %(file))
       try :
@@ -138,7 +138,7 @@ while JJMIN <= JJMAX :
 
    for file in lst_pers3:
 ## Create link pers3
-      try: 
+      try:
          os.symlink(file,DIRPERS3+link_name_pers)
       except OSError as e:
          if e.errno == errno.EEXIST:
@@ -147,13 +147,12 @@ while JJMIN <= JJMAX :
 
    for file in lst_pers4:
 ## Create link pers4
-      try: 
+      try:
          os.symlink(file,DIRPERS4+link_name_pers)
       except OSError as e:
          if e.errno == errno.EEXIST:
             os.remove(DIRPERS4+link_name_pers)
             os.symlink(file,DIRPERS4+link_name_pers)
- 
    for file in lst_pers5:
 ## Create link pers5
       try:
@@ -165,7 +164,7 @@ while JJMIN <= JJMAX :
 
    for file in lst_pers6:
 ## Create link pers6
-      try: 
+      try:
          os.symlink(file,DIRPERS6+link_name_pers)
       except OSError as e:
          if e.errno == errno.EEXIST:
@@ -174,7 +173,7 @@ while JJMIN <= JJMAX :
 
    for file in lst_pers7:
 ## Create link pers7
-      try: 
+      try:
          os.symlink(file,DIRPERS7+link_name_pers)
       except OSError as e:
          if e.errno == errno.EEXIST:
@@ -183,7 +182,7 @@ while JJMIN <= JJMAX :
 
    for file in lst_pers8:
 ## Create link pers8
-      try: 
+      try:
          os.symlink(file,DIRPERS8+link_name_pers)
       except OSError as e:
          if e.errno == errno.EEXIST:
@@ -192,7 +191,7 @@ while JJMIN <= JJMAX :
 
    for file in lst_pers9:
 ## Create link pers9
-      try: 
+      try:
          os.symlink(file,DIRPERS9+link_name_pers)
       except OSError as e:
          if e.errno == errno.EEXIST:

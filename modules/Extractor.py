@@ -700,6 +700,8 @@ class Extract_UVDrifters_filtr(Extractor):
         nc_fid.time_interp = "daily average fields"
         nc_fid.Conventions = 'CF-1.6'
         nc_fid.close()
+        nc_file.close()
+        nc_fid = Dataset(file_new, 'r+')
 
     def run_list(self,param_dict, daterun):
         liste_tot=[]
@@ -713,7 +715,10 @@ class Extract_UVDrifters_filtr(Extractor):
         self.log.debug('Number of forecasts {}'.format(nb_fcst))
         for new_file in liste_file :
             try :
-                file_new = 'class4_'+daterun+'_'+param_dict['cl_config_h']+'_'+param_dict['model_type'].lower()+'_currents-filtr.nc'
+                #file_new = 'class4_'+daterun+'_'+param_dict['cl_conf']+'_'+param_dict['model_type'].lower()+'_currents-filtr.nc'
+                file_new = 'class4_' + daterun + '_' + param_dict['cl_conf']\
+                           +  '_' + param_dict['model_type'].lower() + \
+                           '_currents-filtr.nc'
                 ## Read and Rewrite file
                 self.rewrite(liste_file[0], nb_fcst, nb_fcst2, param_dict['dirwork']+file_new)
                 self.log.debug('Filename {}'.format(param_dict['dirwork']+file_new))
@@ -895,77 +900,82 @@ class Extract_GODAE(Extractor):
         if typedata ==  "AMSR" : 
             liste_file=glob(dirdata+'/*'+daterun+'*.nc')
         else :
-            liste_file=[glob(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')[0]]
-        # liste_file=glob(dirdata+'/*[TS]*'+daterun+'*.nc')
-        self.log.info(f'Liste file GODAE {liste_file}')
-        for new_file in liste_file :
-            try :
-                filename=os.path.basename(new_file)
-                if typedata ==  "AMSR" :
-                    filename=re.sub('GL_h5',template,filename)
-                elif typedata ==  "current":
-                    filename=filename
-                else:
-                    template1 = filename.split('_')[0:]
-                    template_tmp = template1[2]+'_'+template1[3]+'_'+template1[4]
-                    filename=re.sub(template_tmp,template,filename)
-                # Copy extracted value of GODAE file with nco module
-                if typedata != "aice" and typedata != 'current':
-                    ## Change numfcts dim
-                    options = []
-                    options.extend(['-h','-O','-a','numfcsts'])
-                    nco.ncwa(input=new_file, output=dirtmp+filename, fortran=True ,options=options)
-                    nc = netCDF4.Dataset(dirtmp+filename, 'r')
-                    variables = nc.variables.keys()
-                    if 'modeljuld' in variables:
-                       command ="ncap2 -h -O -s "
-                       command2 = "\'defdim(\"numfcsts\","+str(nb_fcst)+");leadtime_new[$numfcsts]=leadtime;modeljuld_new[$numfcsts]=modeljuld\' "
-                       os.system(command+command2+dirtmp+filename+" "+dirtmp+filename)
+            try:
+                liste_file = [glob(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')[0]]
+            except IndexError:
+               self.log.error(f'Missing CLASS4 {daterun} {typedata} file')
+               liste_file = []
+        if liste_file:
+            self.log.info(f'Liste file {liste_file}')
+            for new_file in liste_file :
+                try :
+                    filename=os.path.basename(new_file)
+                    if typedata ==  "AMSR" :
+                        filename=re.sub('GL_h5',template,filename)
+                    elif typedata ==  "current":
+                        filename=filename
                     else:
-                        self.log.info('no modeljuld !!')
-                    options = []
-                    if typedata == "SLA" :
-                        options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference,leadtime,modeljuld'])
-                    else :
-                        options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,leadtime,modeljuld'])
-                    nco.ncks(input=dirtmp+filename,output=dirtmp+filename, fortran=True ,options=options)
-                    # Rename
-                    options = []
-                    if 'modeljuld' in variables:
-                        options.extend(['-h','-O','-v','modeljuld_new,modeljuld'])
-                        nco.ncrename(input=dirtmp+filename,output=dirtmp+filename, options=options)
+                        template1 = filename.split('_')[0:]
+                        template_tmp = template1[2]+'_'+template1[3]+'_'+template1[4]
+                        filename=re.sub(template_tmp,template,filename)
+                    # Copy extracted value of GODAE file with nco module
+                    if typedata != "aice" and typedata != 'current':
+                        ## Change numfcts dim
                         options = []
-                        options.extend(['-h','-O','-v','leadtime_new,leadtime'])
-                        nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
-                    self.log.info("add new dim ok {}".format(dirtmp+filename))
-                elif typedata == "current":
-                    options = []
-                    shutil.copy(dirdata+filename,dirtmp)
-                else:
-                    #typedata == "aice" :
-                    options = []
-                    options.extend(['-h','-O','-xv','best_estimate,forecast,persistence'])
-                    nco.ncks(input=new_file,output=dirtmp+filename,options=options)
-                if typedata == "AMSR" :
-                    # add missing varname
-                    # Solution2 : add dimensions and variable varname
-                    cl_fileIn=dirtmp+filename
-                    nc   = netCDF4.Dataset(cl_fileIn,'a')
-                    nc.createDimension('string_length8',8)
-                    # for AMSR
-                    nc.createDimension('numvars',1)
-                    nc.createVariable('varname','c',('numvars','string_length8'))
-                    nc.variables['varname'][:]='ileadfra'
-                    nc.close
-                self.log.info('Fichier extracted %s ' % (dirtmp+filename)) 
-                liste_tot.append(dirtmp+filename)
-                # Design output File
-                # Design_file('GODAE').run(dirtmp+filename)
-            except IOError as e:
-                self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-                raise
-        #valeurj=valeurj.goforward(1)
-
+                        options.extend(['-h','-O','-a','numfcsts'])
+                        nco.ncwa(input=new_file, output=dirtmp+filename, fortran=True ,options=options)
+                        nc = netCDF4.Dataset(dirtmp+filename, 'r')
+                        variables = nc.variables.keys()
+                        if 'modeljuld' in variables and nb_fcst>0:
+                           command ="ncap2 -h -O -s "
+                           command2 = "\'defdim(\"numfcsts\","+str(nb_fcst)+");leadtime_new[$numfcsts]=leadtime;modeljuld_new[$numfcsts]=modeljuld\' "
+                           os.system(command+command2+dirtmp+filename+" "+dirtmp+filename)
+                        else:
+                            self.log.info('no modeljuld !!')
+                        options = []
+                        if typedata == "SLA" :
+                            options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference,leadtime,modeljuld'])
+                        else :
+                            options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,leadtime,modeljuld'])
+                        nco.ncks(input=dirtmp+filename,output=dirtmp+filename, fortran=True ,options=options)
+                        # Rename
+                        options = []
+                        if 'modeljuld' in variables and nb_fcst>0:
+                            options.extend(['-h','-O','-v','modeljuld_new,modeljuld'])
+                            nco.ncrename(input=dirtmp+filename,output=dirtmp+filename, options=options)
+                            options = []
+                            options.extend(['-h','-O','-v','leadtime_new,leadtime'])
+                            nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
+                        self.log.info("add new dim ok {}".format(dirtmp+filename))
+                    elif typedata == "current":
+                        options = []
+                        shutil.copy(dirdata+filename,dirtmp)
+                    else:
+                        #typedata == "aice" :
+                        options = []
+                        options.extend(['-h','-O','-xv','best_estimate,forecast,persistence'])
+                        nco.ncks(input=new_file,output=dirtmp+filename,options=options)
+                    if typedata == "AMSR" :
+                        # add missing varname
+                        # Solution2 : add dimensions and variable varname
+                        cl_fileIn=dirtmp+filename
+                        nc   = netCDF4.Dataset(cl_fileIn,'a')
+                        nc.createDimension('string_length8',8)
+                        # for AMSR
+                        nc.createDimension('numvars',1)
+                        nc.createVariable('varname','c',('numvars','string_length8'))
+                        nc.variables['varname'][:]='ileadfra'
+                        nc.close
+                    self.log.info('Fichier extracted %s ' % (dirtmp+filename)) 
+                    liste_tot.append(dirtmp+filename)
+                    # Design output File
+                    # Design_file('GODAE').run(dirtmp+filename)
+                except IOError as e:
+                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
+                    raise
+            #valeurj=valeurj.goforward(1)
+        else:
+            liste_tot = []
         return liste_tot
 
 

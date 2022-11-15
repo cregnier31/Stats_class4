@@ -588,6 +588,7 @@ class Writer():
         self.mkdir(param_dict['diroutput'])
         if dataorigin == "GODAE":
             self.log.debug("Write inside GODAE file")
+            self.log.debug(f"{tab_results.keys()}")
             if 'forecast'  not in tab_results.keys() and 'persistence' not in tab_results.keys() \
                     and 'best' in tab_results.keys():
                 self.write_GODAE_files_best(
