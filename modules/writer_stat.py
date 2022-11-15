@@ -782,53 +782,11 @@ class writer_stat():
                 nc_fid.variables['stats_salinity'][:] = stat[:,:,:,index]
         nc_fid.close()
 
-    def write_stats_daily_pickle(self, params_conf, \
-                          cla_vars, rla_layers, rla_surface, rla_maskvalues, rla_forecast, lead_time, log):
-        """
-        """
-        run_ini = True
 
-        # ************************** Time vector **********************************
-
-        dateCNESref   = dt.datetime.strptime('19500101','%Y%m%d').toordinal()
-        ndays = len(params_conf['cla_dates'])
-        vector_time = np.zeros((ndays))
-        for il_ind, day in enumerate(params_conf['cla_dates']):
-            vector_time[il_ind] = (dt.datetime.strptime(day,'%Y%m%d').toordinal()-dateCNESref)*24
-
-        log.info("SAVE RESULTS IN A SINGLE FILE")
-
-        nb_fcst_max = 0
-
-        #*  First loop to count the number of max leadtimes
-        for numvar, cvar in enumerate(cla_vars):
-
-            # *************** Listing fichiers CLASS4 ***************
-            for datex in params_conf['cla_dates']:
-                log.info(datex)
-                cl_file = cvar+'_'+datex+'.p'
-                cla_filechck = glob(os.path.join(params_conf['dirout']+'TMP_'+params_conf['cla_dates'][0]+'_'+params_conf['cla_dates'][-1]+'/',cl_file))
-                if len(cla_filechck) != 1:
-                    log.info("missing file %s" %(datex))
-                    continue
-                else: cl_cl4file = cla_filechck[0]
-                stat_tmp, rla_forecast, aname, lead_time = cl4_reader.read_NC_tmp(cl_cl4file)
-                if 'forecast' in lead_time:
-                    tmp1 = np.where(rla_forecast == params_conf['missing_value'], 0, rla_forecast)
-                    nb_fcst = len(np.where(np.array(tmp1) > 0)[0])
-                    if nb_fcst > nb_fcst_max:
-                        nb_fcst_max = nb_fcst
-                        rla_forecast_tmp = rla_forecast[:]
-                        nb_lead_max=len(rla_forecast_tmp)
-                else:
-                    rla_forecast_tmp = rla_forecast
-                    nb_lead_max =  len(rla_forecast)
-
-        log.info('nb_lead_max  {}'.format(nb_lead_max))
-
-
-    def write_stats_daily(self, params_conf, \
-                          cla_vars, rla_layers, rla_surface, log):
+    def write_stats_daily(self, params_conf,
+                          cla_vars, rla_layers,
+                          rla_surface, rla_forecast,
+                          lead_time, ll_pickle, log):
         """
             Output writer to save all the daily statistics for a period of time
             Arguments
@@ -847,26 +805,41 @@ class writer_stat():
         dateCNESref   = dt.datetime.strptime('19500101','%Y%m%d').toordinal()
         ndays = len(params_conf['cla_dates'])
         vector_time = np.zeros((ndays))
+        lead_time = [var.decode("utf-8") for var in lead_time]
         for il_ind, day in enumerate(params_conf['cla_dates']):
             vector_time[il_ind] = (dt.datetime.strptime(day,'%Y%m%d').toordinal()-dateCNESref)*24
 
         log.info("SAVE RESULTS IN A SINGLE FILE")
-
         nb_fcst_max = 0
+        if ll_pickle:
+            suf = ".p"
+        else:
+            suf = ".nc"
 
         #*  First loop to count the number of max leadtimes
+        log.info(f"List on input vars {cla_vars}")
         for numvar, cvar in enumerate(cla_vars):
 
             # *************** Listing fichiers CLASS4 ***************
             for datex in params_conf['cla_dates']:
-                log.info(datex)
-                cl_file = cvar+'_'+datex+'.nc'
+                #log.info(f"Input var: {cvar} date: {datex} - {suf}")
+                cl_file = f'{cvar}_{datex}{suf}'
                 cla_filechck = glob(os.path.join(params_conf['dirout']+'TMP_'+params_conf['cla_dates'][0]+'_'+params_conf['cla_dates'][-1]+'/',cl_file))
                 if len(cla_filechck) != 1:
-                    log.info("missing file %s" %(datex))
+                    log.info(f"{params_conf['dirout']}")
+                    log.info(f"write_stats_daily missing file l828 {datex} {cvar}")
                     continue
                 else: cl_cl4file = cla_filechck[0]
-                stat_tmp, rla_forecast, aname, lead_time = cl4_reader.read_NC_tmp(cl_cl4file)
+                if ll_pickle:
+                    log.debug(f'Inside pickle {cl_cl4file}')
+                    with open(cl_cl4file, 'rb') as handle:
+                        stat_tmp = pickle.load(handle)
+                    if params_conf['CMEMS_area'] == True:
+                        aname = params_conf['cla_area_names']
+                    else:
+                        aname = np.arange((len(np.array(rla_maskvalues))))
+                else:
+                    stat_tmp, rla_forecast, aname, lead_time = cl4_reader.read_NC_tmp(cl_cl4file)
                 if 'forecast' in lead_time:
                     tmp1 = np.where(rla_forecast == params_conf['missing_value'], 0, rla_forecast)
                     nb_fcst = len(np.where(np.array(tmp1) > 0)[0])
@@ -878,23 +851,29 @@ class writer_stat():
                     rla_forecast_tmp = rla_forecast
                     nb_lead_max =  len(rla_forecast)
 
-        log.info('nb_lead_max  {}'.format(nb_lead_max))
-
+        log.debug('nb_lead_max  {}'.format(nb_lead_max))
         for numvar, cvar in enumerate(cla_vars):
 
             # *************** Listing fichiers CLASS4 ***************
 
             for datex in params_conf['cla_dates']:
-                log.info(datex)
-                cl_file = cvar+'_'+datex+'.nc'
+                cl_file = f'{cvar}_{datex}{suf}'
                 cla_filechck = glob(os.path.join(params_conf['dirout']+'TMP_'+params_conf['cla_dates'][0]+'_'+params_conf['cla_dates'][-1]+'/',cl_file))
                 if len(cla_filechck) != 1:
-                    log.info("missing file %s" %(datex))
+                    log.debug(f"missing file l861 write_stats_daily {datex}")
                     continue
                 else: cl_cl4file = cla_filechck[0]
                 stat_day = np.where(np.asarray(params_conf['cla_dates']) == datex)[0][0]
-                stat_tmp, rla_forecast, aname, lead_time = cl4_reader.read_NC_tmp(cl_cl4file)
-
+                if ll_pickle:
+                    log.debug(f'Inside pickle {cl_cl4file}')
+                    with open(cl_cl4file, 'rb') as handle:
+                        stat_tmp = pickle.load(handle)
+                    if params_conf['CMEMS_area'] == True:
+                        aname = params_conf['cla_area_names']
+                    else:
+                        aname = np.arange((len(np.array(rla_maskvalues))))
+                else:
+                    stat_tmp, rla_forecast, aname, lead_time = cl4_reader.read_NC_tmp(cl_cl4file)
                 if 'forecast' in lead_time:
                     tmp1 = np.where(rla_forecast == params_conf['missing_value'], 0, rla_forecast)
                     nb_fcst = len(np.where(np.array(tmp1) > 0)[0])
@@ -912,11 +891,9 @@ class writer_stat():
                     leadtime_ref = []
                     if 'best_estimate' in lead_time: leadtime_ref.append('best_estimate')
                     if 'forecast' in lead_time:
-                       # for f in range(nb_fcst):
                         for f in range(nb_fcst_max):
                             leadtime_ref.append('forecast')
                     if 'persistence' in lead_time:
-                      #  for f in range(nb_fcst):
                         for f in range(nb_fcst_max):
                             leadtime_ref.append('persistence')
                     if 'climatology' in lead_time: leadtime_ref.append('climatology')
@@ -924,7 +901,7 @@ class writer_stat():
                     run_ini = False
 
                 ## Log
-                log.debug('Len leadtime_ref {}'.format(len(leadtime_ref)))
+                log.debug(f'Len leadtime_ref {len(leadtime_ref)} {leadtime_ref}')
                 ##
                 ldt_ref = np.chararray(len(leadtime_ref), itemsize=14)
 
@@ -939,7 +916,7 @@ class writer_stat():
                             try:
                                 w = np.where(ldt_ref == lt)[0][0]
                             except:
-                                raise cl4err.Class4FatalError("Pb with leadtime file {} {} {} {} {} {}".format(y, lt, cl_cl4file, ldt_ref, lead_time,lead_time))
+                                raise cl4err.Class4FatalError(f'Pb with leadtime file {y} {lt} {cl_cl4file} {ldt_ref} {lead_time} {lead_time}')
                             if lt not in ['forecast','persistence']:
                                 stat_all[stat_day,w,:,:,:,numvar] = stat_tmp[y,:,:,:]
                             else:
@@ -953,8 +930,7 @@ class writer_stat():
                             try:
                                 w = np.where(ldt_ref == lt)[0][0]
                             except:
-                                #log.info("Pb with leatime ldt_ref {} lead_time {} file {}".format(ldt_ref, lead_time, cl_cl4file))
-                                raise cl4err.Class4FatalError("Pb with leadtime file {} {} {} {} {} {}".format(y, lt, cl_cl4file, ldt_ref, lead_time,lead_time))
+                                raise cl4err.Class4FatalError(f'Pb with leadtime file {y} {lt} {cl_cl4file} {ldt_ref} {lead_time} {lead_time}')
                             if lt not in ['forecast','persistence']:
                                 stat_all[stat_day,w,0:1,:,:,numvar] = stat_tmp[y,:,:,:]
                             else:
@@ -1007,7 +983,7 @@ class writer_stat():
 
 
     def write_stats_BOX_dict(self, params_conf, cla_vars,\
-                        rla_layers, rla_surface, rla_maskvalues, rla_forecast, lead_time):
+                        rla_layers, rla_surface, rla_forecast, lead_time):
 
         """
             Write stats for global bins with dictionnary as input

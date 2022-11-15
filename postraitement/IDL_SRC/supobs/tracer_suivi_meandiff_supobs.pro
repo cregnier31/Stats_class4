@@ -456,7 +456,7 @@ FOR ind=0,N_ELEMENTS(tab_choix)-1 DO BEGIN
                 ;; write ASCII file
                 iof=1
                 err=0
-                file=dirname_out+'/File_ASCII/Fic_ASCII_PREVI_meanval_'+var+'_'+zone+'_'+modele+'_'+profondeur(prof)+'.txt'
+                file=dirname_out+'/File_ASCII/Fic_ASCII_EAN_meanval_'+var+'_'+zone+'_'+modele+'_'+profondeur(prof)+'.txt'
                 OPENW, iof, file, ERROR=err
                 print ,'Ecriture file ascii ',file,err
                 IF err EQ 0 THEN BEGIN

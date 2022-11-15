@@ -144,7 +144,8 @@ class Extract_Legos_SIT(Extractor):
             year=dateval[0:4]
             frame=dirdata+'/*'+dateval.strip()+'*.nc'
             liste_file=glob(frame)
-            self.log.info('Liste file CORA %s ' % (liste_file))
+            self.log.debug(f'{Frame=}')
+            self.log.info(f'Liste file CORA {liste_file}')
             for new_file in liste_file :
                 try :
                     filename=os.path.basename(new_file)
@@ -439,12 +440,13 @@ class Extract_cora5_2(Extractor):
         while  valeurj_tmp >= valeurj and valeurj_tmp <= valeurj2 :
             dateval = str(valeurj_tmp)
             #dateval=str(SyDate(str(self.date.setfromjulian(int(valeurj)))))
-            self.log.info('Day 5.2 %s ' % (dateval))
-            month=dateval[0:6]
+            self.log.info(f'Day 5.2 {dateval}')
+            month=dateval[4:6]
             year=dateval[0:4]
             frame=dirdata+year+'/'+month+'/*'+dateval.strip()+'*.nc'
             liste_file=glob(frame)
-            self.log.info('Liste file CORA %s ' % (liste_file))
+            self.log.debug(f'{frame=}')
+            self.log.info(f'Liste file CORA {liste_file}')
             for new_file in liste_file :
                 try :
                     filename=os.path.basename(new_file)
@@ -895,7 +897,7 @@ class Extract_GODAE(Extractor):
         else :
             liste_file=[glob(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')[0]]
         # liste_file=glob(dirdata+'/*[TS]*'+daterun+'*.nc')
-        self.log.info('Liste file %s ' % (liste_file))
+        self.log.info(f'Liste file GODAE {liste_file}')
         for new_file in liste_file :
             try :
                 filename=os.path.basename(new_file)
@@ -984,7 +986,8 @@ class Extract_ARMOR(Extractor):
             frame=dirdata+prefix+'*'+dateval.strip()+'*.nc*'
             liste_file=glob(frame)
             # liste_file=glob(dirdata+'/*[TS]*'+dateval+'*.nc')
-            self.log.info('Liste file %s ' % (liste_file)) 
+            self.log.debug(f'Frame {dirdata}{prefix}*{dateval.strip()}*.nc*')
+            self.log.info(f'Liste file ARMOR {liste_file}') 
             for new_file in liste_file :
                 try :
                     filename=os.path.basename(new_file)

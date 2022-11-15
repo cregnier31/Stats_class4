@@ -8,6 +8,8 @@ from os.path import dirname
 import arithm
 sys.path.append(dirname(__file__)+'/../')
 import utilities
+import xarray as xr
+import traceback
 
 #-----------------------------------------------------------------------------
 
@@ -45,7 +47,6 @@ Routine permettant de lire les contenus de fichiers CLASS4 au format GODAE.
     except:
         print ("Missing varname depth")
         rla_depth=np.zeros((len(rla_lons),1))
-    nc.close()
     rla_depth[(rla_depth >= 99999.)] = np.nan
     rla_lons[(rla_lons >= 99999.)] = np.nan
     rla_lats[(rla_lats >= 99999.)] = np.nan
@@ -55,6 +56,44 @@ Routine permettant de lire les contenus de fichiers CLASS4 au format GODAE.
 
 
 #------------------------------------------------------------------------------
+
+def read_MFCL4obs(mfdataset, log) :
+    """
+Routine permettant de lire les contenus de fichiers CLASS4 au format GODAE.
+> Usage : rla_val,cla_varname,rla_lons,rla_lats,rla_depth = read_CL4values(cl_fileIn,ccast=ccast)
+
+> Inputs : cl_fileIn     path du fichier CLASS4
+
+> Outputs : rla_val       tableau de la variable a lire
+           rla_lons,      tableau des longitudes/latitudes/profondeurs des profils
+           rla_lats,
+           rla_depth
+    """
+
+    cla_varname = []
+    try:
+        cla_varname_read =  np.array(mfdataset.variables['varname'][:].values)
+        cla_varname = utilities.pull_names(cla_varname_read)
+    except:
+        log.debug("Missing varname variable")
+        pass
+    try:
+        rla_lons  = np.array(mfdataset.variables['longitude'][:].values)
+        rla_lats  = np.array(mfdataset.variables['latitude'][:].values)
+    except OSError as err:
+        log.error("Missing varname lon/lat {err}")
+        sys.exit(1)
+    try:
+        rla_depth = np.array(mfdataset.variables['depth'][:].values)
+    except:
+        log.debug("Missing varname depth")
+        rla_depth=np.zeros((len(rla_lons),1))
+    rla_depth[(rla_depth >= 99999.)] = np.nan
+    rla_lons[(rla_lons >= 99999.)] = np.nan
+    rla_lats[(rla_lats >= 99999.)] = np.nan
+
+    return cla_varname,rla_lons,rla_lats,rla_depth
+
 
 def read_CL4obs_chloro(cl_fileIn) :
 
@@ -82,7 +121,133 @@ Routine permettant de lire les contenus de fichiers CLASS4 au format GLOBCOLOUR.
 
     return rla_lons_vect,rla_lats_vect, rla_depthobs
 
+def read_MFCL4_chloro_MFdataset(mfdataset) :
+    """
+        Routine permettant de lire les contenus de fichiers CLASS4 au format GLOBCOLOUR avec MFdataset de xarray
+    """
+
+    rla_lons  = np.array(mfdataset.variables['lon'][:].values)
+    rla_lats  = np.array(mfdataset.variables['lat'][:].values)
+    if rla_lons.shape != rla_lats.shape :
+        lon2D = np.zeros((rla_lats.size, rla_lons.size))
+        lat2D = np.zeros((rla_lats.size, rla_lons.size))
+
+        for numl,l in enumerate(rla_lats) :
+            lat2D[numl,:] = l
+        for numL,L in enumerate(rla_lons) :
+            lon2D[:,numL] = L
+
+    rla_lons_vect = np.reshape(lon2D,rla_lats.size*rla_lons.size)
+    rla_lats_vect = np.reshape(lat2D,rla_lats.size*rla_lons.size)
+    rla_depthobs = np.zeros((rla_lons_vect.size,1))
+
+    return rla_lons_vect,rla_lats_vect, rla_depthobs
+
+
 #------------------------------------------------------------------------------
+def read_CL4(filename, lead_time, cexp, cvar) :
+    """
+        Routine permettant de lire les contenus de fichiers CLASS4 avec xarray(hindcast, fcst, obs, clim, persistence)
+    """
+    try:
+        nc = netCDF4.Dataset(filename,'r')
+        #nc = xr.open_dataset(filename)
+        tab_res={}
+        for time in lead_time:
+            if time == 'observation' and cexp == 'BIO': run_name = ''
+            else: run_name = time
+           # tab_res[run_name] = nc.variables[run_name][:]
+           # tab_res[run_name] = nc[run_name][:].values
+            if time == 'forecast':
+                rla_forecast_init = nc.variables[run_name][:]
+                ll_fcst = True
+            if time == 'persistence':
+                rla_persistence_init = nc.variables[run_name][:]
+                ll_pers = True
+            if time == 'observation':
+                rla_observation_init = nc.variables[run_name][:]
+            if time == 'best_estimate':
+                ll_best = True
+                rla_best_estimate_init = nc.variables[run_name][:]
+            if time == 'climatology':
+                rla_climatology_init = nc.variables[run_name][:]
+                ll_clim = True
+###
+#"        if cexp == 'PHYS':
+#"            if cvar in ['SST', 'SLA', 'PSAL', 'TEMP']:
+#"                cl_qcvar = 'qc'
+#"            elif cvar ==  'aice':
+#"                ll_ice = True
+#"                cl_qcvar = 'QC02'
+#"                cl_qcvar2 = 'QC07'
+#"                rla_qc_init2 = nc.variables[cl_qcvar2][:]
+#"            elif cvar in ['VVEL', 'UVEL', 'UVEL_filtr', 'VVEL_filtr']:
+#"                list_var = [*nc.variables.keys()]
+#"                ## New case for filtered data
+#"                liste1 = ['current_test_qc', 'position_qc', 'obs_qc', 'current_test']
+#"                liste2 = ['position_qc', 'observation_qc', 'time_qc','depth_qc' ]
+#"                if len(set(list_var).intersection(liste1)) == 4:
+#"                    ll_currents = True
+#"                    cl_qcvar = 'current_test_qc'
+#"                    cl_qcvar2 = 'position_qc'
+#"                    cl_qcvar3 = 'obs_qc'
+#"                    cl_qcvar4 = 'current_test'
+#"                    rla_qc_init2 = nc.variables[cl_qcvar2][:]
+#"
+#"
+    except:
+        print('Missing variable : {} file {}'.format(run_name, filename))
+        rla_dset_init = np.nan
+        ll_miss = True
+#    if type(rla_dset_init) != np.ndarray and not ll_miss:
+#        rla_dset_init = rla_dset_init.data
+#    if not ll_miss:
+#        try:
+#            missing_value =  nc.variables[run_name]._FillValue
+#            rla_dset_init[(rla_dset_init == missing_value)] = np.nan
+#        except:
+#            print ('Fillvalue missing var: {} filename: {}'.format(cvar,filename))
+#            raise
+#
+#
+#    if run_name == 'climatology':
+#        rla_dset_init[(rla_dset_init == 0.)] = np.nan
+#    if cvar in ['CHL','chl']:
+#        rla_dset_init[(rla_dset_init == 0.)] = np.nan
+
+    return tab_res
+
+def read_CL4_all_valuesMF(dataset, run_name, cvar,log) :
+    """
+        Routine permettant de lire les contenus de fichiers CLASS4 MFdataset (hindcast, fcst, obs, clim, persistence)
+    """
+    ll_miss = False
+    try:
+        rla_dset_init = dataset[run_name][:].values
+    except Exception as exec:
+        log.error(f'Exception with variable : {run_name} {traceback.format_exc()}')
+        rla_dset_init = np.nan
+        ll_miss = True
+    if type(rla_dset_init) != np.ndarray and not ll_miss:
+        rla_dset_init = rla_dset_init.data
+#    if not ll_miss:
+#        try:
+#            missing_value =  dataset[run_name]._FillValue
+#            missing_value =  dataset[run_name].FillValue
+#            rla_dset_init[(rla_dset_init == missing_value)] = np.nan
+#        except:
+#            print ('Fillvalue missing var: {} filename: {}'.format(cvar,filename))
+#            raise
+#
+
+    if run_name == 'climatology':
+        rla_dset_init[(rla_dset_init == 0.)] = np.nan
+    if cvar in ['CHL','chl']:
+        rla_dset_init[(rla_dset_init == 0.)] = np.nan
+        rla_dset_init = np.log10(rla_dset_init)
+
+    return rla_dset_init
+
 
 def read_CL4_all_values(nc, run_name, cvar, filename) :
 

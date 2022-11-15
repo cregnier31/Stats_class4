@@ -24,8 +24,9 @@
 ;@config_GLORYS12V1
 ;@config_GLORYS12V1-free
 ;@config_GLORYS12V1-clim
-@config_GLO12V4
+;@config_GLO12V4
 ;@config_PSY4V3R1-light
+@config_GLO12V4-NOW
 ;@config_GLO4
 ;@config_GLORYS2V1
 ;@config_MJM105b
@@ -82,7 +83,6 @@ SPAWN,'mkdir -p '+fic_out+'/File_ASCII/'
 print, dir_stats_MERC
 SPAWN,'ls '+dir_stats_MERC+ ' | grep  rms_diff_R | grep '+modele,filelist 
 SPAWN,'ls '+dir_stats_MERC+ ' | grep  rms_diff_R | grep '+modele+ ' | cut -f4 -d_ | cut -f2 -dR | cut -f1 -d.',day 
-
 PRINT,filelist,day
 print,dir_stats_MERC
 print,liste_zone
@@ -165,8 +165,8 @@ CASE modele OF  & $
          liste_region(*)=liste_zone(*) & $
          ENDCASE & $
 
-         'MJM105b' :BEGIN & $
-         liste_region=strarr(13) & $
+         'GLO12V4-now' :BEGIN & $
+         liste_region=strarr(14) & $
          liste_region(*)=liste_zone(*) & $
          ENDCASE & $
 

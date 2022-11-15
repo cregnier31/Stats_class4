@@ -67,12 +67,13 @@ list_prof = {}
 list_prof['1'] = list_prof1
 list_prof['2'] = list_prof2
 list_prof['3'] = list_prof3
+nb_plots = 4
 
 fic_dir = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'+modele1+'/Class4_pics'
 fic_out1 = fic_dir+'/suivi_rms/CORA5.2/'
 fic_dir = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'+modele2+'/Class4_pics'
 fic_out2 = fic_dir+'/suivi_rms/alleges/CORA5.2/'
-dir_plot = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/Comparaison_systemes/GLO12V4/filter_test3/'
+dir_plot = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/Comparaison_systemes/GLO12V4/RUN2/GLO12vsPSY4/'
 varmean = "mean"
 length_med = 4
 for var in list_var:
@@ -110,33 +111,46 @@ for var in list_var:
                     print (f"file doesn't exist {file2}")
                     sys.exit(1)
                 time, HDCT1_meandiff, WOA18_meandiff, nb_cumul = get_value(file1,4)
-                time_ref_1 = convert_timeBC(time)
                 time, HDCT1_rmsdiff, WOA18_rmsdiff, nb_cumul_rmsdiff = get_value(file3,4)
+                ll_none = False
+                if np.all((time == 0)):
+                    time[time == 0] = np.nan
+                    time_ref_1 = np.nan
+                    ll_none = True
+                else:
+                    time_ref_1 = convert_timeBC(time)
+                time2, HDCT2_meandiff = get_value(file2,2)
                 time2, HDCT2_meandiff = get_value(file2,2)
                 time2, HDCT2_rmsdiff = get_value(file4,2)
-                time_ref_2 = convert_timeBC(time2)
-                cmin = -1.5
-                cmax = 1.5
-                ax_multi = fig_multi.fig.add_subplot(gs[i,j])
-                if  j == ncols-1:
-                    timeserie = Plot_TS(datefmt='%Y', ax=ax_multi).plot_timeserie(title, time_ref_1, HDCT1_rmsdiff,
-                                                    title_img, label=modele1, nb_obs=nb_cumul[:],
-                                                    cmin=cmin, cmax=cmax, color='red', log=False, ylabel=True)
+                if np.all((time2 == 0)):
+                    print('Only None value')
+                    time2[time2 == 0] = np.nan
+                    time_ref_2 = time2
                 else:
-                    timeserie = Plot_TS(datefmt='%Y', ax=ax_multi).plot_timeserie(title, time_ref_1, HDCT1_rmsdiff,
-                                                    title_img, label=modele1, nb_obs=nb_cumul[:],
-                                                    cmin=cmin, cmax=cmax, color='red', log=False, ylabel=False)
+                    time_ref_2 = convert_timeBC(time2)
+                if not ll_none:
+                    cmin = -1.5
+                    cmax = 1.5
+                    ax_multi = fig_multi.fig.add_subplot(gs[i,j])
+                    if  j == ncols-1:
+                        timeserie = Plot_TS(datefmt='%Y', ax=ax_multi).plot_timeserie(title, time_ref_1, HDCT1_rmsdiff,
+                                                        title_img, label=modele1, nb_obs=nb_cumul[:],
+                                                        cmin=cmin, cmax=cmax, color='red', log=False, ylabel=True)
+                    else:
+                        timeserie = Plot_TS(datefmt='%Y', ax=ax_multi).plot_timeserie(title, time_ref_1, HDCT1_rmsdiff,
+                                                        title_img, label=modele1, nb_obs=nb_cumul[:],
+                                                        cmin=cmin, cmax=cmax, color='red', log=False, ylabel=False)
 
-                timeserie =  timeserie.overplot(time_ref_1, HDCT1_meandiff[:], color1='red', linestyle='--')
-                timeserie =  timeserie.overplot(time_ref_2, HDCT2_rmsdiff[:], color1='black', label=modele2, linestyle='-')
-                timeserie =  timeserie.overplot(time_ref_2, HDCT2_meandiff[:], color1='black', linestyle='--')
-                timeserie =  timeserie.overplot(time_ref_1, WOA18_rmsdiff[:], color1='blue', label="WOA18")
-                timeserie =  timeserie.overplot(time_ref_1, WOA18_meandiff[:], color1='blue', linestyle='--', )
+                    timeserie =  timeserie.overplot(time_ref_1, HDCT1_meandiff[:], color1='red', linestyle='--')
+                    timeserie =  timeserie.overplot(time_ref_2, HDCT2_rmsdiff[:], color1='black', label=modele2, linestyle='-')
+                    timeserie =  timeserie.overplot(time_ref_2, HDCT2_meandiff[:], color1='black', linestyle='--')
+                    timeserie =  timeserie.overplot(time_ref_1, WOA18_rmsdiff[:], color1='blue', label="WOA18")
+                    timeserie =  timeserie.overplot(time_ref_1, WOA18_meandiff[:], color1='blue', linestyle='--', )
 
-                if ind == 0:
-                    fig_multi.fig.suptitle(subtitle, fontsize=15.5, color='red')
-                    fig_multi.fig.legend(loc='lower center', ncol=4, fontsize=12, frameon=False)
-                print ('----------------------')
+                    if ind == 0:
+                        fig_multi.fig.suptitle(subtitle, fontsize=15.5, color='red')
+                        fig_multi.fig.legend(loc='lower center', ncol=nb_plots, fontsize=12, frameon=False)
+                        #fig_multi.fig.legend(loc='lower center', ncol=4, fontsize=12, frameon=False)
+                    print ('----------------------')
             print(f' Figure {title_img}')
             fig_multi.fig.savefig(title_img)
-            sys.exit(1)

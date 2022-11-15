@@ -176,6 +176,14 @@ profondeur4[3] ='2000-5000m'
 profondeur5    = np.chararray(1,itemsize=25)
 profondeur5[0] ='0-6000m'
 
+profondeur6    = np.chararray(6,itemsize=25)
+profondeur6[0] = '0-5m'
+profondeur6[1] = '5-100m'
+profondeur6[2] = '100-300m'
+profondeur6[3] = '300-8000m'
+profondeur6[4] = '800-2000m'
+profondeur6[5] = '2000-5000m'
+
 
 profondeur_surf  = np.chararray(1,itemsize=25)
 profondeur_surf[0] = '0-0m'

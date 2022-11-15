@@ -7,7 +7,7 @@ if sys.version_info[0] >= 3:
 else:
     import ConfigParser
 
-def load_db():
+def load_db(_DBFILE_):
     db = ConfigParser.ConfigParser()
     db.read(os.path.expanduser(_DBFILE_))
     if not db.sections():

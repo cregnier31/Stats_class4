@@ -211,7 +211,9 @@ class ColocFortran(object):
                 self.log.info('Lead Time {}'.format(time))
                 lead_fin = []
                 lead_new=self.params['lead_int']
-                if self.params['cl_typemod'].lower() == "allege" or self.params['cl_typemod'].lower() == "allege_new":
+                if self.params['cl_typemod'].lower() == "allege" or \
+                        self.params['cl_typemod'].lower() == "allege_new" \
+                        or self.params['cl_typemod'].lower() == "allege_now":
                     sort_rep = self.params['dirmodel_light']
                 else:
                     sort_rep = self.params['dirmodel']

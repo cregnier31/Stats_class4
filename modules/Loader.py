@@ -292,6 +292,7 @@ class InputLoader(Loader):
         nb_proc = 0
         cl_schedule = 'd'
         cl_data_id = ""
+        list_inputtype = ['pgs', 'pgn', 'allege','2ease', 'allege_new', 'allege_now']
         for o, p in cla_opts[0]:
             if o in ['--delta']:
                 ll_delta = True
@@ -304,8 +305,9 @@ class InputLoader(Loader):
                 cl_end_date = p
             elif o in ['--typemod']:
                 cl_typemod = p
-                if cl_typemod not in ['pgs', 'pgn', 'allege','2ease', 'allege_new']:
-                    print ("input data type not known : must be pgn pgs allege 2ease :{}".format(cl_typemod))
+                if cl_typemod not in list_inputtype:
+                    print('input data type not known : ')
+                    print(f'must be {list_inputtype} not {cl_typemod}')
                     sys.exit(1)
             elif o in ['--daterun']:
                 ll_daterun = True
@@ -394,7 +396,7 @@ class InputLoader(Loader):
                 date2 = SyDate(cl_end_date2)
                 cl_schedule = 'm'
             elif datelen1 == datelen2 and datelen1 == 8:
-                log.debug("Daily values")
+                log.debug(f"Daily values {cl_start_date} {cl_end_date}")
                 date1 = SyDate(cl_start_date)
                 date2 = SyDate(cl_end_date)
                 cl_schedule = 'd'

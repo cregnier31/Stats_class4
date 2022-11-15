@@ -389,14 +389,17 @@ if params_conf['daily_off'] == 'on':
 
 
     if params_conf['percent'] == 'off' and comm.rank == 0:
-
+        print('Passe la')
         if nb_file_exist  == 0:
             log.error("Missing files for this period {} {}" \
                     .format(params_conf['cl_start_date'],params_conf['cl_end_date']))
             sys.exit(1)
 
-        writer_stat().write_stats_daily(params_conf,\
-                                        cla_vars, rla_layers, rla_surface, log)
+        writer_stat().write_stats_daily(params_conf,
+                                        cla_vars,
+                                        rla_layers,
+                                        rla_surface,
+                                        log)
 
         if params_conf['cexp'] == 'PHYS' and dict_inputs['nb_fcst'] > 0 and ll_skill:
             writer_stat().write_stats_daily_skill(params_conf,\
@@ -405,7 +408,7 @@ if params_conf['daily_off'] == 'on':
 
         end = timer()
         log.info(' ')
-        log.info(" ~~~~~~~~~~~~~ Running time for daily stats : {} {} ".format(str(end - start), " seconds ~~~~~~~~~~~~"))
+        log.info(f'~~~~~~~~~~~~~ Running time for daily stats : {end - start}  seconds ~~~~~~~~~~~~')
         log.info(' ')
         log.info(' ')
         log.info('**********************************************************************************')
@@ -414,8 +417,16 @@ if params_conf['daily_off'] == 'on':
 
 
     elif params_conf['percent'] == 'on':
-        stat_all, rla_forecast, aname, lead_time = writer_stat().write_stats_daily(params_conf,\
-                                                                                   cla_vars, rla_layers, rla_surface, log)
+        stat_all, rla_forecast, aname, lead_time = writer_stat().\
+                write_stats_daily(params_conf,
+                                  cla_vars,
+                                  rla_layers,
+                                  rla_surface,
+                                  log)
+        #def write_stats_daily(self, params_conf,
+        #                  cla_vars, rla_layers,
+        #                  rla_surface, rla_forecast,
+        #                  lead_time, ll_pickle, log):
 
         w_obs = (np.where(params_conf['cla_metricname'] == 'mean of reference'))[0][0]
         w_nb_obs = (np.where(params_conf['cla_metricname'] == 'number of data values'))[0][0]
@@ -444,22 +455,38 @@ if params_conf['daily_off'] == 'on':
             stat_percent = np.nan*np.zeros((len(rla_forecast), len(rla_layers[0:-1]),\
                                             len(params_conf['metric_percent']), len(cla_vars)))
 
-            stat_percent = writer_stat().compute_percentile(len(rla_forecast), len(rla_layers[0:-1]), len(cla_vars), stat_bias[:,:,:,ind,:], nb_obs[:,:,:,ind,:], stat_percent, params_conf)
-            cl_resultsFileName = params_conf['prefix_fileout']+params_conf['cl_conf_percent']+'_'+\
-                                 params_conf['cl_start_date']+'_'+params_conf['cl_end_date']+'_profile_percentile_'+area_name+'.nc'
-            cl_resultsFile = os.path.join(params_conf['dirout'],cl_resultsFileName)
+            stat_percent = writer_stat().compute_percentile(len(rla_forecast),
+                                                            len(rla_layers[0:-1]),
+                                                            len(cla_vars),
+                                                            stat_bias[:,:,:,ind,:],
+                                                            nb_obs[:,:,:,ind,:],
+                                                            stat_percent,
+                                                            params_conf)
+            cl_resultsFileName = f"{params_conf['prefix_fileout']}" \
+                                 f"{params_conf['cl_conf_percent']}"\
+                                 f"_{params_conf['cl_start_date']}" \
+                                 f"_{params_conf['cl_end_date']}" \
+                                 f"_profile_percentile_{area_name}.nc"
+            cl_resultsFile = os.path.join(params_conf['dirout'],
+                                          cl_resultsFileName)
 
             leadtime = np.chararray(len(lead_time), itemsize=14)
             for l in range(len(lead_time)):
                 leadtime[l] = str(lead_time[l])
 
-            writer_stat().write_percent_files(cl_resultsFile, params_conf['metric_percent'], rla_forecast,
-                                              rla_layers, stat_percent, leadtime, cla_vars, params_conf)
+            writer_stat().write_percent_files(cl_resultsFile,
+                                              params_conf['metric_percent'],
+                                              rla_forecast,
+                                              rla_layers,
+                                              stat_percent,
+                                              leadtime,
+                                              cla_vars,
+                                              params_conf)
 
             del stat_percent
 
             log.info('**************************************************************************')
-            log.info("              END OF DAILY COMPUTATION : {}".format(area_name))
+            log.info(f'              END OF DAILY COMPUTATION : {area_name}')
             log.info('**************************************************************************')
 
 
@@ -547,12 +574,17 @@ if params_conf['bilan'] == 'on' and recomb == 'off' :
             log.info("Missing files")
             log.info(params_conf['dirNCin']+cl_file)
             continue
-        if params_conf['cexp'] == 'BIO' or cvar in ['SST', 'SLA','aice', 'UVEL', 'VVEL', 'UVEL_filtr', 'VVEL_filtr']:
+        list_vars = ['SST', 'SLA','aice', 'UVEL',\
+                     'VVEL', 'UVEL_filtr', 'VVEL_filtr']
+        if params_conf['cexp'] == 'BIO' or cvar in list_vars:
             tab_prof   = np.array([-0.5,0.5])
         else:
             tab_prof = np.array(rla_layers)
-        #log.debug('Tab profs {}'.format(tab_prof))
-        dict_inputs = cl4_reader.cfg_ltime(cla_cl4files[0], params_conf['cexp'], cvar)
+
+        log.info(f'Tab profs {tab_prof}')
+        dict_inputs = cl4_reader.cfg_ltime(cla_cl4files[0],
+                                           params_conf['cexp'],
+                                           cvar)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #             SELECTION OF GRID POINTS CONTAINED IN EACH BASIN
@@ -583,9 +615,12 @@ if params_conf['bilan'] == 'on' and recomb == 'off' :
 
             if params_conf['CMEMS_area'] == True:
                 rla_maskvalues = np.unique(rla_mask[area_m,:,:])
-                rla_maskvalues = np.delete(rla_maskvalues,np.where(rla_maskvalues==0))
+                rla_maskvalues = np.delete(rla_maskvalues,
+                                           np.where(rla_maskvalues==0))
 
-            stat_bilan = np.nan*np.zeros((dict_inputs['yout'], len(tab_prof) -1, len(params_conf['cla_metricname'])))
+            stat_bilan = np.nan*np.zeros((dict_inputs['yout'],
+                                          len(tab_prof) -1,
+                                          len(params_conf['cla_metricname'])))
             if ll_skill:
                 stat_PSS_skill = np.nan*np.zeros((5, len(tab_prof) -1))
                 stat_CSS_skill = np.nan*np.zeros((5, len(tab_prof) -1))
@@ -613,7 +648,9 @@ if params_conf['bilan'] == 'on' and recomb == 'off' :
 
                         # ~~~~~~~~ Shift 0-360 ~~~~~~~~~~~~~~~~~~~
 
-                        rla_lonmask_nan_shift = np.where(rla_lonmask_nan<0,rla_lonmask_nan+360,rla_lonmask_nan)
+                        rla_lonmask_nan_shift = np.where(rla_lonmask_nan<0,
+                                                         rla_lonmask_nan+360,
+                                                         rla_lonmask_nan)
                         rla_lonmask_tmp = rla_lonmask_nan_shift
                         ll_shift = True
                     else:

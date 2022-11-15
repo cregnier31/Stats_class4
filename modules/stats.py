@@ -355,8 +355,10 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp,\
                 supobs.Statslib.statlayer_CL4var(rla_var,
                                                  rla_obs,
                                                  rla_clim,
-                                                 dict_inputs['rla_depthobs'][iobs, :],
-                                                 dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
+                                                 dict_inputs['rla_depthobs'][iobs, :], log,
+                                                 dict_inputs['tab_profs'],
+                                                 ncfile=dict_inputs['ncfile'],
+                                                 echeance=time)
             log.debug('RMSE Hindcast {}'.format(rla_rmse))
             if ll_debug:
                 print(('RMSE {}'.format(rla_rmse)))
@@ -387,7 +389,8 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp,\
                                                      rla_obs,
                                                      rla_clim,
                                                      dict_inputs['rla_depthobs'][iobs, :],
-                                                     dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
+                                                     dict_inputs['tab_profs'], log,
+                                                     ncfile=dict_inputs['ncfile'], echeance=time)
 
                 stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
@@ -419,7 +422,8 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp,\
                                                      rla_obs,
                                                      rla_clim,
                                                      dict_inputs['rla_depthobs'][iobs, :],
-                                                     dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
+                                                     dict_inputs['tab_profs'], log,
+                                                     ncfile=dict_inputs['ncfile'], echeance=time)
 
                 stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
@@ -439,7 +443,8 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp,\
                                                  rla_obs,
                                                  rla_clim,
                                                  dict_inputs['rla_depthobs'][iobs, :],
-                                                 dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
+                                                 dict_inputs['tab_profs'], log,
+                                                 ncfile=dict_inputs['ncfile'], echeance=time)
 
             stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                     rla_mean_obs, rla_rms_obs, rla_mean_prod,
@@ -473,7 +478,9 @@ def compute_stats_skill(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp,\
     return stat_tmp, stat_PSS_skill, stat_CSS_skill
 
 
-def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout, logger='', filename=''):
+def compute_stats(lead_time, nb_fcst, iobs,
+                  dict_inputs, stat_tmp, amask,
+                  yout, log, filename=''):
     """
      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #         COMPUTE STATS FOR EACH BASIN AT DIFFERENT LEAD TIME
@@ -490,6 +497,7 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout, 
     ll_debug = False
 
     for time in lead_time:
+        log.debug(f'leadtime {time}')
         if len(np.shape(dict_inputs['obs'])) == 2:
             rla_obs = dict_inputs['obs'][iobs, :]
             if 'climatology' in lead_time:
@@ -509,12 +517,15 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout, 
                 rla_var = dict_inputs['best'][iobs, :]
             else:
                 rla_var = dict_inputs['best'][iobs]
+            log.debug(f'Compute stats layer')
             rla_mean_obs, rla_rms_obs, rla_mean_prod, rla_rms_prod, rla_rmse, rla_cor, ila_nobs =\
                 supobs.Statslib.statlayer_CL4var(rla_var,
                                                  rla_obs,
                                                  rla_clim,
                                                  dict_inputs['rla_depthobs'][iobs, :],
-                                                 dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
+                                                 dict_inputs['tab_profs'], log,
+                                                 ncfile=dict_inputs['ncfile'],
+                                                 echeance=time)
 
             if ll_debug:
                 print (rla_rmse)
@@ -546,7 +557,8 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout, 
                                                      rla_obs,
                                                      rla_clim,
                                                      dict_inputs['rla_depthobs'][iobs, :],
-                                                     dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
+                                                     dict_inputs['tab_profs'], log,
+                                                     ncfile=dict_inputs['ncfile'], echeance=time)
 
                 stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
@@ -574,7 +586,8 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout, 
                                                      rla_obs,
                                                      rla_clim,
                                                      dict_inputs['rla_depthobs'][iobs, :],
-                                                     dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
+                                                     dict_inputs['tab_profs'], log,
+                                                     ncfile=dict_inputs['ncfile'], echeance=time)
 
                 stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                         rla_mean_obs, rla_rms_obs, rla_mean_prod,
@@ -593,7 +606,9 @@ def compute_stats(lead_time, nb_fcst, iobs, dict_inputs, stat_tmp, amask, yout, 
                                                  rla_obs,
                                                  rla_clim,
                                                  dict_inputs['rla_depthobs'][iobs, :],
-                                                 dict_inputs['tab_profs'], ncfile=dict_inputs['ncfile'], echeance=time)
+                                                 dict_inputs['tab_profs'], log,
+                                                 ncfile=dict_inputs['ncfile'], echeance=time)
+
 
             stat_tmp, num_col = stat_mod_obs(stat_tmp, num_col, amask, ila_nobs,
                                                     rla_mean_obs, rla_rms_obs, rla_mean_prod,

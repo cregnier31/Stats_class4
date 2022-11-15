@@ -167,7 +167,7 @@ def input_params(arg, log):
             else:
                 log.error("Not known : debug option should be 0 or 1")
 
-    log.info(f'{params_conf}')
+    log.debug(f'{params_conf}')
 
     # *********************  Define input date / fmt date  *********************
 
