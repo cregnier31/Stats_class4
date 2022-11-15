@@ -126,13 +126,13 @@ for v, varname in enumerate(VAR):
 
     if varname in ['sla','sst','seaice-concentration']: level = level_sla_stt
     elif varname in ['temperature','salinity']: level = level_t_s
-    else: print 'level not define'
+    else: print('level not define')
 
     for s, prod in enumerate(SYSTEM):
 
         dict[varname][prod] = {} ; dict_tmp[varname][prod] = {}
         #print PATH_IN+ prod +"/timeseries/best/Stats_contable_timeseries_"+ZONE+"_"+prod+"_"+date1+"_seuil"+tval+"_"+frame1+".nc"
-        print PATH_IN+ prod +"/timeseries/best/Stats_contable_timeseries_"+ZONE+"_"+prod+"_"+date1+"_seuil"+tval+"_"+frame1+".nc"
+        print(PATH_IN+ prod +"/timeseries/best/Stats_contable_timeseries_"+ZONE+"_"+prod+"_"+date1+"_seuil"+tval+"_"+frame1+".nc")
         filename = glob(os.path.join(PATH_IN+ prod +"/timeseries/best/Stats_contable_timeseries_"+ZONE+"_"+prod+"_"+date1+"_seuil"+tval+"_"+frame1+".nc"))[0]
       #  filename = glob(os.path.join(PATH_IN+ prod+ '/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_'+prod+'*nc'))[0]
         nc1_file = Dataset(filename, 'r')
@@ -173,7 +173,7 @@ for v, varname in enumerate(VAR):
         #cor = np.where(np.array(metric_name) == 'anomaly correlation')[0][0]   
         ini = False
         for a, area in enumerate(area_name):
-            print area_name 
+            print(area_name) 
             dict[varname][prod][area] = {}
             dict_tmp[varname][prod][area] = {}
             dict_tmp[varname][prod][area]['PCT'] = PCT_dt1[:]
@@ -187,14 +187,14 @@ for v, varname in enumerate(VAR):
             TIME = []
             for t in range(len(vtime)):
                 if SYSTEM  == "FOAM":
-                    print int(vtime[t])
-                    print t
-                    print d.date.fromordinal(int(vtime[t]))
+                    print(int(vtime[t]))
+                    print(t)
+                    print(d.date.fromordinal(int(vtime[t])))
                 TIME.append(d.date.fromordinal(int(vtime[t])))
                # TIME.append(d.date.fromordinal(vtime[t]))
 
             dict[varname][prod][area]['time'] = TIME[int(window/2):-int(window/2)]
-        print "OK"
+        print("OK")
     # ~~ On lisse la courbe en faisant une moyenne glissante des stats sur n jours ~~~
 
     for s, prod in enumerate(SYSTEM):
@@ -257,7 +257,7 @@ if SINGLE_PLOT:
                 #ymin=0.4
                 #ymax=1.0
                 #plt.ylim(ymin,ymax)
-                print (PATH_OUT+str(area)+'_'+str(metric_type)+'_'+dt_start_plot+'-'+dt_end_plot+'.png')
+                print((PATH_OUT+str(area)+'_'+str(metric_type)+'_'+dt_start_plot+'-'+dt_end_plot+'.png'))
                 plt.savefig(PATH_OUT+str(area)+'_'+str(frame1)+'_'+str(metric_type)+'_'+dt_start_plot+'-'+dt_end_plot+'.png',dpi=200)
             plt.close()
 
@@ -272,19 +272,19 @@ if MULTI_PLOT == True:
     elif CMEMS_AREA:
         area_ini = area_name
     for area in area_ini:
-        print area
+        print(area)
         #a = np.where(np.array(area_name) == area)[0][0]
         fig, splot, nb_var = tsp.fmtFig(area, name_ech, splot='multi', nb_var=len(VAR))
         leg = False
-        print "OK1"
+        print("OK1")
         for v, varname in enumerate(VAR):
-            print varname
+            print(varname)
             if varname in ['sla','sst']: prof = cla_depth[level_sla_stt]
             elif varname in ['temperature','salinity']: prof = cla_depth[level_t_s]
             ax_fig = plt.subplot(len(VAR),1,v+1) 
             if (v+1) == len(VAR):
                 leg = True
-            print area
+            print(area)
             f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof, dtst, dted, leg, list_color, splot, nb_var, metric_type)           
             #if area == 'ARC' or :
             #    print "CAS 1"
@@ -295,7 +295,7 @@ if MULTI_PLOT == True:
         elif metric_type == 'COR':
             plt.savefig(PATH_OUT+cla_areaini[a]+'_correlation_'+dt_start_plot+'-'+dt_end_plot+'.png',dpi=200)
         else:
-            print (PATH_OUT+str(area)+'_'+str(metric_type)+'_'+dt_start_plot+'-'+dt_end_plot+'.png')
+            print((PATH_OUT+str(area)+'_'+str(metric_type)+'_'+dt_start_plot+'-'+dt_end_plot+'.png'))
             plt.savefig(PATH_OUT+str(area)+'_'+str(frame1)+'_'+str(metric_type)+'_'+dt_start_plot+'-'+dt_end_plot+'.png',dpi=200)
         plt.close()
 

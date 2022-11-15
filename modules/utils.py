@@ -32,9 +32,10 @@ def loader(options):
     tab_options ={}
     list_typemod = ['BIO','PHYS']
     tab_options['typemod'] = list_typemod
-    list_config = ['FOAM','GIOPS','CMCC','CGOFS','BLK','PSY3V3R3',\
-                   'HYCOM_RTOFS','PSY4V2R2','PSY4V3R1','BIOMER4',\
-                   'FREEBIORYS2','NERSC','BIOMER4V2','ENSMEAN','GLO12','GLO4']
+    list_config = ['FOAM', 'GIOPS', 'CMCC', 'CGOFS', 'BLK', 'PSY3V3R3',
+                   'HYCOM_RTOFS', 'PSY4V2R2', 'PSY4V3R1', 'BIOMER4',
+                   'FREEBIORYS2', 'NERSC', 'BIOMER4V2','ENSMEAN', 'GLO12',
+                   'GLO12V4', 'GLO4', 'FOAM12']
     tab_options['config'] = list_config
     list_mask = ['basin','basin_pol','box','bins2d','bins2d_arc','bins2d_ant','bins4d']
     tab_options['fmt_mask'] = list_mask

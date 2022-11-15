@@ -114,10 +114,10 @@ list_prof['2'] = list_prof2
 list_prof['3'] = list_prof3
 
 fic_dir = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'+modele1+'/Class4_pics'
-fic_out1 = fic_dir+'/suivi_rms/CORA5.2/'
+fic_out1 = fic_dir+'/suivi_rms/CORA5.2/RUN1/'
 fic_dir = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'+modele2+'/Class4_pics'
 fic_out2 = fic_dir+'/suivi_rms/alleges/CORA5.2/'
-dir_plot = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/Comparaison_systemes/GLO12V4/filter_test2/'
+dir_plot = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/Comparaison_systemes/GLO12V4/filter_test3/'
 varmean = "mean"
 length_med = 4
 for var in list_var:

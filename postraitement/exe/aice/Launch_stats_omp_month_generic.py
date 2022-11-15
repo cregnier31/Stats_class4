@@ -3,14 +3,20 @@
 #
 import os,sys,string,shutil,glob,re
 import subprocess,shlex
+PATHLIB = os.path.dirname(os.path.realpath(__file__))
+sys.path.append("../../../modules/")
 from utilities import load_db
+from glob import glob
+
 #===============================
 # Test sur le nombre d'arguments
 # ===============================
 
-if len(sys.argv) != 12:
+if len(sys.argv) != 7:
     print('Usage: ./Launch_stats_omp.py <YEAR> <MONTH> <model> <zone> <leadtype> <machine>') 
-  sys.exit(1)
+    print(f'{len(sys.argv)=}')
+    print(sys.argv)
+    sys.exit(1)
 else :
   YEAR=sys.argv[1]
   MONTH=sys.argv[2]
@@ -24,27 +30,23 @@ if int(MONTH) < 10 :
 else:
     MONTH=MONTH
 cl_date=str(YEAR)+"_"+str(MONTH)
-#model="GIOPS"
-#model="PSY4"
-#zone="ANT"
-PATHLIB = os.path.dirname(os.path.realpath(__file__))
-_DBFILE_ = PATHLIB + './cfg/' + model + '.cfg'
+_DBFILE_ = PATHLIB + '/cfg/' + model + '.cfg'
+print(_DBFILE_)
 db = load_db(_DBFILE_)
-## TODO : add db files for generic stats
-DIRDATA="/sortref/calval/DATA_COLOCATIONS/T_S_data_new/PSY4V3R1/data_CLASS4_GODAE/aice/"
-cl_path="/kara/data1/cregnier/CLASS4_MERCATOR/"+model+"/Stats/"
-cl_dirmask="/kara/data1/cregnier/static/"
-rl_seuil=0.4
-rl_seuil=0.2
-rl_seuil2=0.15
-il_echeances=10
-BIN_DIR = PATHLIB + "../../../bin/"
-exe = BIN_DIR+"Compute_seaice_stats_"+zone+"_"+machine+"_leadtime.exe"
-dir_log = PATHLIB + "log/"
-nml = PATHLIB + "../../postraitement/NAMELIST/namelist_aice_"+zone+"_"+model+"_"+YEAR+MONTH+".nml"
-sub = PATLIB + "../../postraitement/sub/launch_stats_"+zone+"_"+YEAR+MONTH+"_"+model+"_omp.pbs"
+DIRDATA = db.get('PATH', 'DIRDATA')
+cl_path = db.get('PATH', 'cl_path')
+cl_dirmask = db.get('PATH', 'cl_dirmask')
+rl_seuil= float(db.get('PATH', 'rl_seuil'))
+rl_seuil2 =  float(db.get('PATH', 'rl_seuil2'))
+il_echeances =  int(db.get('PATH', 'il_echeances'))
+BIN_DIR = PATHLIB + "/../../../bin/"
+#exe = BIN_DIR+"Compute_seaice_stats_"+zone+"_"+machine+"_leadtime.exe"
+exe = BIN_DIR+"Compute_seaice_stats_"+zone+"_"+machine+"_leadtime_best.exe"
+dir_log = PATHLIB + "/log/"
+nml = PATHLIB + "/../../../NAMELIST/namelist_aice_"+zone+"_"+model+"_"+YEAR+MONTH+".nml"
+sub = PATHLIB + "/../../../sub/launch_stats_"+zone+"_"+YEAR+MONTH+"_"+model+"_omp.pbs"
 list_file=[]
-for file in sorted(glob.glob(DIRDATA+"/class4_"+YEAR+MONTH+"*"+model+"*aice.nc")) :
+for file in sorted(glob(DIRDATA+"/class4_"+YEAR+MONTH+"*"+model+"*aice.nc")):
     list_file.append(file)
 if not list_file : 
     print("None in the list")

@@ -169,7 +169,7 @@ class SelectListModelData(Selector):
             param_dict['gridtype'] = param_dict['gridice']
         if typemod == "pgn":
             dirmodel = param_dict['dirmodel_pgn']
-        elif typemod == "allege" or "allege_new":
+        elif typemod == "allege" or "allege_new" or typemod == "allege_now":
             dirmodel = param_dict['dirmodel_light']
         elif typemod == "2ease":
             dirmodel = param_dict['dirmodel_pgn']
@@ -288,7 +288,8 @@ class SelectListModelData(Selector):
                     elif directory == 'hdct_all':
                         dirmodel_new = param_dict['dirmodel']+"/"
                         self.log.debug("directory {}".format(dirmodel_new))
-                    elif typemod == 'allege_new':
+
+                    elif typemod == 'allege_new' or typemod == 'allege_now':
                         self.log.debug("lightout new type")
                         dirmodel_new = dirmodel+"/"
                         template = self.get_template_alleges_new(dateval,
@@ -556,7 +557,10 @@ class SelectListData(Selector):
             self.log.debug('========================================================')
             list_files = Extractor(self.log).factory(param_dict['prefix_data']).run_list(param_dict, daterun)
         if not list_files:
-            self.log.error(f"Missing files {param_dict['prefix_data']} {param_dict['dirdata']}")
+            self.log.error(f"Missing Obs files {param_dict['prefix_data']}"
+                           f" {param_dict['dirdata']} {param_dict['dirwork']}"
+                           f"{param_dict['prefix_data']}")
+            sys.exit(1)
             ll_miss = True
         else:
             self.log.debug('List Files  %s ' % (list_files))

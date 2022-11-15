@@ -137,7 +137,7 @@ CONTAINS
     !* Lecture Fichier 
     DO  WHILE (eofbis == 0 .AND. il_ji <= ig_nbregion )
        READ(il_numfil,*,iostat=eofbis) rl_box,rl_lonmin,rl_latmin,rl_lonmax,rl_latmax
-       WRITE(80,9001) il_ji,rl_lonmin,rl_latmin,rl_lonmax,rl_latmax
+       !WRITE(80,9001) il_ji,rl_lonmin,rl_latmin,rl_lonmax,rl_latmax
        IF (il_err/=0) THEN
           WRITE (0,*) 'error reading configtxt[',TRIM(cd_fconfigtxt)
           CLOSE(UNIT=il_numfil)
@@ -150,7 +150,7 @@ CONTAINS
         rga_info(3,il_ji)=rl_lonmax 
         rga_info(4,il_ji)=rl_latmax 
         il_ji=il_ji+1
-        WRITE(8,*) rl_box,rl_lonmin,rl_latmin,rl_lonmax,rl_latmax
+        !WRITE(8,*) rl_box,rl_lonmin,rl_latmin,rl_lonmax,rl_latmax
         !WRITE(0,*) rl_box,rl_lonmin,rl_latmin,rl_lonmax,rl_latmax
        ENDIF 
     ENDDO ! fin de la boucle while

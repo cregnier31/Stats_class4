@@ -18,7 +18,8 @@
 @param_class4
 ;@config_ORCA025
 ;@config_PSY3V3R3
-@config_PSY4V2R2
+@config_GLO12V4
+;@config_PSY4V3R1-light
 ;@config_PSY2V4R4
 ;@config_GLORYS2V3
 dirname_out=fic_out_card
@@ -42,8 +43,8 @@ COMMON param_CLASS4,variable_name,valeurs_cmax,$
 
 ; Choix des  parametres
 var1=2
-var2=3
-
+var2=5
+ind_netcdf=1
 ;; choix du type de tracé
 kind='no_iso stddev UserLevels'
 clear,titre,units
@@ -76,12 +77,17 @@ CASE TRIM OF                 & $
           print,'trimestre 4'& $
           QUAT='OND'         & $
         END                & $
+  '0' : BEGIN                  & $
+;;  YEAR                      & $
+          print,'YEAR'& $
+          QUAT=''         & $
+        END                & $
+
+
 ENDCASE & $
-date_title=year
 date_title=QUAT+year
 ;date_title='ASOND_2006'
 print,'date : ',date_title
-
 ;; Lancement du programme
 ;; Boites binsxdeg
 ;; Bins 2 deg
@@ -91,14 +97,16 @@ print ,'-----------------------------------'
 print,dir_stats_MERC2
 print,modele
 ;; Liste des fichiers à synthétiser
-SPAWN,'ls '+dir_stats_MERC2+ ' | grep rms_diff_R | grep '+modele,filelist 
-SPAWN,'ls '+dir_stats_MERC2+ ' | grep rms_diff_R | grep '+modele+ ' | cut -f4 -d_ | cut -f2 -dR | cut -f1 -d.',day 
+;SPAWN,'ls '+dir_stats_MERC2+ ' | grep rms_diff_R ' + year + '*.nc | grep '+modele,filelist 
+SPAWN,'ls '+dir_stats_MERC2+ ' | grep rms_diff_R' + year + '*.nc | grep '+modele,filelist 
+print,filelist
+;SPAWN,'ls '+dir_stats_MERC2+ ' | grep rms_diff_R ' + year + '*.nc | grep '+modele+ ' | cut -f4 -d_ | cut -f2 -dR | cut -f1 -d.',day 
 SPAWN,'mkdir -p '+dirname_out
-;tracer_stats_gloCLASS4_pcolor_supobs,modele,fichier_mask2,filelist,var1,var2,$
-;                                zone,kind,dir_stats_MERC2,OPER,date_title, $
-;				tab_prof
-;dirname_out=fic_out_card
 tracer_stats_gloCLASS4_pcolor_supobs,modele,fichier_mask2,filelist,var1,var2,$
                                 zone,kind,dir_stats_MERC2,OPER,date_title, $
-				tab_prof_2
+                                tab_prof, NETCDF=ind_netcdf,TYPE_OBS=type_data
+;;dirname_out=fic_out_card
+;tracer_stats_gloCLASS4_pcolor_supobs,modele,fichier_mask2,filelist,var1,var2,$
+;                                zone,kind,dir_stats_MERC2,OPER,date_title, $
+;                                tab_prof_2, NETCDF=ind_netcdf,TYPE_OBS=type_data
 exit, /NO_CONFIRM

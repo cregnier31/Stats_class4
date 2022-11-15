@@ -38,7 +38,6 @@ ENDIF
 IF (ind_plot_nc EQ 1) THEN BEGIN
     print,'Save fichier netcdf'
 ENDIF
-
 ;; Reconstitution profondeur
 print,nb_prof
 profondeur=strarr(nb_prof)
@@ -354,15 +353,15 @@ prof=0L
                      xxl='PSU'
                      type_obs='Clim_ARIVO11'
                    ENDCASE	       
-		   'TMLEV05' : BEGIN
+		   'TMLEV18' : BEGIN
 		     varname='temperature'
                      xxl='DegC'
-                     type_obs='Clim_WOA05'
+                     type_obs='Clim_WOA18'
                    ENDCASE	       
-		   'SMLEV05' : BEGIN
+		   'SMLEV18' : BEGIN
 		     varname='salinity'
                      xxl='PSU'
-                     type_obs='Clim_WOA05'
+                     type_obs='Clim_WOA18'
                    ENDCASE	       
 		   'TMLEV09' : BEGIN
 		     varname='temperature'
@@ -467,6 +466,7 @@ prof=0L
           ZGRID=0
           choice='rms_'+nom_var
           write_ncdf,file,TAB,XGRID,YGRID,ZGRID,1,choice
+          print, 'write file',file
           file=dirname_out+'stats_mean_'+modele+'_'+nom_var+'_'+profondeur(prof)+'_'+date_title+'.nc'
           clear,choice
           TAB2=-val2
@@ -538,7 +538,7 @@ prof=0L
       fmin=valcmin
       fmax=valcmax
       ishold=1
-      name_out='RmsMisfit_Class4pcolor_'+modele+'_'+nom_var+'_'+profondeur(prof)+'_'+typezone+'_'+date_title
+      name_out='rmsMisfit_Class4pcolor_'+modele+'_'+nom_var+'_'+profondeur(prof)+'_'+typezone+'_'+date_title
       subst_str,name_out, '-', '_'
       plot_2Dfield,OUTPUT_FILE=dirname_out+name_out
       pcolor,rms_diff1,lon,lat,cmin=cmin, cmax=cmax,DX1=0.25, DX2=0.25 
@@ -691,9 +691,9 @@ prof=0L
       endif
       if ( indice_var EQ  0 ) THEN BEGIN
         ;cmin=-1 & cmax=1 & dc=0.025
-        cmin=-2 & cmax=2 & dc=0.05
+       ; cmin=-2 & cmax=2 & dc=0.05
        ;  cmin=-tab_cmax(0,prof) & cmax=tab_cmax(0,prof) &  dc=0.05
-       ; cmin=-1 & cmax=1 & dc=0.025
+        cmin=-1 & cmax=1 & dc=0.025
       endif
       kindchoice='unknown difference no_iso UserLevels publi' 
       palette='sla'
@@ -723,7 +723,7 @@ prof=0L
       fmin=valcmin
       fmax=valcmax
       ishold=1
-      name_out='MeanDiff_Class4pcolor_'+modele+'_'+nom_var+'_'+profondeur(prof)+'_'+typezone+'_'+date_title
+      name_out='meanDiff_Class4pcolor_'+modele+'_'+nom_var+'_'+profondeur(prof)+'_'+typezone+'_'+date_title
       subst_str,name_out, '-', '_'
       plot_2Dfield,OUTPUT_FILE=dirname_out+name_out
       pcolor,mean_diff1,lon,lat,cmin=cmin, cmax=cmax,DX1=0.25, DX2=0.25

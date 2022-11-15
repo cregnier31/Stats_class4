@@ -269,7 +269,9 @@ def calculer_stats_MYO2(czoneFile,modele,tab_prof,\
 
 #-----------------------------------------------------------------------------------------------------------------------------------
 
-def statlayer_CL4var(rda_val, rda_observations, rda_climatology, rda_depthobs, rda_depth_layers, ncfile='', echeance=''):
+def statlayer_CL4var(rda_val, rda_observations, rda_climatology,
+                     rda_depthobs, rda_depth_layers, log,
+                     ncfile='', echeance=''):
     """
 Returns mean, RMS, Bias (/observations), RMSE (/observations), number of observations of input array rda_val in depth layers
     """
@@ -289,6 +291,7 @@ Returns mean, RMS, Bias (/observations), RMSE (/observations), number of observa
     rla_skill  = np.nan*np.zeros(n_layers)
     ila_nobs = np.zeros(n_layers)
     ilayer   = 0
+    log.debug('Inside statlayer_CL4var')
     if n_layers == 1:
         if len(np.shape(rda_val)) == 1:  ## BIO case
             ila_nobs[0] = np.size(np.where(~ np.isnan(rda_val[:]))[0]) 
@@ -311,20 +314,34 @@ Returns mean, RMS, Bias (/observations), RMSE (/observations), number of observa
             rla_rmse[0] = np.nan
             rla_cor[0]  = np.nan
     else:
+        log.debug('Inside profile')
         for depthmin,depthmax in zip(rda_depth_layers[:-1],rda_depth_layers[1:]):
+            log.debug(f'{depthmin}-{depthmax}')
             nobs = 0
             for iobs in range(n_obs):
-                ila_inds = np.where((rda_depthobs[iobs,:] >= depthmin) & (rda_depthobs[iobs,:] < depthmax))
+                try:
+                    ila_inds = np.where((rda_depthobs[iobs,:] >= depthmin) & (rda_depthobs[iobs,:] < depthmax))
+                except:
+                    log.debug('Pb during where')
+                    sys.exit(1)
                 nobs = nobs + len(ila_inds[0])
 
             val_box_depth = np.nan*np.zeros((nobs))
             obs_box_depth = np.nan*np.zeros((nobs))
             clim_box_depth = np.nan*np.zeros((nobs))
+            log.debug(f'Init ok')
 
             nobs = 0
             for iobs in range(n_obs) :
-                ila_inds = np.where((rda_depthobs[iobs,:] >= depthmin) & (rda_depthobs[iobs,:] < depthmax))
+                try:
+                    log.debug(f'Compute where {iobs}{n_obs}')
+                    ila_inds = np.where((rda_depthobs[iobs,:] >= depthmin) & (rda_depthobs[iobs,:] < depthmax))
+                except:
+                    log.debug('Pb during where')
+                    sys.exit(1)
+                log.debug(f'{ila_inds}')
                 if len(ila_inds[0]) > 0 and len(np.shape(rda_val)) == 2:
+                    log.debug(f'Inside if')
                     for ind in ila_inds[0]:
                         try:
                            val_box_depth[nobs] = rda_val[iobs,ind]
@@ -336,9 +353,11 @@ Returns mean, RMS, Bias (/observations), RMSE (/observations), number of observa
                                clim_box_depth[nobs] = np.nan
                            nobs += 1
                         except Exception as e:
-                             print(f"{ind=}, {iobs=} Dimension {np.shape(rda_climatology)}  File {ncfile=} {echeance=} Error {e}")
+                             log.error(f"Error {ind=}, {iobs=} Dimension {np.shape(rda_climatology)}")
+                             log.error(f"File {ncfile=} {echeance=} Error {e}")
                              sys.exit(1)
                 elif len(ila_inds[0]) > 0 and len(np.shape(rda_val)) != 2:
+                    log.debug(f'Inside elif')
                     val_box_depth[nobs] = rda_val[iobs]
                     obs_box_depth[nobs] = rda_observations[iobs]
                     clim_box_depth[nobs] = rda_climatology[iobs]

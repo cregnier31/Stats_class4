@@ -7,6 +7,9 @@
 *.o
 *.so
 *.pyc
+*.mod
+*.pbs
+*.pbs.*
 modules/*/*/*.pyc
 modules/trash/*
 script/test/dask-worker-space/*

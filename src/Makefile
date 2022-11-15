@@ -5,7 +5,8 @@
 # intel/intel-17
 # netcdf/netcdf-4.1_intel11_r4
 #type=orca_r025_light
-type=orca12_allege
+type=glo12_allege
+#type=psy4v3_allege
 #type=glorys2v4
 include ../macro/make_intel_$(type).macro
 ## Rules

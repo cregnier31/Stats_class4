@@ -1,0 +1,73 @@
+# Macro pour intel 
+## C.REGNIER Octobre 2009
+# Compilo
+F90=ifort
+COMPILEPT=$(F90) -cpp
+COMPILE=ifort
+F90PT=ifort -cpp
+#-Qoption,fpp
+## Debug
+DEBUG=-g -check bounds -ftrapuv -check uninit
+## FLAGS
+OPEN_MP=-openmp
+#FLAGS=-O2 -check bounds -ftrapuv -warn -convert big_endian   
+#FLAGS=-O3 -convert big_endian
+#FLAGS_MP=-O3 -convert big_endian $(OPEN_MP) 
+#FLAGS_MP=-O2 -check bounds -ftrapuv -warn -convert big_endian $(OPEN_MP) 
+
+FFLAGS=-O0  -check bounds -ftrapuv -check uninit -check pointers -traceback -convert big_endian 
+LD_FLAGS=-O0 -check bounds -ftrapuv -check uninit -check pointers -traceback -convert big_endian
+
+FFLAGS=-O3 -convert big_endian -traceback #$(DEBUG)
+LD_FLAGS=-O3 -convert big_endian -traceback
+
+#FFLAGS=-O3  -check bounds -ftrapuv -check uninit -check pointers -traceback -convert big_endian 
+#LD_FLAGS=-O3  -check bounds -ftrapuv -check uninit -check pointers -traceback -convert big_endian
+
+#LD_FLAGS=-O3 -convert big_endian 
+#LD_FLAGS_MP=-O2 -check bounds -ftrapuv -warn -convert big_endian -static-intel $(OPEN_MP)
+#LD_FLAGS=-O2 -check bounds -ftrapuv -warn -convert big_endian -static-intel
+#LD_FLAGS_MP=-O3 -convert big_endian -static-intel $(OPEN_MP)
+#
+#
+## ARCHIVE LIBRARY
+AR=ar -rv
+## NETCDF
+LIBNETCDF=netcdf
+NCDF_INC = ${NETCDF_INC}
+NCDF_LIB = -L${NETCDF_LIB} -lnetcdff  -lnetcdf  -L${HDF5_LIB} #-lhdf5_hl -lhdf5
+INCLUDE_NC =  -I$(NCDF_INC)
+LIB_NC=${NETCDF_LIB}/libnetcdf.a
+
+# MFT
+#MFT_DIR=/home/cregnier/LIB/MFT3.6/intel_hdf5/
+MFT_DIR=/home/cregnier/LIB/MFT3.7/intel18_hdf5_kara/
+MFT_INC=${MFT_DIR}/include
+MFT_LIB=${MFT_DIR}/lib
+LIB_MFT=libmft.a
+LIBMFT=mft
+##
+paramPath=${MFT_DIR}/param
+INCLUDE= -I${NETCDF_INC} -I${MFT_INC}
+LIBRARY=-L$(MFT_LIB) -lmft $(NCDF_LIB) 
+
+##
+MAKE=gmake
+## Clé cpp
+#CPP_KEYS= -C -Dkey_cputime
+#CPP_KEYS= -Dkey_orca_r025
+#CONFIG=ORCA025
+#CPP_KEYS= -Dkey_orca_r12 -Dkey_debug -Dkey_orca12_T321
+#CPP_KEYS=-Dkey_orca_r12 -Dkey_inv_prof -Dkey_red_profil -Dkey_log -Dkey_debug #-Dkey_global # -Dkey_debug
+
+CPP_KEYS=-Dkey_orca_r12_allege -Dkey_inv_prof -Dkey_red_profil -Dkey_log -Dkey_computePot -Dkey_usecomputePot -Dkey_debug -Dkey_global # -Dkey_debug
+#CPP_KEYS=-Dkey_orca_r12_allege -Dkey_inv_prof -Dkey_red_profil -Dkey_log -Dkey_global #-Dkey_debug
+CPP_KEYS=-Dkey_orca_r12_allege -Dkey_log -Dkey_global #-Dkey_debug
+#CPP_KEYS= -Dkey_orca_r12  -Dkey_cputime
+CONFIG=ORCA12
+MODELE=PSY4V3R1-light
+#MODELE=GLORYS12V1-light
+#MODELE=GLORYS12V1
+# nom du preprocesseur
+# CPP=/lib/cpp
+#

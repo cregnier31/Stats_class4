@@ -165,7 +165,7 @@ class NmlCreator_IAOOS(NmlCreator):
 
         output_varname_T=prefix_var+'_'+input_varname_T
         output_varname_S=prefix_var+'_'+input_varname_S
-        log.debug('listdir %s '%(listdir[0:4])) 
+        log.debug('listdir inside NML %s '%(listdir[0:4]))
         if listdir[0:4] == 'CLIM' :
             daterun=dateval[0:6]
             monthval=dateval[4:6]
@@ -175,10 +175,10 @@ class NmlCreator_IAOOS(NmlCreator):
             model_varname_S="salinity"
         if listdir == 'CLIM_WOA09' :
             output_varname_T='TMLEV09'
-            output_varname_S='SMLEV09'   
+            output_varname_S='SMLEV09'
         elif listdir == 'CLIM_WOA05' :
             output_varname_T='TMLEV05'
-            output_varname_S='SMLEV05'   
+            output_varname_S='SMLEV05'
         elif listdir == 'CLIM_ARV11' :
             output_varname_T='TMARV11'
             output_varname_S='SMARV11'
@@ -269,32 +269,51 @@ class NmlCreator_CORIOLIS(NmlCreator):
 
     def __init__(self,mssh_file,ll_mssh,ll_compute,mssh_shift,**kwargs):
         super(NmlCreator,self).__init__(**kwargs)
-        self.mssh_file=mssh_file
-        self.ll_mssh=ll_mssh
-        self.mssh_shift=mssh_shift
+        self.mssh_file = mssh_file
+        self.ll_mssh = ll_mssh
+        self.mssh_shift = mssh_shift
         self.log = Logger("NmlCreator").run(1)
 
-    def get_date(self, dateval, type_run):
+    def get_date_now(self, dateval, type_run):
         ## Find next daterun
-        jdatemin=SyDate(dateval)
-        daytogo=2-jdatemin.weekday()
+        jdatemin = SyDate(dateval)
+        daytogo = 2-jdatemin.weekday()
         if daytogo > 0:
-            first_date=jdatemin.goforward(daytogo)
+            first_date = jdatemin.goforward(daytogo)
         else :
             if type_run == 'RTR' or type_run == 'REA':
                 nbdate=7
             elif type_run == 'HINDCAST' or type_run == 'OPER':
                 nbdate=14
-            daytogo2=nbdate+daytogo
-            first_date=jdatemin.goforward(daytogo2)
+            daytogo2 = nbdate+daytogo
+            first_date = jdatemin.goforward(daytogo2)
+        daterun=first_date
+        date1 = dateval
+        date2 = dateval
+        return date1, date2, daterun
+
+
+    def get_date(self, dateval, type_run):
+        ## Find next daterun
+        jdatemin = SyDate(dateval)
+        daytogo = 2-jdatemin.weekday()
+        if daytogo > 0:
+            first_date = jdatemin.goforward(daytogo)
+        else :
+            if type_run == 'RTR' or type_run == 'REA':
+                nbdate=7
+            elif type_run == 'HINDCAST' or type_run == 'OPER':
+                nbdate=14
+            daytogo2 = nbdate+daytogo
+            first_date = jdatemin.goforward(daytogo2)
         daterun=first_date
         self.log.info(f'{type_run=}')
         if type_run == 'RTR' or  type_run == 'REA':
-            date1=daterun.gobackward(7)
-            date2=daterun.gobackward(1)
+            date1 = daterun.gobackward(7)
+            date2 = daterun.gobackward(1)
         elif type_run == 'HINDCAST' or  type_run == 'OPER':
-            date1=daterun.gobackward(14)
-            date2=daterun.gobackward(7)
+            date1 = daterun.gobackward(14)
+            date2 = daterun.gobackward(7)
         if type_run == 'OPER':
             type_run_tmp = 'hindcast'
         elif type_run == 'RTR' or type_run == 'REA':
@@ -426,6 +445,17 @@ class NmlCreator_CORIOLIS(NmlCreator):
                 model_varname_T="thetao"
                 model_varname_S="so"
                 ll_lightout=False
+            elif type_mod.lower() == 'allege_now':
+                self.log.debug(f"lightout new nowcast {type_run}")
+                date1, date2, daterun = self.get_date_now(dateval, type_run)
+                self.log.debug(f"{date1} {date2}")
+                self.log.info(f"{dirmodel=}")
+                template = dirmodel + cl_conf +'_' + 'cg_1d-m_' + \
+                        str(date1)+'-'+str(date2)+'_3DT-thetao-NOW_rtr_R'+str(daterun)+'.nc'
+                self.log.debug(f"Template T {template}")
+                model_varname_T="thetao"
+                model_varname_S="so"
+                ll_lightout=False
             else :
                 #template=dirmodel+searchdir+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
                 template=dirmodel+'/'+modele+'*'+daterun+'_'+gridtemp+'.nc'
@@ -442,6 +472,15 @@ class NmlCreator_CORIOLIS(NmlCreator):
                 date1, date2, daterun = self.get_date(dateval, type_run)
                 self.log.info(f"{dirmodel=}")
                 template = dirmodel + cl_conf +'_' + 'cg_7d-m_' + str(date1)+'-'+str(date2)+'_3DT-thetao_rtr_R'+str(daterun)+'.nc'
+                self.log.debug(f"Template T {template}")
+                model_varname_T="thetao"
+                model_varname_S="so"
+                ll_lightout=False
+            elif type_mod.lower() == 'allege_now' :
+                self.log.debug("lightout new type")
+                date1, date2, daterun = self.get_date_now(dateval, type_run)
+                self.log.info(f"{dirmodel=}")
+                template = dirmodel + cl_conf +'_' + 'cg_1d-m_' + str(date1)+'-'+str(date2)+'_3DT-thetao-NOW_rtr_R'+str(daterun)+'.nc'
                 self.log.debug(f"Template T {template}")
                 model_varname_T="thetao"
                 model_varname_S="so"
@@ -512,7 +551,7 @@ class NmlCreator_CORIOLIS(NmlCreator):
             if listdir[0:4] != 'CLIM' :
                 if type_mod.lower() == 'allege' :
                     fic_psal=re.sub(gridtemp+"N.B",gridsal+"N.B",fic_temp)
-                elif type_mod.lower() == 'allege_new' :
+                elif type_mod.lower() == 'allege_new' or type_mod.lower() == 'allege_now':
                     fic_psal=re.sub("3DT-thetao","3DT-so",fic_temp)
                 else :
                     self.log.debug('gridtemp {} gridsal {}'.format(gridtemp,gridsal))
