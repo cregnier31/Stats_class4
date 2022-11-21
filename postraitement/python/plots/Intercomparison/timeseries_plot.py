@@ -67,15 +67,14 @@ def plotStat(fig, ax_fig, dict, varname, area, system,
 
     # ~~~~~~~~ Plot des time series ~~~~~~~~~~~
     list_system = ['PSY4', 'ENSMEAN', 'PSY3', 'FOAM', 'HYCOM_RTOFS',\
-        'BLK', 'GIOPS', 'NERSC', 'CGOFS', 'CMCC', 'PSY4V3R1', 'GLO12','FOAM_ORCA12']
-    list_system = ['GLO12V4']
+        'BLK', 'GIOPS', 'NERSC', 'CGOFS', 'CMCC', 'PSY4V3R1', 'GLO12V4','FOAM_ORCA12']
+    #list_system = ['GLO12V4']
     #list_system = ['PSY4','FOAM','HYCOM_RTOFS','BLK','GIOPS','NERSC','CMCC','PSY4V3R1']
     list_metric_aice = ['PCI','PCW','PCT','BIAS']
     for s, prod in enumerate(system):
         prod_name = prod
         if prod == "PSY4V3R1": prod_name = "PSY4"
-        if prod == "GLO12V4": prod_name = "GLO12"
-
+        #if prod == "GLO12V4": prod_name = "GLO12"
         if prod_name in list_system:
             name_lab = prod
         elif prod == 0:
@@ -84,20 +83,21 @@ def plotStat(fig, ax_fig, dict, varname, area, system,
         else:
             name_lab = f'Fcst {prod} hours'
             prod_name = f'{s}'
-        if 'time' not in dict[varname][prod_name][area]: continue
+        if 'time' not in dict[varname][prod_name][area][prof]:
+            continue
         if skill == 1:
-            plt.plot(np.array(dict[varname][prod_name][area]['time']),
-                     np.array(dict[varname][prod_name][area]['PSS']),
+            plt.plot(np.array(dict[varname][prod_name][area][prof]['time']),
+                     np.array(dict[varname][prod_name][area][prof]['PSS']),
                      linewidth = 1.2, color = list_color[s], label = name_lab)
-            plt.plot(np.array(dict[varname][prod_name][area]['time']),
-                     np.array(dict[varname][prod_name][area]['CSS']),
+            plt.plot(np.array(dict[varname][prod_name][area][prof]['time']),
+                     np.array(dict[varname][prod_name][area][prof]['CSS']),
                      linestyle = '--', linewidth = 1.2, color = list_color[s])
         else:
-            plt.plot(np.array(dict[varname][prod_name][area]['time']),
-                     np.array(dict[varname][prod_name][area]['rmsd']),
+            plt.plot(np.array(dict[varname][prod_name][area][prof]['time']),
+                     np.array(dict[varname][prod_name][area][prof]['rmsd']),
                      linewidth = 1.6, color = list_color[s], label = name_lab)
-            plt.plot(np.array(dict[varname][prod_name][area]['time']),
-                     np.array(dict[varname][prod_name][area]['bias']),
+            plt.plot(np.array(dict[varname][prod_name][area][prof]['time']),
+                     np.array(dict[varname][prod_name][area][prof]['bias']),
                      linestyle = '--', linewidth = 1.6, color = list_color[s])
 
 
@@ -105,7 +105,11 @@ def plotStat(fig, ax_fig, dict, varname, area, system,
     if varname in ['sla','sst']:
         plt.title(varname.upper(), fontsize=13, fontweight="bold")
     else:
-        plt.title(varname.upper()+' (depth: '+str(prof.decode("utf-8"))+')',
+        if isinstance(prof, (bytes, bytearray)):
+            profval = str(prof.decode("utf-8"))
+        else :
+            profval = str(prof)
+        plt.title(f'{varname.upper()} (depth: {profval})',
                   fontsize=13, fontweight="bold")
     ##if varname in ['sla']:
     ##    valmin = -0.05
@@ -142,12 +146,12 @@ def plotStat(fig, ax_fig, dict, varname, area, system,
         ax1 = ax_fig.twinx()
         ax_fig.grid(axis='y', color='grey', linestyle='--', alpha=0.5, linewidth = 0.3)
         if system[0] in list_system:
-            barlist=ax1.bar(np.array(dict[varname][system[0]][area]['time']),
-                            np.array(dict[varname][system[0]][area]['nb_obs']),
+            barlist=ax1.bar(np.array(dict[varname][system[0]][area][prof]['time']),
+                            np.array(dict[varname][system[0]][area][prof]['nb_obs']),
                             alpha=0.14, width=1,linewidth=0,color="grey")
         else:
-            barlist=ax1.bar(np.array(dict[varname][str(int(system[0]))][area]['time']),
-                            np.array(dict[varname][str(int(system[0]))][area]['nb_obs']),
+            barlist=ax1.bar(np.array(dict[varname][str(int(system[0]))][area][prof]['time']),
+                            np.array(dict[varname][str(int(system[0]))][area][prof]['nb_obs']),
                             alpha=0.14, width=1,linewidth=0,color="grey")
         plt.ylabel("Number of observations", fontsize=12,color='darkgrey')
         ax1.tick_params(axis='y', colors='darkgrey',labelsize='small', length=6, pad = 1.5)
