@@ -715,7 +715,6 @@ class Extract_UVDrifters_filtr(Extractor):
         self.log.debug('Number of forecasts {}'.format(nb_fcst))
         for new_file in liste_file :
             try :
-                #file_new = 'class4_'+daterun+'_'+param_dict['cl_conf']+'_'+param_dict['model_type'].lower()+'_currents-filtr.nc'
                 file_new = 'class4_' + daterun + '_' + param_dict['cl_conf']\
                            +  '_' + param_dict['model_type'].lower() + \
                            '_currents-filtr.nc'
@@ -917,7 +916,7 @@ class Extract_GODAE(Extractor):
                     else:
                         template1 = filename.split('_')[0:]
                         template_tmp = template1[2]+'_'+template1[3]+'_'+template1[4]
-                        filename=re.sub(template_tmp,template,filename)
+                        filename=re.sub(template_tmp, template, filename)
                     # Copy extracted value of GODAE file with nco module
                     if typedata != "aice" and typedata != 'current':
                         ## Change numfcts dim

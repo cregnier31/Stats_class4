@@ -410,7 +410,7 @@ class SelectListModelData(Selector):
                                     list_file.extend(list_file_tmp)
 
                             else:
-                                self.log.debug("Type run {}".format(param_dict['type_run']))
+                                self.log.debug(f"Type run {param_dict['type_run']}")
                                 if param_dict['type_run'] == "REA":
                                     for i in range(len(param_dict['gridtype'])):
                                         list_file_tmp = glob(dirmodel_new+ "/"+modele+"_"+ \
@@ -432,6 +432,7 @@ class SelectListModelData(Selector):
                                         list_file.extend(list_file_tmp)
                                         #print(f"{dirmodel_new}{modele}_{param_dict['daily_pref']}_"
                                         #      f"{dateval}*{param_dict['gridtype'][i]}*.nc")
+                                    self.log.info(f'{list_file=}')
                                 else:
                                     if directory == "smoc" or directory == "stokes" or directory == "tides":
                                         for i in range (2):
@@ -560,7 +561,6 @@ class SelectListData(Selector):
             self.log.error(f"Missing Obs files {param_dict['prefix_data']}"
                            f" {param_dict['dirdata']} {param_dict['dirwork']}"
                            f"{param_dict['prefix_data']}")
-            sys.exit(1)
             ll_miss = True
         else:
             self.log.debug('List Files  %s ' % (list_files))

@@ -8,15 +8,15 @@ from scipy.spatial import cKDTree
 import xarray as xr
 import dask
 import vertical
-from lib_pyt.Utils import *
-from lib_pyt.Reader import ReadModel
+from lib_pyt.libtools import *
+from lib_pyt.reader.reader import ReadModel
 from utils import find_index_month
 from Loader import Loader
 from collections import OrderedDict
 from Interp_kdtree import interp_KDtree
 from interpolate import search_orca, search_orca_4pts
 from scipy.interpolate import InterpolatedUnivariateSpline, interp1d
-from lib_pyt.Profile import plot_2profiles, plot_3profiles, plot_2profiles_2
+from lib_pyt.plot.Profile import plot_2profiles, plot_3profiles, plot_2profiles_2
 import matplotlib.pyplot as plt
 from matplotlib import style
 from Writer import Writer

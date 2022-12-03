@@ -19,12 +19,11 @@ import getopt
 import datetime as dt
 import pandas as pd
 from datetime import date
-#from sydate import SyDate
-from sytoolkit.sydate import SyDate
+from lib_pyt.libtools.sydate import SyDate
+from lib_pyt.libtools.utilities import date_range
 from Logger import Logger
 from calendar import monthrange
-#from lib_pyt.libtools.utilities import date_range
-from lib_pyt.Utils import date_range
+from lib_pyt.libtools.utilities import date_range
 from reader import *
 from ast import literal_eval
 from os.path import dirname
@@ -600,7 +599,9 @@ class NmlLoader(Loader):
         param_dict['cl_conf'] = db.get('GLOBAL', 'CONF')
         param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION')
         param_dict['cl_config_h'] = re.sub("QV", "V", param_dict['cl_config'])
-        param_dict['template'] = param_dict['cl_config_h'] + \
+        #param_dict['template'] = param_dict['cl_config_h'] + \
+        #    '_'+param_dict['model_type'].lower()
+        param_dict['template'] = param_dict['cl_conf'] + \
             '_'+param_dict['model_type'].lower()
         param_dict['lead_time'] = db.get('input_dir', 'LEAD_TIME').split()
         param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
@@ -609,6 +610,7 @@ class NmlLoader(Loader):
         param_dict['gridsal'] = db.get('GLOBAL', 'gridsal')
         param_dict['gridu'] = db.get('GLOBAL', 'gridu')
         param_dict['gridv'] = db.get('GLOBAL', 'gridv')
+
         try:
             param_dict['gridice'] = db.get('GLOBAL', 'gridice')
         except:
