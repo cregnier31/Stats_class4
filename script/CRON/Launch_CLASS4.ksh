@@ -11,6 +11,14 @@ fi
 
 typedata=$1
 CONFIG=$2
+LOCK_DIR=${PROGDIR}
+lock=${LOCK_DIR}/.${PROGNAME}_${typedata}.pid
+echo $lock
+pid=$( /bin/cat ${lock} 2>/dev/null )
+if [ ! -z "${pid}" ]; then
+	/bin/kill -0 ${pid} 2>/dev/null && exit 0
+fi
+echo -n $$ > ${lock} # -n: no line feed/carriage return
 case "${typedata}" in
       SLA|SST|profile|aice)
 	  # echo "Working with $typedata"
@@ -26,12 +34,11 @@ case "${typedata}" in
 esac
 typemod="pgn"
 loglevel=1
-
-nb_files_ok=`ls ${PROGDIR}/log/Rappat-PSY4V3R1-${DATERUN}-*HDCT-OK | wc -l`
+nb_files_ok=`ls ${PROGDIR}/../../../../../CRON/log/Rappat-PSY4V3R1-${DATERUN}-*HDCT-OK | wc -l`
 nb_files_ok=6
 if [ $(echo "$nb_files_ok == 6" | bc) -eq 1 ] ; 
 then 
-   flag_ok=${PROGDIR}/../log/Class4-${CONFIG}-${DATE1}-${DATE2}-${typedata}-OK
+   flag_ok=${PROGDIR}/log/Class4-${CONFIG}-${DATE1}-${DATE2}-${typedata}-OK
    [ -f ${flag_ok} ] && exit 0
    echo "Source the bashrc"
    . /etc/bashrc
