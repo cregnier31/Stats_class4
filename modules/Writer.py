@@ -402,21 +402,31 @@ class Writer():
 
     def write_GODAE_files(self, filename, hdct_tab, fcst_tab, pers_tab, dateval, model, variable):
         nc_fid = Dataset(filename,'r+')
-        nc_best = nc_fid.createVariable(
-            'best_estimate', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
-        nc_best.setncatts(
-            {'long_name': u"Model best_estimate counterpart of obs. value"})
-        nc_fcst = nc_fid.createVariable(
-            'forecast', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
-        nc_fcst.setncatts(
-            {'long_name': u"Model forecast counterpart of obs. value"})
-        nc_pers = nc_fid.createVariable(
-            'persistence', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
-        nc_pers.setncatts(
-            {'long_name': u"Model persistence counterpart of obs. value"})
-        nc_fid.variables['best_estimate'][:, :, :] = hdct_tab[:, :, :]
-        nc_fid.variables['forecast'][:, :, :, :] = fcst_tab[:, :, :, :]
-        nc_fid.variables['persistence'][:, :, :, :] = pers_tab[:, :, :, :]
+        if np.any(hdct_tab):
+            self.log.info('Hindcast not empty')    
+            nc_best = nc_fid.createVariable(
+                'best_estimate', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
+            nc_best.setncatts(
+                {'long_name': u"Model best_estimate counterpart of obs. value"})
+            nc_fid.variables['best_estimate'][:, :, :] = hdct_tab[:, :, :]
+        if np.any(fcst_tab):
+            self.log.info('Forecast not empty')    
+            nc_fcst = nc_fid.createVariable(
+                'forecast', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
+            nc_fcst.setncatts(
+                {'long_name': u"Model forecast counterpart of obs. value"})
+            nc_fid.variables['forecast'][:, :, :, :] = fcst_tab[:, :, :, :]
+        else:
+            self.log.info('Forecast is empty')    
+        if np.any(pers_tab):
+            self.log.info('Persistence not empty')    
+            nc_pers = nc_fid.createVariable(
+                'persistence', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
+            nc_pers.setncatts(
+                {'long_name': u"Model persistence counterpart of obs. value"})
+            nc_fid.variables['persistence'][:, :, :, :] = pers_tab[:, :, :, :]
+        else:
+            self.log.info('Persistence is empty')    
         # Add global attributs
         nc_fid.institution = 'MERCATOR OCEAN'
         nc_fid.contact = 'cregnier@mercator-ocean.fr'

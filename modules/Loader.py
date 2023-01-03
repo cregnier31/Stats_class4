@@ -19,12 +19,11 @@ import getopt
 import datetime as dt
 import pandas as pd
 from datetime import date
-#from sydate import SyDate
-from sytoolkit.sydate import SyDate
+from lib_pyt.libtools.sydate import SyDate
+from lib_pyt.libtools.utilities import date_range
 from Logger import Logger
 from calendar import monthrange
-#from lib_pyt.libtools.utilities import date_range
-from lib_pyt.Utils import date_range
+from lib_pyt.libtools.utilities import date_range
 from reader import *
 from ast import literal_eval
 from os.path import dirname
@@ -600,7 +599,9 @@ class NmlLoader(Loader):
         param_dict['cl_conf'] = db.get('GLOBAL', 'CONF')
         param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION')
         param_dict['cl_config_h'] = re.sub("QV", "V", param_dict['cl_config'])
-        param_dict['template'] = param_dict['cl_config_h'] + \
+        #param_dict['template'] = param_dict['cl_config_h'] + \
+        #    '_'+param_dict['model_type'].lower()
+        param_dict['template'] = param_dict['cl_conf'] + \
             '_'+param_dict['model_type'].lower()
         param_dict['lead_time'] = db.get('input_dir', 'LEAD_TIME').split()
         param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
@@ -609,6 +610,7 @@ class NmlLoader(Loader):
         param_dict['gridsal'] = db.get('GLOBAL', 'gridsal')
         param_dict['gridu'] = db.get('GLOBAL', 'gridu')
         param_dict['gridv'] = db.get('GLOBAL', 'gridv')
+
         try:
             param_dict['gridice'] = db.get('GLOBAL', 'gridice')
         except:
@@ -851,6 +853,18 @@ class LoaderNCgodae(Loader):
         rla_value = nc.variables[self.varname][:]
         #ncdata = xr.open_dataset(filename)
         #variables = ncdata.data_vars
+        dimensions = nc.dimensions
+        nb_fcsts = None
+        tab_dims = {}
+        for dims in dimensions.keys():
+            sizedim = dimensions[dims].size
+            if dims == 'numfcsts':
+                tab_dims['nb_fcsts'] = sizedim
+            elif dims == 'numobs':
+                tab_dims['nb_obs'] = sizedim
+            elif dims == 'numdeps':
+                tab_dims['nb_depths'] = sizedim
+            
         if 'depth' in nc.variables.keys():
             rla_depth = nc.variables['depth'][:]
         elif 'DEPH' in nc.variables.keys():
@@ -863,11 +877,13 @@ class LoaderNCgodae(Loader):
             ## No depth: surface variable
             nb_obs, nb_vars, nb_deps = np.shape(rla_value)
             rla_depth = np.ndarray(shape=(nb_obs,nb_deps),dtype=float, order='F')
-            rla_depth[:,0] = 0
+            rla_depth[:, 0] = 0
         nb_obs = len(rla_value)
+        ### TODO Return the dimensions of the forecast
+        ## CREGNIER
         #ncdata.close()
         nc.close()
-        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, _FillValue
+        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, tab_dims,  _FillValue
 
 class PGN_coords_Loader(Loader):
 
