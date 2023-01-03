@@ -1,7 +1,7 @@
 #!/bin/ksh
 CONFIG="GLO12V4"
-DATE1="20170212"
-DATE2="20170213"
+DATE1="20221201"
+DATE2="20221202"
 typedata="SST"
 typemod="pgn"
 srcdata="GODAE"

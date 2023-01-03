@@ -126,7 +126,8 @@ class Interpolator(object):
         #fcst = {k for k, v in list_input_file.items() if "fcst" in k}
         fcst = {k for k, v in list_input_file.items() if k.startswith("fcst")}
         pers = {k for k, v in list_input_file.items() if "pers" in k}
-        return len(best), len(fcst), len(pers), len(clim)
+        nwct = {k for k, v in list_input_file.items() if "nwct" in k}
+        return len(best), len(fcst), len(pers), len(clim), len(nwct)
 
     def read_and_interp(self, data_file, list_input_file, param_dict, date=None):
         """
@@ -146,13 +147,15 @@ class Interpolator(object):
         ll_clim = False
         ll_json = False
         ll_verif = False
-        nb_best, nb_fcst, nb_pers, nb_clim = self.check_dimensions(
-            list_input_file)
-        self.log.info("========================================================")
+        nb_best, nb_fcst, nb_pers, nb_clim, nb_nwct = \
+                    self.check_dimensions(list_input_file)
+        ## TODO add forecast dimensions from file
+        ##
+        self.log.info("==================================================")
         self.log.info(f" Interp file {data_file}")
-        self.log.info("========================================================")
-        self.log.info("Dimensions best : {} fcst : {} pers : {} clim : {}"
-                      .format(nb_best, nb_fcst, nb_pers, nb_clim))
+        self.log.info("==================================================")
+        self.log.info(f"Dimensions best : {nb_best} nwct: {nb_nwct} "\
+                      f"fcst : {nb_fcst} pers : {nb_pers} clim : {nb_clim}")
         nb_ptsinterp = param_dict['nb_points']
         # Read input obs value
         self.log.debug("Format of the data {}".format(param_dict['data_format']))
@@ -162,9 +165,8 @@ class Interpolator(object):
                 param_dict['data_format']).read_pos_and_value(data_file, varname=variable_obs)
         else:
             self.log.info("Read pos and value : {}".format(param_dict['data_format']))
-            lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = Loader.factory(
+            lon_obs, lat_obs, obs_value, nb_obs, depth, tab_dims, _FillValue = Loader.factory(
                 param_dict['data_format']).read_pos_and_value(data_file)
-
         tuple_obs = (np.shape(lon_obs)[0], np.shape(lat_obs)[0])
 
         self.log.debug(f"{lon_obs=}")
@@ -183,13 +185,17 @@ class Interpolator(object):
             ll_best = True
         ll_fcst = False
         if nb_fcst > 0:
-            fcst_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst, nb_profs),
+            #fcst_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst, nb_profs),
+            #                      dtype=float, order='F')
+            fcst_tab = np.ndarray(shape=(nb_obs, len(variable), tab_dims['nb_fcsts'], nb_profs),
                                   dtype=float, order='F')
             fcst_tab[:, :, :, :] = self.missing_value
             ll_fcst = True
         ll_pers = False
-        if nb_pers > 0:
-            pers_tab = np.ndarray(shape=(nb_obs, len(variable), nb_pers+1, nb_profs),
+        if nb_pers > 0 or nb_nwct >0:
+            #pers_tab = np.ndarray(shape=(nb_obs, len(variable), nb_pers+1, nb_profs),
+            #                      dtype=float, order='F')
+            pers_tab = np.ndarray(shape=(nb_obs, len(variable), tab_dims['nb_fcsts'], nb_profs),
                                   dtype=float, order='F')
             pers_tab[:, :, :, :] = self.missing_value
             ll_pers = True
@@ -574,8 +580,13 @@ class Interpolator(object):
                 fcst_tab = fcst_tab[:, 0, 0, 0].reshape(
                     lat_obs.shape[0], lon_obs.shape[0])
             tab_results['forecast'] = fcst_tab
+        else:
+            tab_results['forecast'] = None
         if ll_pers:
             tab_results['persistence'] = pers_tab
+        else:
+            tab_results['persistence'] = None
+
         if ll_clim:
             if param_dict['data_origin'] == "GLOBCOLOUR":
                 clim_tab = clim_tab[:, 0, 0].reshape(

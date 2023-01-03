@@ -24,8 +24,8 @@ config_h=modele_type
 config_d=re.sub("V","QV",config_h)
 type_d=config_d[0:5]
 type=config_d[0:4]
-day1=SyDate("20220801")
-day2=SyDate("20221114")
+day1=SyDate("20221201")
+day2=SyDate("20221215")
 JJMIN=day1.tojulian()
 JJMAX=day2.tojulian()
 
@@ -33,9 +33,10 @@ config_type=modele_type.lower()
 config_type_daily=config_d.lower()
 print ("daily %s "%(config_type_daily))
 print ("hebdo %s "%(config_type))
-DIR_SORT="/scratch/work/regnierc/SORT/"
+DIR_SORT1="/scratch/work/regnierc/SORT/"
+DIR_SORT="/scratch/work/regnierc/SORT-2/"
 DIR_SORT_DAILY=DIR_SORT+"DAILY/"+type_d+"/"+config_type_daily
-DIR_SORT_HEBDO=DIR_SORT+"HEBDO/"+type+"/"+config_type
+DIR_SORT_HEBDO=DIR_SORT1+"HEBDO/"+type+"/"+config_type
 
 DIRPERS1=DIR_SORT_DAILY+"/pers1/"
 DIRPERS2=DIR_SORT_DAILY+"/pers2/"

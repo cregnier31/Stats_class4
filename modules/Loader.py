@@ -853,6 +853,18 @@ class LoaderNCgodae(Loader):
         rla_value = nc.variables[self.varname][:]
         #ncdata = xr.open_dataset(filename)
         #variables = ncdata.data_vars
+        dimensions = nc.dimensions
+        nb_fcsts = None
+        tab_dims = {}
+        for dims in dimensions.keys():
+            sizedim = dimensions[dims].size
+            if dims == 'numfcsts':
+                tab_dims['nb_fcsts'] = sizedim
+            elif dims == 'numobs':
+                tab_dims['nb_obs'] = sizedim
+            elif dims == 'numdeps':
+                tab_dims['nb_depths'] = sizedim
+            
         if 'depth' in nc.variables.keys():
             rla_depth = nc.variables['depth'][:]
         elif 'DEPH' in nc.variables.keys():
@@ -865,11 +877,13 @@ class LoaderNCgodae(Loader):
             ## No depth: surface variable
             nb_obs, nb_vars, nb_deps = np.shape(rla_value)
             rla_depth = np.ndarray(shape=(nb_obs,nb_deps),dtype=float, order='F')
-            rla_depth[:,0] = 0
+            rla_depth[:, 0] = 0
         nb_obs = len(rla_value)
+        ### TODO Return the dimensions of the forecast
+        ## CREGNIER
         #ncdata.close()
         nc.close()
-        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, _FillValue
+        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, tab_dims,  _FillValue
 
 class PGN_coords_Loader(Loader):
 
