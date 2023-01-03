@@ -907,26 +907,31 @@ class writer_stat():
 
                 for l in range(len(leadtime_ref)):
                     ldt_ref[l] = str(leadtime_ref[l])
+                #print(f'Size stat_tmp {np.shape(stat_tmp[0,:,0,0])}')
+                #print(f'Size 2 stat_tmp {len(stat_tmp[0,:,0,0])}')
 
                 if len(stat_tmp[0,:,0,0]) > 1:
                     if stat_all[stat_day,:,:,:,:,numvar].shape == stat_tmp.shape:
                         stat_all[stat_day,:,:,:,:,numvar] = stat_tmp
                     else:
                         for y, lt in enumerate(lead_time):
+                            #print (f"Work on leadtime {y}")
                             try:
                                 w = np.where(ldt_ref == lt)[0][0]
                             except:
-                                raise cl4err.Class4FatalError(f'Pb with leadtime file {y} {lt} {cl_cl4file} {ldt_ref} {lead_time} {lead_time}')
+                                raise cl4err.Class4FatalError(f'Pb with leadtime file {y} {lt} {cl_cl4file} {ldt_ref} {lead_time}')
                             if lt not in ['forecast','persistence']:
                                 stat_all[stat_day,w,:,:,:,numvar] = stat_tmp[y,:,:,:]
                             else:
                                 stat_all[stat_day,w:w+nb_fcst,:,:,:,numvar] = stat_tmp[y:y+nb_fcst,:,:,:]
                     tab_prof = rla_layers
                 else:
+
                     if stat_all[stat_day,:,0:1,:,:,numvar].shape == stat_tmp.shape:
                         stat_all[stat_day,:,0:1,:,:,numvar] = stat_tmp
                     else:
                         for y, lt in enumerate(lead_time):
+                            #print (f"Work on leadtime {y}")
                             try:
                                 w = np.where(ldt_ref == lt)[0][0]
                             except:
@@ -982,8 +987,10 @@ class writer_stat():
             return stat_all, rla_forecast, aname, lead_time
 
 
-    def write_stats_BOX_dict(self, params_conf, cla_vars,\
-                        rla_layers, rla_surface, rla_forecast, lead_time):
+    def write_stats_BOX_dict(self, params_conf, cla_vars,
+                             rla_layers, rla_surface,
+                             rla_maskvalues, rla_forecast,
+                             lead_time):
 
         """
             Write stats for global bins with dictionnary as input

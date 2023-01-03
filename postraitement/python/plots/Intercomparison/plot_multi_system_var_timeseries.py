@@ -107,9 +107,10 @@ GLO_AREA = False
 CMEMS_AREA = True
 skill = 0
 dt_start_plot_ini = ['20170101', '20170101']
-dt_end_plot_ini = ['20220614', '20221031']
+dt_end_plot_ini = ['20221108', '20221031']
 list_color = ['red', 'black']
-window = 30
+#window = 30
+window = 4
 nf = 0 # Hincast: 0 ; Forecast: nbre heures echeance (12, 60, etc.)
 
 if nf == 0 :
@@ -130,13 +131,14 @@ else :
 
 PATH_IN = '/home/cregnier/Gitlab/TEP_CLASS4/postraitement/python/plots/Intercomparison/'
 depth_comp="0-5000m"
-PATH_OUT = PATH_IN+'img/GLO12/oper/'
+PATH_OUT = PATH_IN+'img/GLO12/oper/run2/'
 DATA_IN = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'
 SYSTEM = ['GLO12V4', 'PSY4V3R1']
 VAR = ['seaice-concentration','salinity',\
        'temperature', 'sla', 'sst',\
        'zonal-velocity-filtr', 'meridional-velocity-filtr']
 #VAR = ['salinity', 'temperature']
+#VAR = ['sla']
 if not os.path.isdir(PATH_OUT):
     os.makedirs(PATH_OUT)
 #VAR = ['sst']
@@ -149,7 +151,7 @@ cla_depth = params.profondeur3.decode()
 # ~~~~~~~~~~~ Definition des dates ~~~~~~~~~~~~~~~~~
 
 dt_start_plot = "20170101"
-dt_end_plot = "20220614"
+dt_end_plot = "20221108"
 dateCNESref = d.datetime.strptime('19500101','%Y%m%d').toordinal()
 dtst = d.datetime.strptime(dt_start_plot,'%Y%m%d')
 dted = d.datetime.strptime(dt_end_plot,'%Y%m%d')
@@ -176,10 +178,15 @@ for v, varname in enumerate(VAR):
         dt_start_plot = dt_start_plot_ini[s]
         dt_end_plot = dt_end_plot_ini[s]
         try:
-            file = f'{DATA_IN}{prod}/Stats_GODAE/NETCDF/{depth_comp}'\
-                   f'/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_PHY_'\
-                   f'{prod}_{dt_start_plot}_{dt_end_plot}.nc'
-            print(file)
+            if prod == 'GLO12V4':
+                file = f'{DATA_IN}{prod}/Stats_GODAE/NETCDF/{depth_comp}/run2'\
+                       f'/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_PHY_'\
+                       f'{prod}_{dt_start_plot}_{dt_end_plot}.nc'
+            else:
+                file = f'{DATA_IN}{prod}/Stats_GODAE/NETCDF/{depth_comp}'\
+                       f'/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_PHY_'\
+                       f'{prod}_{dt_start_plot}_{dt_end_plot}.nc'
+
             #filename = glob(file)[0]
             filename = file
         except Exception as e:
