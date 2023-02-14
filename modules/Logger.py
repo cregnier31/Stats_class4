@@ -1,5 +1,7 @@
 import logging
 from colorlog import ColoredFormatter
+import datetime
+import hashlib
 ## Log wrapper
 # Creation C.REGNIER Juillet 2014
 # Creation C.REGNIER October 2020 :  add color logger
@@ -8,8 +10,13 @@ class Logger(object):
 
     """ Class Logger : define level of log with a number """
 
-    def __init__(self,name) :
+    def __init__(self, name, stream='logfile') :
         self.name=name
+        current_datetime = datetime.datetime.now()
+        log_name = current_datetime.strftime(f"Log_{name}_%Y-%m-%d_%H-%M")
+        # Calculate the MD5 hash of the log name
+        hash = hashlib.md5(log_name.encode()).hexdigest()
+        self.logname = f'{log_name}_{hash}.txt'
         LOGFORMAT = " %(log_color)s %(asctime)s  %(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
         self.formatter = ColoredFormatter(LOGFORMAT,
                          datefmt=None,
@@ -22,7 +29,11 @@ class Logger(object):
                                      'CRITICAL': 'red,bg_white',
                                       },
                 )
-        self.stream = logging.StreamHandler()
+        if stream == 'logfile':
+            print('Add logfile')
+            self.stream = logging.FileHandler(self.logname)
+        else: 
+            self.stream = logging.StreamHandler()
 
     def run(self,level):
         log = logging.getLogger(self.name)

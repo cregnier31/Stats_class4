@@ -373,7 +373,7 @@ def read_depth(filename):
     nc = netCDF4.Dataset(filename,'r')
     multidim = True
     if 'deptht' in nc.variables.keys(): rla_depth = nc.variables['deptht'][:]
-    else: 
+    else:
         rla_depth = [0]
         multidim = False
 

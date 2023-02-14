@@ -866,7 +866,10 @@ class Extract_UVDrifters(Extractor):
         self.log.debug('Number of forecasts {}'.format(nb_fcst))
         for new_file in liste_file :
             try :
-                file_new = 'class4_'+daterun+'_'+param_dict['cl_config_h']+'_'+param_dict['model_type'].lower()+'_currents.nc'
+                #file_new = 'class4_'+daterun+'_'+param_dict['cl_config_h']+'_'+param_dict['model_type'].lower()+'_currents.nc'
+                file_new = 'class4_' + daterun + '_' + param_dict['cl_conf']\
+                           +  '_' + param_dict['model_type'].lower() + \
+                           '_currents.nc'
                 ## Read and Rewrite file
                 self.rewrite(liste_file[0], nb_fcst, nb_fcst2, param_dict['dirwork']+file_new)
                 self.log.debug('Filename {}'.format(param_dict['dirwork']+file_new))

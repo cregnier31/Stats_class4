@@ -51,7 +51,7 @@ def main(level=2):
     # Load db configuration file
     conf_path = dirname(__file__) #os.getcwd()
     filename = conf_path + '/cfg/' + param_dict['confname']
-    param_dict = Loader.factory('NML').load(filename, level, param_dict)
+    param_dict = Loader.factory('NML').load(filename, level, param_dict, log)
     # ==========================================================================
     # PART-2 - Loop for a given time range
     # ==========================================================================

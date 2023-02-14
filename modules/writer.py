@@ -129,7 +129,7 @@ def write_cl4_files(filename, latitude, longitude, id_drift, observations,\
     nc_fid.createDimension('numdeps', nb_depths)
     nc_fid.createDimension('numfcsts', nb_fcst)
     nc_fid.createDimension('string_length', 18)
-    nc_fid.createDimension('string32', 32)
+    nc_fid.createDimension('string35', 35)
     nc_lon = nc_fid.createVariable('longitude','f4',('numobs'))
     nc_lon.setncatts({'long_name': u"Longitudes",\
                                 'units': u"degrees_east"})
@@ -181,7 +181,7 @@ def write_cl4_files(filename, latitude, longitude, id_drift, observations,\
     nc_current_qc.valid_max = 9
     nc_current_qc.flag_values = "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
     nc_current_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
-    nc_dcref = nc_fid.createVariable('dc_reference','c',('numobs','string32'))
+    nc_dcref = nc_fid.createVariable('dc_reference','c',('numobs','string35'))
     nc_dcref.long_name = "Station/Location unique identifier in data centre"
     nc_dcref.conventions = "Data centre convention"
     nc_wind = nc_fid.createVariable('wdst_model','f4',('numobs', 'numvars'),fill_value=fillvalue)

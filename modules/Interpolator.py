@@ -44,6 +44,11 @@ class Interpolator(object):
         self.log = log
         self.missing_value = netCDF4.default_fillvals['f4']
         self.list_ssh = ["sossheig", "ssh"]
+        self.ll_UVcorr = False
+        self.compute_corr = False
+        self.model_var = ['uo', 'vo', 'vozocrtx', 'vomecrty']
+        self.listUV = ['drifter', 'drifter_filtr']
+        self.tab_interp = {}
         if dask:
             self.log.debug("Launch dask server")
             #client = Client(n_workers=2, threads_per_worker=2, processes=False)
@@ -156,6 +161,7 @@ class Interpolator(object):
         self.log.info("==================================================")
         self.log.info(f"Dimensions best : {nb_best} nwct: {nb_nwct} "\
                       f"fcst : {nb_fcst} pers : {nb_pers} clim : {nb_clim}")
+        ## Todo write into a file
         nb_ptsinterp = param_dict['nb_points']
         # Read input obs value
         self.log.debug("Format of the data {}".format(param_dict['data_format']))
@@ -168,7 +174,27 @@ class Interpolator(object):
             lon_obs, lat_obs, obs_value, nb_obs, depth, tab_dims, _FillValue = Loader.factory(
                 param_dict['data_format']).read_pos_and_value(data_file)
         tuple_obs = (np.shape(lon_obs)[0], np.shape(lat_obs)[0])
-
+        
+        if param_dict['coordinates_hgr']:
+            try:      
+                self.log.debug("Read coordinates for the correction of UV drifters")
+                mod_hgr = xr.open_dataset(param_dict['coordinates_hgr'])
+                self.gsinU = mod_hgr['gsinu']
+                self.gcosU = mod_hgr['gcosu']
+                self.gsinV = mod_hgr['gsinv']
+                self.gcosV = mod_hgr['gcosv']
+                self.gsinT = mod_hgr['gsint']
+                self.gcosT = mod_hgr['gcost']
+                self.log.debug(f"Read ok")
+            except IOError:
+                self.log.error("Open Error coordinates_hgr")
+            self.log.info("Open hgr ok")
+            
+        if param_dict['corr']:
+            self.compute_corr = True
+            self.log.debug(f"Add Correction {param_dict['corr']}")
+        else:
+            self.log.debug(f"No correction")
         self.log.debug(f"{lon_obs=}")
         ll_best = False
         nb_obs2, nb_profs = np.shape(depth)
@@ -185,18 +211,26 @@ class Interpolator(object):
             ll_best = True
         ll_fcst = False
         if nb_fcst > 0:
-            #fcst_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst, nb_profs),
-            #                      dtype=float, order='F')
-            fcst_tab = np.ndarray(shape=(nb_obs, len(variable), tab_dims['nb_fcsts'], nb_profs),
-                                  dtype=float, order='F')
+            if 'nb_fcsts' not in tab_dims.keys():
+                nb_fcst = len(param_dict['lead_int'])
+                fcst_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst, nb_profs),
+                                      dtype=float, order='F')
+            else:
+                fcst_tab = np.ndarray(shape=(nb_obs, len(variable), tab_dims['nb_fcsts'], nb_profs),
+                                      dtype=float, order='F')
             fcst_tab[:, :, :, :] = self.missing_value
             ll_fcst = True
         ll_pers = False
         if nb_pers > 0 or nb_nwct >0:
-            #pers_tab = np.ndarray(shape=(nb_obs, len(variable), nb_pers+1, nb_profs),
-            #                      dtype=float, order='F')
-            pers_tab = np.ndarray(shape=(nb_obs, len(variable), tab_dims['nb_fcsts'], nb_profs),
-                                  dtype=float, order='F')
+            if 'nb_fcsts' not in tab_dims.keys():
+                nb_fcst = len(param_dict['lead_int'])
+                #pers_tab = np.ndarray(shape=(nb_obs, len(variable), nb_pers+1, nb_profs),
+                #                      dtype=float, order='F')
+                pers_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst, nb_profs),
+                                      dtype=float, order='F')
+            else:
+                pers_tab = np.ndarray(shape=(nb_obs, len(variable), tab_dims['nb_fcsts'], nb_profs),
+                                      dtype=float, order='F')
             pers_tab[:, :, :, :] = self.missing_value
             ll_pers = True
         if nb_clim > 0:
@@ -419,6 +453,7 @@ class Interpolator(object):
                           tab_depth[key.lower()] = depthval 
                       self.log.debug("Depth of interpolation {}".format(tab_depth[key.lower()]))
                       self.log.debug("Index time {}".format(index_time))
+                      self.log.debug(f"{varname=}")
                       interp_values = self.interp_2D(weights, indexes,
                                                      file_input,
                                                      nb_ptsinterp,
@@ -428,6 +463,25 @@ class Interpolator(object):
                                                      lon_mod=lon_mod, lat_mod=lat_mod,
                                                      missing_value=self.missing_value,
                                                      same_grid=same_grid)
+                      self.compute = False
+                      if varname in self.model_var and self.compute_corr and not self.compute: 
+                          self.log.debug('Interp grid coordinates for the correction')
+                          #self.tab_interp['gsinU'] = ma.array(self.gsinU).flatten()[indexes]
+                          #self.tab_interp['gsinV'] = ma.array(self.gsinV).flatten()[indexes]
+                          #self.tab_interp['gcosU'] = ma.array(self.gcosU).flatten()[indexes]
+                          #self.tab_interp['gcosV'] = ma.array(self.gcosV).flatten()[indexes]
+                          self.tab_interp['gsint'] = np.sum(weights * np.array(self.gsinT).flatten()
+                                       [indexes], axis=1) / np.sum(weights, axis=1)
+                          #ma.array(self.gsinT).flatten()[indexes]
+                          self.tab_interp['gcost'] = np.sum(weights * np.array(self.gcosT).flatten()
+                                        [indexes], axis=1) / np.sum(weights, axis=1)
+                          #ma.array(self.gcosT).flatten()[indexes]
+                          print('----------------------')
+                          self.compute = True
+                          # ucorr0 = values_u0*gcost_interp - values_v0*gsint_interp
+                          # vcorr0 = values_u0*gsint_interp + values_v0*gcost_interp
+                          # ucorr15 = values_u15_interp*gcost_interp - values_v15_interp*gsint_interp
+                          # vcorr15 = values_u15_interp*gsint_interp + values_v15_interp*gcost_interp
                       if len(np.shape(obs_value)) ==  3:
                           if param_dict['data_type'].lower() == 'drifter_filtr' or param_dict['data_type'].lower() == 'drifter':
                              obs_value2 = np.array(obs_value)[var,:,:]
@@ -438,6 +492,7 @@ class Interpolator(object):
                       elif len(np.shape(obs_value)) ==  2:
                           interp_values = np.where(np.array(obs_value).flatten() == _FillValue,
                                                             self.missing_value, np.array(interp_values))
+
                       ll_unique = True
                   elif key.lower() == "clim" and param_dict['data_type'].lower() == 'current' :
                       depthval = 0
@@ -491,13 +546,29 @@ class Interpolator(object):
                    self.log.debug("Fead forecast indice %i " % (indice))
                    if ll_unique :
                        fcst_tab[:, var, indice, 0] = interp_values
+                       if self.compute and var == len(variable)-1:
+                          self.log.debug(f'Compute correction fcst {ind}')
+                          fcst_tab[:, 0, indice, 0] = fcst_tab[:, 0, indice, 0] * \
+                             self.tab_interp['gcost'] - fcst_tab[:, 1, indice, 0] * \
+                             self.tab_interp['gsint']
+                          fcst_tab[:, 1, indice, 0] = fcst_tab[:, 0, indice, 0]* \
+                              self.tab_interp['gsint'] + fcst_tab[:, 1, indice, 0]* \
+                              self.tab_interp['gcost']
                    else:
                        fcst_tab[:, var, indice, :] = interp_values
                elif key[0:4] == 'nwct':
                    indice = 0
-                   self.log.debug("%s Persistence indice  %i " %(key,indice))
+                   self.log.debug("%s Persistence nwct indice  %i " %(key,indice))
                    if ll_unique :
                        pers_tab[:, var, indice, 0] = interp_values
+                       if self.compute and var == len(variable)-1:
+                          self.log.debug(f'Compute correction nwct {var}')
+                          pers_tab[:, 0, indice, 0] = pers_tab[:, 0, indice, 0] * \
+                             self.tab_interp['gcost'] - pers_tab[:, 1, indice, 0] * \
+                             self.tab_interp['gsint']
+                          pers_tab[:, 1, indice, 0] = pers_tab[:, 0, indice, 0]* \
+                              self.tab_interp['gsint'] + pers_tab[:, 1, indice, 0]* \
+                              self.tab_interp['gcost']
                    else:
                        pers_tab[:, var, indice, :] = interp_values
                elif key[0:4] == 'pers':
@@ -508,13 +579,31 @@ class Interpolator(object):
                    self.log.debug("Persistence indice %i " % (indice))
                    if ll_unique :
                         pers_tab[:, var, indice, 0] = interp_values
+                        if self.compute and var == len(variable)-1:
+                           self.log.debug(f'Compute correction pers {ind}')
+                           pers_tab[:, 0, indice, 0] = pers_tab[:, 0, indice, 0] * \
+                              self.tab_interp['gcost'] - pers_tab[:, 1, indice, 0] * \
+                              self.tab_interp['gsint']
+                           pers_tab[:, 1, indice, 0] = pers_tab[:, 0, indice, 0]* \
+                              self.tab_interp['gsint'] + pers_tab[:, 1, indice, 0]* \
+                              self.tab_interp['gcost']
                    else:
                        pers_tab[:, var, indice, :] = interp_values
                elif key[0:4] == 'hdct':
+                   self.log.info(f'{var=}{varname=}')
                    if ll_unique :
                        hdct_tab[:, var, 0] = interp_values
+                       if self.compute and var == len(variable)-1:
+                           self.log.debug('Compute correction hindcast')
+                           hdct_tab[:, 0, 0] = hdct_tab[:, 0, 0]* \
+                              self.tab_interp['gcost'] - hdct_tab[:, 1, 0]* \
+                              self.tab_interp['gsint']
+                           hdct_tab[:, 1, 0] = hdct_tab[:, 0, 0]* \
+                              self.tab_interp['gsint'] + hdct_tab[:, 1, 0]* \
+                              self.tab_interp['gcost']
                    else:
                        hdct_tab[:, var, :] = interp_values
+                       
                elif key[0:4] == 'clim':
                    if ll_unique:
                        clim_tab[:, var, 0] = interp_values
@@ -778,7 +867,7 @@ class Interpolator(object):
         else:
             if nbpts_interp > 1:
                 # Distance weight interpolation
-                self.log.debug("Distance weight interpolation")
+                self.log.debug(f"Distance weight interpolation {ll_single}")
                 if ll_single :
                    self.log.debug('Dimension longitude {}'.format(nblon))
                    self.log.debug('Dimension latitude {}'.format(nblat))
@@ -803,7 +892,6 @@ class Interpolator(object):
                     tab_interp = ma.array(var_in).flatten()[inds]
                 else:
                     tab_interp =  (w1 * ma.array(var_in1).flatten()[inds])+ (w2 * ma.array(var_in2).flatten()[inds])
-
 
         # Put nan to missing values
         tab_interp = np.where(np.isnan(tab_interp), missing_value, tab_interp)

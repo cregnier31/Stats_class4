@@ -254,6 +254,9 @@ class SelectListModelData(Selector):
         MONTH = str(dateval)[4:6]
         self.log.info(f"Grid type {param_dict['gridtype']} {self.dirmodel=}")
         # loop on lead time
+        new_naming = False
+        if  param_dict['naming'] == 'new':
+            new_naming = True
         for time in param_dict['lead_time']:
             list_tmp = []
             self.log.debug(f'Lead Time {time}')
@@ -295,9 +298,13 @@ class SelectListModelData(Selector):
                                 else:
                                     config = param_dict['cl_conf']
                                     self.config_d = re.sub("V", "QV", config)
-                                    #dirmodel_new = self.dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
-                                    # Modifs Charly
-                                    dirmodel_new = f'{self.dirmodel}HEBDO/{config[0:5]}/{config.lower()}/'
+                                    # PSY4
+                                    if new_naming :
+                                        # GLO12V4
+                                        dirmodel_new = f'{self.dirmodel}HEBDO/{config[0:5]}/{config.lower()}/'
+                                    else:
+                                        #dirmodel_new = self.dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
+                                        dirmodel_new = self.dirmodel+"HEBDO/"+self.modele[:4]+"/"+self.modele.lower()+"/"
                     elif directory == 'hdct_all' and self.typemod == 'allege':
                         self.log.debug("lightout type")
                         dirmodel_new = self.dirmodel+"/"
@@ -317,9 +324,12 @@ class SelectListModelData(Selector):
                         if param_dict['daily_pref'] == '7dAV':
                             dirmodel_new = self.dirmodel+"FORECAST/"
                         else:
-                            # Modifs Charly
-                            dirmodel_new = f'{self.dirmodel}DAILY/{config[0:5]}/{config.lower()}/'
-                            #dirmodel_new = self.dirmodel+"DAILY/"+self.modele[:5]+"/"+self.modele.lower()+"/"
+                            if new_naming :
+                                # Case GLO12
+                                dirmodel_new = f'{self.dirmodel}DAILY/{config[0:5]}/{config.lower()}/'
+                            else:
+                                # Case PSY4
+                                dirmodel_new = self.dirmodel+"DAILY/"+self.modele[:5]+"/"+self.modele.lower()+"/"
                     elif param_dict['data_origin'] == 'GLOBCOLOUR' and directory == 'clim':
                         dirmodel_new = param_dict['dirclim']
                     elif directory == "smoc" or directory == "tides" or directory == "stokes":
@@ -330,10 +340,15 @@ class SelectListModelData(Selector):
                     elif time == 'smoc_fcst' or time == 'stokes_fcst':
                         dirmodel_new = self.dirmodel+'DAILY/SMOC/'
                         self.log.debug('Directory smoc/stokes fcst: {}'.format(dirmodel_new))
+                    elif directory == "clim":
+                        dirmodel_new =  param_dict['dirclim']
                     else:
-                        # Modifs Charly
-                        dirmodel_new = f'{self.dirmodel}DAILY/{config[0:5]}Q/{self.config_d.lower()}/'
-                        #dirmodel_new = self.dirmodel+"DAILY/"+self.modele[:5]+"/"+self.modele.lower()+"/"
+                        if new_naming :
+                            ## Case GLO12
+                            dirmodel_new = f'{self.dirmodel}DAILY/{config[0:5]}Q/{self.config_d.lower()}/'
+                        else:
+                            # Case PSY4
+                            dirmodel_new = self.dirmodel+"DAILY/"+self.modele[:5]+"/"+self.modele.lower()+"/"
                 if datev.month < 10: month = '0' + str(datev.month)
                 else: month = str(datev.month)
                 if month_up < 10: month_up = '0' + str(month_up)
@@ -478,10 +493,11 @@ class SelectListModelData(Selector):
                                         list_file.extend(list_file_tmp)
                                     else:
                                         #print(f'Passe la {self.modele=}')
+                                        ## Oper Case
                                         for i in range(len(param_dict['gridtype'])):
                                             #list_file_tmp = glob(dirmodel_new+directory+"/"+self.modele+"_"+ \
                                             #param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
-                                            print(f'{dirmodel_new}{directory}/{self.modele}_{param_dict["daily_pref"]}_{dateval}*_*{param_dict["gridtype"][i]}*.nc')
+                                            #print(f'{dirmodel_new}{directory}/{self.modele}_{param_dict["daily_pref"]}_{dateval}*_*{param_dict["gridtype"][i]}*.nc')
                                             list_file_tmp = glob(f'{dirmodel_new}{directory}/{self.modele}_{param_dict["daily_pref"]}_{dateval}*_*{param_dict["gridtype"][i]}*.nc')
                                             list_file.extend(list_file_tmp)
                                 self.log.debug(list_file)

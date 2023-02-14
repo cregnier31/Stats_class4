@@ -345,7 +345,7 @@ class InputLoader(Loader):
                 diroutput = p
                 ll_output = True
         # LOGGER
-        log = Logger("TEP_CLASS4").run(level)
+        log = Logger(f"TEP_CLASS4_{cl_data}").run(level)
         log.info("Loglevel {}".format(log))
         list_var.append(ll_date1)
         list_var.append(ll_date2)
@@ -494,8 +494,8 @@ class InputLoader(Loader):
 
 class NmlLoader(Loader):
     """Loader for namelists"""
-    def load(self, filename, level, param_dict):
-        log = Logger("NmlLoader").run(level)
+    def load(self, filename, level, param_dict, log):
+        #log = Logger("NmlLoader").run(level)
         db = ConfigParser.ConfigParser()
         for file in filename:
             db.read(os.path.expanduser(filename))
@@ -592,6 +592,11 @@ class NmlLoader(Loader):
             param_dict['coord_clim'] = glob(param_dict['dirclim'] + "*.nc")[0]
         except:
             param_dict['coord_clim'] = ""
+        try:
+            param_dict['coordinates_hgr'] = db.get('static', 'coordinates_hgr')
+        except:
+            param_dict['coordinates_hgr'] = ""
+
         param_dict['dirtmp'] = param_dict['dirwork'] + 'ext-'
         param_dict['prefix_data'] = db.get('input_dir', 'PREFIX')
         param_dict['daily_pref'] = db.get('GLOBAL', 'DAILY_PREF')
@@ -619,6 +624,10 @@ class NmlLoader(Loader):
             param_dict['grid2DT'] = db.get('GLOBAL', 'grid2DT')
         except:
             param_dict['grid2DT'] = "grid2D"
+        try:
+            param_dict['naming'] = db.get('GLOBAL', 'name')
+        except:
+            param_dict['naming'] = 'old'
         param_dict['type_run'] = db.get('GLOBAL', 'TYPE_RUN')
         param_dict['type_archi'] = db.get('GLOBAL', 'TYPE_ARCHI')
         param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable'))
@@ -649,7 +658,11 @@ class NmlLoader(Loader):
             param_dict['varname_bathy'] = db.get('GLOBAL', 'variable_bathy').split()
         except:
             param_dict['lead_int2'] = ""
-
+        try:
+            param_dict['corr'] = literal_eval(db.get('GLOBAL', 'corr'))
+        except:
+            param_dict['corr'] = False
+        
         if param_dict['zoom'] or param_dict['do_qc']:
             param_dict['lon_min'] = int(param_dict.get('GLOBAL', 'LONMIN'))
             param_dict['lon_max'] = int(param_dict.get('GLOBAL', 'LONMAX'))
@@ -1055,8 +1068,18 @@ class LoaderCMEMSDrifter_filtr(Loader):
             position_qc, time_qc, dc_reference = read_drifter_filt(filename)
         nb_obs = len(lon)
         _FillValue = np.nan
+        tab_dims = {}
+        #for dims in dimensions.keys():
+        #    sizedim = dimensions[dims].size
+        #    if dims == 'numfcsts':
+        #        tab_dims['nb_fcsts'] = sizedim
+        #    elif dims == 'numobs':
+        #        tab_dims['nb_obs'] = sizedim
+        #    elif dims == 'numdeps':
+        #        tab_dims['nb_depths'] = sizedim
+            
 
-        return lon, lat, [u_filtr, v_filtr], nb_obs, depth,  _FillValue
+        return lon, lat, [u_filtr, v_filtr], nb_obs, depth, tab_dims, _FillValue
 
 class LoaderCMEMSDrifter(Loader):
 
@@ -1069,8 +1092,18 @@ class LoaderCMEMSDrifter(Loader):
             position_qc, time_qc, dc_reference = read_drifter(filename)
         nb_obs = len(lon)
         _FillValue = np.nan
+        tab_dims = {}
+        #for dims in dimensions.keys():
+        #    sizedim = dimensions[dims].size
+        #    if dims == 'numfcsts':
+        #        tab_dims['nb_fcsts'] = sizedim
+        #    elif dims == 'numobs':
+        #        tab_dims['nb_obs'] = sizedim
+        #    elif dims == 'numdeps':
+        #        tab_dims['nb_depths'] = sizedim
+            
 
-        return lon, lat, [u, v], nb_obs, depth,  _FillValue
+        return lon, lat, [u, v], nb_obs, depth, tab_dims, _FillValue
 
 class SMOC_coords_Loader(Loader):
     """ 
