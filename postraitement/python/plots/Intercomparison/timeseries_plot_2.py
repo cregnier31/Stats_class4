@@ -10,11 +10,12 @@ Created on Wed Nov 28 09:13:09 2017
 
 import sys
 import matplotlib
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg')
 import matplotlib.dates as dates
 import matplotlib.pyplot as plt
 import numpy as np
-
+from lib_pyt.filter.filters import medfilt
+import pandas as pd
 
 def fmtFig(area, name_ech, splot='single', nb_var=1):
     """
@@ -42,14 +43,14 @@ def fmtFig(area, name_ech, splot='single', nb_var=1):
         print ('************ config not found ************')
         sys.exit()
 
-    plt.suptitle(area+' - '+name_ech,fontsize=15.5+nb_var,color='red')   
+    plt.suptitle(area+' - '+name_ech,fontsize=15.5+nb_var,color='red')
 
     return fig, splot, nb_var
 
 
 def plotStat(fig, ax_fig, dict, varname, area, system,
-             ind_prof, prof, datemin, datemax, leg, list_color,
-             splot, nb_var, skill):
+             ind_run, prof, datemin, datemax, leg, list_color,
+             splot, nb_var, skill, list_fcst, med_filtr=False, window=5):
     """
     Plot the timeserie of RMSD, Bias and number of observations of the different systems
 
@@ -67,42 +68,95 @@ def plotStat(fig, ax_fig, dict, varname, area, system,
 
     # ~~~~~~~~ Plot des time series ~~~~~~~~~~~
     list_system = ['PSY4', 'ENSMEAN', 'PSY3', 'FOAM', 'HYCOM_RTOFS',\
-        'BLK', 'GIOPS', 'NERSC', 'CGOFS', 'CMCC', 'PSY4V3R1', 'GLO12','FOAM_ORCA12']
+        'BLK', 'GIOPS', 'NERSC', 'CGOFS', 'CMCC', 'PSY4V3R1', 'GLO12V4','FOAM_ORCA12',
+        'WED', 'THU', 'SUN', 'MON', 'TUE', 'DAY0', 'DAY1', 'DAY2', 'DAY3', 'DAY4', 'DAY5',
+        'DAY6', 'DAY7', 'ALL']
+    #list_system = ['GLO12V4']
     #list_system = ['PSY4','FOAM','HYCOM_RTOFS','BLK','GIOPS','NERSC','CMCC','PSY4V3R1']
+    run_name = system
+    len_run = 7
     list_metric_aice = ['PCI','PCW','PCT','BIAS']
-    for s, prod in enumerate(system):
-        prod_name = prod
-        if prod == "PSY4V3R1": prod_name = "PSY4"
-        if prod_name in list_system:
-            name_lab = prod
-        elif prod == 0:
-            name_lab = 'Hindcast'
-            prod_name = f'{s}'
-        else:
-            name_lab = f'Fcst {prod} hours'
-            prod_name = f'{s}'
-        if 'time' not in dict[varname][prod_name][ind_prof][area]: continue
+    list_lead = list(dict[varname].keys())
+    def search_lead(list_fcst, list_lead, ind_run):
+        ind_tmp = ind_run
+        dict_lead = {}
+
+        for ind_lead, lead in enumerate(list_fcst):
+            if ind_lead > 0:
+                if ind_lead == 1:
+                    ind_tmp = ind_tmp + ind_lead
+                    if ind_tmp >= len(list_lead):
+                         ind_tmp = ind_tmp - len(list_lead)
+                else:
+                    ind_tmp = ind_tmp + 2
+                    if ind_tmp >= len(list_lead):
+                        ind_tmp = ind_tmp - len(list_lead)
+                        print(f'inside else {ind_tmp}{len(list_lead)}')
+                print(f'Ind_lead > 0 Run {ind_lead} Work on {ind_tmp}: lead {lead}')
+                print(f'ind_lead > 0 Run {ind_lead} Day involved {list_lead[ind_tmp]}')
+            else:
+                if ind_tmp < 0:
+                    ind_tmp = ind_tmp + len_run
+                print(f'Ind_lead = 0 Run {ind_lead} Work on {ind_tmp}: lead {lead} RUN IN {list_lead[ind_tmp]}')
+            dict_lead[lead] = list_lead[ind_tmp]
+        return dict_lead
+    dict_lead = search_lead(list_fcst, list_lead, ind_run)
+    for ind_lead, lead in enumerate(list_fcst):
+        prod_name = dict_lead[lead]
+        print(f'Run {run_name} Forecast {lead} Run involved {prod_name}')
+        if 'time' not in dict[varname][prod_name][lead][area][prof]:
+            continue
         if skill == 1:
-            plt.plot(np.array(dict[varname][prod_name][ind_prof][area]['time']),
-                     np.array(dict[varname][prod_name][ind_prof][area]['PSS']),
-                     linewidth = 1.2, color = list_color[s], label = name_lab)
-            plt.plot(np.array(dict[varname][prod_name][ind_prof][area]['time']),
-                     np.array(dict[varname][prod_name][ind_prof][area]['CSS']),
-                     linestyle = '--', linewidth = 1.2, color = list_color[s])
+            plt.plot(np.array(dict[varname][prod_name][lead][area][prof]['time']),
+                     np.array(dict[varname][prod_name][lead][area][prof]['PSS']),
+                     linewidth = 1.2, color = list_color[ind_lead], label = name_lab)
+            plt.plot(np.array(dict[varname][prod_name][lead][area][prof]['time']),
+                     np.array(dict[varname][prod_name][lead][area][prof]['CSS']),
+                     linestyle = '--', linewidth = 1.2, color = list_color[ind_lead])
         else:
-            plt.plot(np.array(dict[varname][prod_name][ind_prof][area]['time']),
-                     np.array(dict[varname][prod_name][ind_prof][area]['rmsd']),
-                     linewidth = 1.6, color = list_color[s], label = name_lab)
-            plt.plot(np.array(dict[varname][prod_name][ind_prof][area]['time']),
-                     np.array(dict[varname][prod_name][ind_prof][area]['bias']),
-                     linestyle = '--', linewidth = 1.6, color = list_color[s])
+            ii = np.where(~np.isnan(np.array(dict[varname][prod_name][lead][area][prof]['rmsd'])))
+            rms_tmp =  np.array(dict[varname][prod_name][lead][area][prof]['rmsd'])[ii]
+            if  med_filtr:
+                #print(f'Data filtered {window}')
+                if len(rms_tmp > 0):
+                    var_filtre1 = medfilt(rms_tmp[:], window)
+                    data = pd.Series(var_filtre1)
+                    rms_tmp = data.rolling(window, center=True).mean()
+            plt.plot(np.array(dict[varname][prod_name][lead][area][prof]['time'])[ii],
+                     rms_tmp, linestyle = '-',  linewidth = 1.6, color = list_color[ind_lead],
+                     label = lead)
+            #plt.plot(np.array(dict[varname][prod_name][area][prof]['time'])[ii],
+            #         np.array(dict[varname][prod_name][area][prof]['rmsd'])[ii],
+            #         linestyle = '-',  linewidth = 1.6, color = list_color[s],
+            #         label = name_lab)
+            ii = np.where(~np.isnan(np.array(dict[varname][prod_name][lead][area][prof]['bias'])))
+            v_time = np.array(dict[varname][prod_name][lead][area][prof]['time'])[ii]
+            #print(f'Echeance {lead}')
+            #[print(dt.strftime('The date is %A %Y %b %d')) for dt in v_time]
+            bias_tmp =  np.array(dict[varname][prod_name][lead][area][prof]['bias'])[ii]
+            if  med_filtr:
+                print(f'Data filtered {window}')
+                if len(bias_tmp > 0):
+                    var_filtre1 = medfilt(bias_tmp[:], window)
+                    data = pd.Series(var_filtre1)
+                    bias_tmp = data.rolling(window, center=True).mean()
+            plt.plot(np.array(dict[varname][prod_name][lead][area][prof]['time'])[ii],
+                     bias_tmp,
+                     linestyle = '--', linewidth = 1.6, color = list_color[ind_lead])
+            #plt.plot(np.array(dict[varname][prod_name][area][prof]['time'])[ii],
+            #         np.array(dict[varname][prod_name][area][prof]['bias'])[ii],
+            #         linestyle = '--', linewidth = 1.6, color = list_color[s])
 
 
     # ~~~~~~~~ Config plot, axes et sous-titres ~~~~~~~~~~~
     if varname in ['sla','sst']:
         plt.title(varname.upper(), fontsize=13, fontweight="bold")
     else:
-        plt.title(varname.upper()+' (depth: '+str(prof.decode("utf-8"))+')',
+        if isinstance(prof, (bytes, bytearray)):
+            profval = str(prof.decode("utf-8"))
+        else :
+            profval = str(prof)
+        plt.title(f'{varname.upper()} (depth: {profval})',
                   fontsize=13, fontweight="bold")
     ##if varname in ['sla']:
     ##    valmin = -0.05
@@ -123,17 +177,13 @@ def plotStat(fig, ax_fig, dict, varname, area, system,
     ax_fig.xaxis.set_major_formatter(dates.DateFormatter('%Y'))
 
     if leg and splot == 'single':
-        plt.legend(loc=9, bbox_to_anchor=(0., -0.18, 1, 0.1), ncol=len(system),
+        plt.legend(loc=9, bbox_to_anchor=(0., -0.18, 1, 0.1), ncol=len(list_fcst),
                    fontsize = 9, edgecolor = 'black', facecolor = 'lavender')
     elif leg and splot == 'multi' and nb_var == 4:
-        if len(system) >  7:
-            fontsize = 9
-        else:
-            fontsize = 12
-        plt.legend(loc=9, bbox_to_anchor=(0., -0.29, 1, 0.1), ncol=len(system),
-                   fontsize = fontsize, edgecolor = 'black', facecolor = 'lavender')
+        plt.legend(loc=9, bbox_to_anchor=(0., -0.29, 1, 0.1), ncol=len(list_fcst),
+                   fontsize = 12, edgecolor = 'black', facecolor = 'lavender')
     elif leg and splot == 'multi' and nb_var == 2:
-        plt.legend(loc=9, bbox_to_anchor=(0., -0.255, 1, 0.1), ncol=len(system),
+        plt.legend(loc=9, bbox_to_anchor=(0., -0.255, 1, 0.1), ncol=len(list_fcst),
                    fontsize = 10.5, edgecolor = 'black', facecolor = 'lavender')
 
 
@@ -143,12 +193,12 @@ def plotStat(fig, ax_fig, dict, varname, area, system,
         ax1 = ax_fig.twinx()
         ax_fig.grid(axis='y', color='grey', linestyle='--', alpha=0.5, linewidth = 0.3)
         if system[0] in list_system:
-            barlist=ax1.bar(np.array(dict[varname][system[0]][ind_prof][area]['time']),
-                            np.array(dict[varname][system[0]][ind_prof][area]['nb_obs']),
+            barlist=ax1.bar(np.array(dict[varname][system][lead][area][prof]['time']),
+                            np.array(dict[varname][system][lead][area][prof]['nb_obs']),
                             alpha=0.14, width=1,linewidth=0,color="grey")
         else:
-            barlist=ax1.bar(np.array(dict[varname][str(int(system[0]))][ind_prof][area]['time']),
-                            np.array(dict[varname][str(int(system[0]))][ind_prof][area]['nb_obs']),
+            barlist=ax1.bar(np.array(dict[varname][system][lead][area][prof]['time']),
+                            np.array(dict[varname][system][lead][area][prof]['nb_obs']),
                             alpha=0.14, width=1,linewidth=0,color="grey")
         plt.ylabel("Number of observations", fontsize=12,color='darkgrey')
         ax1.tick_params(axis='y', colors='darkgrey',labelsize='small', length=6, pad = 1.5)
@@ -157,13 +207,7 @@ def plotStat(fig, ax_fig, dict, varname, area, system,
              linestyle = '-', label = 'RMSD')
     plt.plot([0,0],[0,0.1], linewidth = 1.2, color = 'black',
              linestyle = '--', label = 'BIAS')
-    #if splot == 'multi':
-    #    print('------------')
-    #    print('Plot multi')
-    #    print('------------')
-    #    plt.legend(loc=1, ncol=1, prop={'size': 5},
-    #               edgecolor = 'black', facecolor = 'white')
-    #else:
+
     plt.legend(loc=1, bbox_to_anchor=(0., 0.88, 0.08, 0.1), ncol=1,
                fontsize = 7, edgecolor = 'black', facecolor = 'white')
 

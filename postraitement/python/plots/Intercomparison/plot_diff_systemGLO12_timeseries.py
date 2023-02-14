@@ -69,7 +69,7 @@ def read_stats(filename,prod, varname, dict_tmp, dict):
     cor = np.where(np.array(metric_name) == 'anomaly correlation')[0][0]
     ini = False
     if prod == "PSY4V3R1": prod = "PSY4"
-    if prod == "GLO12V4": prod = "GLO12"
+    #if prod == "GLO12V4": prod = "GLO12"
     if prod == "PSY3V3R3": prod = "PSY3"
     dict[varname][prod] = {} ; dict_tmp[varname][prod] = {}
     for a, area in enumerate(area_name):
@@ -103,7 +103,7 @@ MULTI_PLOT = False
 GLO_AREA = False
 CMEMS_AREA = True
 skill = 0
-dt_start_plot_ini = ['20140101','20161101']
+dt_start_plot_ini = ['20170101','20220614']
 dt_end_plot_ini = ['20181231', '20210531']
 list_color = ['red', 'black']
 window = 30
@@ -131,7 +131,10 @@ PATH_OUT = PATH_IN+'img/GLO12/'
 DATA_IN = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'
 SYSTEM = ['GLO12V4', 'PSY4V3R1']
 #VAR = ['seaice-concentration','salinity', 'temperature', 'sla', 'sst']
-VAR = ['sst']
+#VAR = ['sst']
+VAR = ['seaice-concentration','salinity',\
+       'temperature', 'sla', 'sst',\
+       'zonal-velocity-filtr', 'meridional-velocity-filtr']
 level_sla_stt = 0
 level_t_s = 0
 cla_areaini = params.liste_zone
@@ -139,8 +142,8 @@ cla_depth = params.profondeur3
 print (cla_depth)
 # ~~~~~~~~~~~ Definition des dates ~~~~~~~~~~~~~~~~~
 
-dt_start_plot = "20140101"
-dt_end_plot = "20181231"
+dt_start_plot = "20170101"
+dt_end_plot = "20220614"
 dateCNESref = d.datetime.strptime('19500101','%Y%m%d').toordinal()
 dtst = d.datetime.strptime(dt_start_plot,'%Y%m%d')
 dted = d.datetime.strptime(dt_end_plot,'%Y%m%d')
@@ -175,7 +178,7 @@ for v, varname in enumerate(VAR):
     print ('Filter out the timeserie')
     for s, prod in enumerate(SYSTEM):
         if prod == "PSY4V3R1": prod = "PSY4"
-        if prod == "GLO12V4": prod = "GLO12"
+        #if prod == "GLO12V4": prod = "GLO12"
         if prod == "PSY3V3R3": prod = "PSY3"
         for a, area in enumerate(area_name):
             #if area == "Full Domain":
@@ -199,7 +202,7 @@ for v, varname in enumerate(VAR):
 #             Test pour tracer plusieurs plots simples
 # ************************************************************************
 
-SYSTEM = ['GLO12','PSY4']
+SYSTEM = ['GLO12V4','PSY4']
 comp_name = 'vs'.join(SYSTEM)
 if SINGLE_PLOT:
     print ("Single_plot")

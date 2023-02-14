@@ -14,7 +14,8 @@ import matplotlib
 import matplotlib.dates as dates
 import matplotlib.pyplot as plt
 import numpy as np
-
+from lib_pyt.filter.filters import medfilt
+import pandas as pd
 
 def fmtFig(area, name_ech, splot='single', nb_var=1):
     """
@@ -41,15 +42,15 @@ def fmtFig(area, name_ech, splot='single', nb_var=1):
     else:
         print ('************ config not found ************')
         sys.exit()
-    
+
     plt.suptitle(area+' - '+name_ech,fontsize=15.5+nb_var,color='red')   
-    
+ 
     return fig, splot, nb_var
 
 
 def plotStat(fig, ax_fig, dict, varname, area, system,
              prof, datemin, datemax, leg, list_color,
-             splot, nb_var, skill):
+             splot, nb_var, skill, med_filtr=False, window=5):
     """
     Plot the timeserie of RMSD, Bias and number of observations of the different systems
 
@@ -67,7 +68,9 @@ def plotStat(fig, ax_fig, dict, varname, area, system,
 
     # ~~~~~~~~ Plot des time series ~~~~~~~~~~~
     list_system = ['PSY4', 'ENSMEAN', 'PSY3', 'FOAM', 'HYCOM_RTOFS',\
-        'BLK', 'GIOPS', 'NERSC', 'CGOFS', 'CMCC', 'PSY4V3R1', 'GLO12V4','FOAM_ORCA12']
+        'BLK', 'GIOPS', 'NERSC', 'CGOFS', 'CMCC', 'PSY4V3R1', 'GLO12V4','FOAM_ORCA12',
+        'WED', 'THU', 'SUN', 'MON', 'TUE', 'DAY1', 'DAY2', 'DAY3', 'DAY4', 'DAY5',
+        'DAY6', 'DAY7', 'ALL']
     #list_system = ['GLO12V4']
     #list_system = ['PSY4','FOAM','HYCOM_RTOFS','BLK','GIOPS','NERSC','CMCC','PSY4V3R1']
     list_metric_aice = ['PCI','PCW','PCT','BIAS']
@@ -83,6 +86,8 @@ def plotStat(fig, ax_fig, dict, varname, area, system,
         else:
             name_lab = f'Fcst {prod} hours'
             prod_name = f'{s}'
+        print(f'{prod=}')
+        print(f'{prod_name=}')
         if 'time' not in dict[varname][prod_name][area][prof]:
             continue
         if skill == 1:
@@ -93,12 +98,39 @@ def plotStat(fig, ax_fig, dict, varname, area, system,
                      np.array(dict[varname][prod_name][area][prof]['CSS']),
                      linestyle = '--', linewidth = 1.2, color = list_color[s])
         else:
-            plt.plot(np.array(dict[varname][prod_name][area][prof]['time']),
-                     np.array(dict[varname][prod_name][area][prof]['rmsd']),
-                     linewidth = 1.6, color = list_color[s], label = name_lab)
-            plt.plot(np.array(dict[varname][prod_name][area][prof]['time']),
-                     np.array(dict[varname][prod_name][area][prof]['bias']),
+            ii = np.where(~np.isnan(np.array(dict[varname][prod_name][area][prof]['rmsd'])))
+            rms_tmp =  np.array(dict[varname][prod_name][area][prof]['rmsd'])[ii]
+            if  med_filtr:
+                print('Data filtered {window}')
+                if len(rms_tmp > 0):
+                    var_filtre1 = medfilt(rms_tmp[:], window)
+                    data = pd.Series(var_filtre1)
+                    rms_tmp = data.rolling(window, center=True).mean()
+
+            plt.plot(np.array(dict[varname][prod_name][area][prof]['time'])[ii],
+                     rms_tmp, linestyle = '-',  linewidth = 1.6, color = list_color[s],
+                     label = name_lab)
+            #plt.plot(np.array(dict[varname][prod_name][area][prof]['time'])[ii],
+            #         np.array(dict[varname][prod_name][area][prof]['rmsd'])[ii],
+            #         linestyle = '-',  linewidth = 1.6, color = list_color[s],
+            #         label = name_lab)
+            ii = np.where(~np.isnan(np.array(dict[varname][prod_name][area][prof]['bias'])))
+            v_time = np.array(dict[varname][prod_name][area][prof]['time'])[ii]
+            print(f'Echeance {prod}')
+            [print(dt.strftime('The date is %A %Y %b %d')) for dt in v_time]
+            bias_tmp =  np.array(dict[varname][prod_name][area][prof]['bias'])[ii]
+            if  med_filtr:
+                print(f'Data filtered {window}')
+                if len(bias_tmp > 0):
+                    var_filtre1 = medfilt(bias_tmp[:], window)
+                    data = pd.Series(var_filtre1)
+                    bias_tmp = data.rolling(window, center=True).mean()
+            plt.plot(np.array(dict[varname][prod_name][area][prof]['time'])[ii],
+                     bias_tmp,
                      linestyle = '--', linewidth = 1.6, color = list_color[s])
+            #plt.plot(np.array(dict[varname][prod_name][area][prof]['time'])[ii],
+            #         np.array(dict[varname][prod_name][area][prof]['bias'])[ii],
+            #         linestyle = '--', linewidth = 1.6, color = list_color[s])
 
 
     # ~~~~~~~~ Config plot, axes et sous-titres ~~~~~~~~~~~

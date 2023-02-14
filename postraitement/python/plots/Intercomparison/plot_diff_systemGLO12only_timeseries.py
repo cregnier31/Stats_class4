@@ -69,7 +69,7 @@ def read_stats(filename,prod, varname, dict_tmp, dict):
     cor = np.where(np.array(metric_name) == 'anomaly correlation')[0][0]
     ini = False
     if prod == "PSY4V3R1": prod = "PSY4"
-    if prod == "GLO12V4": prod = "GLO12"
+    #if prod == "GLO12V4": prod = "GLO12"
     if prod == "PSY3V3R3": prod = "PSY3"
     dict[varname][prod] = {} ; dict_tmp[varname][prod] = {}
     for a, area in enumerate(area_name):
@@ -103,8 +103,8 @@ MULTI_PLOT = False
 GLO_AREA = False
 CMEMS_AREA = True
 skill = 0
-dt_start_plot_ini = ['20190101']
-dt_end_plot_ini = ['20191231']
+dt_start_plot_ini = ['20170101']
+dt_end_plot_ini = ['20220614']
 list_color = ['red']
 window = 30
 nf = 0 # Hincast: 0 ; Forecast: nbre heures echeance (12, 60, etc.)
@@ -127,30 +127,32 @@ else :
 
 PATH_IN = '/home/cregnier/Gitlab/TEP_CLASS4/postraitement/python/plots/Intercomparison/'
 depth_comp="0-5000m"
-PATH_OUT = PATH_IN+'img/GLO12/'
+PATH_OUT = PATH_IN+'img/GLO12/oper/'
 DATA_IN = '/sortref/calval/DATA_COLOCATIONS/T_S_data_new/'
 SYSTEM = ['GLO12V4']
 VAR = ['seaice-concentration','salinity',\
        'temperature', 'sla', 'sst',\
        'zonal-velocity-filtr', 'meridional-velocity-filtr']
-#VAR = ['sst', 'sla', 'seaice-concentration']
+#VAR = ['salinity', 'temperature']
+if not os.path.isdir(PATH_OUT):
+    os.makedirs(PATH_OUT)
+#VAR = ['sst']
 list_var0 = ['sla','sst','seaice-concentration','zonal-velocity-filtr', 'meridional-velocity-filtr']
 list_varTS = ['temperature','salinity']
 level_sla_stt = 0
 level_t_s = [0, 1, 2, 3, 4]
 cla_areaini = params.liste_zone
 cla_depth = params.profondeur3
-print (cla_depth)
 # ~~~~~~~~~~~ Definition des dates ~~~~~~~~~~~~~~~~~
 
-dt_start_plot = "20190101"
-dt_end_plot = "20191231"
+dt_start_plot = "20170101"
+dt_end_plot = "20220614"
 dateCNESref = d.datetime.strptime('19500101','%Y%m%d').toordinal()
 dtst = d.datetime.strptime(dt_start_plot,'%Y%m%d')
 dted = d.datetime.strptime(dt_end_plot,'%Y%m%d')
 
 
-# Lecture des stats pour les differents systemes 
+# Lecture des stats pour les differents systemes
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 dict={}
@@ -171,7 +173,8 @@ for v, varname in enumerate(VAR):
                    f'/product_quality_stats_GLOBAL_ANALYSIS_FORECAST_PHY_'\
                    f'{prod}_{dt_start_plot}_{dt_end_plot}.nc'
             print(file)
-            filename = glob(file)[0]
+            #filename = glob(file)[0]
+            filename = file
         except Exception as e:
             raise RuntimeError(file) from e
         dict_tmp, dict, area_name, name_ech = \
@@ -180,12 +183,13 @@ for v, varname in enumerate(VAR):
     print ('Filter out the timeserie')
     for s, prod in enumerate(SYSTEM):
         if prod == "PSY4V3R1": prod = "PSY4"
-        if prod == "GLO12V4": prod = "GLO12"
+        #if prod == "GLO12V4": prod = "GLO12"
         if prod == "PSY3V3R3": prod = "PSY3"
         for a, area in enumerate(area_name):
             #if area == "Full Domain":
             #if area == "Indian Ocean":
-            if 'time' not in dict[varname][prod][area]: continue
+            if 'time' not in dict[varname][prod][area]:
+                continue
             v_time = np.array(dict[varname][prod][area]['time'])
             MAT_TMP = np.zeros((len(v_time), 4))
             for t in range(len(v_time)):
@@ -197,14 +201,16 @@ for v, varname in enumerate(VAR):
             dict[varname][prod][area]['bias'] = MAT_TMP[:,1]
             dict[varname][prod][area]['nb_obs'] = MAT_TMP[:,2]
             dict[varname][prod][area]['cor_ano'] = MAT_TMP[:,3]
+            print(f'{area} ok')
         print(f'{prod} {varname} ok')
-
+        print(f'{prod} {varname}')
 
 # ************************************************************************
 #             Test pour tracer plusieurs plots simples
 # ************************************************************************
 
-SYSTEM = ['GLO12']
+
+SYSTEM = ['GLO12V4']
 comp_name = 'vs'.join(SYSTEM)
 if SINGLE_PLOT:
     print ("Single_plot")
@@ -213,24 +219,30 @@ if SINGLE_PLOT:
     elif CMEMS_AREA:
         area_ini = area_name
     for area in area_ini:
+        print(f'Area {area}')
         a = np.where(np.array(area_name) == area)[0][0]
         for v, varname in enumerate(VAR):
-            if varname in list_var0: prof = cla_depth[level_sla_stt]
-            elif varname in list_varTS: prof = cla_depth[level_t_s]
-            fig, splot, nb_var = tsp.fmtFig(area, name_ech)
-            leg = True
-            ax_fig = plt.subplot(1,1,1)
-            if cla_areaini[a] == 'ARC':
-                f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof,
-                                 dtst, dted, leg, list_color, splot, nb_var, skill)
-            else:
-                f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof,
-                                 dtst, dted, leg, list_color, splot, nb_var, skill)
-            areavalue = cla_areaini[a].decode("utf-8")
-            filename_out = f"{PATH_OUT}{areavalue}_rmsd_bias_"\
-                           f"{varname}_{comp_name}_{dt_start_plot}-{dt_end_plot}.png"
-            plt.savefig(filename_out, dpi=200)
-            plt.close()
+            if varname in list_var0:
+                list_prof = [cla_depth[level_sla_stt]]
+            elif varname in list_varTS:
+                list_prof = cla_depth[level_t_s]
+            for prof in list_prof:
+                fig, splot, nb_var = tsp.fmtFig(area, name_ech)
+                leg = True
+                ax_fig = plt.subplot(1,1,1)
+                if cla_areaini[a] == 'ARC':
+                    f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof,
+                                     dtst, dted, leg, list_color, splot, nb_var, skill)
+                else:
+                    f = tsp.plotStat(fig, ax_fig, dict, varname, area, SYSTEM, prof,
+                                     dtst, dted, leg, list_color, splot, nb_var, skill)
+                areavalue = cla_areaini[a].decode("utf-8")
+                filename_out = f"{PATH_OUT}{areavalue}_rmsd_bias_"\
+                               f"{varname}_{comp_name}_{dt_start_plot}"\
+                               f"-{dt_end_plot}_{prof.decode()}.png"
+                print(filename_out)
+                plt.savefig(filename_out, dpi=200)
+                plt.close()
 
 
 sys.exit(1)
