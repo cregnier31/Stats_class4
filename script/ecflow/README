@@ -1,0 +1,10 @@
+# launch ecflow server
+export ECF_HOST=fidjim08-sihpc
+export ECF_PORT=3144
+nohup ecflow_server &  # start ecFlow with default port 3144
+netstat -lnptu
+
+# launch ecflow client
+ecflow_client --load="mysuite.def"  force
+ecflow_client --begin="/ecflow_tutorial_${USER}"
+

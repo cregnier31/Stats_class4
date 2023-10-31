@@ -476,7 +476,6 @@ class Interpolator(object):
                           self.tab_interp['gcost'] = np.sum(weights * np.array(self.gcosT).flatten()
                                         [indexes], axis=1) / np.sum(weights, axis=1)
                           #ma.array(self.gcosT).flatten()[indexes]
-                          print('----------------------')
                           self.compute = True
                           # ucorr0 = values_u0*gcost_interp - values_v0*gsint_interp
                           # vcorr0 = values_u0*gsint_interp + values_v0*gcost_interp
@@ -547,7 +546,7 @@ class Interpolator(object):
                    if ll_unique :
                        fcst_tab[:, var, indice, 0] = interp_values
                        if self.compute and var == len(variable)-1:
-                          self.log.debug(f'Compute correction fcst {ind}')
+                          self.log.debug(f'Compute correction fcst {indice}')
                           fcst_tab[:, 0, indice, 0] = fcst_tab[:, 0, indice, 0] * \
                              self.tab_interp['gcost'] - fcst_tab[:, 1, indice, 0] * \
                              self.tab_interp['gsint']
@@ -580,7 +579,7 @@ class Interpolator(object):
                    if ll_unique :
                         pers_tab[:, var, indice, 0] = interp_values
                         if self.compute and var == len(variable)-1:
-                           self.log.debug(f'Compute correction pers {ind}')
+                           self.log.debug(f'Compute correction pers {indice}')
                            pers_tab[:, 0, indice, 0] = pers_tab[:, 0, indice, 0] * \
                               self.tab_interp['gcost'] - pers_tab[:, 1, indice, 0] * \
                               self.tab_interp['gsint']

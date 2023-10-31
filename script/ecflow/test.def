@@ -1,0 +1,8 @@
+# Definition of the suite 'test'
+suite test
+   edit ECF_HOME "/home/smer/regnierc/code/test/TEP_CLASS4_dev/script/ecflow"  # replace '$HOME' with the path to your home directory
+   task t1
+   task t2
+        trigger t1 eq complete
+endsuite
+

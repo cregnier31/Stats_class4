@@ -345,7 +345,7 @@ class InputLoader(Loader):
                 diroutput = p
                 ll_output = True
         # LOGGER
-        log = Logger(f"TEP_CLASS4_{cl_data}").run(level)
+        log = Logger(f"TEP_CLASS4_{cl_data}_{cl_config}").run(level)
         log.info("Loglevel {}".format(log))
         list_var.append(ll_date1)
         list_var.append(ll_date2)
