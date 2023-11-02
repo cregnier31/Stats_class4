@@ -1,4 +1,0 @@
-#!/bin/ksh
-
-rep_idl=/home/mercator-px/bin/idl
-$rep_idl exe_multiserietemp_class4.pro

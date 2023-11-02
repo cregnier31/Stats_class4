@@ -1,1 +1,0 @@
-/home/cregnier/Gitlab/TEP_CLASS4/postraitement/exe/../utils/Region_boite_global.txt
