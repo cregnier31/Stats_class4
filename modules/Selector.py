@@ -155,9 +155,21 @@ class SelectListModelData(Selector):
             param_dict['gridtype'] = [param_dict['gridu'], param_dict['gridv']]
             param_dict['gridtype_clim'] = ["current"]
         elif self.data_type.lower() == "profile":
-            param_dict['gridtype'] = [param_dict['gridtemp'],param_dict['gridsal']]
-            param_dict['gridtype_clim'] = ["TEMP", "PSAL"]
-            param_dict['gridtype_light'] = ["TN.B", "SN.B"]
+            list_grid = []
+            list_grid_clim = []
+            list_grid_light = []
+            if param_dict['ll_TEMP']:
+                list_grid.append(param_dict['gridtemp'])
+                list_grid_clim.append("TEMP")
+                list_grid_light.append("TN.B")
+            if param_dict['ll_PSAL']: 
+                list_grid.append(param_dict['gridsal'])
+                list_grid_clim.append("PSAL")
+                list_grid_light.append("SN.B")
+            param_dict['gridtype'] = list_grid
+            param_dict['gridtype_clim'] = list_grid_clim
+            param_dict['gridtype_light'] = list_grid_light
+
         elif self.data_type.lower() == "current":
             #param_dict['gridtype'] = ["gridU", "gridV"]
             param_dict['gridtype'] = ["3DU-uo", "3DV-vo"]
@@ -175,9 +187,9 @@ class SelectListModelData(Selector):
             raise ('typemod not known')
         return param_dict
 
-    def set_leadtime(self, time, param_dict):
+    def set_leadtime(self, time, param_dict, lead_new):
         lead_fin = []
-        lead_new = param_dict['lead_int']
+        #lead_new = param_dict['lead_int']
         lead_new2 = param_dict['lead_int2']
         cl_config_use = param_dict['cl_config']
         ll_single = False
@@ -194,10 +206,16 @@ class SelectListModelData(Selector):
             if 'best_weekly' in param_dict['lead_time']:
                 lead_fin = ['pers']
             else:
-                lead_tmp = ['nwct']
-                lead_new = [time[:4]+element for element in lead_new[1:]]
-                lead_tmp.extend(lead_new)
-                lead_fin = lead_tmp
+                if len(lead_new) > 1 :
+                    lead_tmp = ['nwct']
+                    lead_new = [time[:4]+element for element in lead_new[1:]]
+                    lead_tmp.extend(lead_new)
+                    lead_fin = lead_tmp
+                else:
+                    if lead_new == '0':
+                        lead_fin = ['nwct']
+                    else:
+                        lead_fin = [time[:4]+lead_new]
         elif time == 'best_estimate':
             if param_dict['cl_config'][0:6] == 'BIOMER':
                 #lead_fin = [time[0]+time[4]+time[6:8]]
@@ -247,7 +265,7 @@ class SelectListModelData(Selector):
         self.leadtime = lead_fin
         return param_dict
 
-    def run(self, param_dict, dateval):
+    def run(self, param_dict, dateval, leadtime, lead_int):
         list = OrderedDict()
         param_dict = self.set_gridtype(param_dict)
         self.log.info(f'Data type {self.data_type}')
@@ -257,300 +275,301 @@ class SelectListModelData(Selector):
         new_naming = False
         if  param_dict['naming'] == 'new':
             new_naming = True
-        for time in param_dict['lead_time']:
-            list_tmp = []
-            self.log.debug(f'Lead Time {time}')
-            lead_new = param_dict['lead_int']
-            lead_new2 = param_dict['lead_int2']
-            cl_config_use = param_dict['cl_config']
-            ll_single = False
-            param_dict = self.set_leadtime(time, param_dict)
-            ## Find and Load the good file
-            ind = 0
-            ll_miss = False
-            for directory in self.leadtime:
-                self.log.debug("directory {}".format(directory))
-                ll_miss_rep = False
-                datev = SyDate(str(dateval))
-                year = str(datev.year)
-                month_up = datev.month + 1
-                ## Compute date
-                if param_dict['data_origin'] == 'GLOBCOLOUR' and directory != 'clim':
-                    if directory == 'hdct' and param_dict['daily_pref'] == '7dAV':
-                        dirmodel_new = param_dict['dirmodel']+"HINDCAST/"
-                    elif directory == 'hdct' and param_dict['daily_pref'] == '1dAV':
-                        dirmodel_new = param_dict['dirmodel']
-                    elif directory == 'fcst' and param_dict['daily_pref'] == '7dAV':
-                        dirmodel_new = param_dict['dirmodel']+"FORECAST/"
-                    elif directory == 'fcst' and param_dict['daily_pref'] == '1dAV':
-                        self.log.debug('define forecast path')
-                        sys.exit()
-                else:
-                    if directory == 'hdct':
-                        if param_dict['daily_pref'] == '7dAV':
-                            dirmodel_new = self.dirmodel+"HINDCAST/"
+        #for time in param_dict['lead_time']:
+        list_tmp = []
+        self.log.debug(f'Lead Time {leadtime}')
+        #lead_new = param_dict['lead_int']
+        #lead_new2 = param_dict['lead_int2']
+        cl_config_use = param_dict['cl_config']
+        config = param_dict['cl_conf']
+        ll_single = False
+        param_dict = self.set_leadtime(leadtime, param_dict, lead_int)
+        ## Find and Load the good file
+        ind = 0
+        ll_miss = False
+        for directory in self.leadtime:
+            self.log.debug("directory {}".format(directory))
+            ll_miss_rep = False
+            datev = SyDate(str(dateval))
+            year = str(datev.year)
+            month_up = datev.month + 1
+            ## Compute date
+            if param_dict['data_origin'] == 'GLOBCOLOUR' and directory != 'clim':
+                if directory == 'hdct' and param_dict['daily_pref'] == '7dAV':
+                    dirmodel_new = param_dict['dirmodel']+"HINDCAST/"
+                elif directory == 'hdct' and param_dict['daily_pref'] == '1dAV':
+                    dirmodel_new = param_dict['dirmodel']
+                elif directory == 'fcst' and param_dict['daily_pref'] == '7dAV':
+                    dirmodel_new = param_dict['dirmodel']+"FORECAST/"
+                elif directory == 'fcst' and param_dict['daily_pref'] == '1dAV':
+                    self.log.debug('define forecast path')
+                    sys.exit()
+            else:
+                if directory == 'hdct':
+                    if param_dict['daily_pref'] == '7dAV':
+                        dirmodel_new = self.dirmodel+"HINDCAST/"
+                    else:
+                        if self.data_type.lower() == "nitrate" or self.data_type.lower() == "ph" or  self.data_type.lower() == "chl" :
+                            dirmodel_new = self.dirmodel
                         else:
-                            if self.data_type.lower() == "nitrate" or self.data_type.lower() == "ph" or  self.data_type.lower() == "chl" :
-                                dirmodel_new = self.dirmodel
+                            if param_dict['type_run'] == "REA":
+                                dirmodel_new = self.dirmodel+year+'/'+MONTH+'/'
                             else:
-                                if param_dict['type_run'] == "REA":
-                                    dirmodel_new = self.dirmodel+year+'/'+MONTH+'/'
+                                #config = param_dict['cl_conf']
+                                self.config_d = re.sub("V", "QV", config)
+                                # PSY4
+                                if new_naming :
+                                    # GLO12V4
+                                    dirmodel_new = f'{self.dirmodel}HEBDO/{config[0:5]}/{config.lower()}/'
                                 else:
-                                    config = param_dict['cl_conf']
-                                    self.config_d = re.sub("V", "QV", config)
-                                    # PSY4
-                                    if new_naming :
-                                        # GLO12V4
-                                        dirmodel_new = f'{self.dirmodel}HEBDO/{config[0:5]}/{config.lower()}/'
-                                    else:
-                                        #dirmodel_new = self.dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
-                                        dirmodel_new = self.dirmodel+"HEBDO/"+self.modele[:4]+"/"+self.modele.lower()+"/"
-                    elif directory == 'hdct_all' and self.typemod == 'allege':
-                        self.log.debug("lightout type")
-                        dirmodel_new = self.dirmodel+"/"
-                        template = self.get_template_alleges(dateval,
-                                                             param_dict)
-                    elif directory == 'hdct_all':
-                        dirmodel_new = param_dict['dirmodel']+"/"
-                        self.log.debug("directory {}".format(dirmodel_new))
+                                    #dirmodel_new = self.dirmodel+"HEBDO/"+modele[:4]+"/"+modele.lower()+"/"
+                                    dirmodel_new = self.dirmodel+"HEBDO/"+self.modele[:4]+"/"+self.modele.lower()+"/"
+                elif directory == 'hdct_all' and self.typemod == 'allege':
+                    self.log.debug("lightout type")
+                    dirmodel_new = self.dirmodel+"/"
+                    template = self.get_template_alleges(dateval,
+                                                         param_dict)
+                elif directory == 'hdct_all':
+                    dirmodel_new = param_dict['dirmodel']+"/"
+                    self.log.debug("directory {}".format(dirmodel_new))
 
-                    elif self.typemod == 'allege_new' or self.typemod == 'allege_now':
-                        self.log.debug("lightout new type")
-                        dirmodel_new = self.dirmodel+"/"
-                        template = self.get_template_alleges_new(dateval,
-                                                                 param_dict)
-                    elif directory == 'fcst':
-                        self.log.debug("directory fcst !!!")
-                        if param_dict['daily_pref'] == '7dAV':
-                            dirmodel_new = self.dirmodel+"FORECAST/"
-                        else:
-                            if new_naming :
-                                # Case GLO12
-                                dirmodel_new = f'{self.dirmodel}DAILY/{config[0:5]}/{config.lower()}/'
-                            else:
-                                # Case PSY4
-                                dirmodel_new = self.dirmodel+"DAILY/"+self.modele[:5]+"/"+self.modele.lower()+"/"
-                    elif param_dict['data_origin'] == 'GLOBCOLOUR' and directory == 'clim':
-                        dirmodel_new = param_dict['dirclim']
-                    elif directory == "smoc" or directory == "tides" or directory == "stokes":
-                        dirmodel_new = self.dirmodel+'DAILY/SMOC/nwct/'
-                        self.log.debug('Directory smoc: {}'.format(dirmodel_new))
-                    elif directory == "bathy":
-                        dirmodel_new =  param_dict['bathy_file']
-                    elif time == 'smoc_fcst' or time == 'stokes_fcst':
-                        dirmodel_new = self.dirmodel+'DAILY/SMOC/'
-                        self.log.debug('Directory smoc/stokes fcst: {}'.format(dirmodel_new))
-                    elif directory == "clim":
-                        dirmodel_new =  param_dict['dirclim']
+                elif self.typemod == 'allege_new' or self.typemod == 'allege_now':
+                    self.log.debug("lightout new type")
+                    dirmodel_new = self.dirmodel+"/"
+                    template = self.get_template_alleges_new(dateval,
+                                                             param_dict)
+                elif directory == 'fcst':
+                    self.log.debug("directory fcst !!!")
+                    if param_dict['daily_pref'] == '7dAV':
+                        dirmodel_new = self.dirmodel+"FORECAST/"
                     else:
                         if new_naming :
-                            ## Case GLO12
-                            dirmodel_new = f'{self.dirmodel}DAILY/{config[0:5]}Q/{self.config_d.lower()}/'
+                            # Case GLO12
+                            dirmodel_new = f'{self.dirmodel}DAILY/{config[0:5]}/{config.lower()}/'
                         else:
                             # Case PSY4
                             dirmodel_new = self.dirmodel+"DAILY/"+self.modele[:5]+"/"+self.modele.lower()+"/"
-                if datev.month < 10: month = '0' + str(datev.month)
-                else: month = str(datev.month)
-                if month_up < 10: month_up = '0' + str(month_up)
-                else: month_up = str(month_up)
-                if datev.day < 10: day = '0' + str(datev.day)
-                else: day = str(datev.day)
-                if param_dict['data_origin'] == 'GLOBCOLOUR' and param_dict['daily_pref'] == '7dAV':
-                    jdatemin = SyDate(str(dateval))
-                    daytogo = 2-jdatemin.weekday()
-                    if daytogo > 0:
-                        first_date = jdatemin.goforward(daytogo)
-                    else:
-                        nbdate = 14
-                        daytogo2 = nbdate+daytogo
-                        first_date = jdatemin.goforward(daytogo2)
-                    daterun = first_date
-                    date1 = daterun.gobackward(14)
-                    date2 = daterun.gobackward(7)
-                    list_file = []
-                    if directory == 'hdct':
-                        for i in range(len(param_dict['gridtype'])):
-                            template = self.modele+'_'+param_dict['daily_pref']+'_'+ \
-                            str(date1)+'_'+ str(date2)+'_' + param_dict['gridtype'][i]+'_R'+str(daterun)
-                            list_file_tmp = glob(self.dirmodel_new+template+"*.nc")
-                            list_file.extend(list_file_tmp)
-                    elif directory == 'fcst':
-                        for i in range(len(param_dict['gridtype'])):
-                            template = self.modele+'_'+param_dict['daily_pref']+'_'+ \
-                            str(date1)+'_'+ str(date2)+'_' + param_dict['gridtype'][i]+'_R'+str(date1)
-                            list_file_tmp = glob(self.dirmodel_new+template+"*.nc")
-                            list_file.extend(list_file_tmp)
-                    elif directory == 'clim' and param_dict['data_type'].lower() == 'chloro':
-
-                        dirmodel_new = param_dict['dirclim']
-                        datev = SyDate(str(dateval))
-                        if int(datev.month) < 10 and int(datev.day) < 10:
-                            template = '19980'+str(datev.month)+'0'+str(datev.day)
-                        elif datev.month < 10 and datev.day > 9:
-                            template = '19980'+str(datev.month)+str(datev.day)
-                        elif datev.month > 9 and datev.day < 10:
-                            template = '1998'+str(datev.month)+'0'+str(datev.day)
-                        else:
-                            template = '1998'+str(datev.month)+str(datev.day)
-                        list_file = glob(dirmodel_new+template+"*.nc")
-                elif param_dict['data_origin'] == 'GLOBCOLOUR' and param_dict['daily_pref'] == '1dAV':
-                    if directory == 'clim':
-                        template = '1998'+month+day
-                        # Code Monthly case  template = '1998'+month
-                        self.log.debug('directory clim bio {}'.format(dirmodel_new+"/"+template+"*.nc"))
-                        list_file = glob(dirmodel_new+"/"+template+"*.nc")
-                    else:
-                        #directory = dirmodel_new+'/'+year+'/'+month+'/'
-                        dir_input = dirmodel_new
-                        list_file = glob(dir_input+self.modele+"_"+ \
-                        param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['varname'][0]+"*.nc")
-                        if not list_file:
-                            if datev.month < 9:
-                                month2 = '0' + str(datev.month+1)
-                                year2 = str(datev.year)
-                            elif datev.month == 12:
-                                month2 = '01'
-                                year2 = str(datev.year+1)
-                            else:
-                                month2 = str(datev.month+1)
-                                year2 = str(datev.year)
-                            list_file = glob(dirmodel_new+"/"+year2+'/'+month2+'/'+self.modele+"_"+ \
-                            param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['varname'][0]+"*.nc")
+                elif param_dict['data_origin'] == 'GLOBCOLOUR' and directory == 'clim':
+                    dirmodel_new = param_dict['dirclim']
+                elif directory == "smoc" or directory == "tides" or directory == "stokes":
+                    dirmodel_new = self.dirmodel+'DAILY/SMOC/nwct/'
+                    self.log.debug('Directory smoc: {}'.format(dirmodel_new))
+                elif directory == "bathy":
+                    dirmodel_new =  param_dict['bathy_file']
+                elif leadtime == 'smoc_fcst' or leadtime == 'stokes_fcst':
+                    dirmodel_new = self.dirmodel+'DAILY/SMOC/'
+                    self.log.debug('Directory smoc/stokes fcst: {}'.format(dirmodel_new))
+                elif directory == "clim":
+                    dirmodel_new =  param_dict['dirclim']
                 else:
-                    if self.typemod == "pgn":
-                        if directory == "clim":
-                            if self.data_type.lower() == "drifter_filtr" or self.data_type.lower() == "drifter" \
-                                    or self.data_type.lower() == "current":
-                                dirmodel_new = param_dict['dirclim']
-                                list_file = glob(dirmodel_new+"/*_monthlymeans.nc")
-                                list_file.append(glob(dirmodel_new+"/*monthlymeans.nc")[0])
-                            else:
-                                if param_dict['type_run'] == "REA":
-                                    for i in range(len(param_dict['gridtype'])):
-                                        list_file_tmp=glob.glob(dir_clim+"/"+type_clim+"_M"+MONTH+"_*"+\
-                                                gridtype_clim+".nc")
-                                       # list_file_tmp = glob(dirmodel_new+ "/"+self.modele+"_"+ \
-                                       # param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
-                                        list_file.extend(list_file_tmp)
-                                else:
-                                    list_file = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
-                                    param_dict['gridtype_clim']+".nc")
-                        else:
-                            list_file = []
-                            if self.data_type.lower() == "nitrate" or self.data_type.lower() == "ph" or  self.data_type.lower() == "chl":
-                                for i in range(len(param_dict['gridtype'])):
-                                    list_file_tmp = glob(dirmodel_new+"/"+year+"/"+month+"/"+self.modele+"_"+ \
-                                    param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
-                                    if not list_file_tmp:
-                                        list_file_tmp = glob(dirmodel_new+"/"+year+"/"+month_up+"/"+self.modele+"_"+ \
-                                            param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
-
-                                    list_file.extend(list_file_tmp)
-
-                            else:
-                                self.log.debug(f"Type run {param_dict['type_run']}")
-                                if param_dict['type_run'] == "REA":
-                                    for i in range(len(param_dict['gridtype'])):
-                                        list_file_tmp = glob(dirmodel_new+ "/"+self.modele+"_"+ \
-                                        param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
-                                        list_file.extend(list_file_tmp)
-                                elif param_dict['type_run'] == "free":
-                                    list_file_tmp = glob(dirmodel_new+self.modele+"_"+param_dict['daily_pref']+"_*_"+param_dict['gridtype']+\
-                                                '_'+dateval+"*.nc")
-                                    list_file.extend(list_file_tmp)
-                                elif param_dict['type_run'] == "RTR":
-                                    #print(dirmodel_new + self.modele + "_" + param_dict['daily_pref'] + "_" +\
-                                    #      dateval+ '*' +param_dict['gridtype'] + "*.nc")
-                                    #list_file_tmp = glob(dirmodel_new + self.modele + "_" + param_dict['daily_pref'] + "_" +\
-                                    #                dateval+ '*' +param_dict['gridtype'] + "*.nc")
-                                    #list_file.extend(list_file_tmp)
-                                    for i, grid in enumerate(param_dict['gridtype']):
-                                        list_file_tmp = glob(f"{dirmodel_new}{self.modele}_{param_dict['daily_pref']}_"
-                                                              f"{dateval}*{param_dict['gridtype'][i]}*.nc")
-                                        list_file.extend(list_file_tmp)
-                                        #print(f"{dirmodel_new}{self.modele}_{param_dict['daily_pref']}_"
-                                        #      f"{dateval}*{param_dict['gridtype'][i]}*.nc")
-                                    self.log.info(f'{list_file=}')
-                                else:
-                                    if directory == "smoc" or directory == "stokes" or directory == "tides":
-                                        for i in range (2):
-                                            list_file_tmp = glob(dirmodel_new+"SMOC_"+dateval+"*.nc")
-                                            list_file.extend(list_file_tmp)
-                                    elif time == "smoc_fcst":
-                                        for i in range (2):
-                                            list_file_tmp = glob(dirmodel_new+directory+"/SMOC_"+dateval+"*.nc")
-                                            #print (dirmodel_new+directory+"/SMOC_"+dateval+"*.nc")
-                                            list_file.extend(list_file_tmp)
-                                        directory="smoc_"+directory
-                                    elif time == "stokes_fcst":
-                                        for i in range (2):
-                                            list_file_tmp = glob(dirmodel_new+directory+"/SMOC_"+dateval+"*.nc")
-                                            #print (dirmodel_new+directory+"/SMOC_"+dateval+"*.nc")
-                                            list_file.extend(list_file_tmp)
-                                        directory="stokes_"+directory
-                                    elif time == "bathymetrie":
-                                        list_file_tmp = glob(dirmodel_new)
-                                        list_file.extend(list_file_tmp)
-                                    else:
-                                        #print(f'Passe la {self.modele=}')
-                                        ## Oper Case
-                                        for i in range(len(param_dict['gridtype'])):
-                                            #list_file_tmp = glob(dirmodel_new+directory+"/"+self.modele+"_"+ \
-                                            #param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
-                                            #print(f'{dirmodel_new}{directory}/{self.modele}_{param_dict["daily_pref"]}_{dateval}*_*{param_dict["gridtype"][i]}*.nc')
-                                            list_file_tmp = glob(f'{dirmodel_new}{directory}/{self.modele}_{param_dict["daily_pref"]}_{dateval}*_*{param_dict["gridtype"][i]}*.nc')
-                                            list_file.extend(list_file_tmp)
-                                self.log.debug(list_file)
-                    elif self.typemod == "allege":
-                        if directory == "clim":
-                            list_file = []
-                            dirmodel_new = param_dict['dirclim']
-                            for i in range(len(param_dict['gridtype_clim'])):
-                                list_file_tmp = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
-                                param_dict['gridtype_clim'][i]+".nc")
-                                list_file.extend(list_file_tmp)
-                            self.log.debug('Liste File clim :{}'.format(list_file))
-
-                        else:
-                            self.log.debug('Liste template')
-                            list_file = template
-                    elif self.typemod == "2ease":
-                        list_file = []
-                        if param_dict['type_run']== "kaku":
-                            list_file_tmp = glob(dirmodel_new+"*"+dateval[:6]+"*.nc")
-                            self.log.debug('File {}'.format(dirmodel_new+"*"+dateval[:6]+"*.nc"))
-                            list_file.extend(list_file_tmp)
-                        else:
-                            raise ("type not known for 2ease files")
+                    if new_naming :
+                        ## Case GLO12
+                        dirmodel_new = f'{self.dirmodel}DAILY/{config[0:5]}Q/{self.config_d.lower()}/'
                     else:
-                        self.log.debug('directory %s' % (dirmodel_new+'/'+year+'/'+month))
-                        list_file = glob(dirmodel_new+"/"+year+'/'+month+'/'+self.modele+"_"+ \
-                        param_dict['daily_pref']+"_"+dateval+"*_*"+gridtype+"*.nc")
-                        if not list_file:
-                            if datev.month < 9:
-                                month2 = '0' + str(datev.month+1)
-                                year2 = str(datev.year)
-                            elif datev.month == 12:
-                                month2 = '01'
-                                year2 = str(datev.year+1)
-                            else:
-                                month2 = str(datev.month+1)
-                                year2 = str(datev.year)
-                            list_file = glob(dirmodel_new+"/"+year2+'/'+month2+'/'+self.modele+"_"+ \
-                            param_dict['daily_pref']+"_"+dateval+"*_*"+gridtype+"*.nc")
-                        #print ("Type not define %s" %(cl_typemod.lower()))
-                        #sys.exit(1)
-                    self.log.debug('directory %s' % (dirmodel_new))
+                        # Case PSY4
+                        dirmodel_new = self.dirmodel+"DAILY/"+self.modele[:5]+"/"+self.modele.lower()+"/"
+            if datev.month < 10: month = '0' + str(datev.month)
+            else: month = str(datev.month)
+            if month_up < 10: month_up = '0' + str(month_up)
+            else: month_up = str(month_up)
+            if datev.day < 10: day = '0' + str(datev.day)
+            else: day = str(datev.day)
+            if param_dict['data_origin'] == 'GLOBCOLOUR' and param_dict['daily_pref'] == '7dAV':
+                jdatemin = SyDate(str(dateval))
+                daytogo = 2-jdatemin.weekday()
+                if daytogo > 0:
+                    first_date = jdatemin.goforward(daytogo)
+                else:
+                    nbdate = 14
+                    daytogo2 = nbdate+daytogo
+                    first_date = jdatemin.goforward(daytogo2)
+                daterun = first_date
+                date1 = daterun.gobackward(14)
+                date2 = daterun.gobackward(7)
+                list_file = []
+                if directory == 'hdct':
+                    for i in range(len(param_dict['gridtype'])):
+                        template = self.modele+'_'+param_dict['daily_pref']+'_'+ \
+                        str(date1)+'_'+ str(date2)+'_' + param_dict['gridtype'][i]+'_R'+str(daterun)
+                        list_file_tmp = glob(self.dirmodel_new+template+"*.nc")
+                        list_file.extend(list_file_tmp)
+                elif directory == 'fcst':
+                    for i in range(len(param_dict['gridtype'])):
+                        template = self.modele+'_'+param_dict['daily_pref']+'_'+ \
+                        str(date1)+'_'+ str(date2)+'_' + param_dict['gridtype'][i]+'_R'+str(date1)
+                        list_file_tmp = glob(self.dirmodel_new+template+"*.nc")
+                        list_file.extend(list_file_tmp)
+                elif directory == 'clim' and param_dict['data_type'].lower() == 'chloro':
 
-                if not list_file:
-                    self.log.error("Repertory %s" % (dirmodel_new))
-                    self.log.error("File missing for %s" %(directory))
-                    ll_miss_rep = True
-                    continue
+                    dirmodel_new = param_dict['dirclim']
+                    datev = SyDate(str(dateval))
+                    if int(datev.month) < 10 and int(datev.day) < 10:
+                        template = '19980'+str(datev.month)+'0'+str(datev.day)
+                    elif datev.month < 10 and datev.day > 9:
+                        template = '19980'+str(datev.month)+str(datev.day)
+                    elif datev.month > 9 and datev.day < 10:
+                        template = '1998'+str(datev.month)+'0'+str(datev.day)
+                    else:
+                        template = '1998'+str(datev.month)+str(datev.day)
+                    list_file = glob(dirmodel_new+template+"*.nc")
+            elif param_dict['data_origin'] == 'GLOBCOLOUR' and param_dict['daily_pref'] == '1dAV':
+                if directory == 'clim':
+                    template = '1998'+month+day
+                    # Code Monthly case  template = '1998'+month
+                    self.log.debug('directory clim bio {}'.format(dirmodel_new+"/"+template+"*.nc"))
+                    list_file = glob(dirmodel_new+"/"+template+"*.nc")
+                else:
+                    #directory = dirmodel_new+'/'+year+'/'+month+'/'
+                    dir_input = dirmodel_new
+                    list_file = glob(dir_input+self.modele+"_"+ \
+                    param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['varname'][0]+"*.nc")
+                    if not list_file:
+                        if datev.month < 9:
+                            month2 = '0' + str(datev.month+1)
+                            year2 = str(datev.year)
+                        elif datev.month == 12:
+                            month2 = '01'
+                            year2 = str(datev.year+1)
+                        else:
+                            month2 = str(datev.month+1)
+                            year2 = str(datev.year)
+                        list_file = glob(dirmodel_new+"/"+year2+'/'+month2+'/'+self.modele+"_"+ \
+                        param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['varname'][0]+"*.nc")
+            else:
+                if self.typemod == "pgn":
+                    if directory == "clim":
+                        if self.data_type.lower() == "drifter_filtr" or self.data_type.lower() == "drifter" \
+                                or self.data_type.lower() == "current":
+                            dirmodel_new = param_dict['dirclim']
+                            list_file = glob(dirmodel_new+"/*_monthlymeans.nc")
+                            list_file.append(glob(dirmodel_new+"/*monthlymeans.nc")[0])
+                        else:
+                            if param_dict['type_run'] == "REA":
+                                for i in range(len(param_dict['gridtype'])):
+                                    list_file_tmp=glob.glob(dir_clim+"/"+type_clim+"_M"+MONTH+"_*"+\
+                                            gridtype_clim+".nc")
+                                   # list_file_tmp = glob(dirmodel_new+ "/"+self.modele+"_"+ \
+                                   # param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+                                    list_file.extend(list_file_tmp)
+                            else:
+                                list_file = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
+                                param_dict['gridtype_clim']+".nc")
+                    else:
+                        list_file = []
+                        if self.data_type.lower() == "nitrate" or self.data_type.lower() == "ph" or  self.data_type.lower() == "chl":
+                            for i in range(len(param_dict['gridtype'])):
+                                list_file_tmp = glob(dirmodel_new+"/"+year+"/"+month+"/"+self.modele+"_"+ \
+                                param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+                                if not list_file_tmp:
+                                    list_file_tmp = glob(dirmodel_new+"/"+year+"/"+month_up+"/"+self.modele+"_"+ \
+                                        param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+
+                                list_file.extend(list_file_tmp)
+
+                        else:
+                            self.log.debug(f"Type run {param_dict['type_run']}")
+                            if param_dict['type_run'] == "REA":
+                                for i in range(len(param_dict['gridtype'])):
+                                    list_file_tmp = glob(dirmodel_new+ "/"+self.modele+"_"+ \
+                                    param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+                                    list_file.extend(list_file_tmp)
+                            elif param_dict['type_run'] == "free":
+                                list_file_tmp = glob(dirmodel_new+self.modele+"_"+param_dict['daily_pref']+"_*_"+param_dict['gridtype']+\
+                                            '_'+dateval+"*.nc")
+                                list_file.extend(list_file_tmp)
+                            elif param_dict['type_run'] == "RTR":
+                                #print(dirmodel_new + self.modele + "_" + param_dict['daily_pref'] + "_" +\
+                                #      dateval+ '*' +param_dict['gridtype'] + "*.nc")
+                                #list_file_tmp = glob(dirmodel_new + self.modele + "_" + param_dict['daily_pref'] + "_" +\
+                                #                dateval+ '*' +param_dict['gridtype'] + "*.nc")
+                                #list_file.extend(list_file_tmp)
+                                for i, grid in enumerate(param_dict['gridtype']):
+                                    list_file_tmp = glob(f"{dirmodel_new}{self.modele}_{param_dict['daily_pref']}_"
+                                                          f"{dateval}*{param_dict['gridtype'][i]}*.nc")
+                                    list_file.extend(list_file_tmp)
+                                    #print(f"{dirmodel_new}{self.modele}_{param_dict['daily_pref']}_"
+                                    #      f"{dateval}*{param_dict['gridtype'][i]}*.nc")
+                                self.log.info(f'{list_file=}')
+                            else:
+                                if directory == "smoc" or directory == "stokes" or directory == "tides":
+                                    for i in range (2):
+                                        list_file_tmp = glob(dirmodel_new+"SMOC_"+dateval+"*.nc")
+                                        list_file.extend(list_file_tmp)
+                                elif leadtime == "smoc_fcst":
+                                    for i in range (2):
+                                        list_file_tmp = glob(dirmodel_new+directory+"/SMOC_"+dateval+"*.nc")
+                                        #print (dirmodel_new+directory+"/SMOC_"+dateval+"*.nc")
+                                        list_file.extend(list_file_tmp)
+                                    directory="smoc_"+directory
+                                elif leadtime == "stokes_fcst":
+                                    for i in range (2):
+                                        list_file_tmp = glob(dirmodel_new+directory+"/SMOC_"+dateval+"*.nc")
+                                        #print (dirmodel_new+directory+"/SMOC_"+dateval+"*.nc")
+                                        list_file.extend(list_file_tmp)
+                                    directory="stokes_"+directory
+                                elif leadtime == "bathymetrie":
+                                    list_file_tmp = glob(dirmodel_new)
+                                    list_file.extend(list_file_tmp)
+                                else:
+                                    #print(f'Passe la {self.modele=}')
+                                    ## Oper Case
+                                    for i in range(len(param_dict['gridtype'])):
+                                        #list_file_tmp = glob(dirmodel_new+directory+"/"+self.modele+"_"+ \
+                                        #param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['gridtype'][i]+"*.nc")
+                                        #print(f'{dirmodel_new}{directory}/{self.modele}_{param_dict["daily_pref"]}_{dateval}*_*{param_dict["gridtype"][i]}*.nc')
+                                        list_file_tmp = glob(f'{dirmodel_new}{directory}/{self.modele}_{param_dict["daily_pref"]}_{dateval}*_*{param_dict["gridtype"][i]}*.nc')
+                                        list_file.extend(list_file_tmp)
+                            self.log.debug(list_file)
+                elif self.typemod == "allege":
+                    if directory == "clim":
+                        list_file = []
+                        dirmodel_new = param_dict['dirclim']
+                        for i in range(len(param_dict['gridtype_clim'])):
+                            list_file_tmp = glob(dirmodel_new+"/"+type_clim+"_M"+MONTH+"_*"+\
+                            param_dict['gridtype_clim'][i]+".nc")
+                            list_file.extend(list_file_tmp)
+                        self.log.debug('Liste File clim :{}'.format(list_file))
+
+                    else:
+                        self.log.debug('Liste template')
+                        list_file = template
+                elif self.typemod == "2ease":
+                    list_file = []
+                    if param_dict['type_run']== "kaku":
+                        list_file_tmp = glob(dirmodel_new+"*"+dateval[:6]+"*.nc")
+                        self.log.debug('File {}'.format(dirmodel_new+"*"+dateval[:6]+"*.nc"))
+                        list_file.extend(list_file_tmp)
+                    else:
+                        raise ("type not known for 2ease files")
+                else:
+                    self.log.debug('directory %s' % (dirmodel_new+'/'+year+'/'+month))
+                    list_file = glob(dirmodel_new+"/"+year+'/'+month+'/'+self.modele+"_"+ \
+                    param_dict['daily_pref']+"_"+dateval+"*_*"+gridtype+"*.nc")
+                    if not list_file:
+                        if datev.month < 9:
+                            month2 = '0' + str(datev.month+1)
+                            year2 = str(datev.year)
+                        elif datev.month == 12:
+                            month2 = '01'
+                            year2 = str(datev.year+1)
+                        else:
+                            month2 = str(datev.month+1)
+                            year2 = str(datev.year)
+                        list_file = glob(dirmodel_new+"/"+year2+'/'+month2+'/'+self.modele+"_"+ \
+                        param_dict['daily_pref']+"_"+dateval+"*_*"+gridtype+"*.nc")
+                    #print ("Type not define %s" %(cl_typemod.lower()))
                     #sys.exit(1)
-                self.log.debug('dirmodel  %s ' % (self.dirmodel))
-                if not ll_miss_rep : self.log.debug('directory and file  %s %s ' % (directory, list_file[0]))
-                list[directory] = list_file
+                self.log.debug('directory %s' % (dirmodel_new))
+
+            if not list_file:
+                self.log.error("Repertory %s" % (dirmodel_new))
+                self.log.error(f"File missing for {directory} {dateval}")
+                ll_miss_rep = True
+                continue
+                #sys.exit(1)
+            self.log.debug('dirmodel  %s ' % (self.dirmodel))
+            if not ll_miss_rep : self.log.debug('directory and file  %s %s ' % (directory, list_file[0]))
+            list[directory] = list_file
         if not list:
             self.log.error("No repertories")
             ll_miss = True
@@ -603,7 +622,7 @@ class SelectListData(Selector):
         else:
             self.log.debug('========================================================')
             self.log.debug('              DATE Selection and extraction  %s         ' %(param_dict['prefix_data']))
-            self.log.debug(' Prefix Data {}'.format(param_dict['prefix_data']))
+            self.log.debug(f" Prefix Data {param_dict['prefix_data']}")
             self.log.debug('========================================================')
             list_files = Extractor(self.log).factory(param_dict['prefix_data']).run_list(param_dict, daterun)
         if not list_files:

@@ -17,6 +17,7 @@ else:
 import operator
 import getopt
 import datetime as dt
+import errno
 import pandas as pd
 from datetime import date
 from lib_pyt.libtools.sydate import SyDate
@@ -27,6 +28,7 @@ from lib_pyt.libtools.utilities import date_range
 from reader import *
 from ast import literal_eval
 from os.path import dirname
+from QCcontrol import QCcontroller
 
 ##############################################################
 # C.REGNIER Juin 2014
@@ -266,12 +268,15 @@ class LoaderNCClim(Loader):
         return rla_lon, rla_lat
 
 class InputLoader(Loader):
+    def __init__(self):
+        self.lead_int = list(range(10))
+
     def load(self, options, level):
         """Loader for input options"""
         keywords = ['date1=', 'date2=', 'delta=', 'nbdate=', 'daterun=',
         'config=', 'data=', 'src=', 'nbproc=', 'typemod=', 'schedule=',
-        'data_id=','loglevel=','daymax=','dirinput=','diroutput=']
-        cla_opts = getopt.getopt(options, 'd', keywords)
+        'data_id=','loglevel=','daymax=','dirinput=','diroutput=',
+        'best','fcst','pers','all']
         ll_delta = None
         ll_date1 = None
         ll_date2 = None
@@ -287,11 +292,27 @@ class InputLoader(Loader):
         dask = False
         ll_input = False
         ll_output = False
+        ll_best = False
+        ll_forecast = False
+        ll_persistence = False
         list_var = []
         nb_proc = 0
         cl_schedule = 'd'
         cl_data_id = ""
+        list_LEAD_TIME = []
         list_inputtype = ['pgs', 'pgn', 'allege','2ease', 'allege_new', 'allege_now']
+        #try:
+        #    opts, args = getopt.getopt(options, "h", [keywords])
+        #except getopt.GetoptError:
+        #    print("Invalid option. Use --help for usage information.")
+        #    sys.exit(2)
+        #for opt, arg in opts:
+        #    if opt in ("-h", "--help"):
+        #        print("Usage: script.py [--best]")
+        #        sys.exit()
+        #    elif opt == "--best":
+        #        print("Performing the best operation.")
+        cla_opts = getopt.getopt(options, 'd', keywords)
         for o, p in cla_opts[0]:
             if o in ['--delta']:
                 ll_delta = True
@@ -344,6 +365,14 @@ class InputLoader(Loader):
             elif o in ['--diroutput']:
                 diroutput = p
                 ll_output = True
+            elif o in ['--best']:
+                list_LEAD_TIME.append('best_estimate')
+            elif o in ['--fcst']:
+                list_LEAD_TIME.append('forecast')
+            elif o in ['--pers']:
+                list_LEAD_TIME.append('persistence')
+            elif o in ['--all']:
+                list_LEAD_TIME=['best_estimate', 'forecast', 'persistence']
         # LOGGER
         log = Logger(f"TEP_CLASS4_{cl_data}_{cl_config}").run(level)
         log.info("Loglevel {}".format(log))
@@ -476,6 +505,8 @@ class InputLoader(Loader):
         param_dict['cl_data_id'] = cl_data_id
         param_dict['daymax'] = daymax
         param_dict['dask'] = dask
+        param_dict['lead_time'] = list_LEAD_TIME
+        param_dict['lead_int'] = self.lead_int
         if ll_input : param_dict['dirdata'] = dirinput
         if ll_output : param_dict['diroutput'] =  diroutput
         # Create time vector between date1 and date2
@@ -507,13 +538,22 @@ class NmlLoader(Loader):
         param_dict['nml_dir'] = param_dict['dirhome']+'NAMELIST/'
         param_dict['dir_log'] = param_dict['dirhome']+'log/'
         # Add new parameters in the dictionnary
-        #if param_dict['data_type'] == "SLA":
-        param_dict['cl_msshFile'] = db.get('static','cl_msshFile')
-        param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
+        if param_dict['data_type'] == "SLA":
+            param_dict['cl_msshFile'] = db.get('static','cl_msshFile')
+            param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
         param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
         param_dict['dirmodel'] = param_dict['dirmodel_pgn']
-        if 'dirdata' not in param_dict.keys(): param_dict['dirdata'] = db.get('input_dir', 'INPUTDATA')
-        param_dict['dirmodel_light'] = db.get('input_dir', 'DATA_IN_LIGHT')
+        if 'dirdata' not in param_dict.keys():
+            param_dict['dirdata'] = db.get('input_dir', 'INPUTDATA')
+        try:
+            param_dict['dirmodel_light'] = db.get('input_dir', 'DATA_IN_LIGHT')
+        except:
+            param_dict['dirmodel_light'] = ''
+        try:
+            param_dict['insitu_corr'] = db.get('GLOBAL', 'corr_pot')
+        except:
+            param_dict['insitu_corr'] = False
+
         param_dict['dirmodel'] = db.get('input_dir', 'DATA_IN')
         param_dict['nb_level'] = int(db.get('GLOBAL', 'LEVELS'))
         param_dict['zoom'] = int(db.get('GLOBAL', 'zoom'))
@@ -608,14 +648,19 @@ class NmlLoader(Loader):
         #    '_'+param_dict['model_type'].lower()
         param_dict['template'] = param_dict['cl_conf'] + \
             '_'+param_dict['model_type'].lower()
-        param_dict['lead_time'] = db.get('input_dir', 'LEAD_TIME').split()
-        param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
+        #param_dict['lead_time'] = db.get('input_dir', 'LEAD_TIME').split()
+        #param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
         param_dict['coloc_rep'] = db.get('output_dir', 'DIRCOLOC')
         param_dict['gridtemp'] = db.get('GLOBAL', 'gridtemp')
         param_dict['gridsal'] = db.get('GLOBAL', 'gridsal')
-        param_dict['gridu'] = db.get('GLOBAL', 'gridu')
-        param_dict['gridv'] = db.get('GLOBAL', 'gridv')
-
+        try:
+            param_dict['gridu'] = db.get('GLOBAL', 'gridu')
+        except:
+            param_dict['gridu'] = ''
+        try:
+            param_dict['gridv'] = db.get('GLOBAL', 'gridv')
+        except:
+            param_dict['gridv'] = ''
         try:
             param_dict['gridice'] = db.get('GLOBAL', 'gridice')
         except:
@@ -662,7 +707,7 @@ class NmlLoader(Loader):
             param_dict['corr'] = literal_eval(db.get('GLOBAL', 'corr'))
         except:
             param_dict['corr'] = False
-        
+
         if param_dict['zoom'] or param_dict['do_qc']:
             param_dict['lon_min'] = int(param_dict.get('GLOBAL', 'LONMIN'))
             param_dict['lon_max'] = int(param_dict.get('GLOBAL', 'LONMAX'))
@@ -698,6 +743,8 @@ class LoaderNCcorio(Loader):
     """Loader for coriolis dataset"""
     def __init__(self):
         self.varname_list = []
+        self.list_temp = ['votemper', 'thetao', 'temperature']
+        self.list_psal = ['vosaline', 'so', 'salinity']
 
     def read_pos(self,filename):
         nc = netCDF4.Dataset(filename,'r')
@@ -724,7 +771,7 @@ class LoaderNCcorio(Loader):
         nc.close()
         return position
 
-    def read_pos_and_value(self,filename):
+    def read_pos_and_value(self,filename, param_dict, qc_level=0):
 
         ll_pres=0
         ll_depth=0
@@ -743,17 +790,25 @@ class LoaderNCcorio(Loader):
             ll_psal = 1
             self.varname_list.append('PSAL')
             n_profiles, n_profs = np.shape(rla_temp)
-        if not ll_temp and ll_psal :
-            print ('PROF not valid with no TEMP and no PSAL')
+        if not ll_temp and not ll_psal :
+            print (f'PROF not valid with no TEMP and no PSAL {filename}')
             sys.exit(1)
         nb_variables = len(self.varname_list)
-        rla_obs = np.ndarray(shape=(n_profiles,n_profs, nb_variables))
+        #print(self.varname_list)
+        #print(f"Number of variables in {filename} {nb_variables}")
+        #rla_obs = np.ndarray(shape=(n_profiles,n_profs, nb_variables))
+        rla_obs = np.ndarray(shape=(n_profiles, nb_variables, n_profs))
         for ind in range(nb_variables):
-            rla_obs[:,:,ind] = nc.variables[self.varname_list[ind]][:,:]
+            rla_obs[:, ind, :] = nc.variables[self.varname_list[ind]][:,:]
             _FillValue = nc.variables[self.varname_list[ind]]._FillValue
 
-        print ('Nb variables {}'.format(nb_variables))
+        tab_dims = {}
+        dimension_names = nc.dimensions.keys()
+        dimensions_dict = {dim_name: len(dim) for dim_name, dim in nc.dimensions.items()}
 
+        for dim_name in dimension_names:
+            dimension = nc.dimensions[dim_name]
+            tab_dims[dim_name] = len(dimension)
         if ll_depth and ll_pres :
             rla_depth = nc.variables['PRES'][:,:]
         elif ll_depth and not ll_pres :
@@ -774,8 +829,31 @@ class LoaderNCcorio(Loader):
         if 'LONGITUDE' in nc.variables.keys(): rla_lon =  nc.variables['LONGITUDE'][:]
         if 'LATITUDE' in nc.variables.keys(): rla_lat =  nc.variables['LATITUDE'][:]
         nc.close()
-
-        return np.float32(rla_lon), np.float32(rla_lat), np.float32(rla_obs), n_profiles, np.float32(rla_depth), _FillValue
+        list_mod = param_dict['varname']
+        if len(set(self.list_psal).intersection(param_dict['varname'])) == 1:
+            list_psal =  list(set.intersection(set(self.list_psal), set(param_dict['varname'])))
+        if len(set(self.list_temp).intersection(param_dict['varname'])) == 1:
+            list_temp =  list(set.intersection(set(self.list_temp), set(param_dict['varname'])))
+        #print(f"{list_psal=} {ll_psal}")
+        #print(f"{list_temp=} {ll_temp}")
+        param_dict['ll_PSAL'] = False
+        param_dict['ll_TEMP'] = False
+        if not ll_psal:
+           #print('Remove psal')
+           list_mod = list(set(list_mod) - set(list_psal))
+        else:
+            param_dict['ll_PSAL'] = True
+        if not ll_temp:
+           #print('Remove temp')
+           list_mod = list(set(list_mod) - set(list_temp))
+        else:
+           param_dict['ll_TEMP'] = True
+        param_dict['varname_select'] = list_mod
+        ## Qc control 
+        QCflag = QCcontroller(param_dict['data_type'],param_dict['data_origin']).factory().QCrun(filename, qc_level)
+        param_dict['qc'] = QCflag
+        return np.float32(rla_lon), np.float32(rla_lat), np.float32(rla_obs),\
+               n_profiles, np.float32(rla_depth), tab_dims, param_dict,  _FillValue
 
 class LoaderSyntheticValue(Loader):
 
@@ -877,7 +955,7 @@ class LoaderNCgodae(Loader):
                 tab_dims['nb_obs'] = sizedim
             elif dims == 'numdeps':
                 tab_dims['nb_depths'] = sizedim
-            
+
         if 'depth' in nc.variables.keys():
             rla_depth = nc.variables['depth'][:]
         elif 'DEPH' in nc.variables.keys():
@@ -896,7 +974,7 @@ class LoaderNCgodae(Loader):
         ## CREGNIER
         #ncdata.close()
         nc.close()
-        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, tab_dims,  _FillValue
+        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, tab_dims, _FillValue
 
 class PGN_coords_Loader(Loader):
 

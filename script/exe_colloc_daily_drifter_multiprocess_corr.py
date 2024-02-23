@@ -81,43 +81,42 @@ def select_drifters(log, params_dict, YEAR, MONTH, ts, depthvalue=15.0):
             raise cl4err.Class4FatalError(f"Pb with drifter file {file}")
         date_val = pd.to_datetime(time).strftime('%Y-%m-%d')
         w_depth15 = np.where(np.array(depth) == depthvalue)
-        ndim1, ndim2 = np.shape(depth)
+        #ndim1, ndim2 = np.shape(depth)
+        ndim1 = np.shape(time)
         vtime = time.astype('M8[ms]').astype('O')
         vect_time = []
         if len(w_depth15[0]) > 0:
             ind_x15 = w_depth15[0]
-            ind_y15 = w_depth15[1]
-            u_ewct15 = np.array(u_ewct)[ind_x15, ind_y15]
-            v_nsct15 = np.array(v_nsct)[ind_x15, ind_y15]
-            lon_15 = np.array(lon_value)[ind_x15]
-            lat_15 = np.array(lat_value)[ind_x15]
-            u_ewct0 = np.array(u_ewct)[ind_x15, 0]
-            v_nsct0 = np.array(v_nsct)[ind_x15, 0]
-            depth0 = np.array(depth)[ind_x15, 0]
-            depth15 = np.array(depth)[ind_x15, 1]
-            u_qc0 = np.array(u_qc)[ind_x15, 0]
-            v_qc0 = np.array(v_qc)[ind_x15, 0]
-            time_qc_tmp = time_qc[ind_x15]
-            depth0 = np.array(depth)[ind_x15, 0]
-            depth_qc0 = np.array(depth_qc)[ind_x15, 0]
-            current_test_qc0 = np.array(current_test_qc)[ind_x15, 0]
-            current_test0 = np.array(current_test)[ind_x15, 0]
-            position_qc_tmp = position_qc[ind_x15]
-            dc_reference_tmp = dc_reference[ind_x15]
-            for t in range(len((w_depth15[0]))):
+            #ind_y15 = w_depth15[1]
+            u_ewct15 = np.array(u_ewct)[:, ind_x15]
+            v_nsct15 = np.array(v_nsct)[:, ind_x15]
+            lon_15 = np.array(lon_value)[:]
+            lat_15 = np.array(lat_value)[:]
+            u_ewct0 = np.array(u_ewct)[:, 0]
+            v_nsct0 = np.array(v_nsct)[:, 0]
+            depth0 = [np.array(depth)[0] for prof in range(ndim1[0])]
+            depth_qc0 = [np.array(depth_qc)[0] for prof in range(ndim1[0])]
+            u_qc0 = np.array(u_qc)[:, 0]
+            v_qc0 = np.array(v_qc)[:, 0]
+            time_qc_tmp = time_qc[:]
+            current_test_qc0 = np.array(current_test_qc)[:, 0]
+            current_test0 = np.array(current_test)[:, 0]
+            position_qc_tmp = position_qc[:]
+            dc_reference_tmp = dc_reference[:]
+            for t in range(len(vtime)):
                 vect_time.append(vtime[t].strftime('%Y%m%d%H'))
             ndays = len(vect_time)
             vector_time = np.nan*np.zeros((ndays))
             for il_ind, daytime in enumerate(np.array(vect_time)):
                 vector_time[il_ind] = (dt.datetime.strptime(daytime, '%Y%m%d%H').
                                        toordinal()-dateCNESref)*24+int(daytime[8:10])
-            time_15 = np.array(date_val)[ind_x15]
-            u_qc15 = np.array(u_qc)[ind_x15, ind_y15]
-            v_qc15 = np.array(v_qc)[ind_x15, ind_y15]
-            depth15 = np.array(depth)[ind_x15, ind_y15]
-            depth_qc15 = np.array(depth_qc)[ind_x15, ind_y15]
-            current_test_qc15 = np.array(current_test_qc)[ind_x15, ind_y15]
-            current_test15 = np.array(current_test)[ind_x15, ind_y15]
+            time_15 = np.array(date_val)[:]
+            u_qc15 = np.array(u_qc)[:, ind_x15]
+            v_qc15 = np.array(v_qc)[:, ind_x15]
+            depth15 = [np.array(depth)[ind_x15] for prof in range(ndim1[0])]
+            depth_qc15 = [np.array(depth_qc)[ind_x15] for prof in range(ndim1[0])]
+            current_test_qc15 = np.array(current_test_qc)[:, ind_x15]
+            current_test15 = np.array(current_test)[:, ind_x15]
             if len(np.shape(wind_u)) > 0 and len(np.shape(wind_v)) > 0:
                 u_wind = np.array(wind_u)[:, 0]
                 v_wind = np.array(wind_v)[:, 0]
@@ -126,8 +125,8 @@ def select_drifters(log, params_dict, YEAR, MONTH, ts, depthvalue=15.0):
                 nb_times, nb_depths = np.shape(u_ewct)
                 u_wind = np.nan*np.zeros(nb_times)
                 v_wind = np.nan*np.zeros(nb_times)
-            if len(w_depth15[0]) != ndim1:
-                log.error(f"Missing some depth at 15m depth {file}")
+            #if len(w_depth15[0]) != ndim1:
+            #    log.error(f"Missing some depth at 15m depth {file}")
             ll_var15 = True
         else:
             ll_var15 = False
@@ -363,10 +362,10 @@ for i, day in enumerate(cla_df):
                                   nb_profs))
     DATA_SAVE_pers = np.nan*np.zeros((nbobs, nb_comp, nb_fcst,
                                          nb_profs))
-    DATA_SAVE_obs[:, 0, 0] = np.array(tab_value[str(day)]['u0'])
-    DATA_SAVE_obs[:, 1, 0] = np.array(tab_value[str(day)]['v0'])
-    DATA_SAVE_obs[:, 0, 1] = np.array(tab_value[str(day)]['u'])
-    DATA_SAVE_obs[:, 1, 1] = np.array(tab_value[str(day)]['v'])
+    DATA_SAVE_obs[:, 0, 0] = np.array(tab_value[str(day)]['u0']).flatten()
+    DATA_SAVE_obs[:, 1, 0] = np.array(tab_value[str(day)]['v0']).flatten()
+    DATA_SAVE_obs[:, 0, 1] = np.array(tab_value[str(day)]['u']).flatten()
+    DATA_SAVE_obs[:, 1, 1] = np.array(tab_value[str(day)]['v']).flatten()
 
     for ech in range(nb_fcst + nb_pers + 1):
         start = timer()

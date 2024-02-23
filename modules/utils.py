@@ -188,7 +188,7 @@ def launch_sbatch(Jobfile):
     SUBEXE="/usr/bin/sbatch"
     code_launch=f'{SUBEXE} {Jobfile}'
     args   = shlex.split(code_launch)
-    print(args)
+    #print(args)
     try :   subprocess.run(args)
     except :
         print (f'Launch {Jobfile} failed')
@@ -384,3 +384,20 @@ def find_index_month(date):
     index = dateval.month
     return index
 
+def create_dict(date1, date2, lead_time, lead_int):
+    list_keys = {}
+    valeurj = date1
+    list_keys_values = []
+    while valeurj >= date1  and valeurj <= date2:
+        dateval = str(valeurj)
+        for lead in lead_time:
+            if lead == 'best_estimate':
+                list_int = [0]
+            else:
+                list_int = lead_int
+            for int_val in list_int:
+                keyvalue = f'{dateval}-{lead}-{int_val}'
+                list_keys_values.append(keyvalue)
+        valeurj = valeurj.goforward(1)
+    list_keys['keyvalues'] = list_keys_values
+    return list_keys

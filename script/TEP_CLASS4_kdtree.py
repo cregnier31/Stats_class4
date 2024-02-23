@@ -26,7 +26,6 @@ import resource
 # Import local modules
 from Selector import Selector
 from Loader import Loader
-from Logger import Logger
 from Interpolator import Interpolator
 from Writer import Writer
 from timeit import default_timer as timer
@@ -47,7 +46,6 @@ def main(level=2):
     log.info('========================================================')
     log.info('          Load input options and parameter file         ')
     log.info('========================================================')
-
     # Load db configuration file
     conf_path = dirname(__file__) #os.getcwd()
     filename = conf_path + '/cfg/' + param_dict['confname']
@@ -97,7 +95,6 @@ def main(level=2):
         log.info('~~~~~~~~ Time elapsed to process day {} : {} {}'.format
                         (str(dateval),str(end - start), " seconds ~~~~~~~~~~~~"))
 
-# Set the level of logger
-#log_level = 2
+# Set the level of logger (log_level = 2)
 # Run the main code
 main()

@@ -5,6 +5,7 @@ import netCDF4
 from netCDF4 import Dataset
 import numpy as np
 import datetime
+import json
 
 def write_cl4_files_2(filename, latitude, longitude, observations,\
         observation_filt, best, forecast, persistence, time, u_qc, v_qc, depth_qc,\
@@ -429,55 +430,12 @@ def write_cl4_files_clim(filename, latitude, longitude, id_drift, observations,\
     nc_fid.close()  # close the new file
 
 
-def write_data_colloc_files(filename, latitude, longitude, u0, v0, u15, v15, vtime, nb_fcst):
-
-
-    nc = netCDF4.Dataset(filename, 'w')
-
-    #  ********************** Add dimensions ************************
-
-    nc.createDimension('time', len(vtime))
-    nc.createDimension('nb_ech', np.size(u0[0,:]))
-
-    #  ********************** Add variables ************************
-
-    nc_u0 = nc.createVariable('EWCT_0m', 'f', ('time', 'nb_ech'))
-    nc_u0.long_name = 'West-east current component at 0m depth'
-    nc_u0.units = 'm s-1'
-    nc.variables['EWCT_0m'][:] = u0
-    nc_v0 = nc.createVariable('NSCT_0m', 'f', ('time', 'nb_ech'))
-    nc_v0.long_name = 'South-north current component at 0m depth'
-    nc_v0.units = 'm s-1'
-    nc.variables['NSCT_0m'][:] = v0
-    nc_u15 = nc.createVariable('EWCT_15m', 'f', ('time', 'nb_ech'))
-    nc_u15.long_name = 'West-east current component at 15m depth'
-    nc_u15.units = 'm s-1'
-    nc.variables['EWCT_15m'][:] = u15
-    nc_v15 = nc.createVariable('NSCT_15m', 'f', ('time', 'nb_ech'))
-    nc_v15.long_name = 'South-north current component at 15m depth'
-    nc_v15.units = 'm s-1'
-    nc.variables['NSCT_15m'][:] = v15
-
-    nc_time = nc.createVariable('time','f', ('time'))
-    nc_time.calendar = 'gregorian'
-    nc_time.standard_name = 'time'
-    nc_time.units = 'hours since 1950-01-01 00:00:00'
-    nc_time.axis = 'T'
-    nc.variables['time'][:] = vtime
-
-    #  ********************** Add global attributes ************************
-
-    nc.longitude_east = longitude
-    nc.latitude_north = latitude
-    nc.close()
-
 def write_data_colloc_files_daily(filename, latitude, longitude, var_mod, vtime, stt_date, end_date, d_moor, d_mod, mvalue, ech_fcst=[0]):
     
 
     nc = netCDF4.Dataset(filename, 'w')
 
     #  ********************** Add dimensions ************************
-        
     nc.createDimension('forecasts', len(ech_fcst))   
     nc.createDimension('depth',1) 
     nc.createDimension('time', None)
@@ -497,8 +455,8 @@ def write_data_colloc_files_daily(filename, latitude, longitude, var_mod, vtime,
     nc_dpt.long_name = 'Depth'
     nc_dpt.standard_name = 'depth'
     nc_dpt.units = 'm'
-    nc_dpt.unit_long = 'Meters'    
-    nc.variables['depth'] = d_moor
+    nc_dpt.unit_long = 'Meters'
+    nc.variables['depth'] = float(d_moor)
 
     nc_time = nc.createVariable('time','double', ('time'))
     nc_time.axis = 'T'
@@ -533,17 +491,64 @@ def write_data_colloc_files_daily(filename, latitude, longitude, var_mod, vtime,
     nc.forecasts_value_0 = 'Analysis-SAM'
     nc.close()
 
+def convert_to_list(item):
+    if isinstance(item, np.ndarray):
+        return item.tolist()
+    elif isinstance(item, np.float32):
+        return float(item)
+    return item
+
+def convert_numpy_to_list(d):
+    for key, value in d.items():
+        if isinstance(value, dict):
+            d[key] = convert_numpy_to_list(value)
+        elif isinstance(value, list):
+            d[key] = value
+        else:
+            d[key] = convert_to_list(value)
+    return d
+
+def write_data_json_file(filename, latitude, longitude, depth_moor, var_mod, vtime, depth, obs_values, variable, ech_fcst=[0]):
+    # Convert NetCDF variables to a dictionary
+    variables = {}
+    variables["time"] = vtime.tolist()
+    variables[f'Observed_{variable}'] = obs_values.tolist()
+    variables["Analysis-mod"] = var_mod[:, 0].tolist()
+    variables["Forecast_12"] = var_mod[:, 1].tolist()
+    variables["Forecast_60"] = var_mod[:, 2].tolist()
+    variables["Forecast_204"] = var_mod[:, 3].tolist()
+    variables["longitude"] = float(longitude)
+    variables["latitude"] = float(latitude)
+    if isinstance(depth_moor, np.ndarray):
+        print(f'DEPTH array {depth_moor}')
+        variables["depth"] = depth_moor.tolist()
+    else:
+        variables["depth"] = depth_moor
+        print(f'DEPTH List {variables["depth"]}')
+
+    try:
+        variables = convert_numpy_to_list(variables)
+    except Exception as e:
+        print(f"Error conversion JSON file: {e} {filename} {depth_moor} {type(depth_moor)}")
+
+    # Write the dictionary to a JSON file
+    try:
+        with open(filename, 'w') as json_file:
+            json.dump(variables, json_file, indent=2)
+    except Exception as e:
+        print(f"Error saving JSON file: {e} {filename} {depth_moor} {type(depth_moor)}")
+
 def write_data_colloc_files(filename, latitude, longitude, var_mod, vtime, stt_date, end_date, depth, mvalue, ech_fcst=[0]):
-    
+
 
     nc = netCDF4.Dataset(filename, 'w')
 
     #  ********************** Add dimensions ************************
-    
+
     nc.createDimension('forecasts', len(ech_fcst))   
     nc.createDimension('depth',1) 
     nc.createDimension('time', None)
-    
+
 
     #  ********************** Add variables ************************
 
@@ -552,15 +557,21 @@ def write_data_colloc_files(filename, latitude, longitude, var_mod, vtime, stt_d
     nc_fcst.units = 'hours'
     nc.variables['forecasts'][:] = ech_fcst
 
-    nc_dpt = nc.createVariable('depth','double',('depth'))
+    #nc_dpt = nc.createVariable('depth','double',('depth'))
+    nc_dpt = nc.createVariable('depth','float',('depth'))
     nc_dpt.axis = 'Z'
     nc_dpt._CoordinateAxisType = 'Height'
     nc_dpt._CoordinateZisPositive = 'down'
     nc_dpt.long_name = 'Depth'
     nc_dpt.standard_name = 'depth'
     nc_dpt.units = 'm'
-    nc_dpt.unit_long = 'Meters'    
-    nc.variables['depth'] = depth
+    nc_dpt.unit_long = 'Meters'
+    print(f'Write moor file {filename} at depth { np.array(depth)}')
+    #nc.variables['depth'] = float(depth[0])
+    if isinstance(depth, list):
+        nc.variables['depth'] = np.array(depth)
+    elif isinstance(depth, np.ndarray):
+        nc.variables['depth'] = depth[0]
 
     nc_time = nc.createVariable('time','double', ('time'))
     nc_time.axis = 'T'
@@ -581,7 +592,6 @@ def write_data_colloc_files(filename, latitude, longitude, var_mod, vtime, stt_d
     nc_model.comment = "closer model grid point" ;
     nc.variables['thetao'][:] = var_mod
 
-   
     #  ********************** Add global attributes ************************
 
     nc.contact = 'qualif@mercator-ocean.fr'
