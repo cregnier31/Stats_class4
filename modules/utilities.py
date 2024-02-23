@@ -107,7 +107,8 @@ def findListFiles(path, pfx, sfx, time, dt_start=np.nan, dt_end=np.nan):
         ffile = pfx + t.strftime('%Y%m%d') + '*' + sfx + '*.nc'
         file_mod = sorted(glob(path+ffile))
         if len(file_mod) == 0:
-            print ('File missing')
+            print (f"File missing for time {t.strftime('%Y%m%d')} {sfx} {path}")
+            sys.exit(1)
         if np.isnan(dt_start) and np.isnan(dt_end):
             if len(file_mod) > 0 and file_mod[0] not in liste_file:
                 liste_file.append(file_mod[0])
@@ -117,10 +118,10 @@ def findListFiles(path, pfx, sfx, time, dt_start=np.nan, dt_end=np.nan):
                 liste_file.append(file_mod[0])
     return liste_file
 
-def readDataSet(list_f):
+def readDataSet(list_f, data_vars="all"):
     try:
-        mfdataset = xr.open_mfdataset(list_f, concat_dim='time_counter', \
-                    chunks={'time_counter':1,'y':'auto','x':'auto'},parallel=True,combine='by_coords')
+        datasets = [xr.open_dataset(fname, chunks={}) for fname in list_f]
+        mfdataset = xr.concat(datasets, dim='time_counter', data_vars=data_vars)
         time = mfdataset.variables['time_counter'][:].values
     except Exception as exs:
         log.error('Executation mfdataset failed: %s', exs)

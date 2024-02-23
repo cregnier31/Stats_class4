@@ -2,6 +2,7 @@ from __future__ import generators
 import os,sys,string,shutil,glob,re
 import numpy as np
 import netCDF4
+import xarray as xr
 from NetcdReader import *
 
 #######################################################################################
@@ -22,6 +23,8 @@ class QCcontroller(object):
             return QCArgo()
         elif self.data_src == "CORIOLIS":
             return QCCorio(self.data_type,self.data_src)
+        elif self.data_src == "CORIOLIS_RAW":
+            return QCCorio_raw(self.data_type,self.data_src)
         elif self.data_src == "ENS":
             return QCEns()
         elif self.data_src == "GODAE":
@@ -93,7 +96,6 @@ class QC_GODAE(QCcontroller):
             flag_prof=[]
             fillvalue_dep=99999.
             fillvalue_err=9999.
-#### la
             for n_prof in range(n_prof):
                 val_depth=rla_depth[n_prof,0]
                 val_lat=rla_lat[n_prof]
@@ -123,6 +125,35 @@ class QC_GODAE(QCcontroller):
             nc.close()
 
         return flag_prof
+
+class QCCorio_raw(QCcontroller):
+
+    """ Class to compute qc on Coriolis files"""
+
+    def __init__(self,data_type,data_source,**kwargs):
+        super(QCcontroller,self).__init__(**kwargs)
+        self.data_type=data_type
+        self.data_src = data_source
+
+    def QCrun(self, filename, qc_level):
+        #print "Class to compute au qc on Coriolis files"
+        ds = xr.open_dataset(filename)
+        # Get the list of variable names
+        variable_names = list(ds.variables)
+        ll_pres=0
+        ll_depth=0
+        ll_temp=0
+        ll_psal=0
+        if 'DEPTH' in variable_names:
+            ll_depth=1
+        if 'PRES' in variable_names:
+             ll_pres=1
+        if var == 'TEMP':
+            ll_temp=1
+        if var == 'PSAL':
+            ll_psal=1
+        if not ll_temp and ll_psal :
+            print ('PROF not valid with no TEMP and no PSAL')
 
 
 class QCCorio(QCcontroller):
@@ -208,27 +239,27 @@ class QCCorio(QCcontroller):
         for n_prof in range(n_prof): 
             val_posqc=cla_posqc[n_prof]
             val_juldqc=cla_juldqc[n_prof]
-            if qc_level == 0 :  
-                val_depthqc=((cla_depthqc[n_prof,:] == '1') | (cla_depthqc[n_prof,:] == '0') | \
-                           (cla_depthqc[n_prof,:] == '7')).sum()
-                if ll_temp : 
-                    val_tempqc=((cla_tempqc[n_prof,:] == '1') & (rla_temp[n_prof,:] != fillvalue_temp  ) \
-                                & (rla_depth[n_prof,:] != fillvalue_dep) & \
-                                ((cla_depthqc[n_prof,:] == '1') | (cla_depthqc[n_prof,:] == '0') | (cla_depthqc[n_prof,:] == '7'))).sum()
-                if ll_psal:
-                    val_psalqc=((cla_psalqc[n_prof,:] == '1') & (rla_psal[n_prof,:] != fillvalue_sal  ) \
-                               &  (rla_depth[n_prof,:] != fillvalue_dep) & \
-                                 ((cla_depthqc[n_prof,:] == '1') | (cla_depthqc[n_prof,:] == '0') | (cla_depthqc[n_prof,:] == '7'))).sum()
-            elif qc_level == 1 :
-                val_depthqc=((cla_depthqc[n_prof,:] == '1') | (cla_depthqc[n_prof,:] == '0')).sum()
+            if qc_level == 0 :
+                val_depthqc=((cla_depthqc[n_prof,:] == b'1') | (cla_depthqc[n_prof,:] == b'0') | \
+                                                   (cla_depthqc[n_prof,:] == b'7')).sum()
                 if ll_temp :
-                    val_tempqc=((cla_tempqc[n_prof,:] == '1') & (rla_temp[n_prof,:] != fillvalue_temp  ) \
-                            &  (rla_depth[n_prof,:] != fillvalue_dep) & \
-                                ((cla_depthqc[n_prof,:] == '1') | (cla_depthqc[n_prof,:] == '0'))).sum()
+                    val_tempqc=((cla_tempqc[n_prof,:] == b'1') & (rla_temp[n_prof,:] != fillvalue_temp  ) \
+                                & (rla_depth[n_prof,:] != fillvalue_dep) & \
+                                ((cla_depthqc[n_prof,:] == b'1') | (cla_depthqc[n_prof,:] == b'0') | (cla_depthqc[n_prof,:] == b'7'))).sum()
                 if ll_psal:
-                    val_psalqc=((cla_psalqc[n_prof,:] == '1') & (rla_psal[n_prof,:] != fillvalue_sal  ) \
+                    val_psalqc=((cla_psalqc[n_prof,:] == b'1') & (rla_psal[n_prof,:] != fillvalue_sal  ) \
+                               &  (rla_depth[n_prof,:] != fillvalue_dep) & \
+                                 ((cla_depthqc[n_prof,:] == b'1') | (cla_depthqc[n_prof,:] == b'0') | (cla_depthqc[n_prof,:] == b'7'))).sum()
+            elif qc_level == 1 :
+                val_depthqc=((cla_depthqc[n_prof,:] == b'1') | (cla_depthqc[n_prof,:] == b'0')).sum()
+                if ll_temp :
+                    val_tempqc=((cla_tempqc[n_prof,:] == b'1') & (rla_temp[n_prof,:] != fillvalue_temp  ) \
                             &  (rla_depth[n_prof,:] != fillvalue_dep) & \
-                                ((cla_depthqc[n_prof,:] == '1') | (cla_depthqc[n_prof,:] == '0'))).sum()
+                                ((cla_depthqc[n_prof,:] == b'1') | (cla_depthqc[n_prof,:] == b'0'))).sum()
+                if ll_psal:
+                    val_psalqc=((cla_psalqc[n_prof,:] == b'1') & (rla_psal[n_prof,:] != fillvalue_sal  ) \
+                            &  (rla_depth[n_prof,:] != fillvalue_dep) & \
+                                ((cla_depthqc[n_prof,:] == b'1') | (cla_depthqc[n_prof,:] == b'0'))).sum()
             val_depth=rla_depth[n_prof,0]
             val_lat=rla_lat[n_prof]
             val_lon=rla_lon[n_prof]

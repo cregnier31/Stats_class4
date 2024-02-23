@@ -15,12 +15,16 @@ from datetime import date
 from netCDF4 import Dataset
 import netCDF4
 import gzip
+import pickle
+import fcntl
 
 ##############################################################
 # C.REGNIER Juin 2014
 # Class Writer to write output file in ASCII or Geojson
 ##############################################################
 
+class BroadcastError(Exception):
+    pass
 
 class Writer():
 
@@ -29,6 +33,7 @@ class Writer():
     def __init__(self, log):
         self.log = log
         self.fillvalue = netCDF4.default_fillvals['f4']
+        self.fillvalue_corio = 99999
         self.type_data = {
             'profile': {'code': 'INSITU_profile', 'defaults': {'name': 'In Situ profiles from CMEMS'}},
             'SST': {'code': 'SST_DB', 'defaults': {'name': 'SST Drifting buoy'}},
@@ -238,7 +243,6 @@ class Writer():
         nc_fid = Dataset(filename, 'r+')
         dims = nc_fid.dimensions
         ll_defined = False
-        
         if 'numobs' not in dims.keys():
             nc_fid.createDimension('numobs', nb_obs)
         if 'numfcsts' not in dims.keys():
@@ -568,6 +572,488 @@ class Writer():
         nc_fid.system = model
         nc_fid.close()  # close the new file
 
+
+    def write_class4_out(self, param_dict, list_keys):
+        unique_dates = sorted({int(key.split('-')[0]) for key in list_keys['keyvalues']})
+        unique_leadtime = sorted({key.split('-')[1] for key in list_keys['keyvalues']})
+        unique_leadtime_unit = sorted({int(key.split('-')[2]) for key in list_keys['keyvalues']})
+        tab_out = {}
+        for dateval in unique_dates:
+            fcst_tab = None
+            pers_ab = None
+            ll_fcst = False
+            ll_pers = False
+            frame = f"*{dateval}*.nc"
+            list_file = glob(f"{param_dict['dirwork']}{frame}")
+            for file_out in list_file:
+                #file_out = glob(f"{param_dict['dirwork']}{frame}")[0]
+                type_file = os.path.basename(file_out).split('.')[0]
+                ## Read observation and varname
+                frame = f"{type_file}*{dateval}_observation.p"
+                list_file_obs = glob(f"{param_dict['dirwork']}{frame}")[0]
+                self.log.info(f"File obs {list_file_obs}")
+                with open(list_file_obs, 'rb') as handle:
+                    stat_obs = pickle.load(handle)
+                tab_out['observation'] = stat_obs
+                frame = f"{type_file}*{dateval}_varname.p"
+                list_file_var = glob(f"{param_dict['dirwork']}{frame}")[0]
+                self.log.info(f"File param {list_file_var}")
+                with open(list_file_var, 'rb') as handle:
+                    stat_var = pickle.load(handle)
+                tab_out['varname'] = stat_var
+                frame = f"{type_file}*{dateval}_longitude.p"
+                list_file_var = glob(f"{param_dict['dirwork']}{frame}")[0]
+                with open(list_file_var, 'rb') as handle:
+                    stat_var = pickle.load(handle)
+                tab_out['longitude'] = stat_var
+                frame = f"{type_file}*{dateval}_latitude.p"
+                list_file_var = glob(f"{param_dict['dirwork']}{frame}")[0]
+                with open(list_file_var, 'rb') as handle:
+                    stat_var = pickle.load(handle)
+                tab_out['latitude'] = stat_var
+                frame = f"{type_file}*{dateval}_depth.p"
+                list_file_var = glob(f"{param_dict['dirwork']}{frame}")[0]
+                with open(list_file_var, 'rb') as handle:
+                    stat_var = pickle.load(handle)
+                tab_out['depth'] = stat_var
+                frame = f"{type_file}*{dateval}_qc.p"
+                list_file_var = glob(f"{param_dict['dirwork']}{frame}")[0]
+                with open(list_file_var, 'rb') as handle:
+                    stat_var = pickle.load(handle)
+                tab_out['qc'] = stat_var
+                frame = f"{type_file}*{dateval}_clim.p"
+                list_file_var = glob(f"{param_dict['dirwork']}{frame}")[0]
+                with open(list_file_var, 'rb') as handle:
+                    stat_var = pickle.load(handle)
+                tab_out['clim'] = stat_var
+                frame = f"{type_file}*.nc"
+                file_out = glob(f"{param_dict['dirwork']}{frame}")[0]
+                for leadtime in unique_leadtime:
+                    self.log.info(f'Leadtime {leadtime}')
+                    if "best_estimate" in leadtime:
+                        lead_int = 0
+                        frame = f"{type_file}*{dateval}_{leadtime}_{lead_int}.p"
+                        pickle_file = glob(f"{param_dict['dirwork']}{frame}")[0]
+                        self.log.info(f"Inside best {pickle_file}")
+                        with open(pickle_file, 'rb') as handle:
+                            tab_out['best_estimate'] = pickle.load(handle)
+                        nb_obs, variable, nb_profs = np.shape(tab_out['best_estimate'])
+                        self.log.info(f" Best estimate {nb_obs=} {variable=} {nb_profs=}")
+                    if leadtime == "forecast"  or leadtime == "persistence":
+                        self.log.info("Inside Forecast or persistence")
+                        for int_val, lead_rang in enumerate(unique_leadtime_unit):
+                            frame = f"{type_file}*{dateval}_{leadtime}_{lead_rang}.p"
+                            pickle_file = glob(f"{param_dict['dirwork']}{frame}")[0]
+                            self.log.info(f"{pickle_file=}")
+
+                            with open(pickle_file, 'rb') as handle:
+                                stats_tmp = pickle.load(handle)
+                            if int_val == 0:
+                                nb_obs, variable, nb_fcst, nb_profs = np.shape(stats_tmp)
+                                if leadtime == "forecast":
+                                    fcst_tab = np.ndarray(shape=(nb_obs, variable, nb_fcst, nb_profs),
+                                                                 dtype=float, order='F')
+                                    ll_fcst = True
+                                    fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
+                                    self.log.info(f"Create array Forecast {nb_obs=} {variable=} {nb_fcst=} {nb_profs=}")
+                                if leadtime == "persistence":
+                                    pers_tab = np.ndarray(shape=(nb_obs, variable, nb_fcst, nb_profs),
+                                                          dtype=float, order='F')
+                                    ll_pers = True
+                                    pers_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
+                                    self.log.info(f"Create array Persistence leadtime O {nb_obs=} {variable=} {nb_fcst=} {nb_profs=}")
+                                    self.log.info(f"Rank {lead_rang}")
+                                    self.log.debug(f"{pers_tab[0:10, 0 , int(lead_rang), 0:10]}")
+                            else:
+                                if leadtime == "forecast":
+                                    ll_fcst = True
+                                    fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
+                                    self.log.info(f"fill level fcst {lead_rang}")
+                                if leadtime == "persistence":
+                                    ll_pers = True
+                                    pers_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
+                                    self.log.info(f"Reading pers leadtime {lead_rang}")
+                                    self.log.debug(f"{pers_tab[0:10, 0 , int(lead_rang), 0:10]}")
+                                    #self.log.info(f"fill level pers {lead_rang}")
+                if ll_fcst:
+                    tab_out['forecast'] = fcst_tab
+                if ll_pers:
+                    tab_out['persistence'] = pers_tab
+                ## Write output file
+                self.log.info(f"Write output file")
+                self.write_output_frompickle(file_out,
+                                             tab_out,
+                                             str(dateval),
+                                             param_dict['cl_config'])
+                dest = param_dict['diroutput']
+                shutil.move(file_out, dest)
+                tab_out = {}
+
+    def write_class4_out_test(self, param_dict, list_keys):
+        list_dateval = []
+        list_leadtime = []
+        tab_out = {}
+        for ind, keyvalue in enumerate(list_keys['keyvalues']):
+            dateval, leadtime, lead_int = keyvalue.split('-')
+            list_dateval.append(dateval)
+            list_leadtime.append(leadtime)
+            if ind > 0 and list_dateval[ind] != list_dateval[ind-1]:
+                ll_newdate = True
+                self.log.info("-----------------------")
+                self.log.info(f"new Date {dateval}")
+                if "best_estimate" in list_leadtime:
+                    tab_out['best_estimate'] = hdct_tab
+                if "forecast" in list_leadtime:
+                    tab_out['forecast'] = fcst_tab
+                if "persistence" in list_leadtime:
+                    tab_out['persistence'] = pers_tab
+                ## Read observation and varname
+                frame = f"*{list_dateval[ind-1]}_observation.p"
+                list_file_obs = glob(f"{param_dict['dirwork']}{frame}")[0]
+                self.log.info(f"File obs {list_file_obs}")
+                with open(list_file_obs, 'rb') as handle:
+                    stat_obs = pickle.load(handle)
+                tab_out['observation'] = stat_obs
+                frame = f"*{list_dateval[ind-1]}_varname.p"
+                list_file_var = glob(f"{param_dict['dirwork']}{frame}")[0]
+                self.log.info(f"File param {list_file_var}")
+                with open(list_file_var, 'rb') as handle:
+                    stat_var = pickle.load(handle)
+                tab_out['varname'] = stat_var
+                frame = f"*{list_dateval[ind-1]}_longitude.p"
+                list_file_var = glob(f"{param_dict['dirwork']}{frame}")[0]
+                with open(list_file_var, 'rb') as handle:
+                    stat_var = pickle.load(handle)
+                tab_out['longitude'] = stat_var
+                frame = f"*{list_dateval[ind-1]}_latitude.p"
+                list_file_var = glob(f"{param_dict['dirwork']}{frame}")[0]
+                with open(list_file_var, 'rb') as handle:
+                    stat_var = pickle.load(handle)
+                tab_out['latitude'] = stat_var
+                frame = f"*{list_dateval[ind-1]}_depth.p"
+                list_file_var = glob(f"{param_dict['dirwork']}{frame}")[0]
+                with open(list_file_var, 'rb') as handle:
+                    stat_var = pickle.load(handle)
+                tab_out['depth'] = stat_var
+                frame = f"*{list_dateval[ind-1]}_qc.p"
+                list_file_var = glob(f"{param_dict['dirwork']}{frame}")[0]
+                with open(list_file_var, 'rb') as handle:
+                    stat_var = pickle.load(handle)
+                tab_out['qc'] = stat_var
+                frame = f"*{list_dateval[ind-1]}*.nc"
+                file_out = glob(f"{param_dict['dirwork']}{frame}")[0]
+                ## Write output file
+                self.write_output_frompickle(file_out,
+                                             tab_out,
+                                             list_dateval[ind-1],
+                                             param_dict['cl_config'])
+                tab_out = {}
+            else:
+                ll_newdate = False
+            frame = f"*{dateval}_{leadtime}_{lead_int}.p"
+            list_file = glob(f"{param_dict['dirwork']}{frame}")
+            for pickle_file in list_file:
+                with open(pickle_file, 'rb') as handle:
+                    stat_tmp = pickle.load(handle)
+                if leadtime == "best_estimate":
+                    nb_obs, variable, nb_profs = np.shape(stat_tmp)
+                    hdct_tab = stat_tmp
+                    self.log.info(f" Best estimate {nb_obs=} {variable=} {nb_profs=}")
+                elif leadtime == "forecast":
+                    if list_leadtime[ind] != list_leadtime[ind-1] and list_leadtime[ind] == 'forecast':
+                        nb_obs, variable, nb_fcst, nb_profs = np.shape(stat_tmp)
+                        fcst_tab = np.ndarray(shape=(nb_obs, variable, nb_fcst, nb_profs),
+                                              dtype=float, order='F')
+                        self.log.info(f"Create array Forecast {nb_obs=} {variable=} {nb_fcst=} {nb_profs=}")
+                    fcst_tab[:, : , int(lead_int), :] = stat_tmp[:, : , int(lead_int), :]
+                    self.log.info(f"fill level {lead_int}")
+                elif leadtime == "persistence":
+                    if list_leadtime[ind] != list_leadtime[ind-1] and  list_leadtime[ind] == 'persistence':
+                        nb_obs, variable, nb_fcst, nb_profs = np.shape(stat_tmp)
+                        pers_tab = np.ndarray(shape=(nb_obs, variable, nb_fcst, nb_profs),
+                                              dtype=float, order='F')
+                        self.log.info(f"Create array Persistence {nb_obs=} {variable=} {nb_fcst=} {nb_profs=}")
+                    pers_tab[:, : , int(lead_int), :] = stat_tmp[:, : , int(lead_int), :]
+                    self.log.info(f"fill level {lead_int}")
+
+    def create_dims(self, list_dimensions, nc_fid,
+                    nprofs=None, nlevels=None, nparams=None, nfcsts=None):
+        if 'numobs' not in list_dimensions:
+            nc_fid.createDimension('numobs', nprofs)
+        else:
+            self.log.debug('numobs ok')
+        if 'string_length8' not in list_dimensions:
+            nc_fid.createDimension('string_length8', 8)
+        if 'numdeps' not in list_dimensions:
+            nc_fid.createDimension('numdeps', nlevels)
+        else:
+            self.log.debug('numlevels ok')
+        if 'numvars' not in list_dimensions:
+            nc_fid.createDimension('numvars', nparams)
+        else:
+            self.log.debug('numvars ok')
+        if 'numfcsts' not in list_dimensions:
+            self.log.debug("Creation numfcsts")
+            nc_fid.createDimension('numfcsts', nfcsts)
+
+    def write_output_frompickle(self, filename, tab_out, dateval, system):
+        nc_fid = Dataset(filename, 'r+') #, format='NETCDF3_CLASSIC')
+        list_keys = tab_out.keys()
+        list_dimensions = nc_fid.dimensions
+        list_variables = list(nc_fid.variables)
+        varname_data = tab_out['varname']
+        self.log.info("Write write_output_frompickle")
+        if 'best_estimate' in list_keys and np.any(tab_out['best_estimate']):
+            nprofs, nparams, nlevels = np.shape(tab_out['best_estimate'])
+            self.create_dims(list_dimensions,
+                             nc_fid,
+                             nprofs=nprofs,
+                             nlevels=nlevels,
+                             nparams=nparams)
+            if 'varname' not in list_variables:
+                self.log.info("Create varname")
+                varname = nc_fid.createVariable('varname', 'S1', ('numvars', 'string_length8'))
+                varname.setncatts({'long_name': u"Variable name"})
+                for i, var_name in enumerate(varname_data):
+                    varname[i, :] = list(var_name.ljust(8))
+            else:
+                for i, var_name in enumerate(varname_data):
+                    nc_fid.variables['varname'][i, :] = list(var_name.ljust(8))
+            self.log.info(f'Add varname ok {filename}')
+
+            hdct_tab = tab_out['best_estimate'][:, :, :]
+            self.log.info(f"Dimensions best {np.shape(tab_out['best_estimate'][:, :, :])}")
+            self.log.info('Hindcast not empty')
+            if 'best_estimate' not in list_variables:
+                nc_best = nc_fid.createVariable(
+                    'best_estimate', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
+                nc_best.setncatts(
+                    {'long_name': u"Model best_estimate counterpart of obs. value"})
+            try:
+                nc_fid.variables['best_estimate'][:, :, :] = hdct_tab[:, :, :]
+            except ValueError as e:
+                raise BroadcastError(f"Error with best_estimate {e}")
+        if 'forecast' in list_keys and np.any(tab_out['forecast']):
+            fcst_tab = tab_out['forecast']
+            nprofs, nparams, nfcsts, nlevels = np.shape(tab_out['forecast'])
+            self.create_dims(list_dimensions,
+                             nc_fid,
+                             nprofs=nprofs,
+                             nlevels=nlevels,
+                             nparams=nparams,
+                             nfcsts=nfcsts)
+            #if 'numfcst' not in list_dimensions:
+            #    self.log.debug("Creation numfcsts")
+            #    nc_fid.createDimension('numfcst', nfcsts)
+            self.log.info('Forecast not empty')
+            if 'forecast' not in list_variables:
+                nc_fcst = nc_fid.createVariable(
+                    'forecast', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
+                nc_fcst.setncatts(
+                    {'long_name': u"Model forecast counterpart of obs. value"})
+            try:
+                nc_fid.variables['forecast'][:, :, :, :] = fcst_tab[:, : ,:, :]
+            except ValueError as e:
+                raise BroadcastError(f"Error with forecast: {e}")
+        else:
+            self.log.info('Forecast is empty')
+        if 'persistence' in list_keys and np.any(tab_out['persistence']):
+            pers_tab = tab_out['persistence']
+            nprofs, nparams, nfcsts, nlevels = np.shape(tab_out['persistence'])
+            self.create_dims(list_dimensions,
+                             nc_fid,
+                             nprofs=nprofs,
+                             nlevels=nlevels,
+                             nparams=nparams,
+                             nfcsts=nfcsts)
+            self.log.info('Persistence not empty')
+            if 'persistence' not in list_variables:
+                nc_pers = nc_fid.createVariable(
+                    'persistence', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
+                nc_pers.setncatts(
+                    {'long_name': u"Model persistence counterpart of obs. value"})
+            try:
+                nc_fid.variables['persistence'][:, : , :, :] = pers_tab[:, :, :, :]
+            except ValueError as e:
+                raise BroadcastError(f"Error with persistence: {e}")
+        else:
+            self.log.info('Persistence is empty')
+        ## Create observation variable
+        if 'observation' in list_keys and np.any(tab_out['observation']):
+            obs_tab = tab_out['observation']
+            nprofs, nparams, nlevels = np.shape(tab_out['observation'])
+            self.log.info('Observation not empty')
+            self.log.info(f"Dimension obs {np.shape(tab_out['observation'])}")
+            if 'observation' not in list_variables:
+                nc_obs = nc_fid.createVariable(
+                        'observation', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue_corio)
+                nc_obs.setncatts(
+                        {'long_name': u"Observation value"})
+            try:
+                nc_fid.variables['observation'][:, :, :] = obs_tab[:, :, :]
+            except ValueError as e:
+                raise BroadcastError(f"Error with observations: {e}")
+
+        if 'longitude' in list_keys and np.any(tab_out['longitude']):
+            lon_tab = tab_out['longitude']
+            self.log.info('Lon not empty')
+            if 'longitude' not in list_variables:
+                nc_obs = nc_fid.createVariable(
+                        'longitude', 'f4', ('numobs'), fill_value=self.fillvalue_corio)
+                nc_obs.setncatts(
+                        {'long_name': u"Longitude"})
+            try:
+                nc_fid.variables['longitude'][:] = lon_tab[:]
+            except ValueError as e:
+                raise BroadcastError(f"Error with longitudes: {e}")
+        if 'latitude' in list_keys and np.any(tab_out['latitude']):
+            lat_tab = tab_out['latitude']
+            self.log.info('Lat not empty')
+            if 'latitude' not in list_variables:
+                nc_obs = nc_fid.createVariable(
+                        'latitude', 'f4', ('numobs'), fill_value=self.fillvalue_corio)
+                nc_obs.setncatts(
+                        {'long_name': u"Latitude"})
+            try:
+                nc_fid.variables['latitude'][:] = lat_tab[:]
+            except ValueError as e:
+                raise BroadcastError(f"Error with latitudes: {e}")
+        if 'depth' in list_keys and np.any(tab_out['depth']):
+            depth_tab = tab_out['depth']
+            self.log.info('depth not empty')
+            if 'depth' not in list_variables:
+                nc_obs = nc_fid.createVariable(
+                        'depth', 'f4', ('numobs', 'numdeps'), fill_value=self.fillvalue_corio)
+                nc_obs.setncatts(
+                        {'long_name': u"Depths of observations"})
+            try:
+                nc_fid.variables['depth'][:, :] = depth_tab[:, :]
+            except ValueError as e:
+                raise BroadcastError(f"Error with depth: {e}")
+        if 'qc' in list_keys and np.any(tab_out['qc']):
+            qc_tab = tab_out['qc']
+            self.log.info('QC not empty')
+            if 'qc' not in list_variables:
+                nc_qc = nc_fid.createVariable(
+                        'qc', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue_corio)
+                nc_qc.setncatts(
+                        {'long_name': u"Depths of observations",
+                         'flag_value' : u"0, 9",
+                         'flag_meaning': "0 - good data. 9 - bad data."
+                            })
+            try:
+                nc_fid.variables['qc'][:, :, :] = qc_tab[:, :, :]
+            except ValueError as e:
+                raise BroadcastError(f"Error with qc: {e}")
+        if 'clim' in list_keys and np.any(tab_out['clim']):
+            clim_tab = tab_out['clim']
+            self.log.info('Levitus clim not empty')
+            if 'climatology' not in list_variables:
+                nc_qc = nc_fid.createVariable(
+                        'climatology', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue_corio)
+                nc_qc.setncatts(
+                        {'long_name': u"Climatology",
+                         'comment' : u"Levitus monthly fields interpolated to the correct day"
+                            })
+            try:
+                nc_fid.variables['climatology'][:, :, :] = clim_tab[:, :, :]
+            except ValueError as e:
+                raise BroadcastError(f"Error with clim: {e}")
+
+        # Add global attributs
+        nc_fid.institution = 'MERCATOR OCEAN INTERNATIONAL'
+        #nc_fid.obs_type = self.type_data.get(variable, {}).get('defaults').get('name')
+        nc_fid.contact = 'qualif@mercator-ocean.fr'
+        today = date.today()
+        yyyy = str(today)[0:4]
+        yyyy2 = dateval[0:4]
+        month = str(today)[5:7]
+        month2 = dateval[4:6]
+        day = str(today)[8:10]
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
+        nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.system = system
+
+
+    def write_coriolis_file_raw(self, filename, tab_res, dateval, model, variable, varname_data):
+        nc_fid = Dataset(filename, 'r+') #, format='NETCDF3_CLASSIC')
+        list_keys = tab_res.keys()
+        nc_fid.createDimension('string_length8', 8)
+
+        if 'best' in list_keys and np.any(tab_res['best']):
+            nprofs, nparams, nlevels = np.shape(tab_res['best'])
+            nparams = len(varname_data)
+            self.log.info(f'Dimensions {nparams=}')
+            if 'numobs' not in list_keys: nc_fid.createDimension('numobs', nprofs)
+            if 'numdeps' not in list_keys: nc_fid.createDimension('numdeps', nlevels)
+            if 'numvars' not in list_keys: nc_fid.createDimension('numvars', nparams)
+            #varname = nc_fid.createVariable('varname', 'c', ('numvars', 'string_length7'))
+            varname = nc_fid.createVariable('varname', 'S1', ('numvars', 'string_length8'))
+            varname.setncatts(
+                              {'long_name': u"Variable name"})
+            for i, var_name in enumerate(varname_data):
+                varname[i, :] = list(var_name.ljust(8))
+            hdct_tab = tab_res['best'][:, :, :]
+            self.log.info(f"Dimensions best {np.shape(tab_res['best'][:, :, :])}")
+            self.log.info('Hindcast not empty')
+            nc_best = nc_fid.createVariable(
+                'best_estimate', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
+            nc_best.setncatts(
+                {'long_name': u"Model best_estimate counterpart of obs. value"})
+            nc_fid.variables['best_estimate'][:, :, :] = hdct_tab[:, :, :]
+        if 'forecast' in list_keys and np.any(tab_res['forecast']):
+            fcst_tab = tab_res['forecast']
+            nprofs, nparams, nfcsts, nlevels = np.shape(tab_res['forecast'])
+            #if 'numobs' not in list_keys: nc_fid.createDimension('numobs', nprofs)
+            #if 'nlevels' not in list_keys: nc_fid.createDimension('nlevels', nlevels)
+            #if 'numvars' not in list_keys: nc_fid.createDimension('numvars', nparams)
+            if 'numfcsts' not in list_keys: nc_fid.createDimension('numfcst', nfcsts)
+            self.log.info('Forecast not empty')
+            nc_fcst = nc_fid.createVariable(
+                'forecast', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
+            nc_fcst.setncatts(
+                {'long_name': u"Model forecast counterpart of obs. value"})
+            nc_fid.variables['forecast'][:, :, :, :] = fcst_tab[:, : ,:, :]
+        else:
+            self.log.info('Forecast is empty')
+        if 'persistence' in list_keys and np.any(tab_res['persistence']):
+            pers_tab = tab_res['persistence']
+            nprofs, nparams, nfcsts, nlevels = np.shape(tab_res['persistence'])
+            #if 'numobs' not in list_keys: nc_fid.createDimension('numobs', nprofs)
+            #if 'nlevels' not in list_keys: nc_fid.createDimension('nlevels', nlevels)
+            #if 'numvars' not in list_keys: nc_fid.createDimension('numvars', nparams)
+            #if 'numfcsts' not in list_keys: nc_fid.createDimension('numfcst', nfcsts)
+            self.log.info('Persistence not empty')
+            nc_pers = nc_fid.createVariable(
+                'persistence', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
+            nc_pers.setncatts(
+                {'long_name': u"Model persistence counterpart of obs. value"})
+            nc_fid.variables['persistence'][:, : , :, :] = pers_tab[:, :, :, :]
+        else:
+            self.log.info('Persistence is empty')
+        # Create observation variable
+        nc_obs = nc_fid.createVariable(
+                'observation', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue_corio)
+        nc_obs.setncatts(
+                {'long_name': u"Observation value"})
+        self.log.info(f"Dimension obs {np.shape(tab_res['observation'])}")
+        nc_fid.variables['observation'][:, : , :] = tab_res['observation'][:, :, :]
+        # Add global attributs
+        nc_fid.institution = 'MERCATOR OCEAN'
+        nc_fid.obs_type = self.type_data.get(variable, {}).get('defaults').get('name')
+        nc_fid.contact = 'qualif@mercator-ocean.fr'
+        today = date.today()
+        yyyy = str(today)[0:4]
+        yyyy2 = dateval[0:4]
+        month = str(today)[5:7]
+        month2 = dateval[4:6]
+        day = str(today)[8:10]
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 12:00:00"
+        nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
+        nc_fid.system = model
+
     def write_coriolis_file(self, filename, tab1, tab2, tab3, dateval, model, variable):
         nc_fid = Dataset(filename, 'r+') #, format='NETCDF3_CLASSIC')
         nc_file = nc_fid.createVariable(
@@ -596,7 +1082,67 @@ class Writer():
         nc_fid.system = model
         #print ('-------------------------------')
 
-###
+    def test_output(self, param_dict, dateval, leadtime, lead):
+        ## Test pickle files
+        print('test')
+
+    def write_outputnp(self, filename,
+                       tab_results, param_dict,
+                       dateval, leadtime, lead):
+        self.mkdir(param_dict['diroutput'])
+        filename_tmp = re.sub(r'\.nc$', f'_{dateval}_{leadtime}_{lead}.p', filename)
+        filename_tmp = f"{param_dict['dirwork']}{filename_tmp}"
+        filename_obs = re.sub(r'\.nc$',f'_{dateval}_observation.p', filename)
+        filename_obs = f"{param_dict['dirwork']}{filename_obs}"
+        filename_varname = re.sub(r'\.nc$',f'_{dateval}_varname.p', filename)
+        filename_varname = f"{param_dict['dirwork']}{filename_varname}"
+        filename_lon = re.sub(r'\.nc$',f'_{dateval}_longitude.p', filename)
+        filename_lon = f"{param_dict['dirwork']}{filename_lon}"
+        filename_lat = re.sub(r'\.nc$',f'_{dateval}_latitude.p', filename)
+        filename_lat = f"{param_dict['dirwork']}{filename_lat}"
+        filename_depth = re.sub(r'\.nc$',f'_{dateval}_depth.p', filename)
+        filename_depth = f"{param_dict['dirwork']}{filename_depth}"
+        filename_qc = re.sub(r'\.nc$',f'_{dateval}_qc.p', filename)
+        filename_qc = f"{param_dict['dirwork']}{filename_qc}"
+        filename_clim = re.sub(r'\.nc$',f'_{dateval}_clim.p', filename)
+        filename_clim = f"{param_dict['dirwork']}{filename_clim}"
+        dataorigin = param_dict['data_origin']
+        # Specify the file name
+        # Writing the dictionary to the pickle file
+        if not os.path.isfile(filename_tmp):
+            with open(filename_tmp, 'wb') as file:
+                self.log.info(f"Write Pickle file {filename_tmp} {np.shape(tab_results[leadtime])}")
+                pickle.dump(tab_results[leadtime], file)
+        if not os.path.isfile(filename_obs):
+            self.log.info(f"Write Pickle file obs {np.shape(tab_results[leadtime])} {filename_obs}")
+            self.log.info(f"No obs write {filename_obs}")
+            with open(filename_obs, 'wb') as file:
+                pickle.dump(tab_results['observation'], file)
+        if not os.path.isfile(filename_varname):
+            self.log.info(f"Write Pickle file varname {filename_varname}")
+            self.log.info(f"No varname write {filename_varname}")
+            with open(filename_varname, 'wb') as file:
+                pickle.dump(tab_results['varname_select'], file)
+        if not os.path.isfile(filename_lon):
+            with open(filename_lon, 'wb') as file:
+                self.log.info(f"No longitude write {filename_lon} {np.shape(tab_results['longitude'])}")
+                pickle.dump(tab_results['longitude'], file)
+        if not os.path.isfile(filename_lat):
+            with open(filename_lat, 'wb') as file:
+                pickle.dump(tab_results['latitude'], file)
+        if not os.path.isfile(filename_depth):
+            with open(filename_depth, 'wb') as file:
+                pickle.dump(tab_results['depth'], file)
+        if not os.path.isfile(filename_qc):
+            with open(filename_qc, 'wb') as file:
+                pickle.dump(tab_results['qc'], file)
+        if not os.path.isfile(filename_clim):
+            with open(filename_clim, 'wb') as file:
+                pickle.dump(tab_results['LEVITUS_clim'], file)
+        #dest = param_dict['diroutput']
+        #shutil.move(filename_tmp, dest)
+
+
     def write_output(self, filename, tab_results, param_dict, dateval, ll_zip=True):
         dataorigin = param_dict['data_origin']
         self.mkdir(param_dict['diroutput'])
@@ -646,9 +1192,12 @@ class Writer():
             self.write_best(filename, tab_results['clim'], dateval, param_dict['cl_config'],
                             param_dict['dimension'], 'clim', param_dict['desc'], param_dict['data_type'])
         elif dataorigin == "CORIOLIS":
-            self.write_coriolis_files(filename, tab_results['best'],
+            self.write_coriolis_file(filename, tab_results['best'],
                                        tab_results['clim'],
                                        dateval, param_dict['cl_config'], param_dict['data_type'])
+        elif dataorigin == "CORIOLIS_RAW":
+            self.write_coriolis_file_raw(filename, tab_results, dateval, param_dict['cl_config'],
+                                         param_dict['data_type'], param_dict['varname_select'])
         else:
             self.log.error("Origin Not Known : %s :" % (dataorigin))
 

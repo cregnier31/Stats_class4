@@ -1,14 +1,11 @@
 import sys
 import numpy as np
-import numpy.ma as ma
 import netCDF4
 from netCDF4 import Dataset
 import utilities
 import param.Def_param_bulletin as params
 import xarray as xr
 import dask
-from glob import glob
-from utils import find_index_month
 
 __version__ = 0.1
 __date__ = "February 2019"
@@ -303,7 +300,7 @@ def read_drifter_filt(file):
             position_qc, time_qc, dc_reference = read_drifter(file)
     ncdata = xr.open_dataset(file)
     variables = ncdata.data_vars
- 
+
     if 'LONGITUDE_FILTR' in variables.keys():
         lon = ncdata['LONGITUDE_FILTR'].values
     elif 'longitude_filtr' in variables.keys():
@@ -342,32 +339,37 @@ def read_moor(file, varname, log):
     try:
         ncdata = xr.open_dataset(file)
         variables = ncdata.data_vars
+
         ll_var = False
-        if varname in variables.keys():
+        if varname in list(variables.keys()):
             ll_var = True
             vardata = ncdata[varname]
             vardata_qc = ncdata[varname+'_QC']
         else:
             vardata = np.nan
             vardata_qc = np.nan
-        if 'DEPH' in ncdata.variables.keys():
-            depth = ncdata['DEPH'][0]
+        if 'DEPH' in list(ncdata.variables.keys()):
+            depth = ncdata['DEPH']
+            #depth = ncdata['DEPH']
             var_qc=[ var for var in ncdata.variables.keys() if var.startswith('DEP') and var.endswith('QC')] 
             depth_qc = ncdata[var_qc].values
-        elif 'PRES' in variables.keys():
-            depth = ncdata['PRES'][0]
-            depth_qc = ncdata['PRES_QC'][0]
+        elif 'PRES' in list(ncdata.variables.keys()):
+            depth = ncdata['PRES']
+         #   depth = ncdata['PRES']
+            depth_qc = ncdata['PRES_QC']
+          #  depth_qc = ncdata['PRES_QC']
         else:
-            log.info ('Missing Values DEPH or PRES')
+            log.info (f'{file} Missing Values DEPH or PRES')
             sys.exit(1)
-
         lon = ncdata['LONGITUDE']
         lat = ncdata['LATITUDE']
         time = ncdata['TIME'].values
         lon_value = np.nanmean(lon)
         lat_value = np.nanmean(lat)
         return lon_value, lat_value, depth, depth_qc, time, vardata, ll_var, vardata_qc
-    except: return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, False, np.nan
+    except Exception as e:
+        print(f'Error: {e}')
+        return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, False, np.nan
 
 def read_depth(filename):
     nc = netCDF4.Dataset(filename,'r')

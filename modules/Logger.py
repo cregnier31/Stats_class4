@@ -29,11 +29,12 @@ class Logger(object):
                                      'CRITICAL': 'red,bg_white',
                                       },
                 )
-        if stream == 'logfile':
-            print('Add logfile')
-            self.stream = logging.FileHandler(self.logname)
-        else: 
-            self.stream = logging.StreamHandler()
+        self.stream = stream
+       # if stream == 'logfile':
+       #     print('Add logfile')
+       #     self.stream = logging.FileHandler(self.logname)
+       # else:
+       #     self.stream = logging.StreamHandler()
 
     def run(self,level):
         log = logging.getLogger(self.name)
@@ -53,6 +54,16 @@ class Logger(object):
             log.setLevel(logging.ERROR)
         elif level == 5 :
             log.setLevel(logging.CRITICAL)
+        elif level == 6 :
+            log.setLevel(logging.DEBUG)
+            self.stream = ''
+        elif level == 7 :
+            log.setLevel(logging.INFO)
+            self.stream = ''
+        if self.stream == 'logfile':
+            self.stream = logging.FileHandler(self.logname)
+        else:
+            self.stream = logging.StreamHandler()
         self.stream.setLevel(level)
         self.stream.setFormatter(self.formatter)
         log.addHandler(self.stream)

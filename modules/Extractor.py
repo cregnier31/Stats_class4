@@ -98,10 +98,12 @@ class Extractor(object):
         liste_tot = []
         YEAR = dateval[0:4]
         liste_file = glob(param_dict['dirdata']+'/'+YEAR+'/*'+dateval+'*.nc')
+        self.log.debug(f"Search file {param_dict['dirdata']}/{YEAR}/{dateval}*nc")
         for file in liste_file:
             try:
                 filename = os.path.basename(file)
-                shutil.copy(file, param_dict['dirwork']+filename)
+                if not os.path.exists(param_dict['dirwork']+filename):
+                    shutil.copy(file, param_dict['dirwork']+filename)
                 liste_tot.append(param_dict['dirwork']+filename)
             except IOError as e:
                 print ("I/O error({0}): {1}".format(e.errno, e.strerror))
@@ -290,7 +292,8 @@ class Extract_BGC_ARGO(Extractor):
 
     def run_list(self, param_dict, dateval):
         liste_tot = []
-        liste_file = glob(param_dict['dirdata']+'/*/'+param_dict['prefix_data']+'*'+dateval+'*.nc')
+        self.log.info(f"Inside Extract_BGC_ARGO {dateval}")
+        liste_file = glob(f"{param_dict['dirdata']}/*{dateval[0:6]}*.nc")
         for file in liste_file:
             try:
                 filename = os.path.basename(file)
@@ -299,7 +302,7 @@ class Extract_BGC_ARGO(Extractor):
             except IOError as e:
                 self.log ("I/O error({0}): {1}".format(e.errno, e.strerror))
                 sys.exit(1)
-
+        self.log.info(f"liste {liste_tot}")
         return liste_tot
 
 
@@ -361,7 +364,7 @@ class Extract_corio_raw(Extractor):
             # Convert to date
             dateval=[SyDate.__str__(self.date.setfromjulian(int(valeurj))) for valeurj in v]
             ind=0
-            for val in dateval : 
+            for val in dateval :
                 if SyDate(val).tojulian() < 16189 :
                    self.log.error("Probleme  : %s %i  "%(val,ind))
                 else :
@@ -386,12 +389,12 @@ class Extract_corio_raw(Extractor):
             # Convert to date
             dateval=[SyDate.__str__(self.date.setfromjulian(int(valeurj))) for valeurj in v]
             ind=0
-            for val in dateval : 
+            for val in dateval :
                 if SyDate(val).tojulian() < 16189 :
-                   self.log.error("Probleme  : %s %i  "%(val,ind))
+                    self.log.error("Probleme  : %s %i  "%(val,ind))
                 else :
                     file_out=str(val)+'_'+frame+'_profile_'+str(ind)+'.nc'
-                    nco.ncks(input=file,output=dirtmp+file_out, fortran=True ,dimension=str(dimprof)+','+str(ind+1),options=options)              
+                    nco.ncks(input=file,output=dirtmp+file_out, fortran=True ,dimension=str(dimprof)+','+str(ind+1),options=options)
                     liste_tot.append(dirtmp+file_out)
                     # self.log.info('Day %s ' % (dateval))
                 ind+=1
@@ -411,7 +414,7 @@ class Extract_corio(Extractor):
         self.log.info('Day %s ' % (dateval))
         frame=param_dict['dir_data']+'/*'+dateval.strip()+'*.nc'
         liste_file=glob(frame)
-        self.log.info('Liste file %s ' % (liste_file)) 
+        self.log.info('Liste file %s ' % (liste_file))
         for new_file in liste_file :
             try :
                 filename=os.path.basename(new_file)
