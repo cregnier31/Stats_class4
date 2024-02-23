@@ -18,7 +18,8 @@ if sys.version_info[0] >=  3:
 else:
     import cPickle
 #sys.path.append('/home/cregnier/SVN/mo/sytoolkit_branche/sytoolkit_python3/')
-from lib_pyt.libtools.sydate import SyDate
+#from lib_pyt.libtools.sydate import SyDate
+from sytoolkit.sydate import SyDate
 
 __author__      = "C.REGNIER"
 __version__ = 0.1

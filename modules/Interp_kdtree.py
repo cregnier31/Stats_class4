@@ -59,14 +59,15 @@ class interp_KDtree(object):
 
         if len(X1.shape) > 1:
             X1, Y1 = X1, Y1
-            self.log.debug('Shape 1 > 1')
-            self.log.debug('Shape 1 {}'.format(np.shape(X1)))
+            #self.log.debug('Shape 1 > 1')
+            #self.log.debug('Shape 1 {}'.format(np.shape(X1)))
         else:
            X1, Y1 = np.meshgrid(X1, Y1)
            self.log.debug('Shape 1 = x {} y {}'.format(np.shape(X1), np.shape(Y1)))
         if isinstance(lon_out, np.float64) or isinstance(lon_out, np.float32):
            self.log.debug('lon_out is a float')
         else:
+            ll_onevalue = False
             if len(lon_out)> 1 and lon_out.ndim < 2:
                 try:
                     if ma.is_masked(lon_out):
@@ -82,15 +83,19 @@ class interp_KDtree(object):
                 except Exception as e:
                     raise ("Problem during formatting {}".format(e))
             else:
-                self.log.debug('Only one step')
+                first_step = 1.
+                global_step = 2.
+                #self.log.debug('Only one step')
+                self.log.info('Only one step')
+                ll_onevalue = True
 
         # 1D cases
-        if  lon_out.ndim  == 0:
+        if  lon_out.ndim  == 0 or ll_onevalue == True:
             self.log.debug('1D not regular')
             X2, Y2 = lon_out, lat_out
         elif lon_out.ndim < 2:
             self.log.debug(f'lon_out.ndim < 2 {global_step} {first_step}')
-            self.log.debug(f'{lon_out_tmp[0:100]}')
+            #self.log.debug(f'{lon_out_tmp[0:100]}')
             if global_step == first_step and first_step > 0:
                 # Regular
                 self.log.debug(f'1D regular => convert to meshgrid {global_step} {first_step}')
@@ -104,7 +109,7 @@ class interp_KDtree(object):
             self.log.debug('2D case')
             X2, Y2 = lon_out, lat_out
 
-        self.log.debug('Shape 2 = x {} y {}'.format(np.shape(X2), np.shape(Y2)))
+        #self.log.debug('Shape 2 = x {} y {}'.format(np.shape(X2), np.shape(Y2)))
         # Convert to cartesian
         xt, yt, zt = utils.lon_lat_to_cartesian(X2.flatten(), Y2.flatten())
         ### Convert to cartesian

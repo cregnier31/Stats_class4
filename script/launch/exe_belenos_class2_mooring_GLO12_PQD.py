@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-#SBATCH -J CLASS4_UV
+#SBATCH -J CLASS2_MOOR
 #SBATCH -A cmems
 #SBATCH -p normal256
 #SBATCH -N 12
-#SBATCH -e CLASS4_UV_2022_06_job%j.e
-#SBATCH -o CLASS4_UV_2022_06_job%j.o
-#SBATCH --ntasks-per-node=20
-#SBATCH --time=18:30:00
+#SBATCH -e NEW_CLASS2_MOOR_hourly_PQD_202401_job%j.e
+#SBATCH -o NEW_CLASS2_MOOR_hourly_PQD_202401_job%j.o
+#SBATCH --ntasks-per-node=12
+#SBATCH --time=05:00:00
 
 import shlex,subprocess
 import os,sys,getopt
@@ -19,26 +19,19 @@ resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM
 
 # ********************** Source environnement *********************************
 
-#pbsworkdir  = os.getenv('pbsworkdir')
-#year  = os.getenv('year')
-#month = os.getenv('month')
-#system = os.getenv('system')
-pbsworkdir = "/home/ext/mr/smer/regnierc/SAVE/INSTALL/TEP_CLASS4_dev/script/launch/"
-year = 2022
-month = 6
-system = "PSY4V3R1"
+pbsworkdir = "/home/ext/mr/smer/regnierc/SAVE/INSTALL/TEP_CLASS4_creation/script/launch/"
+date = 202401
+time_step = 'hourly'
+system = 'GLO12V4'
+old_obs = 'new'
 
 # **************************** Environnement ***********************************
-#os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 os.chdir(pbsworkdir)
-EXE = os.path.join(pbsworkdir,'../exe_colloc_drifter_multiprocess.py')
+EXE = os.path.join(pbsworkdir,'../exe_colloc_mooring_multi.py')
 try : os.remove(os.path.join(pbsworkdir,"OK.flag"))
 except : pass
 dir_bin="/home/ext/mr/smer/regnierc/anaconda3/envs/env_py38_bis/bin/"
-
 # **************************** Python launcher *********************************
-nb_procs=240
-#nb_procs=400
-print("Launch system")
-os.system(dir_bin+"mpirun -np "+str(nb_procs)+" "+dir_bin+"python %s --year=%s --month=%s --system=%s" \
-        %(EXE,year,month,system))
+nb_process=144
+os.system(dir_bin+"mpirun -np "+str(nb_process)+" "+dir_bin+"python %s %s %s %s %s" \
+        %(EXE, system, date, time_step, old_obs))
