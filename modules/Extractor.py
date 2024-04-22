@@ -610,7 +610,7 @@ class Extract_UVDrifters_filtr(Extractor):
         self.log.info(f"Write new filtered file {file_new}")
         self.nb_fcst = nb_fcst
         self.nb_fcst2 = nb_fcst2
-        nc_fid = Dataset(file_new, 'w', format='NETCDF4')
+        nc_fid = Dataset(file_new, 'w', format='NETCDF4', locking=True)
         nc_fid.createDimension('numobs', None)
         nc_fid.createDimension('numvars', self.nb_vars)
         nc_fid.createDimension('numdeps', self.nb_depths)

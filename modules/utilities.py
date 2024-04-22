@@ -107,7 +107,7 @@ def findListFiles(path, pfx, sfx, time, dt_start=np.nan, dt_end=np.nan):
         ffile = pfx + t.strftime('%Y%m%d') + '*' + sfx + '*.nc'
         file_mod = sorted(glob(path+ffile))
         if len(file_mod) == 0:
-            print (f"File missing for time {t.strftime('%Y%m%d')} {sfx} {path}")
+            print (f"File missing for time {pfx} {t.strftime('%Y%m%d')} {sfx} {path}")
             sys.exit(1)
         if np.isnan(dt_start) and np.isnan(dt_end):
             if len(file_mod) > 0 and file_mod[0] not in liste_file:

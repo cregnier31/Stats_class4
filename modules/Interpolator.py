@@ -160,25 +160,25 @@ class Interpolator(object):
         ## Todo write into a file
         nb_ptsinterp = param_dict['nb_points']
         # Read input obs value
-        self.log.debug("Format of the data {}".format(param_dict['data_format']))
+        self.log.debug(f"Format of the data {param_dict['data_format']}")
         if param_dict['prefix_data'].startswith("BGC_ARGO"):
             variable_obs = param_dict['prefix_data'].split('BGC_ARGO_')[1]+'_ADJUSTED'
             lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = \
                     inputdata_loader(self.log).factory(param_dict['data_format']).\
-                    read_pos_and_value(data_file, varname=variable_obs)
+                    read_pos_and_value(data_file, param_dict, varname=variable_obs)
         else:
-            self.log.info("Read pos and value : {}".format(param_dict['data_format']))
+            self.log.debug(f"Read pos and value : {param_dict['data_format']}")
             lon_obs, lat_obs, obs_value, nb_obs, depth, tab_dims, param_dict,  _FillValue = \
                     inputdata_loader(self.log).factory(param_dict['data_format']).\
                     read_pos_and_value(data_file, param_dict)
         tuple_obs = (np.shape(lon_obs)[0], np.shape(lat_obs)[0])
         ## Find input model files
         # Selection of the input model data
-        self.log.info('Selection of input model')
+        self.log.info(f"Selection of input model {param_dict['data_type']}")
         self.log.info('========================================================')
         list_input_file, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], self.log).\
             factory("GLOBAL_INPUT_MODEL_DATA").run(param_dict, date, leadtime, lead_int)
-        self.log.info(f'Select model ok {list_input_file}')
+        self.log.debug(f'Select model ok {list_input_file}')
         nb_best, nb_fcst, nb_pers, nb_clim, nb_nwct = \
                     self.check_dimensions(list_input_file)
         self.log.info("==================================================")
@@ -202,18 +202,21 @@ class Interpolator(object):
                 self.log.debug(f"Read ok")
             except IOError:
                 self.log.error("Open Error coordinates_hgr")
-            self.log.info("Open hgr ok")
+            self.log.debug("Open hgr ok")
 
         if param_dict['corr']:
             self.compute_corr = True
-            self.log.debug(f"Add Correction {param_dict['corr']}")
+            self.log.info(f"Add Correction {param_dict['corr']}")
         else:
             self.log.debug(f"No correction")
         self.log.debug(f"{lon_obs=}")
         ll_best = False
         nb_obs2, nb_profs = np.shape(depth)
         self.log.debug("Number of observations {} Profondeurs {}".format(nb_obs2, nb_profs))
-        variable = param_dict['varname_select']
+        if 'varname_select' in param_dict.keys():
+            variable = param_dict['varname_select']
+        else:
+            variable = param_dict['varname']
         self.log.debug(f"Variable : {variable}")
         if nb_best > 0:
             if param_dict['data_origin'] == "GLOBCOLOUR":
@@ -275,8 +278,11 @@ class Interpolator(object):
         tab_depth = {}
 
         for i, key in enumerate(list_input_file.keys()):
-            self.log.info("Lead time "+key)
-            variable = param_dict['varname_select']
+            self.log.debug("Lead time "+key)
+            if 'varname_select' in param_dict.keys():
+                variable = param_dict['varname_select']
+            else:
+                variable = param_dict['varname']
             if key.lower() == "smoc":
                 variable = param_dict['varname_smoc']
                 ll_smoc = True
@@ -406,7 +412,7 @@ class Interpolator(object):
             elif len(np.unique(depth)) > 1:
                 ## Compte weight file
                 nb_obs, nb_profs = np.shape(depth)
-                self.log.info(f"Nb_profils {nb_obs} Nb levels {nb_profs}")
+                self.log.debug(f"Nb_profils {nb_obs} Nb levels {nb_profs}")
                 maxdepth =  np.nanmax(depth)
                 self.log.debug('maxdepth {}'.format(maxdepth))
                 ind_depth = self.getneardepth(depth_mod, maxdepth)
@@ -515,7 +521,7 @@ class Interpolator(object):
                               else:
                                   #obs_value2 = np.array(obs_value)[:,:,var]
                                   obs_value2 = np.array(obs_value)[:, var, :]
-                                  self.log.info(f'Case 1 depth 1 profile : {obs_value2}')
+                                  self.log.debug(f'Case 1 depth 1 profile : {obs_value2}')
 
                               interp_values = np.where(np.array(obs_value2).flatten() == _FillValue,
                                                                 self.missing_value, np.array(interp_values))
@@ -637,9 +643,9 @@ class Interpolator(object):
                    else:
                        pers_tab[:, var, indice, :] = interp_values
                elif key[0:4] == 'hdct':
-                   self.log.info(f'{var=}{varname=}')
+                   self.log.debug(f'{var=}{varname=}')
                    if ll_unique :
-                       self.log.info(f'Case uniq {var} {np.shape(hdct_tab)}')
+                       self.log.debug(f'Case uniq {var} {np.shape(hdct_tab)}')
                        try:
                            hdct_tab[:, var, 0] = interp_values
                        except ValueError as e:
@@ -710,6 +716,8 @@ class Interpolator(object):
                    sys.exit(1)
         ####
         if ll_best:
+            self.log.debug(f"Value hindcast {hdct_tab}")
+            self.log.debug(f"Value max hindcast {np.shape(hdct_tab)}")
             self.log.debug("Inside best data origin {}".format(param_dict['data_origin']))
             if param_dict['data_origin'] == "GLOBCOLOUR":
                 hdct_tab = hdct_tab[:, 0, 0].reshape(
@@ -738,14 +746,17 @@ class Interpolator(object):
         if ll_stokes_fcst: tab_results['stokes_fcst'] = stokes_fcst_tab
         if ll_tides: tab_results['tides'] = tides_tab
         if ll_bathy: tab_results['bathy'] = bathy_tab
-        tab_results['observation'] = obs_value
-        tab_results['varname_select'] = param_dict['varname_select']
-        tab_results['longitude'] = lon_obs
-        tab_results['latitude'] = lat_obs
-        tab_results['depth'] = depth
-        tab_results['qc'] = param_dict['qc']
-        if 'LEVITUS_clim' in param_dict.keys():
-            tab_results['LEVITUS_clim'] = param_dict['LEVITUS_clim']
+        if param_dict['Design_GODAE_file']:
+            tab_results['observation'] = obs_value
+            if 'varname_select' in param_dict.keys():
+                tab_results['varname_select'] = param_dict['varname_select']
+            tab_results['longitude'] = lon_obs
+            tab_results['latitude'] = lat_obs
+            tab_results['depth'] = depth
+            if 'qc' in param_dict.keys():
+                tab_results['qc'] = param_dict['qc']
+            if 'LEVITUS_clim' in param_dict.keys():
+                tab_results['LEVITUS_clim'] = param_dict['LEVITUS_clim']
         return tab_results, file_out
 
     def coloc_2D(self, lon_in, lon_out, lat_in, lat_out,

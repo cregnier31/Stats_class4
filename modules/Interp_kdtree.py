@@ -171,7 +171,11 @@ class interp_KDtree(object):
 
     def get_weight(self, d1):
 
-        weight = 1.0 / d1**2
+        if np.any(d1 != 0):
+            weight = 1.0 / d1**2
+        else:
+            # Handle the case when d1 is zero, e.g., set weight to a default value or take alternative action
+            weight = np.nan
 
         return weight
 
@@ -197,7 +201,11 @@ class interp_KDtree(object):
             Compute the interpolation
         """
         # Interpolate using inverse distance weighting, using n nearest neighbours (k=n)
-        w = 1.0 / d1**2
+        if d1 != 0:
+            w = 1.0 / d1**2
+        else:
+            # Handle the case when d1 is zero, e.g., set weight to a default value or take alternative action
+            weight = np.nan
         if nbpts_interp > 1 :
             ## Inverse Distance Weight interpolation
             tab_interp = np.sum(w * np.array(var_in).flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)
