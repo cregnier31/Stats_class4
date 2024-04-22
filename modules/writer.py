@@ -6,6 +6,8 @@ from netCDF4 import Dataset
 import numpy as np
 import datetime
 import json
+import fcntl
+import errno
 
 def write_cl4_files_2(filename, latitude, longitude, observations,\
         observation_filt, best, forecast, persistence, time, u_qc, v_qc, depth_qc,\
@@ -508,7 +510,8 @@ def convert_numpy_to_list(d):
             d[key] = convert_to_list(value)
     return d
 
-def write_data_json_file(filename, latitude, longitude, depth_moor, var_mod, vtime, depth, obs_values, variable, ech_fcst=[0]):
+def write_data_json_file(filename, latitude, longitude, depth_moor, var_mod, \
+                         vtime, depth, obs_values, var_qc, variable, ech_fcst=[0]):
     # Convert NetCDF variables to a dictionary
     variables = {}
     variables["time"] = vtime.tolist()
@@ -519,6 +522,7 @@ def write_data_json_file(filename, latitude, longitude, depth_moor, var_mod, vti
     variables["Forecast_204"] = var_mod[:, 3].tolist()
     variables["longitude"] = float(longitude)
     variables["latitude"] = float(latitude)
+    variables[f"{variable}_qc"] = var_qc.tolist()
     if isinstance(depth_moor, np.ndarray):
         print(f'DEPTH array {depth_moor}')
         variables["depth"] = depth_moor.tolist()
@@ -538,10 +542,32 @@ def write_data_json_file(filename, latitude, longitude, depth_moor, var_mod, vti
     except Exception as e:
         print(f"Error saving JSON file: {e} {filename} {depth_moor} {type(depth_moor)}")
 
+
+def open_netcdf_with_lock(filename, mode):
+    while True:
+        try:
+            # Attempt to open the file with exclusive locking
+            with open(filename, mode) as file:
+                fcntl.flock(file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                nc = netCDF4.Dataset(filename, mode)
+                return nc
+        except IOError as e:
+            #If file is locked, wait and retry
+            if e.errno == errno.EWOULDBLOCK:
+                time.sleep(0.1)
+                continue
+            else:
+                raise
+
+def close_netcdf_with_lock(nc):
+    # Release the lock and close the NetCDF dataset
+    nc.close()
+
 def write_data_colloc_files(filename, latitude, longitude, var_mod, vtime, stt_date, end_date, depth, mvalue, ech_fcst=[0]):
 
 
-    nc = netCDF4.Dataset(filename, 'w')
+    #nc = netCDF4.Dataset(filename, 'w')
+    nc = open_netcdf_with_lock(filename, 'w')
 
     #  ********************** Add dimensions ************************
 
@@ -606,3 +632,5 @@ def write_data_colloc_files(filename, latitude, longitude, var_mod, vtime, stt_d
     nc.forecasts_value_12 = 'FC01-FREE'
     nc.forecasts_value_60 = 'FC03-FREE'
     nc.forecasts_value_204 = 'FC09-FREE'
+    #nc = open_netcdf_with_lock(filename, mode)
+    close_netcdf_with_lock(nc)

@@ -186,7 +186,7 @@ class LoaderNCChloro(inputdata_loader):
     def __init__(self):
         self.varname = 'CHL'
 
-    def read_pos_and_value(self,filename):
+    def read_pos_and_value(self,filename, param_dict):
         rla_lon, rla_lat, _FillValue, nc = \
           self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][0, :, :]
@@ -257,7 +257,7 @@ class LoaderNCClim(inputdata_loader):
     def __init__(self):
         self.varname = 'CHL_MEAN'
 
-    def read_pos_and_value(self,filename):
+    def read_pos_and_value(self,filename, param_dict):
 
         rla_lon, rla_lat, nb_obs, _FillValue = \
          self.generic_read_pos_and_value(filename, self.varname)
@@ -298,6 +298,7 @@ class loaderNCcorio_tac(inputdata_loader):
     def read_pos_and_value(self, filename, param_dict, qc_level=0):
         self.log.info(f"Read pos and value {filename}")
         ds = xr.open_dataset(filename)
+        param_dict['Design_GODAE_file'] = True
         # Get the list of variable names
         variable_names = list(ds.variables)
         dimension_names = list(ds.dims)
@@ -528,7 +529,7 @@ class LoaderNCcorio(inputdata_loader):
         return position
 
     def read_pos_and_value(self,filename, param_dict, qc_level=0):
-
+        param_dict['Design_GODAE_file'] = True
         ll_pres=0
         ll_depth=0
         ll_temp=0
@@ -631,7 +632,7 @@ class LoaderSyntheticValue(inputdata_loader):
 
 class LoaderSSSVessel(inputdata_loader):
 
-    def read_pos_and_value(self,filename):
+    def read_pos_and_value(self, filename, param_dict):
         nc = netCDF4.Dataset(filename,'r')
         variable = 'LON'
         rla_lon = nc.variables[variable][:]
@@ -695,7 +696,8 @@ class LoaderNCgodae(inputdata_loader):
         nc.close()
         return position
 
-    def read_pos_and_value(self,filename):
+    def read_pos_and_value(self, filename, param_dict):
+        param_dict['Design_GODAE_file'] = False
         rla_lon, rla_lat, _FillValue, nc = \
          self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][:]
@@ -727,11 +729,13 @@ class LoaderNCgodae(inputdata_loader):
             rla_depth = np.ndarray(shape=(nb_obs,nb_deps),dtype=float, order='F')
             rla_depth[:, 0] = 0
         nb_obs = len(rla_value)
+        param_dict['ll_PSAL'] = True
+        param_dict['ll_TEMP'] = True
         ### TODO Return the dimensions of the forecast
         ## CREGNIER
         #ncdata.close()
         nc.close()
-        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, tab_dims, _FillValue
+        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, tab_dims, param_dict, _FillValue
 
 class PGN_coords_Loader(inputdata_loader):
 
@@ -894,16 +898,17 @@ class ColocLoader(inputdata_loader):
 
 class LoaderCMEMSDrifter_filtr(inputdata_loader):
 
-     """ 
+     """
         Loader for CMEMS drifters filtered
      """
-     def read_pos_and_value(self,filename):
+     def read_pos_and_value(self, filename, param_dict):
         lon, lat, depth, depth_qc, time, u, v, u_filtr, v_filtr, ll_var,\
             u_qc, v_qc, u_filtr_qc, v_filtr_qc, wind_u, wind_v, current_test, current_test_qc,\
             position_qc, time_qc, dc_reference = read_drifter_filt(filename)
         nb_obs = len(lon)
         _FillValue = np.nan
         tab_dims = {}
+        param_dict['Design_GODAE_file'] = False
         #for dims in dimensions.keys():
         #    sizedim = dimensions[dims].size
         #    if dims == 'numfcsts':
@@ -912,22 +917,21 @@ class LoaderCMEMSDrifter_filtr(inputdata_loader):
         #        tab_dims['nb_obs'] = sizedim
         #    elif dims == 'numdeps':
         #        tab_dims['nb_depths'] = sizedim
-            
-
-        return lon, lat, [u_filtr, v_filtr], nb_obs, depth, tab_dims, _FillValue
+        return lon, lat, [u_filtr, v_filtr], nb_obs, depth, tab_dims, param_dict, _FillValue
 
 class LoaderCMEMSDrifter(inputdata_loader):
 
-     """ 
+     """
         Loader for CMEMS drifters
      """
-     def read_pos_and_value(self,filename):
+     def read_pos_and_value(self, filename, param_dict):
         lon, lat, depth, depth_qc, time, u, v, ll_var,\
             u_qc, v_qc, wind_u, wind_v, current_test, current_test_qc,\
             position_qc, time_qc, dc_reference = read_drifter(filename)
         nb_obs = len(lon)
         _FillValue = np.nan
         tab_dims = {}
+        param_dict['Design_GODAE_file'] = False
         #for dims in dimensions.keys():
         #    sizedim = dimensions[dims].size
         #    if dims == 'numfcsts':
@@ -936,13 +940,12 @@ class LoaderCMEMSDrifter(inputdata_loader):
         #        tab_dims['nb_obs'] = sizedim
         #    elif dims == 'numdeps':
         #        tab_dims['nb_depths'] = sizedim
-            
 
-        return lon, lat, [u, v], nb_obs, depth, tab_dims, _FillValue
+        return lon, lat, [u, v], nb_obs, depth, tab_dims, param_dict, _FillValue
 
 class SMOC_coords_Loader(inputdata_loader):
-    """ 
-       SMOC coordinates 
+    """
+       SMOC coordinates
     """
     def read_pos(self,filename):
         nc = netCDF4.Dataset(filename,'r')
