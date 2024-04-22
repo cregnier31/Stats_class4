@@ -11,7 +11,8 @@ import tarfile
 import netCDF4
 #import custom as c
 #from sydate import SyDate
-from sytoolkit.sydate import SyDate
+#from sytoolkit.sydate import SyDate
+from lib_pyt.libtools.sydate import SyDate
 from Logger import Logger
 from gz import ZipManipulator
 from os.path import dirname
@@ -708,10 +709,13 @@ class Extract_UVDrifters_filtr(Extractor):
 
     def run_list(self,param_dict, daterun):
         liste_tot=[]
-        liste_file=glob(param_dict['dirdata']+'/'+daterun[0:4]+'/*'+daterun+'*.nc')
+        year = daterun[0:4]
+        month = daterun[4:6]
+        #liste_file=glob(param_dict['dirdata']+'/'+daterun[0:4]+'/*'+daterun+'*.nc')
+        liste_file=glob(param_dict['dirdata'] + '/' + year + '/' + month + '/*' + daterun+'*.nc')
         if not liste_file:
-            self.log.error("Missing Drifters files {} {}".format(param_dict['dirdata'], daterun))
-            sys.exit(1)
+            self.log.error(f"Missing Drifters files {param_dict['dirdata']}/{year}/{month}/*{daterun}*nc")
+            return []
         self.log.info('Liste file UV drifters {}'.format(liste_file))
         nb_fcst = len(param_dict['lead_int'])
         nb_fcst2 = len(param_dict['lead_int2'])
@@ -754,7 +758,7 @@ class Extract_UVDrifters(Extractor):
         self.log.info("Write new file {}".format(file_new))
         self.nb_fcst = nb_fcst
         self.nb_fcst2 = nb_fcst2
-        nc_fid = Dataset(file_new, 'w', format='NETCDF4')
+        nc_fid = Dataset(file_new, 'w', format='NETCDF4', locking=True)
         nc_fid.createDimension('numobs', None)
         nc_fid.createDimension('numvars', self.nb_vars)
         nc_fid.createDimension('numdeps', self.nb_depths)
@@ -859,10 +863,13 @@ class Extract_UVDrifters(Extractor):
 
     def run_list(self,param_dict, daterun):
         liste_tot=[]
-        liste_file=glob(param_dict['dirdata']+'/'+daterun[0:4]+'/*'+daterun+'*.nc')
+        #liste_file=glob(param_dict['dirdata']+'/'+daterun[0:4]+'/*'+daterun+'*.nc')
+        year = daterun[0:4]
+        month = daterun[4:6]
+        liste_file=glob(param_dict['dirdata'] + '/' + year + '/' + month + '/*' + daterun+'*.nc')
         if not liste_file:
             self.log.error("Missing Drifters files {} {}".format(param_dict['dirdata'], daterun))
-            sys.exit(1)
+            return []
         self.log.info('Liste file UV drifters {}'.format(liste_file))
         nb_fcst = len(param_dict['lead_int'])
         nb_fcst2 = len(param_dict['lead_int2'])
@@ -928,6 +935,10 @@ class Extract_GODAE(Extractor):
                         ## Change numfcts dim
                         options = []
                         options.extend(['-h','-O','-a','numfcsts'])
+                        self.log.debug(f"Write output file {dirtmp}{filename}")
+                        # If it doesn't exist, create it
+                        if not os.path.exists(dirtmp):
+                            os.makedirs(dirtmp)
                         nco.ncwa(input=new_file, output=dirtmp+filename, fortran=True ,options=options)
                         nc = netCDF4.Dataset(dirtmp+filename, 'r')
                         variables = nc.variables.keys()
@@ -951,7 +962,7 @@ class Extract_GODAE(Extractor):
                             options = []
                             options.extend(['-h','-O','-v','leadtime_new,leadtime'])
                             nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
-                        self.log.info("add new dim ok {}".format(dirtmp+filename))
+                        self.log.debug("add new dim ok {}".format(dirtmp+filename))
                     elif typedata == "current":
                         options = []
                         shutil.copy(dirdata+filename,dirtmp)
@@ -971,7 +982,7 @@ class Extract_GODAE(Extractor):
                         nc.createVariable('varname','c',('numvars','string_length8'))
                         nc.variables['varname'][:]='ileadfra'
                         nc.close
-                    self.log.info('Fichier extracted %s ' % (dirtmp+filename)) 
+                    self.log.debug('Fichier extracted %s ' % (dirtmp+filename)) 
                     liste_tot.append(dirtmp+filename)
                     # Design output File
                     # Design_file('GODAE').run(dirtmp+filename)

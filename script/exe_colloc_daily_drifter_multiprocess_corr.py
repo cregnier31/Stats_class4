@@ -229,7 +229,7 @@ nb_comp = 2
 nb_profs = 2
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Define configuration (path, date, etc.) ~~~~~~~~
 
-log = Logger('TEP_CLASS2').run(loglevel)
+log = Logger(f'TEP_CLASS2_UV_drifters_{year}{month2}').run(loglevel)
 dateCNESref = dt.datetime.strptime('1950010100', '%Y%m%d%H').toordinal()
 log.debug(f"Launch interpolation for {year} {month2}")
 

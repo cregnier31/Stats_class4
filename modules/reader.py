@@ -6,11 +6,17 @@ import utilities
 import param.Def_param_bulletin as params
 import xarray as xr
 import dask
+import os
 
 __version__ = 0.1
 __date__ = "February 2019"
 __authors__ = "C.REGNIER & C.SZCZYPTA"
 
+def read_outputnp(file_out):
+    if os.path.exists(file_out) and os.path.getsize(file_out) != 0:
+        return True
+    else:
+        return False
 
 def read_mask_polar(params_conf):
 

@@ -52,37 +52,36 @@ def main(level=2):
     conf_path = dirname(__file__) #os.getcwd()
     filename = conf_path + '/cfg/' + param_dict['confname']
     param_dict = Loader.factory('NML').load(filename, level, param_dict, log)
-    # ==========================================================================
-    # PART-2 - Loop for a given time range
-    # ==========================================================================
-    log.info('========================================================')
-    log.info('              Launch time loop                          ')
-    log.info('========================================================')
-    ## Create dictionnary
+    # Create dictionnary
     list_keys = create_dict(param_dict['date1'],
                             param_dict['date2'],
                             param_dict['lead_time'],
                             param_dict['lead_int'])
-
     # *********** MPI section to split dates on each processor ***********
     comm = MPI.COMM_WORLD
     ndate = len(list_keys['keyvalues'])
-    if comm.rank == 0:
-        log.info(f"Number of date {ndate}")
-        log.info(f"Size of the comm {comm.size}")
     irest  = np.mod(ndate,comm.size)
     ntask  = ndate // comm.size
-    log.debug(f'Number of tasks {ntask}')
-    log.debug(f"irest = {irest}")
     istart = int(ntask*comm.rank)
     iend   = int(istart + ntask - 1)
-    log.debug(f"Start {istart} End {iend}")
     cla_date = np.array(list_keys['keyvalues'][istart:iend+1]).tolist()
     iend_tot = ntask*comm.size-1
-    log.debug(f"iend_tot = {iend_tot}")
     if irest > 0 and comm.rank < irest:
         cla_date.append(list_keys['keyvalues'][iend_tot+comm.rank+1])
-    log.debug(f'Date to run {cla_date}')
+    # ==========================================================================
+    # PART-2 - Loop for a given time range
+    # ==========================================================================
+    if comm.rank == 0:
+        log.info('========================================================')
+        log.info('              Launch time loop                          ')
+        log.info('========================================================')
+        log.info(f"Number of date {ndate}")
+        log.debug(f'Date to run {cla_date}')
+        log.debug(f"Size of the comm {comm.size}")
+        log.debug(f'Number of tasks {ntask}')
+        log.debug(f"irest = {irest}")
+        log.debug(f"Start {istart} End {iend}")
+        log.debug(f"iend_tot = {iend_tot}")
     for keyvalue in cla_date:
         dateval, leadtime, lead_int = keyvalue.split('-')
         # Selection of the input data
@@ -92,12 +91,26 @@ def main(level=2):
         input_list_files, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], log).\
             factory("GLOBAL_INPUT_DATA").run(param_dict, dateval)
         if ll_miss:
+            if comm.rank == 0:
+                log.info(f'File is missing for the observation {dateval}')
             continue
+        if comm.rank == 0:
+            log.debug(f'{input_list_files}')
         if not ll_miss:
             # Interpolation of the data
             for file in input_list_files:
+                # Test existing files
+                if Writer(log).test_output(file,
+                                           param_dict,
+                                           dateval,
+                                           leadtime,
+                                           lead_int):
+                    if comm.rank == 0:
+                        log.info('Intermediate file exist')
+                    continue
+                #if not read_outputnp(file_out):
                 tab_results, file_out = Interpolator(log, dask=param_dict['dask']).read_and_interp(
-                     file, param_dict, date=dateval, leadtime=leadtime, lead_int=lead_int)
+                    file, param_dict, date=dateval, leadtime=leadtime, lead_int=lead_int)
                 # Write output file
                 if comm.rank == 0:
                     log.info("========================================================")

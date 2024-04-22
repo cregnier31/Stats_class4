@@ -70,7 +70,6 @@ def main(level=2):
     unique_leadtime_unit = sorted({int(key.split('-')[2]) for key in list_keys['keyvalues']})
     for keyvalue in list_keys['keyvalues']:
         dateval, leadtime, lead_int = keyvalue.split('-')
-        print(dateval, leadtime, lead_int)
         start = timer()
         log.info(f'Interp day {dateval} {leadtime} leadtime {lead_int}')
         log.info('========================================================')
@@ -80,12 +79,21 @@ def main(level=2):
         input_list_files, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], log).\
             factory("GLOBAL_INPUT_DATA").run(param_dict, dateval)
         if ll_miss:
-            log.info(f'File is missing {dateval}')
+            log.info(f'File is missing for the observation {dateval}')
             continue
         log.info(f'{input_list_files}')
         if not ll_miss:
             # Interpolation of the data
             for file in input_list_files:
+                # Test existing files
+                if Writer(log).test_output(file,
+                                           param_dict,
+                                           dateval,
+                                           leadtime,
+                                           lead_int):
+                    log.info('Intermediate file exist')
+                    continue
+                #if not read_outputnp(file_out):
                 tab_results, file_out = Interpolator(log, dask=param_dict['dask']).read_and_interp(
                     file, param_dict, date=dateval, leadtime=leadtime, lead_int=lead_int)
                 # Write output file
@@ -104,6 +112,7 @@ def main(level=2):
     # Write output file
     log.info('Write output file')
     Writer(log).write_class4_out(param_dict, list_keys)
+    log.info('End')
 
 # Set the level of logger (log_level = 2)
 # Run the main code
