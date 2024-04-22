@@ -30,11 +30,11 @@ class Logger(object):
                                       },
                 )
         self.stream = stream
-       # if stream == 'logfile':
-       #     print('Add logfile')
-       #     self.stream = logging.FileHandler(self.logname)
-       # else:
-       #     self.stream = logging.StreamHandler()
+        if stream == 'logfile':
+            print('Add logfile')
+            self.stream = logging.FileHandler(self.logname)
+        else:
+            self.stream = logging.StreamHandler()
 
     def run(self,level):
         log = logging.getLogger(self.name)

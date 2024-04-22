@@ -8,10 +8,14 @@ class select_data():
         SUFFIX = params_dict['SUFFIX']
         ZONE = params_dict['ZONE']
         DIRDATA = params_dict['DIRDATA']
+        log.info(f'{DIRDATA=}')
         if TYPE == "013_030":
             frame = ZONE + '_' + str(YEAR) + str(MONTH) + '_' + SUFFIX + '*.nc'
         elif TYPE == "013_048":
             frame = ZONE + '_' + SUFFIX + '*' + str(YEAR) + str(MONTH)+'.nc'
+        log.info(f'{DIRDATA}{YEAR}{MONTH}')
+        log.info(f'{frame=}')
+
         nb_files = len(glob(DIRDATA + str(YEAR) + str(MONTH) + '/' + frame))
         log.debug(f'Number of files {nb_files}')
         list_file = []
