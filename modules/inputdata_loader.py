@@ -70,7 +70,7 @@ class inputdata_loader(object):
         if type == "DRIFTER_CMEMS": return LoaderCMEMSDrifter(self.log)
         if type == "DRIFTER_CMEMS_filtr": return LoaderCMEMSDrifter_filtr(self.log)
         if type == "alleges_coords": return alleges_coords()
-        if type == "bathymetrie": return bathy_coords()
+        if type == "bathymetrie": return bathy_coords(self.log)
         if type == "Legos_SIT": return read_Legos_SIT()
         if type == "2ease_coords": return ease_coords_Loader()
         assert 0, "Format not known: " + type

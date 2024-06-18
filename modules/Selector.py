@@ -273,7 +273,7 @@ class SelectListModelData(Selector):
             lead_fin = ['fcst'+element for element in lead_new2 ]
             self.dirmodel_new = self.dirmodel+'DAILY/SMOC/'
         else:
-            self.log.error('Lead time %s not expected ' %(time))
+            self.log.error('In sorter Lead time %s not expected ' %(time))
             sys.exit(1)
         self.config_d = re.sub("V", "QV", param_dict['cl_config'])
         self.config_d = re.sub("V", "QV", param_dict['cl_conf'])
@@ -336,6 +336,8 @@ class SelectListModelData(Selector):
                             if param_dict['type_run'] == "REA":
                                 dirmodel_new = f'{self.dirmodel}{year}/{month}/'
                                 dirmodel_new_next = f'{self.dirmodel}{next_year}/{next_month}/'
+                            elif  param_dict['type_run'] == "RTR":
+                                dirmodel_new = self.dirmodel
                             else:
                                 #config = param_dict['cl_conf']
                                 self.config_d = re.sub("V", "QV", config)
@@ -389,6 +391,7 @@ class SelectListModelData(Selector):
                 elif directory == "bathy":
                     dirmodel_new =  param_dict['bathy_file']
                     dirmodel_new_next = dirmodel_new
+                    self.log.debug(f"Bathy {dirmodel_new_next=}")
                 elif leadtime == 'smoc_fcst' or leadtime == 'stokes_fcst':
                     dirmodel_new = self.dirmodel+'DAILY/SMOC/'
                     dirmodel_new_next = dirmodel_new
@@ -526,10 +529,18 @@ class SelectListModelData(Selector):
                                             '_'+dateval+"*.nc")
                                 list_file.extend(list_file_tmp)
                             elif param_dict['type_run'] == "RTR":
-                                for i, grid in enumerate(param_dict['gridtype']):
-                                    list_file_tmp = glob(f"{dirmodel_new}{self.modele}_{param_dict['daily_pref']}_"
-                                                          f"{dateval}*{param_dict['gridtype'][i]}*.nc")
+                                if directory == "bathy" or directory == "clim":
+                                    list_file_tmp = glob(dirmodel_new)
                                     list_file.extend(list_file_tmp)
+                                elif directory == "smoc" or directory == "stokes" or directory == "tides":
+                                    for i in range (2):
+                                        list_file_tmp = glob(dirmodel_new+"SMOC_*"+dateval+"*.nc")
+                                        list_file.extend(list_file_tmp)
+                                else:
+                                    for i, grid in enumerate(param_dict['gridtype']):
+                                        list_file_tmp = glob(f"{dirmodel_new}{self.modele}_{param_dict['daily_pref']}_"
+                                                              f"{dateval}*{param_dict['gridtype'][i]}*.nc")
+                                        list_file.extend(list_file_tmp)
                                 self.log.debug(f'{list_file=}')
                             else:
                                 if directory == "smoc" or directory == "stokes" or directory == "tides":

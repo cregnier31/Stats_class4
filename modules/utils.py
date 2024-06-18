@@ -388,10 +388,11 @@ def create_dict(date1, date2, lead_time, lead_int):
     list_keys = {}
     valeurj = date1
     list_keys_values = []
+    list_uniq = ['best_estimate', 'climatology', 'bathymetrie']
     while valeurj >= date1  and valeurj <= date2:
         dateval = str(valeurj)
         for lead in lead_time:
-            if lead == 'best_estimate':
+            if lead in list_uniq:
                 list_int = [0]
             else:
                 list_int = lead_int

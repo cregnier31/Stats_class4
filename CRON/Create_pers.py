@@ -28,10 +28,10 @@ type_d=config_d[0:6]
 type=config_d[0:5]
 today = date.today()
 d1 = today.strftime("%Y%m%d")
-#day1=SyDate("20230801")
-#day2=SyDate("20230831")
-day1=SyDate(d1).gobackward(4)
-day2=SyDate(d1)
+day1=SyDate("20240201")
+day2=SyDate("20240319")
+#day1=SyDate(d1).gobackward(70)
+#day2=SyDate(d1)
 JJMIN=day1.tojulian()
 JJMAX=day2.tojulian()
 
@@ -39,8 +39,8 @@ config_type=modele_type.lower()
 config_type_daily=config_d.lower()
 print ("daily %s "%(config_type_daily))
 print ("hebdo %s "%(config_type))
-DIR_SORT1 = "/utmp/smer/regnierc/SORT/"
-DIR_SORT = "/utmp/smer/regnierc/SORT-2/"
+DIR_SORT1 = "/scratch/work/regnierc/SORT/"
+DIR_SORT = "/scratch/work/regnierc/SORT/"
 DIR_SORT_DAILY = f'{DIR_SORT}DAILY/{type_d}/{config_type_daily}'
 DIR_SORT_HEBDO = f'{DIR_SORT1}HEBDO/{type}/{config_type}'
 
