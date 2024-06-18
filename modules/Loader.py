@@ -269,14 +269,14 @@ class LoaderNCClim(Loader):
 
 class InputLoader(Loader):
     def __init__(self):
-        self.lead_int = list(range(10))
+        self.lead_int = 0 # list(range(10))
 
     def load(self, options, level):
         """Loader for input options"""
         keywords = ['date1=', 'date2=', 'delta=', 'nbdate=', 'daterun=',
         'config=', 'data=', 'src=', 'nbproc=', 'typemod=', 'schedule=',
         'data_id=','loglevel=','daymax=','dirinput=','diroutput=',
-        'best','fcst','pers','all']
+        'best','fcst','pers','all','clim','bathy','SMOC','stokes','tides']
         ll_delta = None
         ll_date1 = None
         ll_date2 = None
@@ -293,6 +293,8 @@ class InputLoader(Loader):
         ll_input = False
         ll_output = False
         ll_best = False
+        ll_clim = False
+        ll_bathy = False
         ll_forecast = False
         ll_persistence = False
         list_var = []
@@ -371,6 +373,16 @@ class InputLoader(Loader):
                 list_LEAD_TIME.append('forecast')
             elif o in ['--pers']:
                 list_LEAD_TIME.append('persistence')
+            elif o in ['--bathy']:
+                list_LEAD_TIME.append('bathymetrie')
+            elif o in ['--tides']:
+                list_LEAD_TIME.append('tides')
+            elif o in ['--stokes']:
+                list_LEAD_TIME.append('stokes')
+            elif o in ['--SMOC']:
+                list_LEAD_TIME.append('smoc')
+            elif o in ['--clim']:
+                list_LEAD_TIME.append('climatology')
             elif o in ['--all']:
                 list_LEAD_TIME=['best_estimate', 'forecast', 'persistence']
         # LOGGER
@@ -520,6 +532,7 @@ class InputLoader(Loader):
 
         vect_time = date_range(start_date, end_date, 1, 'days')
         param_dict['time_period'] = pd.to_datetime(vect_time).strftime('%Y%m%d')
+        log.debug(f"Input leadtime {param_dict['lead_int']}")
 
         return param_dict, log
 
@@ -649,7 +662,7 @@ class NmlLoader(Loader):
         param_dict['template'] = param_dict['cl_conf'] + \
             '_'+param_dict['model_type'].lower()
         #param_dict['lead_time'] = db.get('input_dir', 'LEAD_TIME').split()
-        #param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
+        param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
         param_dict['coloc_rep'] = db.get('output_dir', 'DIRCOLOC')
         param_dict['gridtemp'] = db.get('GLOBAL', 'gridtemp')
         param_dict['gridsal'] = db.get('GLOBAL', 'gridsal')
@@ -683,20 +696,21 @@ class NmlLoader(Loader):
         param_dict['inst'] = db.get('GLOBAL','INSTITUTION')
         param_dict['version'] = db.get('GLOBAL','VERSION')
         param_dict['desc'] = db.get('GLOBAL','DESCRIPTION')
-        try: 
+        try:
             param_dict['varname_smoc'] = literal_eval(db.get('GLOBAL', 'variable_SMOC'))
         except:
             param_dict['varname_smoc'] = ""
-        try: 
+        try:
             param_dict['varname_stokes'] = literal_eval(db.get('GLOBAL', 'variable_stokes'))
         except:
             param_dict['varname_stokes'] = ""
-        try: 
+        try:
             param_dict['varname_tides'] = literal_eval(db.get('GLOBAL', 'variable_tides'))
         except:
             param_dict['varname_tides'] = ""
         try:
-            param_dict['lead_int2'] = db.get('input_dir', 'LEAD_INT2').split()
+            param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT2').split()
+            param_dict['lead_int2'] = param_dict['lead_int']
         except:
             param_dict['lead_int2'] = ""
         try:

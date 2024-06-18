@@ -65,9 +65,12 @@ def main(level=2):
                             param_dict['date2'],
                             param_dict['lead_time'],
                             param_dict['lead_int'])
+    log.debug(f'Keys {list_keys}')
     unique_dates = sorted({int(key.split('-')[0]) for key in list_keys['keyvalues']})
     unique_leadtime = sorted({key.split('-')[1] for key in list_keys['keyvalues']})
     unique_leadtime_unit = sorted({int(key.split('-')[2]) for key in list_keys['keyvalues']})
+    log.debug(f'{unique_leadtime=}')
+    log.debug(f'{unique_leadtime_unit=}')
     for keyvalue in list_keys['keyvalues']:
         dateval, leadtime, lead_int = keyvalue.split('-')
         start = timer()
@@ -91,7 +94,7 @@ def main(level=2):
                                            dateval,
                                            leadtime,
                                            lead_int):
-                    log.info('Intermediate file exist')
+                    log.info(f'Intermediate file exist {file}')
                     continue
                 #if not read_outputnp(file_out):
                 tab_results, file_out = Interpolator(log, dask=param_dict['dask']).read_and_interp(
@@ -100,6 +103,7 @@ def main(level=2):
                 log.info("========================================================")
                 log.info(f'Write interp file for day {dateval} {file_out}')
                 log.info("========================================================")
+                log.debug(tab_results.keys())
                 Writer(log).write_outputnp(file_out,
                                            tab_results,
                                            param_dict,

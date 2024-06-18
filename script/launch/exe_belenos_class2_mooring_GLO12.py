@@ -20,7 +20,7 @@ resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM
 # ********************** Source environnement *********************************
 
 pbsworkdir = "/home/ext/mr/smer/regnierc/SAVE/INSTALL/TEP_CLASS4/script/launch/"
-date = 202205
+date = 202403
 system = 'GLO12V4'
 old_obs = 'old'
 time_step = 'daily'

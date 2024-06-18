@@ -3,10 +3,10 @@
 #SBATCH -A cmems
 #SBATCH -p normal256
 #SBATCH -N 12
-#SBATCH -e NEW_CLASS2_MOOR_hourly_PQD_202401_job%j.e
-#SBATCH -o NEW_CLASS2_MOOR_hourly_PQD_202401_job%j.o
+#SBATCH -e NEW_CLASS2_MOOR_hourly_PQD_202404_job%j.e
+#SBATCH -o NEW_CLASS2_MOOR_hourly_PQD_202404_job%j.o
 #SBATCH --ntasks-per-node=12
-#SBATCH --time=05:00:00
+#SBATCH --time=02:00:00
 
 import shlex,subprocess
 import os,sys,getopt
@@ -19,8 +19,9 @@ resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM
 
 # ********************** Source environnement *********************************
 
+os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 pbsworkdir = "/home/ext/mr/smer/regnierc/SAVE/INSTALL/TEP_CLASS4_creation/script/launch/"
-date = 202401
+date = 202404
 time_step = 'hourly'
 system = 'GLO12V4'
 old_obs = 'new'
@@ -31,6 +32,7 @@ EXE = os.path.join(pbsworkdir,'../exe_colloc_mooring_multi.py')
 try : os.remove(os.path.join(pbsworkdir,"OK.flag"))
 except : pass
 dir_bin="/home/ext/mr/smer/regnierc/anaconda3/envs/env_py38_bis/bin/"
+#dir_bin="/home/ext/mr/smer/regnierc/anaconda3/envs/env_py311/bin/"
 # **************************** Python launcher *********************************
 nb_process=144
 os.system(dir_bin+"mpirun -np "+str(nb_process)+" "+dir_bin+"python %s %s %s %s %s" \

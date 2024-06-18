@@ -1,6 +1,6 @@
 import os, sys
 sys.path.append('../../modules/')
-import resource
+import resource, re
 from mpi4py import MPI
 import dill
 from Logger import Logger
@@ -13,16 +13,15 @@ from utilities import findListFiles as find_lf
 from utilities import readDataSet as read_dtset
 from utils import compute_last_day_month
 from reader import read_moor, read_pos, read_depth
-from writer import write_data_colloc_files_daily, write_data_colloc_files
+from writer import write_data_colloc_files_daily, write_data_colloc_files, write_data_json_file
 import dask
 import psutil
 from Interp_kdtree import interp_KDtree
 import configparser as ConfigParser
 from ast import literal_eval
 import time as tt
-from timeit import default_timer as timer
 
-dask.config.set(scheduler="synchronous")
+#dask.config.set(scheduler="synchronous")
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
 
@@ -63,7 +62,7 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~ Define configuration (path, mask, interp) ~~~~~~~~~~~~~~~~~~~~
 
-level = 2
+level = 6
 log = Logger('TEP_CLASS2').run(level)
 
 IniRead = ConfigParser.ConfigParser()
@@ -90,8 +89,6 @@ systemQ_filen = IniRead.get('nomenclature_file','systemQ')
 grid_filen = IniRead.get('nomenclature_file','grid')
 mean_filen = IniRead.get('nomenclature_file','mean')
 grid_var_filen = IniRead.get('nomenclature_file','grid_var')
-
-start = timer()
 
 if old_obs == 'new':
     DAY = compute_last_day_month(int(YEAR),int(MONTH))
@@ -121,9 +118,6 @@ rank = comm.Get_rank()
 
 mod_coord = xr.open_dataset(coordinates)
 start_time_ini = tt.time()
-end = timer()
-log.info(f'Time init Time {end-start}')
-
 if rank == 0:
     lon_mod, lat_mod = read_pos(coordinates, log)
 
@@ -142,18 +136,16 @@ if rank == 0:
             dte_moor = t_tmp[-1].strftime('%Y%m')
             if int(dte_moor) < int(dts_mod) or int(dts_moor) > int(dte_mod): continue
         if ll_var: nb_files += 1
-
     list_mooring = []
     list_lon = []
     list_lat = []
-    end2 = timer()
-    log.info (f"Nb file total {nb_files} {end2-end})")
+    log.info ("Nb file total : %s" %(str(nb_files)))
     ind_moor = 0
     for f, file in enumerate(glob(frame)):
         if old_obs == 'new': moor =  os.path.basename(file).split('_')[3:][0]
         else: moor =  os.path.basename(file).split('_')[3:][0].split('.nc')[0]
-        if old_obs == 'new' and os.path.isfile(path_out+moor+'_MOD_TS_GLOMFC-PU_'+ \
-        str(YEAR)+MONTH+'_'+typemoor+'.nc'): continue
+        #if old_obs == 'new' and os.path.isfile(path_out+moor+'_MOD_TS_GLOMFC-PU_'+ \
+        #str(YEAR)+MONTH+'_'+typemoor+'.nc'): continue
         log.debug (moor)
         lon_value, lat_value, depth, depth_qc, time, vardata, ll_var, vardata_qc = read_moor(file, typemoor, log)
         if old_obs == 'old':
@@ -172,8 +164,7 @@ if rank == 0:
             ind_moor += 1
 
     nb_files = len(list_mooring)
-    end3 = timer()
-    log.info (f'Nb files Selected {typemoor} {nb_files} {end3-end2}')
+    log.info ("Nb files %s : %s" %(typemoor, str(nb_files)))
     if nb_files < 1:
         log.error ("Missing moorings")
         sys.exit(1)
@@ -186,8 +177,7 @@ if rank == 0:
                                        np.array(list_lon), np.array(list_lat),\
                                        nb_ptsinterp, weight_file=weight_file, save=False)
     ilat, ilon = TreeObj.get_ilonlat(lon_mod, lat_mod, idw)
-    end4 = timer()
-    log.info (f'Coloc 2D {nb_files} Time: {end4 -end3}')
+    log.info ("Coloc 2D %s" %(str(nb_files)))
     for i, m in enumerate(list_mooring):
         ind_dict[m]['ind_lat'] = ilat[i]
         ind_dict[m]['ind_lon'] = ilon[i]
@@ -218,10 +208,8 @@ if rank == 0:
             mfdataset_fcst = {}
             time_fcst = {}
             for fc in forecast:
-                mfdataset_fcst[str(fc)], time_fcst[str(fc)] = read_dtset(liste_fcst[str(fc)])
-
-    end4 = timer()
-    log.info (f'Select model files for the considered month Time: {end4-end3}')
+                mfdataset_fcst[str(fc)], time_fcst[str(fc)] = \
+                    read_dtset(liste_fcst[str(fc)], data_vars=[variable])
 
     # ~~~~~~~~ Read mooring coordinates and compute 2D collocation with the model grid ~~~~~~~~~
 
@@ -231,15 +219,13 @@ if rank == 0:
         else: moor_tmp =  file.split('_')[-1].split('.nc')[0]
         if moor_tmp in list_mooring:
             list_file.append(file)
-    end5 = timer()
-    log.info (f'Split month Time: {end5-end4}')
 else:
     ind_dict, depth_mod, mfdataset_hdct, time_mod, list_file, multidim, dts, dte = \
     None, None, None, None, None, None, None, None
     if len(forecast) > 0:
         mfdataset_fcst, time_fcst = None, None
 
-log.info("Create broadcast")
+log.debug ("Create broadcast ")
 ind_dict = comm.bcast(ind_dict, root=0)
 list_file = comm.bcast(list_file, root=0)
 if old_obs == 'new':
@@ -264,7 +250,6 @@ if irest > 0 and comm.rank < irest:
     cla_mr.append(list_file[iend_tot+comm.rank+1])
 
 for file in cla_mr:
-    start = timer()
     if old_obs == 'new': moor =  os.path.basename(file).split('_')[3:][0]
     else: moor = os.path.basename(file).split('_')[3:][0].split('.nc')[0]
     start_time = tt.time()
@@ -282,7 +267,8 @@ for file in cla_mr:
         pfx = system_filen+grid_filen+'_1'+tstp[0]+mean_filen+'_'
         sfx = grid_var_filen
         liste_file = find_lf(dir_mod_hebdo, pfx, sfx, ts, dt_start=dts, dt_end=dte)
-        depth_mod, multidim = [0], False
+        if varname[typemoor] in ["thetao"]: depth_mod, multidim = read_depth(liste_file[0])
+        else: depth_mod, multidim = [0], False
         mfdataset_hdct, time_mod = read_dtset(liste_file)
         if len(forecast) > 0:
             liste_fcst = {}
@@ -298,37 +284,127 @@ for file in cla_mr:
             time_fcst= {}
             for fc in forecast:
                 mfdataset_fcst[str(fc)], time_fcst[str(fc)] = read_dtset(liste_fcst[str(fc)])
-    end = timer()
-    log.info (f'Step 1 moor: {end-start}')
-    var_moor = [] ; vardata_qc = [] ; depth_moor = []
-    if np.size(vardata) == 1 and np.isnan(vardata): continue
-    if len(np.shape(np.array(vardata))) > 1:
-        w = np.where(np.array(depth.data) >= 0)[0]
-        if len(w) > 0:
-            cont_act = False
-            for ini in range(len(w)):
-                if np.isnan(np.nanmean(np.array(vardata)[:,w[ini]])) or np.array(depth)[w[ini]] > 2 or cont_act: 
+    json_file_out = re.sub('.nc', '.json', nc_file_out)
+    cont_act = False
+    nb_dims_profs = len(np.shape(depth))
+    if not ll_var:
+        print(f'Missing variable {typemoor} for {file}')
+        continue
+    var_moor = []
+    #vardata_qc = []
+    depth_moor = []
+    depthmax = 6
+    # Management of different types of moorings
+    if nb_dims_profs == 1:
+        log.info(f'Case 1 {file}')
+        nb_dims_var = len(np.shape(vardata))
+        for ini, depth_val in enumerate(depth.data):
+            if nb_dims_var == 1:
+                value_data = np.array(vardata)[ini]
+                value_data_all = np.array(vardata)
+                value_qc = np.array(var_qc)[ini]
+            elif nb_dims_var == 2:
+                value_data = np.array(vardata)[:, ini]
+                value_data_all = np.array(vardata)[:, ini]
+                value_qc = np.array(var_qc)[:, ini]
+            else:
+                log.error(f'Case not defined {nb_dims_var}')
+                sys.exit(1)
+            has_valid_data = np.any(~np.isnan(value_data))
+            #if depth_val < 0 or np.isnan(value_data) or depth_val > depthmax:
+            if depth_val < 0 or not has_valid_data or depth_val > depthmax:
+            #if depth_val < 0 or not has_valid_data:
+                continue
+            else :
+                depth_data_all = depth.data[:]
+                depth_moor.append(float(depth_val))
+                var_moor.append(value_data)
+                #vardata_qc.append(value_qc)
+                vardata_qc = value_qc
+                break
+    elif nb_dims_profs == 2:
+        log.info(f'Case 2 {file}')
+        list_depth = depth.data[0]
+        if isinstance(vardata, float) and np.isnan(vardata):
+            continue
+        else:
+            for ini, depth_val in enumerate(list_depth):
+                array_data  = np.array(vardata)[:,ini]
+                if array_data.size == 0:
                     continue
-                else : cont_act = True
-                var_moor = np.array(vardata)[:,w[ini]]
-                depth_moor = depth.data[w[ini]]
-                vardata_qc = np.array(var_qc)[:,w[ini]]
-    if len(var_moor) == 0: continue
-    w = np.where(vardata_qc != 1.)
-    var_moor[w[0]] = np.nan
+                if depth_val < 0 or np.isnan(np.nanmean(array_data)) or depth_val > depthmax:
+               # if depth_val < 0 or depth_val > depthmax:
+                    continue
+                else :
+                    value_data_all = array_data
+                    var_moor.append(np.nanmean(array_data))
+                    depth_moor.append(float(depth_val))
+                    #vardata_qc.append(np.nanmean(np.array(var_qc)[:,ini]))
+                    #vardata_qc.append(np.array(var_qc)[:,ini])
+                    #vardata_qc.append(np.array(vardata_qc)[:,ini])
+                    vardata_qc = np.array(var_qc)[:,ini]
+                    depth_data_all = np.array(depth)[:,ini]
+                    #depth_all = depth.data
+                    break
+                #if depth_val < 0 : continue
+                #elif np.isnan(np.nanmean(np.array(vardata)[:,ini])) or depth_val > depthmax or cont_act: continue
+                #else : cont_act = True
+                #var_moor.append(np.array(vardata)[0,ini])
+                #depth_moor.append(depth_val)
+                #vardata_qc.append(np.array(var_qc)[0,ini])
+    elif nb_dims_profs == 0:
+        log.info('Case 0')
+        depth = float(depth.data)
+        if depth < 0 :
+            print(f"One single depth < 0 for {file}")
+            continue
+        depth_data_all = depth
+        value_data_all = vardata.data
+        value_data = vardata.data[0]
+        value_qc = var_qc.data[0]
+        depth_moor.append(float(depth))
+        var_moor.append(value_data)
+        #vardata_qc.append(value_qc)
+        vardata_qc = value_qc
+    elif nb_dims_profs == 3:
+        log.error(f'Case prof not defined {nb_dims_prof}')
+        sys.exit(1)
+    log.info(f'Depth of mooring {depth_moor}')
+    #if np.size(vardata) == 1 and np.isnan(vardata): continue
+    #if len(np.shape(np.array(vardata))) > 1:
+    #    cont_act = False
+    #    try:
+    #        log.info(f"Depth = {depth}")
+    #        for ini in range(len(depth)):
+    #            if np.array(depth)[ini] < 0: continue
+    #            elif np.isnan(np.nanmean(np.array(vardata)[:,ini])) or np.array(depth)[ini] > 2 or cont_act: continue
+    #            else : cont_act = True
+    #            var_moor = np.array(vardata)[:,ini]
+    #            depth_moor = depth.data[ini]
+    #            vardata_qc = np.array(var_qc)[:,ini]
+    #    except Exception as exs:
+    #        log.error(f"Pb with depth {exs} {moor} {file}")
+    #        continue
+    if len(var_moor) == 0 or np.isnan(depth_moor): continue
+    #w = np.where(vardata_qc != 1.)
+    #var_moor[w[0]] = np.nan
     vardata = var_moor
     if np.isnan(np.nanmean(vardata)) == True: continue
 
-    end2 = timer()
-    log.info (f'Step 2 moor: {end2-end}')
-    log.info ('Mooring: '+moor)
 
     # ****************************************************************************
 
     ilon = ind_dict[moor]['ind_lon']
     ilat = ind_dict[moor]['ind_lat']
-    w = np.where(abs(depth_mod-depth_moor) == np.nanmin(abs(depth_mod-depth_moor)))
-    ind_depth = depth_mod[w[0][0]]
+    #w = np.where(abs(depth_mod-depth_moor[0]) == np.nanmin(abs(depth_mod-depth_moor[0])))
+    depth_mod_arr = np.array(depth_mod)
+    depth_moor_arr = np.array(depth_moor)
+    log.info (f'Mooring {moor} depth_mod {depth_mod} depth_moor {depth_moor}')
+    w = np.where(np.abs(depth_mod_arr - depth_moor_arr[0]) == \
+            np.nanmin(np.abs(depth_mod_arr - depth_moor_arr[0])))
+
+    if np.isnan(depth_moor[0]): ind_depth = 0
+    else: ind_depth = depth_mod[w[0][0]]
 
     if tstp == 'daily':
         if multidim: ds = mfdataset_hdct.sel(x=ilon, y=ilat, deptht=ind_depth)
@@ -353,8 +429,6 @@ for file in cla_mr:
             vector_time[il_ind] = (dt.datetime.strptime(day,'%Y%m%d%H').toordinal()-dateCNESref)*24+int(day[8:10])
         elif tstp == 'daily':
             vector_time[il_ind] = (dt.datetime.strptime(day,'%Y%m%d').toordinal()-dateCNESref)*24
-    end3 = timer()
-    log.info (f'Step 3 moor: {end3-end2}')
     if tstp == 'hourly':
         ind_time = []
         for timevalue in time:
@@ -381,12 +455,8 @@ for file in cla_mr:
         if multidim: ds = mfdataset_hdct.sel(x=ilon, y=ilat, time_counter=np.array(ind_time), deptht=ind_depth)
         else: ds = mfdataset_hdct.sel(x=ilon, y=ilat, time_counter=np.array(ind_time))
         values_var[:,0] = ds.variables[variable][:].values
-        end4 = timer()
-        log.info (f'Step 4 moor: {end4-end3}')
         if len(forecast) > 0:
             for fc,fcst in enumerate(forecast):
-                log.info(f'{fcst=}')
-                start_dat = timer()
                 try:
                     meminfo = psutil.Process().memory_info().rss / 2**20
                     log.debug("RSS memory information : {} ".format(str(meminfo)))
@@ -402,22 +472,13 @@ for file in cla_mr:
                     log.error("Pb during mfdataset construction fcst :%s " %(exs))
                     log.error("Create mfdadaset FCST NOK {}".format(fc))
                     raise
-                end_dat = timer()
-                log.info(f'Loop Time ok {end_dat-start_dat}')
-                start_t = timer()
-                log.info('Loop Time')
                 for tc, timec in enumerate(vect_time):
                     w = np.where(np.array(vt_fcst[str(fcst)]) == timec) 
                     if len(w[0]) == 0:
                         values_var[tc,fc+1] = np.nan
-                end_t = timer()
-                log.info(f'Loop Time ok {end_t-start_t}')
 
-            end5 = timer()
-            log.info(f'Step 5 moor loop: {end5-end4}')
-
-    end_time = tt.time()
-    log.info(f"--- Time moor {end_time - start_time} seconds ---")
+    #end_time = tt.time()
+    #log.info("--- %s seconds ---" % (end_time - start_time))
 
     # ~~~~~~~~~~~~~ Save the Class2 (model/mooring) in a netcdf file ~~~~~~~~~~~~~~~~~~
     if (tstp == 'hourly' and np.isnan(np.nanmean(values_var[:,0])) == True) or \
@@ -428,6 +489,10 @@ for file in cla_mr:
 
     if tstp == 'hourly':
         if len(forecast) > 0:
+            log.info(f"Write Moor {nc_file_out} type{depth_moor}")
+            write_data_json_file(json_file_out, lat_value, lon_value, depth_moor, values_var, vector_time, \
+                                  depth_data_all, value_data_all, vardata_qc, typemoor, ech_fcst = \
+                                  np.insert(np.array(fcst_hour),0,0))
             write_data_colloc_files(nc_file_out, lat_value, lon_value, values_var, vector_time, \
                                     stt_date, end_date, depth_moor, missing_value, ech_fcst = \
                                     np.insert(np.array(fcst_hour),0,0))
@@ -438,8 +503,6 @@ for file in cla_mr:
         write_data_colloc_files_daily(nc_file_out, lat_value, lon_value, values_var, vector_time, \
                                       stt_date, end_date, depth_moor, ind_depth, missing_value)
         del nc_file_out, lat_value, lon_value, values_var, vector_time, depth_moor, ind_depth
-    end_time2 = tt.time()
-    log.info(f"--- Time write moor {end_time2 - end_time} seconds ---")
 
 comm.Barrier()
 log.info ("End of Program")

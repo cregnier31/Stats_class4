@@ -8,17 +8,20 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --time=06:00:00
 module load nco
-CONFIG="GLO12V5"
+CONFIG="GLO12V5-130"
 DATE1="20240103"
-DATE2="20240305"
+DATE2="20240331"
+DATE2="20240104"
+#DATE2="20240103"
 typedata="DRIFTER_filtr"
 #typedata="DRIFTER"
 typemod="pgn"
 srcdata="CMEMS_013_048"
-loglevel=1
+loglevel=6
 which python
 DIR_BIN="/home/ext/mr/smer/regnierc/anaconda3/envs/env_py38/bin/"
 ${DIR_BIN}python ../TEP_CLASS4_kdtree_new.py \
                  --config=${CONFIG} --date1=${DATE1} --date2=${DATE2} \
                  --src=${srcdata} --data=${typedata} --typemod=${typemod} \
-                 --loglevel=${loglevel} --best
+                 --loglevel=${loglevel} --best --bathy --clim
+#                 --loglevel=${loglevel} --best --clim --bathy

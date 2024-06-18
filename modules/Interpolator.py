@@ -95,6 +95,19 @@ class Interpolator(object):
            sys.exit(1)
         return w1, w2
 
+    def read_input_modeldata(self, param_dict, date, leadtime, lead_int):
+        self.log.info(f"Selection of input model {param_dict['data_type']}")
+        self.log.info(f"{leadtime=}")
+        self.log.info('========================================================')
+        self.list_input_file, self.ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], self.log).\
+            factory("GLOBAL_INPUT_MODEL_DATA").run(param_dict, date, leadtime, lead_int)
+        self.log.debug(f'Select model ok {self.list_input_file}')
+        self.nb_best, self.nb_fcst, self.nb_pers, self.nb_clim, self.nb_nwct, self.nb_clim, self.nb_bathy = \
+                    self.check_dimensions(self.list_input_file)
+        self.log.info(f"Dimensions best : {self.nb_best} nwct: {self.nb_nwct} "\
+                      f"fcst : {self.nb_fcst} pers : {self.nb_pers} clim : {self.nb_clim}"\
+                      f"bathy : {self.nb_bathy}")
+
     def search_dims(self, filename):
         """
         Find the lon/lat dimensions of a file
@@ -136,7 +149,9 @@ class Interpolator(object):
         fcst = {k for k, v in list_input_file.items() if k.startswith("fcst")}
         pers = {k for k, v in list_input_file.items() if "pers" in k}
         nwct = {k for k, v in list_input_file.items() if "nwct" in k}
-        return len(best), len(fcst), len(pers), len(clim), len(nwct)
+        clim = {k for k, v in list_input_file.items() if "clim" in k}
+        bathy = {k for k, v in list_input_file.items() if "bathy" in k}
+        return len(best), len(fcst), len(pers), len(clim), len(nwct), len(clim), len(bathy)
 
     #def read_and_interp(self, data_file, list_input_file, param_dict, date=None):
     def read_and_interp(self, data_file, param_dict, date=None, leadtime=None, lead_int=None):
@@ -172,20 +187,22 @@ class Interpolator(object):
                     inputdata_loader(self.log).factory(param_dict['data_format']).\
                     read_pos_and_value(data_file, param_dict)
         tuple_obs = (np.shape(lon_obs)[0], np.shape(lat_obs)[0])
+        ## TODO : Find this in another part because it's not well design for variable that are not model or add the exception of bathymetry , clim, stokes etc inside this function
+        self.read_input_modeldata(param_dict, date, leadtime, lead_int)
         ## Find input model files
         # Selection of the input model data
-        self.log.info(f"Selection of input model {param_dict['data_type']}")
-        self.log.info('========================================================')
-        list_input_file, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], self.log).\
-            factory("GLOBAL_INPUT_MODEL_DATA").run(param_dict, date, leadtime, lead_int)
-        self.log.debug(f'Select model ok {list_input_file}')
-        nb_best, nb_fcst, nb_pers, nb_clim, nb_nwct = \
-                    self.check_dimensions(list_input_file)
+        #self.log.info(f"Selection of input model {param_dict['data_type']}")
+        #self.log.info('========================================================')
+        #list_input_file, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], self.log).\
+        #    factory("GLOBAL_INPUT_MODEL_DATA").run(param_dict, date, leadtime, lead_int)
+        #self.log.debug(f'Select model ok {list_input_file}')
+        #nb_best, nb_fcst, nb_pers, nb_clim, nb_nwct = \
+        #            self.check_dimensions(list_input_file)
         self.log.info("==================================================")
         self.log.info(f" Interp file {data_file}")
         self.log.info("==================================================")
-        self.log.info(f"Dimensions best : {nb_best} nwct: {nb_nwct} "\
-                      f"fcst : {nb_fcst} pers : {nb_pers} clim : {nb_clim}")
+        #self.log.info(f"Dimensions best : {nb_best} nwct: {nb_nwct} "\
+        #              f"fcst : {nb_fcst} pers : {nb_pers} clim : {nb_clim}")
         #nb_profs, nb_levels, nb_vars = np.shape(obs_value)
         ## TODO compare parameters in obs_value and input variables to remove variable if necessary
 
@@ -218,7 +235,7 @@ class Interpolator(object):
         else:
             variable = param_dict['varname']
         self.log.debug(f"Variable : {variable}")
-        if nb_best > 0:
+        if self.nb_best > 0:
             if param_dict['data_origin'] == "GLOBCOLOUR":
                 hdct_tab = np.ndarray(shape=(nb_obs, 1, 1), dtype=float, order='F')
             else :
@@ -227,7 +244,7 @@ class Interpolator(object):
             self.log.debug("Taille hdct_tab {}".format(np.shape(hdct_tab)))
             ll_best = True
         ll_fcst = False
-        if nb_fcst > 0:
+        if self.nb_fcst > 0:
             if 'nb_fcsts' not in tab_dims.keys():
                 nb_fcst = len(param_dict['lead_int'])
                 fcst_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst, nb_profs),
@@ -238,7 +255,7 @@ class Interpolator(object):
             fcst_tab[:, :, :, :] = self.missing_value
             ll_fcst = True
         ll_pers = False
-        if nb_pers > 0 or nb_nwct >0:
+        if self.nb_pers > 0 or self.nb_nwct >0:
             if 'nb_fcsts' not in tab_dims.keys():
                 nb_fcst = len(param_dict['lead_int'])
                 #pers_tab = np.ndarray(shape=(nb_obs, len(variable), nb_pers+1, nb_profs),
@@ -250,7 +267,7 @@ class Interpolator(object):
                                       dtype=float, order='F')
             pers_tab[:, :, :, :] = self.missing_value
             ll_pers = True
-        if nb_clim > 0:
+        if self.nb_clim > 0:
             if param_dict['data_origin'] == "GLOBCOLOUR":
                 clim_tab = np.ndarray(shape=(nb_obs, 1, 1),
                            dtype=float, order='F')
@@ -260,6 +277,7 @@ class Interpolator(object):
                                       dtype=float, order='F')
                 clim_tab[:, :, :] = self.missing_value
             ll_clim = True
+            self.log.debug('Clim ok')
         self.log.debug('Number obs to coloc {} '.format(nb_obs2))
         file_coloc_tmp = os.path.basename(data_file)
         file_out = file_coloc_tmp
@@ -277,8 +295,8 @@ class Interpolator(object):
         ll_bathy = False
         tab_depth = {}
 
-        for i, key in enumerate(list_input_file.keys()):
-            self.log.debug("Lead time "+key)
+        for i, key in enumerate(self.list_input_file.keys()):
+            self.log.debug(f"Lead time {key}")
             if 'varname_select' in param_dict.keys():
                 variable = param_dict['varname_select']
             else:
@@ -399,14 +417,16 @@ class Interpolator(object):
                                                      lon_obs, lat_obs, nb_ptsinterp,\
                                                       weight_file=weight_file,save=False)
                 weights = TreeObj.get_weight(d1)
-                tab_weight = np.asarray(weights)
-                tab_indexes = np.asarray(indexes)
-                maxdepth =  np.nanmax(depth)
-                self.log.debug('maxdepth {}'.format(maxdepth))
-                ind_depth = self.getneardepth(depth_mod, maxdepth)
-                ind_tot = len(depth_mod)
-                ## Loop on levels
-                ind_max = ind_depth
+                #tab_weight = np.asarray(weights)
+                #tab_indexes = np.asarray(indexes)
+                #maxdepth =  np.nanmax(depth)
+                #self.log.debug('maxdepth {}'.format(maxdepth))
+                #sys.exit(1)
+                #ind_depth = self.getneardepth(depth_mod, maxdepth)
+                #ind_tot = len(depth_mod)
+                ### Loop on levels
+                #ind_max = ind_depth
+                #sys.exit(1)
 
 
             elif len(np.unique(depth)) > 1:
@@ -450,7 +470,7 @@ class Interpolator(object):
             self.log.debug('Variable to interpolate {} '.format(variable))
             tab_results = {}
             list_file = []
-            list_file = list_input_file[key]
+            list_file = self.list_input_file[key]
             self.log.debug("Work on {} variables".format(len(variable)))
             ## loop on variable
             for var in range(len(variable)):
@@ -459,7 +479,7 @@ class Interpolator(object):
                tab_results['varname'] = varname
                ll_miss = False
                try:
-                   file_input = list_input_file[key][var]
+                   file_input = self.list_input_file[key][var]
                except IndexError as error:
                    self.log.error(f"Error {error} Missing file for key {key} var {var}")
                    self.log.error("Varname {}".format(varname))
@@ -586,7 +606,6 @@ class Interpolator(object):
                    interp_values = np.ndarray(shape=(nb_obs, nb_profs),
                                          dtype=float, order='F')
                    interp_values[:, :] = self.missing_value
-
 
                if key[0:4] == 'fcst':
                    if len(key) > 4:
@@ -739,13 +758,14 @@ class Interpolator(object):
             if param_dict['data_origin'] == "GLOBCOLOUR":
                 clim_tab = clim_tab[:, 0, 0].reshape(
                     lat_obs.shape[0], lon_obs.shape[0])
-            tab_results['clim'] = clim_tab
-        if ll_smoc: tab_results['smoc'] = smoc_tab
+            tab_results['climatology'] = clim_tab
+        if ll_smoc: 
+            tab_results['smoc'] = smoc_tab
         if ll_smoc_fcst: tab_results['smoc_fcst'] = smoc_fcst_tab
         if ll_stokes: tab_results['stokes'] = stokes_tab
         if ll_stokes_fcst: tab_results['stokes_fcst'] = stokes_fcst_tab
         if ll_tides: tab_results['tides'] = tides_tab
-        if ll_bathy: tab_results['bathy'] = bathy_tab
+        if ll_bathy: tab_results['bathymetrie'] = bathy_tab
         if param_dict['Design_GODAE_file']:
             tab_results['observation'] = obs_value
             if 'varname_select' in param_dict.keys():
