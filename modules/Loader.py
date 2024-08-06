@@ -275,7 +275,7 @@ class InputLoader(Loader):
         """Loader for input options"""
         keywords = ['date1=', 'date2=', 'delta=', 'nbdate=', 'daterun=',
         'config=', 'data=', 'src=', 'nbproc=', 'typemod=', 'schedule=',
-        'data_id=','loglevel=','daymax=','dirinput=','diroutput=',
+        'data_id=','loglevel=','daymax=','dirinput=','diroutput=', 'dirlog=',
         'best','fcst','pers','all','clim','bathy','SMOC','stokes','tides']
         ll_delta = None
         ll_date1 = None
@@ -292,6 +292,7 @@ class InputLoader(Loader):
         dask = False
         ll_input = False
         ll_output = False
+        ll_dirlog = False
         ll_best = False
         ll_clim = False
         ll_bathy = False
@@ -367,6 +368,9 @@ class InputLoader(Loader):
             elif o in ['--diroutput']:
                 diroutput = p
                 ll_output = True
+            elif o in ['--dirlog']:
+                dirlog = p
+                ll_dirlog = True
             elif o in ['--best']:
                 list_LEAD_TIME.append('best_estimate')
             elif o in ['--fcst']:
@@ -386,7 +390,10 @@ class InputLoader(Loader):
             elif o in ['--all']:
                 list_LEAD_TIME=['best_estimate', 'forecast', 'persistence']
         # LOGGER
-        log = Logger(f"TEP_CLASS4_{cl_data}_{cl_config}").run(level)
+        if ll_dirlog:
+            log = Logger(f"TEP_CLASS4_{cl_data}_{cl_config}",dirlog=dirlog).run(level)
+        else:
+            log = Logger(f"TEP_CLASS4_{cl_data}_{cl_config}").run(level)
         log.info("Loglevel {}".format(log))
         list_var.append(ll_date1)
         list_var.append(ll_date2)
@@ -521,6 +528,7 @@ class InputLoader(Loader):
         param_dict['lead_int'] = self.lead_int
         if ll_input : param_dict['dirdata'] = dirinput
         if ll_output : param_dict['diroutput'] =  diroutput
+        if ll_dirlog : param_dict['dirlog'] =  dirlog
         # Create time vector between date1 and date2
         start_date = dt.datetime(year=int(str(param_dict['date1'])[0:4]),\
                                  month=int(str(param_dict['date1'])[4:6]),\
@@ -556,6 +564,10 @@ class NmlLoader(Loader):
             param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
         param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
         param_dict['dirmodel'] = param_dict['dirmodel_pgn']
+        try:
+            param_dict['dirmodel_pgs'] = db.get('input_dir', 'DATA_IN_PGS')
+        except:
+            param_dict['dirmodel_pgs'] = ''
         if 'dirdata' not in param_dict.keys():
             param_dict['dirdata'] = db.get('input_dir', 'INPUTDATA')
         try:

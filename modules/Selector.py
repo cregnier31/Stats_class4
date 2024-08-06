@@ -170,7 +170,7 @@ class SelectListModelData(Selector):
         elif self.data_type.lower() == "drifter_filtr" or self.data_type.lower() == "drifter":
             param_dict['gridtype'] = [param_dict['gridu'], param_dict['gridv']]
             param_dict['gridtype_clim'] = ["current"]
-        elif self.data_type.lower() == "profile":
+        elif self.data_type.lower() == "profile" or self.data_type.lower() == "cora5.2":
             list_grid = []
             list_grid_clim = []
             list_grid_light = []
@@ -186,6 +186,21 @@ class SelectListModelData(Selector):
             param_dict['gridtype'] = list_grid
             param_dict['gridtype_clim'] = list_grid_clim
             param_dict['gridtype_light'] = list_grid_light
+        #elif self.data_type.lower() == "cora5.2":
+        #    list_grid = []
+        #    list_grid_clim = []
+        #    self.log.debug(f"Inside Profile cora5.2 {param_dict['ll_TEMP']}")
+        #    if param_dict['ll_TEMP']:
+        #        list_grid.append(param_dict['gridtemp'])
+        #        list_grid_clim.append("TEMP")
+        #        list_grid_light.append("TN.B")
+        #    if param_dict['ll_PSAL']:
+        #        list_grid.append(param_dict['gridsal'])
+        #        list_grid_clim.append("PSAL")
+        #        list_grid_light.append("SN.B")
+        #    param_dict['gridtype'] = list_grid
+        #    param_dict['gridtype_clim'] = list_grid_clim
+        #    param_dict['gridtype_light'] = list_grid_light
 
         elif self.data_type.lower() == "current":
             #param_dict['gridtype'] = ["gridU", "gridV"]
@@ -195,6 +210,9 @@ class SelectListModelData(Selector):
         self.typemod = param_dict['cl_typemod'].lower()
         if self.typemod == "pgn":
             self.dirmodel = param_dict['dirmodel_pgn']
+        elif self.typemod == "pgs":
+            self.dirmodel = param_dict['dirmodel_pgs']
+            param_dict['suffix'] = "0.25deg_P1D-m"
         elif self.typemod == "allege" or "allege_new" \
              or self.typemod == "allege_now":
             self.dirmodel = param_dict['dirmodel_light']
@@ -202,6 +220,7 @@ class SelectListModelData(Selector):
             self.dirmodel = param_dict['dirmodel_pgn']
         else:
             raise ('typemod not known')
+            sys.exit(1)
         return param_dict
 
     def set_leadtime(self, time, param_dict, lead_new):
@@ -396,7 +415,7 @@ class SelectListModelData(Selector):
                     dirmodel_new = self.dirmodel+'DAILY/SMOC/'
                     dirmodel_new_next = dirmodel_new
                     self.log.debug('Directory smoc/stokes fcst: {}'.format(dirmodel_new))
-                elif directory == "clim":
+                elif directory == "clim" or directory == 'climatology':
                     dirmodel_new =  param_dict['dirclim']
                     dirmodel_new_next = dirmodel_new
                 else:
@@ -592,8 +611,20 @@ class SelectListModelData(Selector):
                         list_file.extend(list_file_tmp)
                     else:
                         raise ("type not known for 2ease files")
+                elif self.typemod == "pgs":
+                    list_file = []
+                    if directory == "clim":
+                       print(dirmodel_new)
+                       list_file_tmp = glob(dirmodel_new+"/*"+'M'+str(month)+"*nc")
+                       print(list_file_tmp)
+                    else:
+                        for i in range(len(param_dict['gridtype'])):
+                            list_file_tmp = glob(dirmodel_new+"/"+str(year)+'/'+str(month)+'/*'+\
+                            param_dict['suffix']+'-'+dateval+".nc")
+                            list_file.extend(list_file_tmp)
+                    self.log.info(f'{list_file=}')
                 else:
-                    self.log.debug('directory %s' % (dirmodel_new+'/'+year+'/'+month))
+                    self.log.debug('other directory %s' % (dirmodel_new+'/'+year+'/'+month))
                     list_file = glob(dirmodel_new+"/"+year+'/'+month+'/'+self.modele+"_"+ \
                     param_dict['daily_pref']+"_"+dateval+"*_*"+gridtype+"*.nc")
                     if not list_file:

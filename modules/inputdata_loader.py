@@ -65,6 +65,7 @@ class inputdata_loader(object):
         if type == "INPUT": return InputLoader()
         if type == "INPUT_DATA": return InputDataLoader(self.log)
         if type == "PGN_coords": return PGN_coords_Loader(self.log)
+        if type == "PGS_coords": return PGS_coords_Loader(self.log)
         if type == "PGN_coords_clim": return PGN_coords_clim_Loader(self.log)
         if type == "SMOC_coords": return SMOC_coords_Loader(self.log)
         if type == "DRIFTER_CMEMS": return LoaderCMEMSDrifter(self.log)
@@ -275,8 +276,10 @@ class loaderNCcorio_tac(inputdata_loader):
     def __init__(self, log):
         self.log = log
         self.varname_list = []
-        self.list_temp = ['votemper', 'thetao', 'temperature']
-        self.list_psal = ['vosaline', 'so', 'salinity']
+        self.list_temp = ['votemper', 'thetao', 'temperature', \
+                          'thetao_glor', 'thetao_cglo', 'thetao_oras',  'thetao_mean']
+        self.list_psal = ['vosaline', 'so', 'salinity',\
+                          'so_glor', 'so_cglo', 'so_oras', 'so_mean']
         self.list_instemp = ['TEMP', 'TEMP_ADJUSTED']
         self.list_inspsal = ['PSAL', 'PSAL_ADJUSTED']
         self.fillvalue_dep= 99999.
@@ -311,20 +314,27 @@ class loaderNCcorio_tac(inputdata_loader):
         ll_temp = ll_psal = ll_temp_adj = ll_psal_adj = False
         # Check for the presence of variables
         ll_depth = 'DEPTH' in ds.variables
+        ll_depth = 'DEPH' in ds.variables
         ll_depth_adj = 'DEPTH_ADJUSTED' in ds.variables
         ll_pres = 'PRES' in ds.variables
         ll_pres_adj = 'PRES_ADJUSTED' in ds.variables
         ll_data_mode = 'DATA_MODE' in ds.variables
-        ll_depth = 'DEPH' in ds.variables
-        ll_pres = 'PRES' in ds.variables
+        ll_clim_temp = False
+        ll_clim_psal = False
+        ll_clim_temp_adjust = False
+        ll_clim_psal_adjust = False
         if 'SMLEV' in variable_names:
             clim_psal = ds['SMLEV'].values
+            ll_clim_psal = True
         if 'TMLEV' in variable_names:
             clim_temp = ds['TMLEV'].values
+            ll_clim_temp = True
         if 'SMLEV_ADJUSTED' in variable_names:
             clim_psal_adj = ds['SMLEV_ADJUSTED'].values
+            ll_clim_psal_adjust = True
         if 'TMLEV_ADJUSTED' in variable_names:
             clim_temp_adj = ds['TMLEV_ADJUSTED'].values
+            ll_clim_temp_adjust = True
         if 'POSITION_QC' in variable_names:
             position_qc = ds['POSITION_QC'].values
         if 'JULD_QC' in variable_names:
@@ -347,22 +357,45 @@ class loaderNCcorio_tac(inputdata_loader):
             depth_qc =  ds['DEPH_QC'].values
         var_pres = 'PRES'
         var_pres_adj = 'PRES_ADJUSTED'
-        if ll_depth:
-            var_prof = 'DEPH'
-            var_prof_adj = 'DEPH_ADJUSTED'
-            var_qc = 'DEPH_QC'
-            var_qc_adj = 'DEPH_ADJUSTED_QC'
-        else:
-            var_prof = 'PRES'
-            var_prof_adj = 'PRES_ADJUSTED'
-            var_qc = 'PRES_QC'
-            var_qc_adj = 'PRES_ADJUSTED_QC'
+        #if ll_pres:
+        #    var_prof = 'PRES'
+        #    var_prof_adj = 'PRES_ADJUSTED'
+        #    var_qc = 'PRES_QC'
+        #    var_qc_adj = 'PRES_ADJUSTED_QC'
+        #    if ll_pres_adj:
+        #        var_prof_adjusted_qc = pres_adjusted_qc
+        #    else:
+        #        var_prof_adjusted_qc = pres_qc
+        #else:
+        #    var_prof = 'DEPH'
+        #    var_prof_adj = 'DEPH_ADJUSTED'
+        #    var_qc = 'DEPH_QC'
+        #    var_qc_adj = 'DEPH_ADJUSTED_QC'
+        #    if ll_depth_adj:
+        #        var_prof_adjusted_qc = depth_adjusted_qc
+        #    else:
+        #        var_prof_adjusted_qc = depth_qc
+        #else:
+        #    var_prof = 'PRES'
+        #    var_prof_adj = 'PRES_ADJUSTED'
+        #    var_qc = 'PRES_QC'
+        #    var_qc_adj = 'PRES_ADJUSTED_QC'
+        #    if ll_pres_adj:
+        #        var_prof_adjusted_qc = pres_adjusted_qc
+        #    else:
+        #        var_prof_adjusted_qc = pres_qc
         if ll_data_mode:
             DATA_MODE = ds['DATA_MODE'].values
         if any(var in variable_names for var in self.list_instemp):
             ll_temp = True
             self.varname_list.append('TEMP')
             rla_temp = np.ndarray(shape=(n_profiles, n_profs))
+        if ll_data_mode:
+            DATA_MODE = ds['DATA_MODE'].values
+        #if any(var in variable_names for var in self.list_instemp):
+        #    ll_temp = True
+        #    self.varname_list.append('TEMP')
+        #    rla_temp = np.ndarray(shape=(n_profiles, n_profs))
         if any(var in variable_names for var in self.list_inspsal):
             ll_psal = True
             self.varname_list.append('PSAL')
@@ -381,94 +414,139 @@ class loaderNCcorio_tac(inputdata_loader):
         rla_qc_temp = np.ndarray(shape=(n_profiles, n_profs))
         rla_qc_psal = np.ndarray(shape=(n_profiles, n_profs))
         for ind in range(ds['N_PROF'].size):
+            nb_pres = 0
+            nb_depth = 0
+            if ll_pres:
+                nb_pres = np.count_nonzero(~np.isnan(ds['PRES'][ind, :].values ))
+            if ll_depth:
+                nb_depth = np.count_nonzero(~np.isnan(ds['DEPH'][ind, :].values))
+            if nb_pres > nb_depth:
+                var_prof = 'PRES'
+                var_prof_adj = 'PRES_ADJUSTED'
+                var_qc = 'PRES_QC'
+                var_qc_adj = 'PRES_ADJUSTED_QC'
+                if ll_pres_adj:
+                    var_prof_adjusted_qc = pres_adjusted_qc
+                else:
+                    var_prof_adjusted_qc = pres_qc
+            else:
+                var_prof = 'DEPH'
+                var_prof_adj = 'DEPH_ADJUSTED'
+                var_qc = 'DEPH_QC'
+                var_qc_adj = 'DEPH_ADJUSTED_QC'
+                if ll_depth_adj:
+                    var_prof_adjusted_qc = depth_adjusted_qc
+                else:
+                    var_prof_adjusted_qc = depth_qc
             if DATA_MODE[ind] in [b'A', b'D']:
-                self.log.debug(f'Ajusted or Delayed Mode {ind} {DATA_MODE[ind]}')
-                val_posqc = position_qc[ind]
-                val_juldqc = juld_qc[ind]
-                val_depthqc=((depth_adjusted_qc[ind, :] == b'1') |
-                             (depth_adjusted_qc[ind, :] == b'0') |
-                             (depth_adjusted_qc[ind, :] == b'7')).sum()
+                #self.log.debug(f'Ajusted or Delayed Mode {ind} {DATA_MODE[ind]}')
+                #val_posqc = position_qc[ind]
+                #val_juldqc = juld_qc[ind]
+                val_depthqc=((var_prof_adjusted_qc[ind, :] == b'1') |
+                             (var_prof_adjusted_qc[ind, :] == b'0') |
+                             (var_prof_adjusted_qc[ind, :] == b'7')).sum()
                 rla_prof[ind, :] = ds[var_prof_adj][ind, :].values
                 if ll_pres:
                     rla_pres[ind, :] = ds[var_pres_adj][ind, :].values
-                else:
-                    self.log.info(f"Missing pres {DATA_MODE[ind]}")
+                #else:
+                #    self.log.debug(f"Missing pres {DATA_MODE[ind]}")
 
                 # read adjusted values
                 if ll_temp:
                     rla_temp[ind, :] =  ds['TEMP_ADJUSTED'][ind, :].values
                     rla_qc_temp[ind, :] = temp_adjusted_qc[ind, :]
-                    rla_clim_temp[ind, :] = clim_temp_adj[ind, :]
+                    if ll_clim_temp_adjust:
+                        rla_clim_temp[ind, :] = clim_temp_adj[ind, :]
                     # Replace QC values of CORIOLIS by GODAE QC values 0 is good and 9 is bad
                     # Coriolis QC 0: Non_qc 1: good 2: probably good ... 8: interpolated
                     # GODAE QC 0: good, 9: bad
                     rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] < 1, 9, rla_qc_temp[ind, :])
                     rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] == 1, 0, rla_qc_temp[ind, :])
                     rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] > 1, 9, rla_qc_temp[ind, :])
+                    #rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] < 1, 9,
+                    #                               np.where(rla_qc_temp[ind, :] == 1, 0, 9))
                 if ll_psal:
                     rla_psal[ind, :] =  ds['PSAL_ADJUSTED'][ind, :].values
                     rla_qc_psal[ind, :] = psal_adjusted_qc[ind, :]
-                    rla_clim_psal[ind, :] = clim_psal_adj[ind, :]
+                    if ll_clim_psal_adjust:
+                        rla_clim_psal[ind, :] = clim_psal_adj[ind, :]
                     rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] < 1, 9, rla_qc_psal[ind, :])
                     rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] == 1, 0, rla_qc_psal[ind, :])
                     rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] > 1, 9, rla_qc_psal[ind, :])
+                   # rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] < 1, 9,
+                   #                                np.where(rla_qc_psal[ind, :] == 1, 0, 9))
             else:
-                self.log.debug(f'Real time mode {DATA_MODE[ind]}')
+                #self.log.debug(f'Real time mode {DATA_MODE[ind]}')
                 # read Normal values
                 if ll_temp:
                     rla_temp[ind, :] =  ds['TEMP'][ind, :].values
                     rla_qc_temp[ind, :] = temp_qc[ind, :]
-                    rla_clim_temp[ind, :] = clim_temp[ind, :]
+                    if ll_clim_temp:
+                        rla_clim_temp[ind, :] = clim_temp[ind, :]
+                    #rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] < 1, 9, 
+                    #                               np.where(rla_qc_temp[ind, :] == 1, 0, 9))
                     rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] < 1, 9, rla_qc_temp[ind, :])
                     rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] == 1, 0, rla_qc_temp[ind, :])
                     rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] > 1, 9, rla_qc_temp[ind, :])
                 if ll_psal:
                     rla_psal[ind, :] =  ds['PSAL'][ind, :].values
                     rla_qc_psal[ind, :] = psal_qc[ind, :]
-                    rla_clim_psal[ind, :] = clim_psal[ind, :]
+                    if ll_clim_psal:
+                        rla_clim_psal[ind, :] = clim_psal[ind, :]
+                    #rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] < 1, 9, 
+                    #                               np.where(rla_qc_psal[ind, :] == 1, 0, 9))
                     rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] < 1, 9, rla_qc_psal[ind, :])
                     rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] == 1, 0, rla_qc_psal[ind, :])
                     rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] > 1, 9, rla_qc_psal[ind, :])
                 rla_prof[ind, :] = ds[var_prof][ind, :].values
                 if ll_pres:
                     rla_pres[ind, :] = ds[var_pres][ind, :].values
-                else:
-                    self.log.info(f"Missing pres {DATA_MODE[ind]}")
+                #else:
+                #    self.log.debug(f"Missing pres {DATA_MODE[ind]}")
         rla_prof = np.nan_to_num(rla_prof, nan=self.fillvalue_dep)
         nb_variables = len(self.varname_list)
-        self.log.info(f'{nb_variables=} {self.varname_list=}')
         results = {}
         results_qc = {}
         _FillValue = self.fillvalue_dep
         if ll_temp:
             results['TEMP'] = rla_temp
             results_qc['TEMP'] = rla_qc_temp
-            results['clim_TEMP'] = rla_clim_temp
+            if ll_clim_temp_adjust or ll_clim_temp:
+                results['clim_TEMP'] = rla_clim_temp
+            indices = len(np.where(~np.isnan(results['TEMP']))[0])
+            pourcent_valid = (100*indices)/n_profiles
         if ll_psal:
             results['PSAL'] = rla_psal
             results_qc['PSAL'] = rla_qc_psal
-            results['clim_PSAL'] = rla_clim_psal
+            if ll_clim_psal_adjust or ll_clim_psal:
+                results['clim_PSAL'] = rla_clim_psal
+            indices = len(np.where(~np.isnan(results['PSAL']))[0])
+            pourcent_valid = (100*indices)/n_profiles
         rla_obs = np.ndarray(shape=(n_profiles, nb_variables, n_profs))
         rla_clim = np.ndarray(shape=(n_profiles, nb_variables, n_profs))
         rla_qc = np.ndarray(shape=(n_profiles, nb_variables, n_profs))
-        if ll_temp and ll_psal and param_dict['insitu_corr']:
-            self.log.info("Add Potential correction")
+        rl_threshold = 50
+        if ll_temp and ll_psal and param_dict['insitu_corr'] and pourcent_valid > rl_threshold:
+            self.log.debug("Add Potential correction")
             obs_temp_pot = sw.ptmp(results['PSAL'], results['TEMP'], rla_pres, pr=0)
-            obs_clim_temp_pot = sw.ptmp(results['clim_PSAL'], results['clim_TEMP'], rla_pres, pr=0)
+            if ll_clim_temp_adjust or ll_clim_temp:
+                obs_clim_temp_pot = sw.ptmp(results['clim_PSAL'], results['clim_TEMP'], rla_pres, pr=0)
+                results['clim_TEMP'] = obs_clim_temp_pot
             results['TEMP'] = obs_temp_pot
-            results['clim_TEMP'] = obs_clim_temp_pot
         # Create observation array that combine all the dataset
         for ind, varname in enumerate(self.varname_list):
-            self.log.info(f'{ind=} {varname=}')
             rla_obs[:, ind, :] =  results[varname]
             rla_qc[:, ind, :] =  results_qc[varname]
-            rla_clim[:, ind, :] = results[f'clim_{varname}']
+            if ll_clim_temp_adjust or ll_clim_temp:
+                rla_clim[:, ind, :] = results[f'clim_{varname}']
         # Replace nan by missing valu] = rla_clime
         rla_obs = np.where(rla_obs == np.nan, self.fillvalue_dep, rla_obs)
         rla_qc = np.where(rla_qc == np.nan, self.fillvalue_dep, rla_qc)
         rla_obs = np.nan_to_num(rla_obs, nan=self.fillvalue_dep)
-        rla_clim = np.nan_to_num(rla_clim, nan=self.fillvalue_dep)
+        if ll_clim_temp_adjust or ll_clim_temp:
+            rla_clim = np.nan_to_num(rla_clim, nan=self.fillvalue_dep)
         rla_qc = np.nan_to_num(rla_qc, nan=self.fillvalue_dep)
+        ## Modifs CHR
         param_dict['qc'] = rla_qc
         if 'LONGITUDE' in variable_names:
             rla_lon = ds['LONGITUDE'].values
@@ -479,7 +557,6 @@ class loaderNCcorio_tac(inputdata_loader):
             list_psal =  list(set.intersection(set(self.list_psal), set(param_dict['varname'])))
         if len(set(self.list_temp).intersection(param_dict['varname'])) == 1:
             list_temp =  list(set.intersection(set(self.list_temp), set(param_dict['varname'])))
-        self.log.info(f"{list_psal=} {list_temp=}")
         param_dict['ll_PSAL'] = False
         param_dict['ll_TEMP'] = False
         if not ll_psal:
@@ -491,7 +568,9 @@ class loaderNCcorio_tac(inputdata_loader):
         else:
            param_dict['ll_TEMP'] = True
         param_dict['varname_select'] = list_mod
-        param_dict['LEVITUS_clim'] = rla_clim
+        if ll_clim_temp_adjust or ll_clim_temp:
+            param_dict['LEVITUS_clim'] = rla_clim
+
         return np.float32(rla_lon), np.float32(rla_lat), np.float32(rla_obs),\
                n_profiles, np.float32(rla_prof), tab_dims, param_dict,  _FillValue
 
@@ -500,8 +579,10 @@ class LoaderNCcorio(inputdata_loader):
     """Loader for coriolis dataset"""
     def __init__(self):
         self.varname_list = []
-        self.list_temp = ['votemper', 'thetao', 'temperature']
-        self.list_psal = ['vosaline', 'so', 'salinity']
+        self.list_temp = ['votemper', 'thetao', 'temperature', \
+                          'thetao_glor', 'thetao_cglo', 'thetao_oras']
+        self.list_psal = ['vosaline', 'so', 'salinity',\
+                          'so_glor', 'so_cglo', 'so_oras']
 
     def read_pos(self,filename):
         nc = netCDF4.Dataset(filename,'r')
@@ -765,6 +846,33 @@ class PGN_coords_Loader(inputdata_loader):
         nc.close()
         return rla_lon,rla_lat,mask_tab,depth_mod
 
+class PGS_coords_Loader(inputdata_loader):
+
+    """Loader for PGN dataset"""
+    def read_pos(self,filename):
+        nc = netCDF4.Dataset(filename,'r')
+        variables = nc.variables
+        list_lon = ['x', 'X', 'lon', 'LON', 'lons', 'longitude', 'LONGITUDE', 'nav_lon']
+        list_lat = ['y', 'Y', 'lat', 'LAT', 'LATS', 'latitude', 'LATITUDE', 'nav_lat']
+        list_depth = [ 'deptht', 'depth', 'z', 'Z', 'DEPTH','nav_lev']
+        list_mask = [ 'tmask', 'mask']
+        try:
+            lon_name = [ k for k in variables.keys() & set(list_lon)][0]
+            lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
+            depth_name = [ k for k in variables.keys() & set(list_depth)][0]
+            mask_name = [ k for k in variables.keys() & set(list_mask)][0]
+        except:
+            print('lon lat or depth not defined')
+            raise
+        rla_lon = nc.variables[lon_name][:]
+        rla_lat = nc.variables[lat_name][:]
+        rla_mask = nc.variables[mask_name][:,:,:]
+        depth_mod =  nc.variables[depth_name][:]
+        nlat, nlon, ndepth = np.shape(rla_mask)
+        mask_tab = np.full((nlat,nlon,ndepth), True)
+        mask_tab = np.where(rla_mask == 1, False, mask_tab)
+        nc.close()
+        return rla_lon,rla_lat,mask_tab,depth_mod
 
 class ease_coords_Loader(inputdata_loader):
 

@@ -441,16 +441,21 @@ class Extract_cora5_2(Extractor):
         valeurj = valeurj_tmp
         valeurj2 = SyDate(str(date2))
         liste_tot=[]
+        self.log.info(f'Extract CORA 5.2 {valeurj_tmp} {valeurj} {valeurj2}')
         while  valeurj_tmp >= valeurj and valeurj_tmp <= valeurj2 :
             dateval = str(valeurj_tmp)
             #dateval=str(SyDate(str(self.date.setfromjulian(int(valeurj)))))
             self.log.info(f'Day 5.2 {dateval}')
             month=dateval[4:6]
             year=dateval[0:4]
-            frame=dirdata+year+'/'+month+'/*'+dateval.strip()+'*.nc'
+            type_obs = "PR_PF"
+            frame=dirdata+year+'/*'+dateval.strip()+'*{type_obs}_*.nc'
+            #frame=dirdata+year+'/*'+dateval.strip()+'*.nc'
+            self.log.info(f"{frame=}")
             liste_file=glob(frame)
             self.log.debug(f'{frame=}')
             self.log.info(f'Liste file CORA {liste_file}')
+  
             for new_file in liste_file :
                 try :
                     filename=os.path.basename(new_file)
@@ -489,6 +494,45 @@ class Extract_cora5_2(Extractor):
             valeurj_tmp=valeurj_tmp.goforward(1)
 
         return liste_tot
+
+    def run_list(self, param_dict, dateval):
+        liste_tot = []
+        YEAR = dateval[0:4]
+        #type_obs = "PR_PF"
+        #type_obs = "TS_MO"
+       # type_obs = "TS_DB"
+      #  type_obs = "XX"
+       # type_obs = "PR_GL"
+        #type_obs = "PR_CT"
+        #type_obs = "TS_FB"
+        type_obs = "*"
+        liste_file = glob(f"{param_dict['dirdata']}/{YEAR}/*{dateval}*{type_obs}*.nc")
+        #liste_file = glob(param_dict['dirdata']+'/'+YEAR+'/*'+dateval+'*.nc')
+        self.log.debug(f"Search file  {liste_file}")
+        for file in liste_file:
+            try:
+                filename = os.path.basename(file)
+                if not os.path.exists(param_dict['dirwork']+filename):
+                    shutil.copy(file, param_dict['dirwork']+filename)
+                    self.log.info(f"Copy file {file}")
+                liste_tot.append(param_dict['dirwork']+filename)
+            except IOError as e:
+                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                sys.exit(1)
+        return liste_tot
+
+class Extract_Legos_SIT(Extractor):
+
+    """ Class to extract Legos SIT l3 files """
+    def __init_(self, log):
+        self.log = log
+
+    def run_list(self, param_dict, daterun):
+        liste_tot=[]
+        liste_file=glob(param_dict['dirdata']+'/*'+daterun+'*.nc')
+        self.log.info("Liste file {} {} ".format(liste_file, daterun))
+        if not liste_file:
+            self.log.error("Missing Legos_SIT {} {}".format(param_dict['dirdata'], daterun))
 
 class Extract_cora4_1(Extractor):
 

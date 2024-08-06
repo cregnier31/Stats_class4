@@ -389,6 +389,9 @@ class Interpolator(object):
                     elif param_dict['cl_typemod'].lower() == "2ease":
                         lon_mod, lat_mod, mask_tab, depth_mod = inputdata_loader(self.log).factory('2ease_coords').\
                             read_pos(param_dict['coordinates'])
+                    elif param_dict['cl_typemod'].lower() == "pgs":
+                            lon_mod, lat_mod, mask_tab, depth_mod = inputdata_loader(self.log).factory('PGS_coords').\
+                                read_pos(param_dict['coordinates'])
                     else:
                         self.log.error("Type mod not known")
                     nlon, nlat = self.search_dims(param_dict['coordinates'])
@@ -434,7 +437,7 @@ class Interpolator(object):
                 nb_obs, nb_profs = np.shape(depth)
                 self.log.debug(f"Nb_profils {nb_obs} Nb levels {nb_profs}")
                 maxdepth =  np.nanmax(depth)
-                self.log.debug('maxdepth {}'.format(maxdepth))
+                self.log.debug(f'maxdepth {maxdepth}')
                 ind_depth = self.getneardepth(depth_mod, maxdepth)
                 ind_tot = len(depth_mod)
                 ## Loop on levels
@@ -541,7 +544,11 @@ class Interpolator(object):
                               else:
                                   #obs_value2 = np.array(obs_value)[:,:,var]
                                   obs_value2 = np.array(obs_value)[:, var, :]
+                                  #obs_value2 = np.array(obs_value)[:, :, :].flatten()
                                   self.log.debug(f'Case 1 depth 1 profile : {obs_value2}')
+                                  self.log.debug(f'{np.shape(obs_value2)}')
+                                  self.log.debug(f'{np.shape(interp_values)}')
+
 
                               interp_values = np.where(np.array(obs_value2).flatten() == _FillValue,
                                                                 self.missing_value, np.array(interp_values))
@@ -571,23 +578,24 @@ class Interpolator(object):
                   else :
                      self.log.debug("Profile case variable : {}".format(variable[var]))
                      self.log.debug(f"{depth=} {ind_max=} ")
-                     try:
-                        if param_dict['data_format'] in self.list_insitu:
-                            obs_tab = None
-                        else:
-                            obs_tab = obs_value[:,var,:]
-                        interp_values = self.interp_3D(tab_weight,
-                                                        tab_indexes,
-                                                        ind_max,
-                                                        file_input, nb_ptsinterp,
-                                                        varname, depth, ll_verif = param_dict['verif'],
-                                                        obs = obs_tab,
-                                                        dateval=date, lon=lon_obs, lat=lat_obs, light=ll_light,
-                                                        clim=ll_clim, depth_mod=depth_mod, fillvalue=self.missing_value)
-                     except Exception as e:
-                         self.log.error(f"Size obs {np.shape(obs_value[:,var,:])}")
-                         self.log.error(f"Pb with file {e} {depth} {ind_max} {file_input} Obs {data_file}")
-                         sys.exit(1)
+                     self.log.debug(f"{tab_indexes=}")
+                     #try:
+                     if param_dict['data_format'] in self.list_insitu:
+                         obs_tab = None
+                     else:
+                         obs_tab = obs_value[:,var,:]
+                     interp_values = self.interp_3D(tab_weight,
+                                                     tab_indexes,
+                                                     ind_max,
+                                                     file_input, nb_ptsinterp,
+                                                     varname, depth, ll_verif = param_dict['verif'],
+                                                     obs = obs_tab,
+                                                     dateval=date, lon=lon_obs, lat=lat_obs, light=ll_light,
+                                                     clim=ll_clim, depth_mod=depth_mod, fillvalue=self.missing_value)
+                     #except Exception as e:
+                     #    self.log.error(f"{param_dict['data_format']} {self.list_insitu} Pb interp 3D, Size obs {np.shape(obs_value[:,var,:])}")
+                     #    self.log.error(f"Pb with file {e} {depth} {ind_max} {file_input} Obs {data_file}")
+                     #    sys.exit(1)
 
                      ll_json = param_dict['json']
                      if ll_json:
@@ -914,12 +922,13 @@ class Interpolator(object):
         ll_single = False
         if depth > 0.5 :
             ## Find the 2 points that enclose the depth value
-            varname_depth = 'deptht'
-            if variable == 'uo':
-                varname_depth = 'depthu'
-            elif variable == 'vo':
-                varname_depth = 'depthv'
-            depth_mod = dataset_in[varname_depth][:].values
+            #varname_depth = 'deptht'
+            #if variable == 'uo':
+            #    varname_depth = 'depthu'
+            #elif variable == 'vo':
+            #    varname_depth = 'depthv'
+            #depth_mod = dataset_in[varname_depth][:].values
+            nlons, nlats, ndepths, depth_mod = self.read_dims(dataset_in)
             ind_depth1, ind_depth2 = self.getnearpos(depth, depth_mod)
             w1, w2 = self.getweight(depth_mod[ind_depth1], depth_mod[ind_depth2], depth)
             self.log.debug(f"Index of depth value {ind_depth1} {ind_depth2} {depth_mod[ind_depth1]} {depth_mod[ind_depth2]}")
@@ -1072,64 +1081,83 @@ class Interpolator(object):
                         (str(end - start), " seconds ~~~~~~~~~~~~"))
         #if nb_profs > 1:
         values_interp = fillvalue*np.zeros((nb_obs, nb_profs))
+        self.log.debug(f'~~~~ Start loop {nb_obs}~~~~')
         start = timer()
+        self.log.debug(f'{depth}')
+        self.log.debug(f'{np.shape(values_interp)}')
+        nprof, nlevel = np.shape(values_interp)
+        #if nlevel > 1:
         for ind_prof in range (nb_obs):
+            self.log.debug(f'{ind_prof}/{nb_obs}')
             profondeur = depth[ind_prof, :]
+            self.log.debug(f'Depth {profondeur}')
             tab_mod_ma = tab_interp_tmp[:,ind_prof]
-            fixture = vertical.Column(tab_mod_ma, depth_mod[0:ind_max])
-            #self.log.debug('Profondeurs profiles {}'.format(profondeur[0:70]))
-            #self.log.debug('Profondeurs modele {}'.format(depth_mod[0:ind_max]))
-            val_interp = fixture.interpolate(profondeur)
-            values_interp[ind_prof,:] = val_interp[:]
-            if np.ma.isMaskedArray(val_interp):
-                values_interp[ind_prof,:] = np.where(val_interp.mask, fillvalue, values_interp[ind_prof,:])
-            #self.log.debug('Valeurs profile {}'.format(obs[:]))
-            #self.log.debug('--------------------------------------------')
-            if ll_verif:
-                # Plot profiles
-                dir_out = './img2/'
-                dir_out2 = './img3/'
-                label = "prof "+str(ind_prof)
-                title = dateval+" "+variable+" "+label
-                label1 = "Insitu"
-                label2 = "Model"
-                #self.log("Profile {}".format(ind_prof))
-                #self.log('Profondeurs profiles {}'.format(profondeur[340:360]))
-                #self.log('Valeur interp {}'.format(values_interp[ind_prof,340:360]))
-                #self.log('Valeur modele {}'.format(tab_mod_ma[27:34]))
-                #self.log('Profondeur modele {}'.format(depth_mod[27:34]))
-                ll_compare = True
-                prof_max = np.nanmax(profondeur)
-                ind_prof_max = np.argmax(depth_mod[:])
-                ind1, ind2 = self.getnearpos(prof_max, depth_mod)
-                label1 = "Obs"
-                label2 = "Interp"
-                plot_2profiles_2(-profondeur[:], obs[ind_prof,:], -profondeur, val_interp[:], label1,\
-                                label2, title=title, save=False,
-                                output=dir_out2+dateval+"_compprof_"+variable+"_profile_num"+str(ind_prof),
-                                var=variable)
-                label1 = "Raw"
-                label2 = "Interp"
-                plot_2profiles_2(-depth_mod[0:ind2], tab_interp_tmp[0:ind2,ind_prof] ,-profondeur, values_interp[ind_prof,:], label1,\
-                                  label2, title=title, save=False,
-                                  output=dir_out2+dateval+"_interp_"+variable+"_profile_num"+str(ind_prof),
-                                  var=variable)
-                if ll_compare == True:
-                    ## Read other profile
-                    dir_class4 = "/sortref/calval/DATA_COLOCATIONS/T_S_data_new/PSY4V3R1/data_CLASS4_GODAE/"
-                    filename = glob(dir_class4+"*"+dateval+"*profile.nc")
-                    label3 = "Model2"
-                    if filename:
-                        prof2, model_best, obs = read_GODAE_profile(variable, filename[0])
-                        plot_3profiles(-profondeur, obs[ind_prof,:], values_interp[ind_prof,:],-prof2[ind_prof,:],
-                                       model_best[ind_prof,:], label1,
-                                       label2, label3, title=title, save=False,
-                                       output=dir_out+dateval+"_comparaison_"+variable+"_profile_num"+str(ind_prof),
-                                       var=variable)
+            self.log.debug(f'Model Value {tab_mod_ma=}')
+            self.log.debug(f"{len(depth_mod[0:ind_max])}")
+            self.log.debug(f"{depth_mod[0:ind_max]}")
+            if len(profondeur) == 1 and profondeur < depth_mod[0]:
+                values_interp[ind_prof,:] =  tab_mod_ma[0]
+            else:
+                fixture = vertical.Column(tab_mod_ma, depth_mod[0:ind_max])
+                self.log.debug('Profondeurs profiles {}'.format(profondeur[0:70]))
+                self.log.debug('Profondeurs modele {}'.format(depth_mod[0:ind_max]))
+                if np.any(~np.isnan(tab_mod_ma[:])):
+                    val_interp = fixture.interpolate(profondeur)
+                    values_interp[ind_prof,:] = val_interp[:]
+                    if np.ma.isMaskedArray(val_interp):
+                        values_interp[ind_prof,:] = np.where(val_interp.mask, fillvalue, values_interp[ind_prof,:])
+                else:
+                    values_interp[ind_prof,:] = np.nan
+
+            self.log.debug(f'{values_interp[ind_prof,:]}=')
+        #self.log.debug('Valeurs profile {}'.format(obs[:]))
+        #self.log.debug('--------------------------------------------')
+        if ll_verif:
+            # Plot profiles
+            dir_out = './img2/'
+            dir_out2 = './img3/'
+            label = "prof "+str(ind_prof)
+            title = dateval+" "+variable+" "+label
+            label1 = "Insitu"
+            label2 = "Model"
+            #self.log("Profile {}".format(ind_prof))
+            #self.log('Profondeurs profiles {}'.format(profondeur[340:360]))
+            #self.log('Valeur interp {}'.format(values_interp[ind_prof,340:360]))
+            #self.log('Valeur modele {}'.format(tab_mod_ma[27:34]))
+            #self.log('Profondeur modele {}'.format(depth_mod[27:34]))
+            ll_compare = True
+            prof_max = np.nanmax(profondeur)
+            ind_prof_max = np.argmax(depth_mod[:])
+            ind1, ind2 = self.getnearpos(prof_max, depth_mod)
+            label1 = "Obs"
+            label2 = "Interp"
+            plot_2profiles_2(-profondeur[:], obs[ind_prof,:], -profondeur, val_interp[:], label1,\
+                            label2, title=title, save=False,
+                            output=dir_out2+dateval+"_compprof_"+variable+"_profile_num"+str(ind_prof),
+                            var=variable)
+            label1 = "Raw"
+            label2 = "Interp"
+            plot_2profiles_2(-depth_mod[0:ind2], tab_interp_tmp[0:ind2,ind_prof] ,-profondeur, values_interp[ind_prof,:], label1,\
+                              label2, title=title, save=False,
+                              output=dir_out2+dateval+"_interp_"+variable+"_profile_num"+str(ind_prof),
+                              var=variable)
+            if ll_compare == True:
+                ## Read other profile
+                dir_class4 = "/sortref/calval/DATA_COLOCATIONS/T_S_data_new/PSY4V3R1/data_CLASS4_GODAE/"
+                filename = glob(dir_class4+"*"+dateval+"*profile.nc")
+                label3 = "Model2"
+                if filename:
+                    prof2, model_best, obs = read_GODAE_profile(variable, filename[0])
+                    plot_3profiles(-profondeur, obs[ind_prof,:], values_interp[ind_prof,:],-prof2[ind_prof,:],
+                                   model_best[ind_prof,:], label1,
+                                   label2, label3, title=title, save=False,
+                                   output=dir_out+dateval+"_comparaison_"+variable+"_profile_num"+str(ind_prof),
+                                   var=variable)
 
             #self.log.debug('Valeurs modèle {}'.format(tab_interp_tmp[0:30,ind_prof]))
             #self.log.debug('Interp modèle onto profiles {} / {}'.format(ind_prof, nb_obs))
         end = timer()
         self.log.debug('~~~~~~~~ Time elapsed interp levels on profiles: %s %s' %
                         (str(end - start), " seconds ~~~~~~~~~~~~"))
+        self.log.debug(f'{values_interp=}')
         return values_interp

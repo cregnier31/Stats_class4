@@ -68,18 +68,26 @@ class interp_KDtree(object):
            self.log.debug('lon_out is a float')
         else:
             ll_onevalue = False
-            if len(lon_out)> 1 and lon_out.ndim < 2:
+            #if len(lon_out)> 1 and lon_out.ndim < 2:
+            if len(lon_out)> 2 and lon_out.ndim < 2:
                 try:
                     if ma.is_masked(lon_out):
                         lon_out_tmp = lon_out[~lon_out.mask]
                     else:
                         lon_out_tmp = lon_out
+                        lat_out_tmp = lat_out
                     global_step = float("{0:.6f}".format((
                         lon_out_tmp[len(lon_out_tmp)-1]-
                         lon_out_tmp[0])/(len(lon_out_tmp)-1)))
+                    global_step_lat = float("{0:.3f}".format((
+                        lat_out_tmp[len(lat_out_tmp)-1]-
+                        lat_out_tmp[0])/(len(lat_out_tmp)-1)))
                     first_step = float("{0:.6f}".format(
                         lon_out_tmp[1]-lon_out_tmp[0]))
+                    first_step_lat = float("{0:.3f}".format(
+                        lat_out_tmp[1]-lat_out_tmp[0]))
                     self.log.debug(f'Step sizes {global_step} {first_step}')
+                    self.log.debug(f'Step sizes lat {global_step_lat} {first_step_lat}')
                 except Exception as e:
                     raise ("Problem during formatting {}".format(e))
             else:
@@ -95,8 +103,9 @@ class interp_KDtree(object):
             X2, Y2 = lon_out, lat_out
         elif lon_out.ndim < 2:
             self.log.debug(f'lon_out.ndim < 2 {global_step} {first_step}')
+            self.log.debug(f'lon_out.ndim < 2 {global_step_lat} {first_step_lat}')
             #self.log.debug(f'{lon_out_tmp[0:100]}')
-            if global_step == first_step and first_step > 0:
+            if global_step == first_step and first_step > 0 and global_step_lat == first_step_lat:
                 # Regular
                 self.log.debug(f'1D regular => convert to meshgrid {global_step} {first_step}')
                 X2, Y2 = np.meshgrid(lon_out, lat_out)
