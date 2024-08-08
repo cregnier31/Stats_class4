@@ -597,7 +597,7 @@ class Writer():
             list_file = glob(f"{param_dict['dirwork']}{frame}")
             self.log.debug(f"{frame=}")
             self.log.debug(f"{param_dict['dirwork']}")
-            self.log.debug(f"{list_file=}")
+            self.log.info(f"{list_file=}")
             for file_out in list_file:
                 type_file = os.path.basename(file_out).split('.')[0]
                 substrings_to_remove = [f"{type_file}_", f"{dateval}_"]
@@ -757,6 +757,11 @@ class Writer():
                     shutil.move(file_out, fileout)
                     #shutil.move(file_out, dest)
                 tab_out = {}
+                # remove p file
+                for file_out in list_pfile:
+                    os.remove(file_out)
+                    self.log.info(f"Remove {file_out}")
+
 
 #    def write_class4_out_test(self, param_dict, list_keys):
 #        list_dateval = []

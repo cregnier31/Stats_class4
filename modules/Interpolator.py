@@ -459,7 +459,7 @@ class Interpolator(object):
                 #    num_cores = 1
                 num_cores = 10
                 ## Compute weight
-                with Parallel(n_jobs=num_cores, prefer="threads", verbose=1) as parallel:
+                with Parallel(n_jobs=num_cores, prefer="threads", verbose=0) as parallel:
                     weight, indexes  = zip(*parallel(delayed(self.compute_weight)(ind,TreeObj,lon_mod,lat_mod,np.array(lon_obs),\
                                                                     np.array(lat_obs), nb_ptsinterp,\
                                                                     mask_tab[ind,:,:]) for ind in range(ind_max)))
@@ -1071,7 +1071,7 @@ class Interpolator(object):
         start = timer()
         num_cores=10
         # Parallelize loop on levels
-        with Parallel(n_jobs=num_cores, prefer="threads", verbose=10) as parallel:
+        with Parallel(n_jobs=num_cores, prefer="threads", verbose=0) as parallel:
             tab_interp_tmp  = parallel(delayed(self.compute_3D_weight)(ind, var_in,\
                                                                        inds, weight, ind_max, nbpts_interp) \
                                                                        for ind in range(ind_max))

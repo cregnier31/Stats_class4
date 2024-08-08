@@ -329,6 +329,10 @@ class loaderNCcorio_tac(inputdata_loader):
         if 'TMLEV' in variable_names:
             clim_temp = ds['TMLEV'].values
             ll_clim_temp = True
+        if 'TEMP_ADJUSTED' in variable_names:
+            ll_temp_adj = True
+        if 'PSAL_ADJUSTED' in variable_names:
+            ll_psal_adj = True
         if 'SMLEV_ADJUSTED' in variable_names:
             clim_psal_adj = ds['SMLEV_ADJUSTED'].values
             ll_clim_psal_adjust = True
@@ -390,8 +394,6 @@ class loaderNCcorio_tac(inputdata_loader):
             ll_temp = True
             self.varname_list.append('TEMP')
             rla_temp = np.ndarray(shape=(n_profiles, n_profs))
-        if ll_data_mode:
-            DATA_MODE = ds['DATA_MODE'].values
         #if any(var in variable_names for var in self.list_instemp):
         #    ll_temp = True
         #    self.varname_list.append('TEMP')
@@ -439,22 +441,36 @@ class loaderNCcorio_tac(inputdata_loader):
                 else:
                     var_prof_adjusted_qc = depth_qc
             if DATA_MODE[ind] in [b'A', b'D']:
-                #self.log.debug(f'Ajusted or Delayed Mode {ind} {DATA_MODE[ind]}')
+                self.log.debug(f'Case 1 Ajusted or Delayed Mode {ind} {DATA_MODE[ind]}')
                 #val_posqc = position_qc[ind]
                 #val_juldqc = juld_qc[ind]
                 val_depthqc=((var_prof_adjusted_qc[ind, :] == b'1') |
                              (var_prof_adjusted_qc[ind, :] == b'0') |
                              (var_prof_adjusted_qc[ind, :] == b'7')).sum()
-                rla_prof[ind, :] = ds[var_prof_adj][ind, :].values
+                if ll_depth_adj or ll_pres_adj:
+                    rla_prof[ind, :] = ds[var_prof_adj][ind, :].values
+                else:
+                    rla_prof[ind, :] = ds[var_prof][ind, :].values
                 if ll_pres:
-                    rla_pres[ind, :] = ds[var_pres_adj][ind, :].values
+                    if ll_pres_adj:
+                        rla_pres[ind, :] = ds[var_pres_adj][ind, :].values
+                    else:
+                        rla_pres[ind, :] = ds[var_pres][ind, :].values
+
                 #else:
                 #    self.log.debug(f"Missing pres {DATA_MODE[ind]}")
 
                 # read adjusted values
                 if ll_temp:
-                    rla_temp[ind, :] =  ds['TEMP_ADJUSTED'][ind, :].values
-                    rla_qc_temp[ind, :] = temp_adjusted_qc[ind, :]
+                    if ll_temp_adj:
+                        rla_temp[ind, :] =  ds['TEMP_ADJUSTED'][ind, :].values
+                        string_data = [byte_data if byte_data != b"" else 9 for byte_data in temp_adjusted_qc[ind, :]]
+                    else:
+                        rla_temp[ind, :] =  ds['TEMP'][ind, :].values
+                        string_data = [byte_data if byte_data != b"" else 9 for byte_data in temp_qc[ind, :]]
+                    #string_data = [byte_data.decode('utf-8') if byte_data != b"" else 9 for byte_data in temp_adjusted_qc[ind, :]]
+                    rla_qc_temp[ind, :] = string_data[:]
+                    #rla_qc_temp[ind, :] = temp_adjusted_qc[ind, :]
                     if ll_clim_temp_adjust:
                         rla_clim_temp[ind, :] = clim_temp_adj[ind, :]
                     # Replace QC values of CORIOLIS by GODAE QC values 0 is good and 9 is bad
@@ -466,8 +482,16 @@ class loaderNCcorio_tac(inputdata_loader):
                     #rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] < 1, 9,
                     #                               np.where(rla_qc_temp[ind, :] == 1, 0, 9))
                 if ll_psal:
-                    rla_psal[ind, :] =  ds['PSAL_ADJUSTED'][ind, :].values
-                    rla_qc_psal[ind, :] = psal_adjusted_qc[ind, :]
+                    if ll_psal_adj:
+                        rla_psal[ind, :] =  ds['PSAL_ADJUSTED'][ind, :].values
+                        string_data = [byte_data if byte_data != b"" else 9 for byte_data in psal_adjusted_qc[ind, :]]
+                    else:
+                        rla_psal[ind, :] =  ds['PSAL'][ind, :].values
+                        string_data = [byte_data if byte_data != b"" else 9 for byte_data in psal_qc[ind, :]]
+                    #string_data = [byte_data.decode('utf-8') for byte_data in psal_adjusted_qc[ind, :]]
+                    #string_data = [byte_data.decode('utf-8') if byte_data != b"" else 9 for byte_data in psal_adjusted_qc[ind, :]]
+                    rla_qc_psal[ind, :] = string_data[:]
+                    #rla_qc_psal[ind, :] = psal_adjusted_qc[ind, :]
                     if ll_clim_psal_adjust:
                         rla_clim_psal[ind, :] = clim_psal_adj[ind, :]
                     rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] < 1, 9, rla_qc_psal[ind, :])
@@ -480,7 +504,11 @@ class loaderNCcorio_tac(inputdata_loader):
                 # read Normal values
                 if ll_temp:
                     rla_temp[ind, :] =  ds['TEMP'][ind, :].values
-                    rla_qc_temp[ind, :] = temp_qc[ind, :]
+                    #string_data = [byte_data.decode('utf-8') for byte_data in temp_qc[ind, :]]
+                    #string_data = [byte_data.decode('utf-8') if byte_data != b"" else 9 for byte_data in temp_qc[ind, :]]
+                    string_data = [byte_data if byte_data != b"" else 9 for byte_data in temp_qc[ind, :]]
+                    #rla_qc_temp[ind, :] = temp_qc[ind, :]
+                    rla_qc_temp[ind, :] = string_data[:]
                     if ll_clim_temp:
                         rla_clim_temp[ind, :] = clim_temp[ind, :]
                     #rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] < 1, 9, 
@@ -490,7 +518,11 @@ class loaderNCcorio_tac(inputdata_loader):
                     rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] > 1, 9, rla_qc_temp[ind, :])
                 if ll_psal:
                     rla_psal[ind, :] =  ds['PSAL'][ind, :].values
-                    rla_qc_psal[ind, :] = psal_qc[ind, :]
+                    #string_data = [byte_data.decode('utf-8') for byte_data in psal_qc[ind, :]]
+                    #string_data = [byte_data.decode('utf-8') if byte_data != b"" else 9 for byte_data in psal_qc[ind, :]]
+                    string_data = [byte_data if byte_data != b"" else 9 for byte_data in psal_qc[ind, :]]
+                    rla_qc_psal[ind, :] = string_data[:]
+                    #rla_qc_psal[ind, :] = psal_qc[ind, :]
                     if ll_clim_psal:
                         rla_clim_psal[ind, :] = clim_psal[ind, :]
                     #rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] < 1, 9, 
@@ -513,19 +545,20 @@ class loaderNCcorio_tac(inputdata_loader):
             results_qc['TEMP'] = rla_qc_temp
             if ll_clim_temp_adjust or ll_clim_temp:
                 results['clim_TEMP'] = rla_clim_temp
-            indices = len(np.where(~np.isnan(results['TEMP']))[0])
-            pourcent_valid = (100*indices)/n_profiles
+            indices_temp = len(np.where(~np.isnan(results['TEMP']))[0])
+            #pourcent_valid = (100*indices)/n_profiles
         if ll_psal:
             results['PSAL'] = rla_psal
             results_qc['PSAL'] = rla_qc_psal
             if ll_clim_psal_adjust or ll_clim_psal:
                 results['clim_PSAL'] = rla_clim_psal
-            indices = len(np.where(~np.isnan(results['PSAL']))[0])
-            pourcent_valid = (100*indices)/n_profiles
+            indices_psal = len(np.where(~np.isnan(results['PSAL']))[0])
+        if ll_temp and ll_psal:
+            pourcent_valid =  (indices_psal*100)/indices_temp
         rla_obs = np.ndarray(shape=(n_profiles, nb_variables, n_profs))
         rla_clim = np.ndarray(shape=(n_profiles, nb_variables, n_profs))
         rla_qc = np.ndarray(shape=(n_profiles, nb_variables, n_profs))
-        rl_threshold = 50
+        rl_threshold = 90
         if ll_temp and ll_psal and param_dict['insitu_corr'] and pourcent_valid > rl_threshold:
             self.log.debug("Add Potential correction")
             obs_temp_pot = sw.ptmp(results['PSAL'], results['TEMP'], rla_pres, pr=0)

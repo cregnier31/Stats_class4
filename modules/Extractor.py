@@ -506,6 +506,7 @@ class Extract_cora5_2(Extractor):
         #type_obs = "PR_CT"
         #type_obs = "TS_FB"
         type_obs = "*"
+        #type_obs = "PR_XB"
         liste_file = glob(f"{param_dict['dirdata']}/{YEAR}/*{dateval}*{type_obs}*.nc")
         #liste_file = glob(param_dict['dirdata']+'/'+YEAR+'/*'+dateval+'*.nc')
         self.log.debug(f"Search file  {liste_file}")

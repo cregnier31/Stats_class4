@@ -402,3 +402,17 @@ def create_dict(date1, date2, lead_time, lead_int):
         valeurj = valeurj.goforward(1)
     list_keys['keyvalues'] = list_keys_values
     return list_keys
+
+
+from datetime import datetime, timedelta
+
+def split_year_into_months(year):
+    months = []
+    for month in range(1, 13):
+        first_day = datetime(year, month, 1)
+        if month == 12:
+            last_day = datetime(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            last_day = datetime(year, month + 1, 1) - timedelta(days=1)
+        months.append((first_day.strftime('%Y%m%d'), last_day.strftime('%Y%m%d')))
+    return months
