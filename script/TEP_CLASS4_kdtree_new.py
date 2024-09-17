@@ -46,9 +46,9 @@ def main(level=2):
     #  PART-1 -  Load input parameters
     # ==================================================================
     param_dict,log = Loader().factory('INPUT').load(sys.argv[1:], level)
-    log.info('========================================================')
-    log.info('          Load input options and parameter file         ')
-    log.info('========================================================')
+    log.debug('========================================================')
+    log.debug('          Load input options and parameter file         ')
+    log.debug('========================================================')
     # Load db configuration file
     conf_path = dirname(__file__) #os.getcwd()
     filename = conf_path + '/cfg/' + param_dict['confname']
@@ -77,14 +77,14 @@ def main(level=2):
         log.info(f'Interp day {dateval} {leadtime} leadtime {lead_int}')
         log.info('========================================================')
         # Selection of the input data
-        log.info('Selection of input data')
+        log.info(f"Selection of input data {param_dict['data_format']} {param_dict['data_type']}")
         log.info('========================================================')
         input_list_files, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], log).\
             factory("GLOBAL_INPUT_DATA").run(param_dict, dateval)
         if ll_miss:
             log.info(f'File is missing for the observation {dateval}')
             continue
-        log.info(f'{input_list_files}')
+        log.debug(f'{input_list_files}')
         if not ll_miss:
             # Interpolation of the data
             for file in input_list_files:

@@ -45,9 +45,9 @@ def main(level=2):
     #  PART-1 -  Load input parameters
     # ==================================================================
     param_dict, log = Loader().factory('INPUT').load(sys.argv[1:], level)
-    log.info('========================================================')
-    log.info('          Load input options and parameter file         ')
-    log.info('========================================================')
+    log.debug('========================================================')
+    log.debug('          Load input options and parameter file         ')
+    log.debug('========================================================')
     # Load db configuration file
     conf_path = dirname(__file__) #os.getcwd()
     filename = conf_path + '/cfg/' + param_dict['confname']
@@ -72,9 +72,9 @@ def main(level=2):
     # PART-2 - Loop for a given time range
     # ==========================================================================
     if comm.rank == 0:
-        log.info('========================================================')
-        log.info('              Launch time loop                          ')
-        log.info('========================================================')
+        log.debug('========================================================')
+        log.debug('              Launch time loop                          ')
+        log.debug('========================================================')
         log.info(f"Number of date {ndate}")
         log.debug(f'Date to run {cla_date}')
         log.debug(f"Size of the comm {comm.size}")
@@ -106,7 +106,7 @@ def main(level=2):
                                            leadtime,
                                            lead_int):
                     if comm.rank == 0:
-                        log.info('Intermediate file exist')
+                        log.debug('Intermediate file exist')
                     continue
                 #if not read_outputnp(file_out):
                 tab_results, file_out = Interpolator(log, dask=param_dict['dask']).read_and_interp(
@@ -127,7 +127,7 @@ def main(level=2):
     if comm.rank == 0:
         log.info(f'Recombine files')
         Writer(log).write_class4_out(param_dict, list_keys)
-        log.info(f'End of the code')
+        log.info(f"End of code {param_dict['date1']} {param_dict['date2']}")
 # Set the level of logger
 #log_level = 1
 # Run the main code

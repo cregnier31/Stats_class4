@@ -67,7 +67,6 @@ def main(level=2):
         log.info('========================================================')
         input_list_files, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], log).\
             factory("GLOBAL_INPUT_DATA").run(param_dict, dateval)
-
         if ll_miss:
             valeurj = valeurj.goforward(1)
             continue

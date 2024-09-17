@@ -17,7 +17,7 @@ import netCDF4
 import gzip
 import pickle
 import fcntl
-
+import time
 ##############################################################
 # C.REGNIER Juin 2014
 # Class Writer to write output file in ASCII or Geojson
@@ -597,7 +597,7 @@ class Writer():
             list_file = glob(f"{param_dict['dirwork']}{frame}")
             self.log.debug(f"{frame=}")
             self.log.debug(f"{param_dict['dirwork']}")
-            self.log.info(f"{list_file=}")
+            self.log.debug(f"{list_file=}")
             for file_out in list_file:
                 type_file = os.path.basename(file_out).split('.')[0]
                 substrings_to_remove = [f"{type_file}_", f"{dateval}_"]
@@ -674,33 +674,39 @@ class Writer():
                         self.log.debug("Inside Forecast or persistence")
                         for int_val, lead_rang in enumerate(unique_leadtime_unit):
                             frame = f"{type_file}*{dateval}_{leadtime}_{lead_rang}.p"
-                            pickle_file = glob(f"{param_dict['dirwork']}{frame}")[0]
-                            self.log.debug(f"{pickle_file=}")
+                            list_pickle_file = glob(f"{param_dict['dirwork']}{frame}")
+                            #pickle_file = glob(f"{param_dict['dirwork']}{frame}")[0]
+                            if  list_pickle_file:
+                                pickle_file = list_pickle_file[0]
+                                self.log.debug(f"{pickle_file=}")
 
-                            with open(pickle_file, 'rb') as handle:
-                                stats_tmp = pickle.load(handle)
-                            if int_val == 0:
-                                nb_obs, variable, nb_fcst, nb_profs = np.shape(stats_tmp)
-                                if leadtime == "forecast":
-                                    fcst_tab = np.ndarray(shape=(nb_obs, variable, nb_fcst, nb_profs),
-                                                                 dtype=float, order='F')
-                                    ll_fcst = True
-                                    fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
-                                    self.log.debug(f"Create array Forecast {nb_obs=} {variable=} {nb_fcst=} {nb_profs=}")
-                                if leadtime == "persistence":
-                                    pers_tab = np.ndarray(shape=(nb_obs, variable, nb_fcst, nb_profs),
-                                                          dtype=float, order='F')
-                                    ll_pers = True
-                                    pers_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
-                                    self.log.debug(f"Create array Persistence leadtime O {nb_obs=} {variable=} {nb_fcst=} {nb_profs=}")
-                            else:
-                                if leadtime == "forecast":
-                                    ll_fcst = True
-                                    fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
-                                if leadtime == "persistence":
-                                    ll_pers = True
-                                    pers_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
-                                    self.log.debug(f"{pers_tab[0:10, 0 , int(lead_rang), 0:10]}")
+                                with open(pickle_file, 'rb') as handle:
+                                    stats_tmp = pickle.load(handle)
+                                if int_val == 0:
+                                    nb_obs, variable, nb_fcst, nb_profs = np.shape(stats_tmp)
+                                    if leadtime == "forecast":
+                                        fcst_tab = np.ndarray(shape=(nb_obs, variable, nb_fcst, nb_profs),
+                                                                     dtype=float, order='F')
+                                        ll_fcst = True
+                                        fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
+                                        self.log.debug(f"Create array Forecast {nb_obs=} {variable=} {nb_fcst=} {nb_profs=}")
+                                    if leadtime == "persistence":
+                                        pers_tab = np.ndarray(shape=(nb_obs, variable, nb_fcst, nb_profs),
+                                                              dtype=float, order='F')
+                                        ll_pers = True
+                                        pers_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
+                                        self.log.debug(f"Create array Persistence leadtime O {nb_obs=} {variable=} {nb_fcst=} {nb_profs=}")
+                                else:
+                                    if leadtime == "forecast":
+                                        ll_fcst = True
+                                        self.log.debug(f"Dim fcst_tab {np.shape(fcst_tab)}")
+                                        self.log.debug(f"Dim stats_tmp {np.shape(stats_tmp)}")
+                                        self.log.debug(f"Leadtime {int(lead_rang)}")
+                                        fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
+                                    if leadtime == "persistence":
+                                        ll_pers = True
+                                        pers_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
+                                        self.log.debug(f"{pers_tab[0:10, 0 , int(lead_rang), 0:10]}")
                     if leadtime == 'climatology':
                         frame = f"{type_file}*{dateval}_climatology_0.p"
                         list_file_var = glob(f"{param_dict['dirwork']}{frame}")[0]
@@ -738,7 +744,7 @@ class Writer():
                 if ll_pers:
                     tab_out['persistence'] = pers_tab
                 ## Write output file
-                self.log.info(f"Write output file in Writer")
+                self.log.debug(f"Write output file in Writer")
                 self.write_output_frompickle(file_out,
                                              tab_out,
                                              str(dateval),
@@ -752,7 +758,7 @@ class Writer():
                 if not os.path.exists(fileout):
                     shutil.move(file_out, fileout)
                 else:
-                    self.log.info(f"Clean and move file {fileout}")
+                    self.log.debug(f"Clean and move file {fileout}")
                     os.remove(fileout)
                     shutil.move(file_out, fileout)
                     #shutil.move(file_out, dest)
@@ -760,7 +766,7 @@ class Writer():
                 # remove p file
                 for file_out in list_pfile:
                     os.remove(file_out)
-                    self.log.info(f"Remove {file_out}")
+                    self.log.debug(f"Remove {file_out}")
 
 
 #    def write_class4_out_test(self, param_dict, list_keys):
@@ -883,7 +889,12 @@ class Writer():
             raise NetCDFFileError(f"The NetCDF file '{filename}' is not writable.")
         try:
             #with Dataset(filename, 'r+') as nc_fid:
-            nc_fid = Dataset(filename, 'r+')
+            #nc_fid = Dataset(filename, 'r+')
+            try:
+                nc_fid = Dataset(filename, 'r+', nc_bufsize=0)
+                time.sleep(0.8) 
+            except OSError as e:
+                raise(f"Failed to open copied NetCDF file: {e}")
             list_keys = tab_out.keys()
             list_dimensions = nc_fid.dimensions
             list_variables = list(nc_fid.variables)
@@ -894,7 +905,7 @@ class Writer():
             ll_varname = self.type_data.get(variable, {}).get('varname')
             if 'best_estimate' in list_keys : #and np.any(tab_out['best_estimate']):
                 nprofs, nparams, nlevels = np.shape(tab_out['best_estimate'])
-                self.log.info(f"Create dimensions {list_dimensions} {nprofs} {nlevels} {nparams}")
+                self.log.debug(f"Create dimensions {list_dimensions} {nprofs} {nlevels} {nparams}")
                 self.create_dims(list_dimensions,
                                  nc_fid,
                                  nprofs=nprofs,
@@ -906,7 +917,7 @@ class Writer():
                         self.log.debug("Create varname")
                         varname = nc_fid.createVariable('varname', 'S1', ('numvars', 'string_length20'))
                         varname.setncatts({'long_name': u"Variable name"})
-                        self.log.info(f'{varname_data=}')
+                        self.log.debug(f'{varname_data=}')
                         for i, var_name in enumerate(varname_data):
                             varname[i, :] = list(var_name.ljust(ndim_int))
                         self.log.debug(f'Add varname ok {filename}')
@@ -917,7 +928,7 @@ class Writer():
 
                 hdct_tab = tab_out['best_estimate'][:, :, :]
                 self.log.debug(f"Dimensions best {np.shape(tab_out['best_estimate'][:, :, :])}")
-                self.log.info('Hindcast not empty')
+                self.log.debug('Hindcast not empty')
                 if 'best_estimate' not in list_variables:
                     nc_best = nc_fid.createVariable(
                         'best_estimate', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
@@ -936,7 +947,7 @@ class Writer():
                                  nlevels=nlevels,
                                  nparams=nparams,
                                  nfcsts=nfcsts)
-                self.log.info('Forecast not empty')
+                self.log.debug('Forecast not empty')
                 if 'forecast' not in list_variables:
                     nc_fcst = nc_fid.createVariable(
                         'forecast', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
@@ -947,7 +958,7 @@ class Writer():
                 except ValueError as e:
                     raise BroadcastError(f"Error with forecast: {e}")
             else:
-                self.log.info('Forecast is empty')
+                self.log.debug('Forecast is empty')
             if 'persistence' in list_keys and np.any(tab_out['persistence']):
                 pers_tab = tab_out['persistence']
                 nprofs, nparams, nfcsts, nlevels = np.shape(tab_out['persistence'])
@@ -957,7 +968,7 @@ class Writer():
                                  nlevels=nlevels,
                                  nparams=nparams,
                                  nfcsts=nfcsts)
-                self.log.info('Persistence not empty')
+                self.log.debug('Persistence not empty')
                 if 'persistence' not in list_variables:
                     nc_pers = nc_fid.createVariable(
                         'persistence', 'f4', ('numobs', 'numvars', 'numfcsts', 'numdeps'), fill_value=self.fillvalue)
@@ -968,13 +979,13 @@ class Writer():
                 except ValueError as e:
                     raise BroadcastError(f"Error with persistence: {e}")
             else:
-                self.log.info('Persistence is empty')
+                self.log.debug('Persistence is empty')
             ## Create observation variable
             if 'observation' in list_keys and np.any(tab_out['observation']):
                 obs_tab = tab_out['observation']
                 nprofs, nparams, nlevels = np.shape(tab_out['observation'])
-                self.log.info('Observation not empty')
-                self.log.info(f'Dimensions Observations {nprofs=} {nparams=} {nlevels=}')
+                self.log.debug('Observation not empty')
+                self.log.debug(f'Dimensions Observations {nprofs=} {nparams=} {nlevels=}')
                 if 'observation' not in list_variables:
                     nc_obs = nc_fid.createVariable(
                             'observation', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue_corio)
@@ -1143,7 +1154,7 @@ class Writer():
             nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
             nc_fid.system = system
             nc_fid.close()  # Close the file
-            self.log.info(f'Write {filename} OK')
+            self.log.debug(f'Write {filename} OK')
         except OSError as e:
             error_message = f"OSError NetCDF file: {e.errno} {e.strerror} {e.filename}"
             raise NetCDFFileError(error_message) from e
@@ -1290,22 +1301,22 @@ class Writer():
         # Writing of the dictionary into the pickle file
         if not os.path.isfile(filename_tmp):
             with open(filename_tmp, 'wb') as file:
-                self.log.info(f"Write Pickle file {filename_tmp} {np.shape(tab_results[leadtime])}")
+                self.log.debug(f"Write Pickle file {filename_tmp} {np.shape(tab_results[leadtime])}")
                 pickle.dump(tab_results[leadtime], file)
         if 'observation' in tab_results.keys():
             if not os.path.isfile(filename_obs):
-                self.log.info(f"Write Pickle file obs {np.shape(tab_results[leadtime])} {filename_obs}")
+                self.log.debug(f"Write Pickle file obs {np.shape(tab_results[leadtime])} {filename_obs}")
                 with open(filename_obs, 'wb') as file:
                     pickle.dump(tab_results['observation'], file)
         if 'varname_select' in tab_results.keys():
             if not os.path.isfile(filename_varname):
-                self.log.info(f"Write Pickle file varname {filename_varname}")
+                self.log.debug(f"Write Pickle file varname {filename_varname}")
                 with open(filename_varname, 'wb') as file:
                     pickle.dump(tab_results['varname_select'], file)
         if 'longitude' in tab_results.keys():
             if not os.path.isfile(filename_lon):
                 with open(filename_lon, 'wb') as file:
-                    self.log.info(f"No longitude write {filename_lon} {np.shape(tab_results['longitude'])}")
+                    self.log.debug(f"No longitude write {filename_lon} {np.shape(tab_results['longitude'])}")
                     pickle.dump(tab_results['longitude'], file)
         if 'latitude' in tab_results.keys():
             if not os.path.isfile(filename_lat):
@@ -1364,12 +1375,12 @@ class Writer():
             #     tab_results['persistence'], tab_results['clim'], dateval, param_dict['modele'], param_dict['data_type'])
 
         elif dataorigin == "GLOBCOLOUR" and param_dict['daily_pref'] == '7dAV':
-            self.log.info("Write inside GLOBCOLOUR files")
+            self.log.debug("Write inside GLOBCOLOUR files")
             self.write_GLOBCOLOR_files(filename, tab_results['best'],
                                        tab_results['forecast'], tab_results['clim'],
                                        dateval, param_dict['cl_config'],f"{param_dict['data_type']}_{param_dict['cl_src']}")
         elif dataorigin == "GLOBCOLOUR" and param_dict['daily_pref'] == '1dAV':
-            self.log.info("Write inside GLOBCOLOUR files")
+            self.log.debug("Write inside GLOBCOLOUR files")
             self.write_GLOBCOLOR_files2(filename, tab_results['best'],
                                         tab_results['clim'],
                                         dateval, param_dict['cl_config'],f"{param_dict['data_type']}_{param_dict['cl_src']}")
@@ -1399,15 +1410,15 @@ class Writer():
             if os.path.exists(file_coloc):
                 os.remove(file_coloc)
 
-        self.log.info('Creation file %s' % (filename))
+        self.log.debug('Creation file %s' % (filename))
         if ll_zip:
             # Zipped files and move in output directory
-            self.log.info(param_dict['dirwork'])
+            self.log.debug(param_dict['dirwork'])
             #self.log.info(param_dict['dirwork']+"*"+param_dict['cl_conf'] +"*"+param_dict['varname']+"*.nc")
             #for filename in glob(param_dict['dirwork']+"*"+param_dict['cl_conf'] +
             #                     "*"+param_dict['varname']+"*.nc"):
             for filename in glob(param_dict['dirwork']+"*.nc"):
-                self.log.info('ZIP and move file %s' % (filename))
+                self.log.debug('ZIP and move file %s' % (filename))
                 f_in = open(filename, 'rb')
                 f_out = gzip.open(filename+'.gz', 'wb')
                 f_out.writelines(f_in)
@@ -1420,6 +1431,6 @@ class Writer():
                                   os.path.basename(filename)+'.gz')
                     shutil.move(filename+'.gz', param_dict['diroutput'])
                 os.remove(filename)
-                self.log.info('File ok %s' % (filename))
+                self.log.debug('File ok %s' % (filename))
         dest = os.path.join(param_dict['diroutput'],os.path.basename(filename))
         shutil.move(filename, dest)
