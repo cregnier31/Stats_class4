@@ -78,7 +78,8 @@ class inputdata_loader(object):
 
     def generic_read_pos_and_value(self,filename, varname):
         rla_lon, rla_lat, nc = self.generic_read_pos(filename)
-        _FillValue = nc.variables[varname[0]]._FillValue
+        #_FillValue = nc.variables[varname[0]]._FillValue
+        _FillValue = nc.variables[varname]._FillValue
 
         return rla_lon, rla_lat, _FillValue, nc
 
@@ -190,7 +191,7 @@ class LoaderNCChloro(inputdata_loader):
 
     def read_pos_and_value(self, filename, param_dict):
         rla_lon, rla_lat, _FillValue, nc = \
-          self.generic_read_pos_and_value(filename, self.varname)
+          self.generic_read_pos_and_value(filename, self.varname[0])
         self.log.info(f"Rad filename {filename=}")
         rla_value = nc.variables[self.varname[0]][0, :, :]
         nb_obs = int(np.shape(rla_value.flatten())[0])
@@ -786,7 +787,8 @@ class LoaderNCgodae(inputdata_loader):
         return position
 
     def read_pos_and_value(self, filename, param_dict):
-        param_dict['Design_GODAE_file'] = False
+        param_dict['Design_GODAE_file'] = True
+        print(f'{self.varname}')
         rla_lon, rla_lat, _FillValue, nc = \
          self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][:]

@@ -418,7 +418,7 @@ class Writer():
     def write_GODAE_files(self, filename, hdct_tab, fcst_tab, pers_tab, dateval, model, variable):
         nc_fid = Dataset(filename,'r+')
         if np.any(hdct_tab):
-            self.log.info('Hindcast not empty')    
+            self.log.info('Hindcast not empty OK2')    
             nc_best = nc_fid.createVariable(
                 'best_estimate', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
             nc_best.setncatts(
@@ -924,9 +924,10 @@ class Writer():
                     self.log.debug(f"Dimensions best {np.shape(tab_out['best_estimate'][:, :, :])}")
                 else:
                     hdct_tab = tab_out['best_estimate'][:, :]
-                self.log.info('Hindcast not empty')
+                self.log.info(f'Hindcast not empty {ll_GODAE}')
                 if 'best_estimate' not in list_variables:
                     if ll_GODAE:
+                        self.log.info('Create Var GODAE')
                         nc_best = nc_fid.createVariable(
                             'best_estimate', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
                         nc_best.setncatts(
@@ -1207,13 +1208,16 @@ class Writer():
             for i, var_name in enumerate(varname_data):
                 varname[i, :] = list(var_name.ljust(8))
             hdct_tab = tab_res['best'][:, :, :]
-            self.log.debug(f"Dimensions best {np.shape(tab_res['best'][:, :, :])}")
-            self.log.info('Hindcast not empty')
+            #self.log.debug(f"Dimensions best {np.shape(tab_res['best'][:, :, :])}")
+            self.log.info('Hindcast not empty OK1')
             nc_best = nc_fid.createVariable(
                 'best_estimate', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
+            self.log.info('Create var ok')
             nc_best.setncatts(
                 {'long_name': u"Model best_estimate counterpart of obs. value"})
+            self.log.debug('Create hindcast ok')
             nc_fid.variables['best_estimate'][:, :, :] = hdct_tab[:, :, :]
+            self.log.debug('Push data hind ok')
         if 'forecast' in list_keys and np.any(tab_res['forecast']):
             fcst_tab = tab_res['forecast']
             nprofs, nparams, nfcsts, nlevels = np.shape(tab_res['forecast'])
@@ -1244,6 +1248,7 @@ class Writer():
             nc_fid.variables['persistence'][:, : , :, :] = pers_tab[:, :, :, :]
         else:
             self.log.info('Persistence is empty')
+        self.log.debug('Add observation')
         # Create observation variable
         nc_obs = nc_fid.createVariable(
                 'observation', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue_corio)
@@ -1251,6 +1256,7 @@ class Writer():
                 {'long_name': u"Observation value"})
         self.log.debug(f"Dimension obs {np.shape(tab_res['observation'])}")
         nc_fid.variables['observation'][:, : , :] = tab_res['observation'][:, :, :]
+        self.log.debug('Add observation ok')
         # Add global attributs
         nc_fid.institution = 'MERCATOR OCEAN'
         nc_fid.obs_type = self.type_data.get(variable, {}).get('defaults').get('name')

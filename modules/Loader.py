@@ -578,10 +578,9 @@ class NmlLoader(Loader):
         except:
             param_dict['insitu_corr'] = False
         try:
-            param_dict['Design_GODAE_file'] = db.get('Design_GODAE_file', 'GLOBAL')
+            param_dict['Design_GODAE_file'] = db.get('GLOBAL', 'Design_GODAE_file')
         except:
             param_dict['Design_GODAE_file'] = False
-
         param_dict['dirmodel'] = db.get('input_dir', 'DATA_IN')
         param_dict['nb_level'] = int(db.get('GLOBAL', 'LEVELS'))
         param_dict['zoom'] = int(db.get('GLOBAL', 'zoom'))
