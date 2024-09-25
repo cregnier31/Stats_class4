@@ -622,9 +622,12 @@ class SelectListModelData(Selector):
                        list_file_tmp = glob(dirmodel_new+"/*"+'M'+str(month)+"*nc")
                        print(list_file_tmp)
                     else:
-                        for i in range(len(param_dict['gridtype'])):
-                            list_file_tmp = glob(dirmodel_new+"/"+str(year)+'/'+str(month)+'/*'+\
-                            param_dict['suffix']+'-'+dateval+".nc")
+                        #for i in range(len(param_dict['gridtype'])):
+                        #    list_file_tmp = glob(dirmodel_new+"/"+str(year)+'/'+str(month)+'/*'+\
+                        #    param_dict['suffix']+'-'+dateval+".nc")
+                        for i, gridname in enumerate(param_dict['gridtype']):
+                            template = f"{dirmodel_new}{directory}/{self.modele}_{param_dict['daily_pref']}_{dateval}*{gridname}*nc"
+                            list_file_tmp = glob(template)
                             list_file.extend(list_file_tmp)
                     self.log.debug(f'{list_file=}')
                 elif self.typemod == "pgs_ai":

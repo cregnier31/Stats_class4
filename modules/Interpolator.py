@@ -408,6 +408,7 @@ class Interpolator(object):
                         lon_mod, lat_mod, mask_tab, depth_mod = inputdata_loader(self.log).factory('2ease_coords').\
                             read_pos(param_dict['coordinates'])
                     elif param_dict['cl_typemod'].lower() == "pgs" or param_dict['cl_typemod'].lower() == "pgs_ai":
+                            self.log.debug("PGS coordinates")
                             lon_mod, lat_mod, mask_tab, depth_mod = inputdata_loader(self.log).factory('PGS_coords').\
                                 read_pos(param_dict['coordinates'])
                     else:
@@ -464,7 +465,8 @@ class Interpolator(object):
                 if ind_depth < ind_tot-2:
                    ind_max = ind_depth+2
                 else:
-                    ind_max = ind_depth+1
+                    #ind_max = ind_depth + 1
+                    ind_max = ind_depth
                 self.log.debug(f'maxdepth {maxdepth} maxind {ind_max} nearest depth model {depth_mod[ind_depth]}')
                 ## Compute weight
                 TreeObj = interp_KDtree(self.log)
@@ -1141,6 +1143,11 @@ class Interpolator(object):
                 values_interp = np.full((nb_obs, nb_profs), np.nan)
             else:
                 try:
+                    self.log.debug(f'Size indexes {np.shape(inds)}')
+                    self.log.debug(f'Size weight {np.shape(weight)}')
+                    self.log.debug(f'Size var_in {np.shape(var_in)}')
+                    self.log.debug(f'Index max {ind_max}')
+                    self.log.debug(f'nbpts_interp {nbpts_interp}')
                     with Parallel(n_jobs=num_cores, prefer="threads", verbose=0) as parallel:
                         tab_interp_tmp  = parallel(delayed(self.compute_3D_weight)(ind, var_in,\
                                                                                    inds, weight, ind_max, nbpts_interp) \
