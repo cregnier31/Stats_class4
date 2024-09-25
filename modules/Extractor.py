@@ -321,7 +321,8 @@ class Extract_CHLORO(Extractor):
 
     def run_list(self, param_dict, dateval):
         liste_tot = []
-        liste_file = glob(param_dict['dirdata']+'/'+dateval+'*REP'+'*.nc')
+        #liste_file = glob(param_dict['dirdata']+'/'+dateval+'*REP'+'*.nc')
+        liste_file = glob(param_dict['dirdata']+'/'+dateval+'*.nc')
 
         if np.size(liste_file) > 0:
             liste_file = liste_file

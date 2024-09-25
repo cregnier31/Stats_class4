@@ -171,13 +171,15 @@ if rank == 0:
 
     weight_file = dir_interp+'weight_file_'+str(nb_ptsinterp)+'pts_'+\
                   str(nb_files)+'moorings_'+typemoor+'_'+YEAR+'_'+MONTH+'.nc'
-    log.info ("Interp Kdtree")
+    if comm.rank == 0:
+        log.info ("Interp Kdtree")
     TreeObj = interp_KDtree(log)
     dist, idw = TreeObj.tree_and_query(lon_mod, lat_mod,\
                                        np.array(list_lon), np.array(list_lat),\
                                        nb_ptsinterp, weight_file=weight_file, save=False)
     ilat, ilon = TreeObj.get_ilonlat(lon_mod, lat_mod, idw)
-    log.info ("Coloc 2D %s" %(str(nb_files)))
+    if comm.rank == 0:
+        log.info ("Coloc 2D ok %s" %(str(nb_files)))
     for i, m in enumerate(list_mooring):
         ind_dict[m]['ind_lat'] = ilat[i]
         ind_dict[m]['ind_lon'] = ilon[i]
@@ -225,7 +227,7 @@ else:
     if len(forecast) > 0:
         mfdataset_fcst, time_fcst = None, None
 
-log.debug ("Create broadcast ")
+#log.debug ("Create broadcast ")
 ind_dict = comm.bcast(ind_dict, root=0)
 list_file = comm.bcast(list_file, root=0)
 if old_obs == 'new':
@@ -296,7 +298,8 @@ for file in cla_mr:
     depthmax = 6
     # Management of different types of moorings
     if nb_dims_profs == 1:
-        log.info(f'Case 1 {file}')
+        if comm.rank == 0:
+            log.info(f'Case 1 {file}')
         nb_dims_var = len(np.shape(vardata))
         for ini, depth_val in enumerate(depth.data):
             if nb_dims_var == 1:
@@ -323,7 +326,8 @@ for file in cla_mr:
                 vardata_qc = value_qc
                 break
     elif nb_dims_profs == 2:
-        log.info(f'Case 2 {file}')
+        if comm.rank == 0:
+            log.info(f'Case 2 {file}')
         list_depth = depth.data[0]
         if isinstance(vardata, float) and np.isnan(vardata):
             continue

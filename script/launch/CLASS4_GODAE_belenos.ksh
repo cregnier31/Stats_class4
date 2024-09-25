@@ -3,22 +3,23 @@
 #SBATCH -A cmems
 #SBATCH -p normal256
 #SBATCH -N 1
-#SBATCH -e CLASS4_GLO12V5-150_DRIFTER_2024_job%j.e
-#SBATCH -o CLASS4_GLO12V5-150_DRIFTER_2024_job%j.o
+#SBATCH -e CLASS4_GLO12V5-150_aice_job%j.e
+#SBATCH -o CLASS4_GLO12V5-150_aice_job%j.o
 #SBATCH --ntasks-per-node=1
 #SBATCH --time=06:00:00
 module load nco
 CONFIG="GLO12V5-150"
-DATE1="20240103"
-DATE2="20240430"
+DATE1="20240813"
+DATE2="20240813"
+#DATE2="20240103"
 #DATE2="20240103"
 #DATE2="20240105"
 #typedata="profile"
 
 typedata="aice"
-typedata="DRIFTER"
-#typedata="DRIFTER_filtr"
-#typedata="profile"
+#typedata="DRIFTER"
+##typedata="DRIFTER_filtr"
+typedata="profile"
 #typedata="SST"
 #typedata="SLA"
 #typedata="DRIFTER"
