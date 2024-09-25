@@ -1,5 +1,6 @@
 from __future__ import generators
 import os
+import fcntl
 import sys
 import string
 import shutil
@@ -305,11 +306,27 @@ class loaderNCcorio_tac(inputdata_loader):
         n_profiles = len(rla_lon)
         position = np.ndarray(shape=(n_profiles,2),dtype=float, \
              order='F',buffer=np.array([rla_lon[:],rla_lat[:]]))
+        nc.close()
         return position
 
+    def is_file_locked(self, filepath):
+        try:
+            fd = os.open(filepath, os.O_RDONLY)
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(fd, fcntl.LOCK_UN)
+            os.close(fd)
+            return False  # File is not locked
+        except OSError:
+            return True  # File is locked
+
     def read_pos_and_value(self, filename, param_dict, qc_level=0):
-        self.log.info(f"Read pos and value {filename}")
-        ds = xr.open_dataset(filename)
+        self.log.debug(f"Read pos and value {filename}")
+        if not self.is_file_locked(filename):
+            ds = xr.open_dataset(filename)
+        else:
+            print(f"File {filename} is currently being used by another process.")
+            sys.exit(1)
+        #nc = netCDF4.Dataset(filename, 'r')
         param_dict['Design_GODAE_file'] = True
         # Get the list of variable names
         variable_names = list(ds.variables)
@@ -368,6 +385,15 @@ class loaderNCcorio_tac(inputdata_loader):
             depth_adjusted_qc =  ds['DEPH_ADJUSTED_QC'].values
         if 'DEPH_QC' in variable_names:
             depth_qc =  ds['DEPH_QC'].values
+        if 'LONGITUDE' in variable_names:
+            rla_lon = ds['LONGITUDE'].values
+            #rla_lon_2 = nc.variables['LONGITUDE'][:]
+            sum_lon = np.nansum(ds['LONGITUDE'])
+        if 'LATITUDE' in variable_names:
+            rla_lat =  ds['LATITUDE'].values
+            #rla_lat_2 = nc.variables['LATITUDE'][:]
+            sum_lat = np.nansum(rla_lat)
+            sum_lat_2 = np.nanmean(ds['LATITUDE'])
         var_pres = 'PRES'
         var_pres_adj = 'PRES_ADJUSTED'
         #if ll_pres:
@@ -403,15 +429,10 @@ class loaderNCcorio_tac(inputdata_loader):
             ll_temp = True
             self.varname_list.append('TEMP')
             rla_temp = np.ndarray(shape=(n_profiles, n_profs))
-        #if any(var in variable_names for var in self.list_instemp):
-        #    ll_temp = True
-        #    self.varname_list.append('TEMP')
-        #    rla_temp = np.ndarray(shape=(n_profiles, n_profs))
         if any(var in variable_names for var in self.list_inspsal):
             ll_psal = True
             self.varname_list.append('PSAL')
             rla_psal = np.ndarray(shape=(n_profiles, n_profs))
-        #if not ll_temp and ll_psal:
         if not ll_temp and not ll_psal:
             self.log.error('PROF not valid with no TEMP and no PSAL or ADJUSTED')
         if not ll_data_mode:
@@ -473,12 +494,34 @@ class loaderNCcorio_tac(inputdata_loader):
                 if ll_temp:
                     if ll_temp_adj:
                         rla_temp[ind, :] =  ds['TEMP_ADJUSTED'][ind, :].values
-                        string_data = [byte_data if byte_data != b"" else 9 for byte_data in temp_adjusted_qc[ind, :]]
+                        list_pattern = [b'\xbf', b'>', b'\x02', b'\xb7', b'\xa6', b'B', b'\xad', \
+                                            b'\xf9', b'L', b')', b'\000', b'\x0b', b'y', b'\xe5',\
+                                            b'\x7f', b'\xf0' ,b'}', b'\xbb', b'\xec', b'|', b'\xbc',\
+                                            b'e', b',', b'A', b'\x0b', b'\x0c',  b'\xe9', b'\xd0']
+                        if any(pattern in temp_adjusted_qc[ind, :] for pattern in list_pattern):
+                            temp_adjusted_qc[ind, :]  = 9
+                            rla_qc_temp[ind, :] = temp_adjusted_qc[ind, :]
+                        else:
+                            string_data = [byte_data if byte_data != b"" else 9 for byte_data in temp_adjusted_qc[ind, :]]
+                            rla_qc_temp[ind, :] = string_data[:]
                     else:
                         rla_temp[ind, :] =  ds['TEMP'][ind, :].values
-                        string_data = [byte_data if byte_data != b"" else 9 for byte_data in temp_qc[ind, :]]
+                        try:
+                            list_pattern = [b'\xbf', b'>', b'\x02', b'\xb7', b'\xa6', b'B', b'\xad', \
+                                            b'\xf9', b'L', b')', b'\000', b'\x0b', b'y', b'\xe5',\
+                                            b'\x7f', b'\xf0' ,b'}', b'\xbb', b'\xec', b'|', b'\xbc',\
+                                            b'e', b',', b'A', b'\x0b', b'\x0c',  b'\xe9', b'\xd0']
+                            if any(pattern in temp_qc[ind, :] for pattern in list_pattern):
+                                rla_qc_temp[ind, :]  = 9
+                            else:
+                                #string_data = [float(byte_data) if byte_data != b"" else 9 for byte_data in temp_qc[ind, :]]
+                                rla_qc_temp[ind, :] =[float(byte_data) if byte_data != b"" else 9 for byte_data in temp_qc[ind, :]]
+                        except (ValueError, UnicodeDecodeError) as e:
+                            self.log.error(f"Conversion error: {e} {filename}")
+                            self.log.error(f"Conversion error: {e}, Data: {string_data} {filename}")
+                            sys.exit(1)
                     #string_data = [byte_data.decode('utf-8') if byte_data != b"" else 9 for byte_data in temp_adjusted_qc[ind, :]]
-                    rla_qc_temp[ind, :] = string_data[:]
+                    #rla_qc_temp[ind, :] = string_data[:]
                     #rla_qc_temp[ind, :] = temp_adjusted_qc[ind, :]
                     if ll_clim_temp_adjust:
                         rla_clim_temp[ind, :] = clim_temp_adj[ind, :]
@@ -493,13 +536,28 @@ class loaderNCcorio_tac(inputdata_loader):
                 if ll_psal:
                     if ll_psal_adj:
                         rla_psal[ind, :] =  ds['PSAL_ADJUSTED'][ind, :].values
-                        string_data = [byte_data if byte_data != b"" else 9 for byte_data in psal_adjusted_qc[ind, :]]
+                        list_pattern = [b'\xbf', b'>', b'\x02', b'\xb7', b'\xa6', b'B', b'\xad', \
+                                            b'\xf9', b'L', b')', b'\000', b'\x0b', b'y', b'\xe5',\
+                                            b'\x7f', b'\xf0' ,b'}', b'\xbb', b'\xec', b'|', b'\xbc',\
+                                            b'e', b',', b'A', b'\x0b', b'\x0c',  b'\xe9', b'\xd0']
+                        if any(pattern in psal_adjusted_qc[ind, :] for pattern in list_pattern):
+                            psal_adjusted_qc[ind, :]  = 9
+                            rla_qc_psal[ind, :] = psal_adjusted_qc[ind, :]
+                        else:
+                            rla_qc_psal[ind, :] = [float(byte_data) if byte_data != b"" else 9 for byte_data in psal_adjusted_qc[ind, :]]
                     else:
                         rla_psal[ind, :] =  ds['PSAL'][ind, :].values
-                        string_data = [byte_data if byte_data != b"" else 9 for byte_data in psal_qc[ind, :]]
+                        ##
+                        if any(pattern in psal_qc[ind, :] for pattern in list_pattern):
+                            psal_qc[ind, :]  = 9
+                            rla_qc_psal[ind, :] = psal_qc[ind, :] 
+                        else:
+                            string_data = [float(byte_data) if byte_data != b"" else 9 for byte_data in psal_qc[ind, :]]
+                            rla_qc_psal[ind, :] = string_data[:]
+                        #string_data = [float(byte_data) if byte_data != b"" else 9 for byte_data in psal_qc[ind, :]]
                     #string_data = [byte_data.decode('utf-8') for byte_data in psal_adjusted_qc[ind, :]]
                     #string_data = [byte_data.decode('utf-8') if byte_data != b"" else 9 for byte_data in psal_adjusted_qc[ind, :]]
-                    rla_qc_psal[ind, :] = string_data[:]
+                    ###rla_qc_psal[ind, :] = string_data[:]
                     #rla_qc_psal[ind, :] = psal_adjusted_qc[ind, :]
                     if ll_clim_psal_adjust:
                         rla_clim_psal[ind, :] = clim_psal_adj[ind, :]
@@ -513,32 +571,54 @@ class loaderNCcorio_tac(inputdata_loader):
                 # read Normal values
                 if ll_temp:
                     rla_temp[ind, :] =  ds['TEMP'][ind, :].values
-                    #string_data = [byte_data.decode('utf-8') for byte_data in temp_qc[ind, :]]
-                    #string_data = [byte_data.decode('utf-8') if byte_data != b"" else 9 for byte_data in temp_qc[ind, :]]
-                    string_data = [byte_data if byte_data != b"" else 9 for byte_data in temp_qc[ind, :]]
-                    #rla_qc_temp[ind, :] = temp_qc[ind, :]
-                    rla_qc_temp[ind, :] = string_data[:]
-                    if ll_clim_temp:
-                        rla_clim_temp[ind, :] = clim_temp[ind, :]
-                    #rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] < 1, 9, 
-                    #                               np.where(rla_qc_temp[ind, :] == 1, 0, 9))
-                    rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] < 1, 9, rla_qc_temp[ind, :])
-                    rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] == 1, 0, rla_qc_temp[ind, :])
-                    rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] > 1, 9, rla_qc_temp[ind, :])
+                    list_pattern = [b'\xbf', b'>', b'\x02', b'\xb7', b'\xa6', b'B', b'\xad', \
+                                    b'\xf9', b'L', b')', b'\000', b'\x0b', b'y', b'\xe5',\
+                                    b'\x7f', b'\xf0' ,b'}', b'\xbb', b'\xec', b'|', b'\xbc',\
+                                    b'e', b',', b'A', b'\x0b', b'\x0c',  b'\xe9', b'\xd0']
+                    if any(pattern in temp_qc[ind, :] for pattern in list_pattern):
+                    #if pattern in temp_qc[ind, :]:
+                        #self.log.error(f"bad qc value TEMP {filename}")
+                        rla_qc_temp[ind, :]  = 9
+                    else:
+                        try:
+                            string_data = [float(byte_data) if byte_data != b"" else 9 for byte_data in temp_qc[ind, :]]
+                        except (ValueError, UnicodeDecodeError) as e:
+                            self.log.error(f"Conversion error: {e} {filename}")
+                            self.log.error(f"Conversion error: {e}, Data: {string_data} {filename}")
+                            sys.exit(1)
+                        #rla_qc_temp[ind, :] = temp_qc[ind, :]
+                        rla_qc_temp[ind, :] = string_data[:]
+                        if ll_clim_temp:
+                            rla_clim_temp[ind, :] = clim_temp[ind, :]
+                        #rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] < 1, 9, 
+                        #                               np.where(rla_qc_temp[ind, :] == 1, 0, 9))
+                        rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] < 1, 9, rla_qc_temp[ind, :])
+                        rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] == 1, 0, rla_qc_temp[ind, :])
+                        rla_qc_temp[ind, :] = np.where(rla_qc_temp[ind, :] > 1, 9, rla_qc_temp[ind, :])
                 if ll_psal:
                     rla_psal[ind, :] =  ds['PSAL'][ind, :].values
                     #string_data = [byte_data.decode('utf-8') for byte_data in psal_qc[ind, :]]
                     #string_data = [byte_data.decode('utf-8') if byte_data != b"" else 9 for byte_data in psal_qc[ind, :]]
-                    string_data = [byte_data if byte_data != b"" else 9 for byte_data in psal_qc[ind, :]]
-                    rla_qc_psal[ind, :] = string_data[:]
-                    #rla_qc_psal[ind, :] = psal_qc[ind, :]
-                    if ll_clim_psal:
-                        rla_clim_psal[ind, :] = clim_psal[ind, :]
-                    #rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] < 1, 9, 
-                    #                               np.where(rla_qc_psal[ind, :] == 1, 0, 9))
-                    rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] < 1, 9, rla_qc_psal[ind, :])
-                    rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] == 1, 0, rla_qc_psal[ind, :])
-                    rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] > 1, 9, rla_qc_psal[ind, :])
+                    #pattern = b'\000'
+                    list_pattern = [b'\xbf', b'>', b'\x02', b'\xb7', b'\xa6', b'B', b'\xad', \
+                                    b'\xf9', b'L', b')', b'\000', b'\x0b', b'y', b'\xe5',\
+                                    b'\x7f', b'\xf0' ,b'}', b'\xbb', b'\xec', b'|', b'\xbc',\
+                                    b'e', b',', b'A', b'\x0b', b'\x0c',  b'\xe9', b'\xd0']
+                    if any(pattern in psal_qc[ind, :] for pattern in list_pattern):
+                    #if pattern in psal_qc[ind, :]:
+                        #self.log.error(f"bad qc value PSAL")
+                        rla_qc_psal[ind, :]  = 9
+                    else:
+                        string_data = [float(byte_data) if byte_data != b"" else 9 for byte_data in psal_qc[ind, :]]
+                        rla_qc_psal[ind, :] = string_data[:]
+                        #rla_qc_psal[ind, :] = psal_qc[ind, :]
+                        if ll_clim_psal:
+                            rla_clim_psal[ind, :] = clim_psal[ind, :]
+                        #rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] < 1, 9, 
+                        #                               np.where(rla_qc_psal[ind, :] == 1, 0, 9))
+                        rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] < 1, 9, rla_qc_psal[ind, :])
+                        rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] == 1, 0, rla_qc_psal[ind, :])
+                        rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] > 1, 9, rla_qc_psal[ind, :])
                 rla_prof[ind, :] = ds[var_prof][ind, :].values
                 if ll_pres:
                     rla_pres[ind, :] = ds[var_pres][ind, :].values
@@ -581,19 +661,19 @@ class loaderNCcorio_tac(inputdata_loader):
             rla_qc[:, ind, :] =  results_qc[varname]
             if ll_clim_temp_adjust or ll_clim_temp:
                 rla_clim[:, ind, :] = results[f'clim_{varname}']
-        # Replace nan by missing valu] = rla_clime
+        # Replace nan by missing value
         rla_obs = np.where(rla_obs == np.nan, self.fillvalue_dep, rla_obs)
         rla_qc = np.where(rla_qc == np.nan, self.fillvalue_dep, rla_qc)
         rla_obs = np.nan_to_num(rla_obs, nan=self.fillvalue_dep)
         if ll_clim_temp_adjust or ll_clim_temp:
             rla_clim = np.nan_to_num(rla_clim, nan=self.fillvalue_dep)
         rla_qc = np.nan_to_num(rla_qc, nan=self.fillvalue_dep)
-        ## Modifs CHR
         param_dict['qc'] = rla_qc
-        if 'LONGITUDE' in variable_names:
-            rla_lon = ds['LONGITUDE'].values
-        if 'LATITUDE' in variable_names:
-            rla_lat =  ds['LATITUDE'].values
+        ## Filtered unrealistic value with 0 for longitude and latitude
+        if sum_lat_2  <  -90.0 or sum_lat_2 > 90.0 or sum_lat_2 == 0.0:
+            rla_lon[:] = np.nan
+            rla_lat[:] = np.nan
+            self.log.info(f'Missing values for lat {sum_lat} for {filename}')
         list_mod = param_dict['varname']
         if len(set(self.list_psal).intersection(param_dict['varname'])) == 1:
             list_psal =  list(set.intersection(set(self.list_psal), set(param_dict['varname'])))
@@ -612,6 +692,9 @@ class loaderNCcorio_tac(inputdata_loader):
         param_dict['varname_select'] = list_mod
         if ll_clim_temp_adjust or ll_clim_temp:
             param_dict['LEVITUS_clim'] = rla_clim
+
+        ds.close()
+        del ds
 
         return np.float32(rla_lon), np.float32(rla_lat), np.float32(rla_obs),\
                n_profiles, np.float32(rla_prof), tab_dims, param_dict,  _FillValue
@@ -732,6 +815,7 @@ class LoaderNCcorio(inputdata_loader):
         ## Qc control  
         QCflag = QCcontroller(param_dict['data_type'],param_dict['data_origin']).factory().QCrun(filename, qc_level)
         param_dict['qc'] = QCflag
+        nc.close()
 
         return np.float32(rla_lon), np.float32(rla_lat), np.float32(rla_obs),\
                n_profiles, np.float32(rla_depth), tab_dims, param_dict,  _FillValue

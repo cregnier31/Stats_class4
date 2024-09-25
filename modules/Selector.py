@@ -214,6 +214,8 @@ class SelectListModelData(Selector):
         elif self.typemod == "pgs":
             self.dirmodel = param_dict['dirmodel_pgs']
             param_dict['suffix'] = "0.25deg_P1D-m"
+        elif self.typemod == "pgs_ai":
+            self.dirmodel = param_dict['dirmodel_pgs']
         elif self.typemod == "allege" or "allege_new" \
              or self.typemod == "allege_now":
             self.dirmodel = param_dict['dirmodel_light']
@@ -230,6 +232,8 @@ class SelectListModelData(Selector):
         lead_new2 = param_dict['lead_int2']
         cl_config_use = param_dict['cl_config']
         ll_single = False
+        self.log.debug(f"Time {time=}")
+        self.log.debug(f"-----------------------")
         if  time == 'forecast':
             if param_dict['cl_config'][0:6] == 'BIOMER':
                 lead_new = [time[0]+time[4]+time[6:8]]
@@ -619,11 +623,19 @@ class SelectListModelData(Selector):
                        list_file_tmp = glob(dirmodel_new+"/*"+'M'+str(month)+"*nc")
                        print(list_file_tmp)
                     else:
-                        for i in range(len(param_dict['gridtype'])):
-                            list_file_tmp = glob(dirmodel_new+"/"+str(year)+'/'+str(month)+'/*'+\
-                            param_dict['suffix']+'-'+dateval+".nc")
+                        #for i in range(len(param_dict['gridtype'])):
+                        #    list_file_tmp = glob(dirmodel_new+"/"+str(year)+'/'+str(month)+'/*'+\
+                        #    param_dict['suffix']+'-'+dateval+".nc")
+                        for i, gridname in enumerate(param_dict['gridtype']):
+                            template = f"{dirmodel_new}{directory}/{self.modele}_{param_dict['daily_pref']}_{dateval}*{gridname}*nc"
+                            list_file_tmp = glob(template)
                             list_file.extend(list_file_tmp)
-                    self.log.info(f'{list_file=}')
+                    self.log.debug(f'{list_file=}')
+                elif self.typemod == "pgs_ai":
+                    list_file = []
+                    for i, gridname in enumerate(param_dict['gridtype']):
+                        list_file_tmp = glob(f"{self.dirmodel}{directory}/{self.modele}_{dateval}_{gridname}.nc")
+                        list_file.extend(list_file_tmp)
                 else:
                     self.log.debug('other directory %s' % (dirmodel_new+'/'+year+'/'+month))
                     list_file = glob(dirmodel_new+"/"+year+'/'+month+'/'+self.modele+"_"+ \

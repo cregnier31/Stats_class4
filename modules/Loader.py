@@ -302,7 +302,7 @@ class InputLoader(Loader):
         cl_schedule = 'd'
         cl_data_id = ""
         list_LEAD_TIME = []
-        list_inputtype = ['pgs', 'pgn', 'allege','2ease', 'allege_new', 'allege_now']
+        list_inputtype = ['pgs', 'pgs_ai', 'pgn', 'allege','2ease', 'allege_new', 'allege_now']
         #try:
         #    opts, args = getopt.getopt(options, "h", [keywords])
         #except getopt.GetoptError:
@@ -374,6 +374,7 @@ class InputLoader(Loader):
                 list_LEAD_TIME.append('best_estimate')
             elif o in ['--fcst']:
                 list_LEAD_TIME.append('forecast')
+                ll_forecast = True
             elif o in ['--pers']:
                 list_LEAD_TIME.append('persistence')
             elif o in ['--bathy']:
@@ -393,7 +394,7 @@ class InputLoader(Loader):
             log = Logger(f"TEP_CLASS4_{cl_data}_{cl_config}",dirlog=dirlog).run(level)
         else:
             log = Logger(f"TEP_CLASS4_{cl_data}_{cl_config}").run(level)
-        log.info("Loglevel {}".format(log))
+        log.debug("Loglevel {}".format(log))
         list_var.append(ll_date1)
         list_var.append(ll_date2)
         list_var.append(ll_daterun)
@@ -506,9 +507,9 @@ class InputLoader(Loader):
         log.debug("Nombre de proc %i" %(nb_proc))
         log.debug("Type des fichiers d'entree %s " %(cl_typemod))
         log.debug("Schedule %s " %(cl_schedule))
-        log.info("Dates %s %s " %(date1,date2))
-        log.info("Datatype %s " %(cl_data))
-        log.info("Daterun %s " %(cl_daterun))
+        log.debug("Dates %s %s " %(date1,date2))
+        log.debug("Datatype %s " %(cl_data))
+        log.debug("Daterun %s " %(cl_daterun))
         # Create dictionnary
         param_dict={}
         param_dict['date1'] = date1
@@ -525,6 +526,7 @@ class InputLoader(Loader):
         param_dict['dask'] = dask
         param_dict['lead_time'] = list_LEAD_TIME
         param_dict['lead_int'] = self.lead_int
+        param_dict['fcst_mode'] = ll_forecast
         if ll_input : param_dict['dirdata'] = dirinput
         if ll_output : param_dict['diroutput'] =  diroutput
         if ll_dirlog : param_dict['dirlog'] =  dirlog

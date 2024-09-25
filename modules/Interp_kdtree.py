@@ -93,9 +93,8 @@ class interp_KDtree(object):
             else:
                 first_step = 1.
                 global_step = 2.
-                #self.log.debug('Only one step')
-                self.log.info('Only one step')
                 ll_onevalue = True
+                self.log.debug('Only one step')
 
         # 1D cases
         if  lon_out.ndim  == 0 or ll_onevalue == True:

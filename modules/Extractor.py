@@ -20,7 +20,7 @@ sys.path.append(dirname(__file__))
 from nco.nco import Nco
 import xarray as xr
 from netCDF4 import Dataset
-#from nco import Nco
+import subprocess
 
 ##############################################################
 # C.REGNIER Juin 2014
@@ -54,8 +54,8 @@ class Extractor(object):
         if type == "CORIOLIS_RAW": return Extract_corio_raw(self.log)
         if type == "ENS": return ExtractEns(self.log)
         if type == "ARMOR_CO" or type == "ARMOR_AR" or type == "AR_": return Extract_ARMOR(self.log)
-        if type == "GODAE_UV": return Extract_UVDrifters(self.log)  
-        if type == "GODAE_UV_filtr": return Extract_UVDrifters_filtr(self.log)  
+        if type == "GODAE_UV": return Extract_UVDrifters(self.log)
+        if type == "GODAE_UV_filtr": return Extract_UVDrifters_filtr(self.log)
         if type == "GODAE": return Extract_GODAE(self.log)
         if type == "ASCII": return Extract_ASCII(self.log)
         if type == "L3m": return Extract_genericData(self.log)
@@ -456,7 +456,7 @@ class Extract_cora5_2(Extractor):
             liste_file=glob(frame)
             self.log.debug(f'{frame=}')
             self.log.info(f'Liste file CORA {liste_file}')
-  
+
             for new_file in liste_file :
                 try :
                     filename=os.path.basename(new_file)
@@ -503,10 +503,11 @@ class Extract_cora5_2(Extractor):
         #type_obs = "TS_MO"
        # type_obs = "TS_DB"
       #  type_obs = "XX"
-       # type_obs = "PR_GL"
+        #type_obs = "PR_GL"
         #type_obs = "PR_CT"
         #type_obs = "TS_FB"
         type_obs = "*"
+        #type_obs = "PR_BO"
         #type_obs = "PR_XB"
         liste_file = glob(f"{param_dict['dirdata']}/{YEAR}/*{dateval}*{type_obs}*.nc")
         #liste_file = glob(param_dict['dirdata']+'/'+YEAR+'/*'+dateval+'*.nc')
@@ -515,8 +516,12 @@ class Extract_cora5_2(Extractor):
             try:
                 filename = os.path.basename(file)
                 if not os.path.exists(param_dict['dirwork']+filename):
-                    shutil.copy(file, param_dict['dirwork']+filename)
-                    self.log.info(f"Copy file {file}")
+                    self.log.debug(f"Copy file {file}")
+                    if os.path.exists(file) and os.access(file, os.R_OK):
+                        shutil.copy(file, param_dict['dirwork']+filename)
+                    else:
+                        print(f"Source file {file} is not accessible.")
+                        sys.exit(1)
                 liste_tot.append(param_dict['dirwork']+filename)
             except IOError as e:
                 print ("I/O error({0}): {1}".format(e.errno, e.strerror))
@@ -1010,6 +1015,14 @@ class Extract_GODAE(Extractor):
     def __init__(self, log):
         self.log = log
 
+    def is_netcdf4_classic(self, file_path):
+        try:
+            output = subprocess.check_output(['ncdump', '-k', file_path], text=True)
+            return 'classic' in output
+        except subprocess.CalledProcessError as e:
+            print(f"An error occurred while checking the file type: {e}")
+            return False
+
     def run(self,daterun,dirdata,dirtmp,typedata,template,nb_fcst):
 
         if typedata != "SLA" and  typedata != "SST" and typedata != "profile" \
@@ -1022,8 +1035,8 @@ class Extract_GODAE(Extractor):
         nco = Nco()
         #while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
         #    dateval=SyDate.__str__(valeurj)
-        self.log.info('Day  %s ' % (daterun)) 
-        if typedata ==  "AMSR" : 
+        self.log.info('Day  %s ' % (daterun))
+        if typedata ==  "AMSR" :
             liste_file=glob(dirdata+'/*'+daterun+'*.nc')
         else :
             try:
@@ -1046,14 +1059,39 @@ class Extract_GODAE(Extractor):
                         filename=re.sub(template_tmp, template, filename)
                     # Copy extracted value of GODAE file with nco module
                     if typedata != "aice" and typedata != 'current':
-                        ## Change numfcts dim
-                        options = []
-                        options.extend(['-h','-O','-a','numfcsts'])
-                        self.log.debug(f"Write output file {dirtmp}{filename}")
                         # If it doesn't exist, create it
                         if not os.path.exists(dirtmp):
                             os.makedirs(dirtmp)
-                        nco.ncwa(input=new_file, output=dirtmp+filename, fortran=True ,options=options)
+                        uncompressed_filename = re.sub(r'(\.nc)$', '_uncompressed.nc', filename)
+                        uncompressed_file_path = os.path.join(dirtmp, uncompressed_filename)
+                        # Define nco options
+                        options = []
+                        options.extend(['-h', '-O', '-a', 'numfcsts'])
+                        # Change numfcts dim
+                        # Test input file
+                        if self.is_netcdf4_classic(new_file):
+                            self.log.info(f"Write output file netcdf4 classical {dirtmp}{filename}")
+                            try:
+                                subprocess.run([
+                                    'nccopy', '-d0',
+                                    new_file,
+                                    uncompressed_file_path
+                                ], check=True)
+                            except subprocess.CalledProcessError as e:
+                                self.log.error(f"An error occurred during decompression: {e}")
+                                raise
+                            try:
+                                nco.ncwa(input=uncompressed_file_path, output=os.path.join(dirtmp, filename), options=options)
+                            except Exception as e:
+                                self.log.error(f"An error occurred: {e}")
+                                raise
+                            finally:
+                                # Remove the uncompressed file
+                                if os.path.exists(uncompressed_file_path):
+                                    os.remove(uncompressed_file_path)
+                        else:
+                            self.log.info(f"Write output file netcdf4 {dirtmp}{filename}")
+                            nco.ncwa(input=new_file, output=dirtmp+filename, fortran=True ,options=options)
                         nc = netCDF4.Dataset(dirtmp+filename, 'r')
                         variables = nc.variables.keys()
                         if 'modeljuld' in variables and nb_fcst>0:

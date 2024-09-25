@@ -10,7 +10,7 @@ class Logger(object):
 
     """ Class Logger : define level of log with a number """
 
-    def __init__(self, name, stream='logfile', dirlog='') :
+    def __init__(self, name, stream='', dirlog='') :
         self.name=name
         self.dirlog = dirlog
         current_datetime = datetime.datetime.now()
@@ -32,7 +32,7 @@ class Logger(object):
                 )
         self.stream = stream
         if stream == 'logfile':
-            print('Add logfile')
+            print(f'Add logfile {self.logname}')
             self.stream = logging.FileHandler(self.logname)
         else:
             self.stream = logging.StreamHandler()
