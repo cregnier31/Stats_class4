@@ -143,6 +143,7 @@ class SelectListModelData(Selector):
         self.list_ice=['sit-legos','snow-legos','sivolu','snvolu','siconc','kaku',
                        'kaku_unc','kakuyear','kakuyear_unc','kakuyearsh','kakuyearsh_unc',
                        'kakush','kakush_unc']
+        self.list_daily = ['1dAV', '1d-m']
 
     def set_gridtype(self, param_dict):
         self.data_type = param_dict['data_type']
@@ -335,13 +336,13 @@ class SelectListModelData(Selector):
             if param_dict['data_origin'] == 'GLOBCOLOUR' and directory != 'clim':
                 if directory == 'hdct' and param_dict['daily_pref'] == '7dAV':
                     dirmodel_new = param_dict['dirmodel']+"HINDCAST/"
-                elif directory == 'hdct' and param_dict['daily_pref'] == '1dAV':
+                #elif directory == 'hdct' and param_dict['daily_pref'] == '1dAV':
+                elif directory == 'hdct' and param_dict['daily_pref'] in self.list_daily:
                     dirmodel_new = param_dict['dirmodel']
                 elif directory == 'fcst' and param_dict['daily_pref'] == '7dAV':
                     dirmodel_new = param_dict['dirmodel']+"FORECAST/"
-                elif directory == 'fcst' and param_dict['daily_pref'] == '1dAV':
+                elif directory == 'fcst' and param_dict['daily_pref'] in self.list_daily:
                     self.log.debug('define forecast path')
-                    sys.exit()
             else:
                 if directory == 'hdct':
                     if param_dict['daily_pref'] == '7dAV':
@@ -471,7 +472,7 @@ class SelectListModelData(Selector):
                     else:
                         template = '1998'+str(datev.month)+str(datev.day)
                     list_file = glob(dirmodel_new+template+"*.nc")
-            elif param_dict['data_origin'] == 'GLOBCOLOUR' and param_dict['daily_pref'] == '1dAV':
+            elif param_dict['data_origin'] == 'GLOBCOLOUR' and param_dict['daily_pref'] in self.list_daily:
                 if directory == 'clim':
                     template = '1998'+month+day
                     # Code Monthly case  template = '1998'+month
@@ -480,8 +481,8 @@ class SelectListModelData(Selector):
                 else:
                     #directory = dirmodel_new+'/'+year+'/'+month+'/'
                     dir_input = dirmodel_new
-                    list_file = glob(dir_input+self.modele+"_"+ \
-                    param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['varname'][0]+"*.nc")
+                    list_file = glob(dir_input+self.modele+"_*"+ \
+                    param_dict['daily_pref']+"_"+dateval+"*_*3DT-"+param_dict['varname'][0]+"_*.nc")
                     if not list_file:
                         if datev.month < 9:
                             month2 = '0' + str(datev.month+1)

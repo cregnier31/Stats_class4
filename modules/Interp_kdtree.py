@@ -76,13 +76,13 @@ class interp_KDtree(object):
                     else:
                         lon_out_tmp = lon_out
                         lat_out_tmp = lat_out
-                    global_step = float("{0:.6f}".format((
+                    global_step = float("{0:.3f}".format((
                         lon_out_tmp[len(lon_out_tmp)-1]-
                         lon_out_tmp[0])/(len(lon_out_tmp)-1)))
                     global_step_lat = float("{0:.3f}".format((
                         lat_out_tmp[len(lat_out_tmp)-1]-
                         lat_out_tmp[0])/(len(lat_out_tmp)-1)))
-                    first_step = float("{0:.6f}".format(
+                    first_step = float("{0:.3f}".format(
                         lon_out_tmp[1]-lon_out_tmp[0]))
                     first_step_lat = float("{0:.3f}".format(
                         lat_out_tmp[1]-lat_out_tmp[0]))

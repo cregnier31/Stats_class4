@@ -181,7 +181,7 @@ class InputDataLoader(Loader):
 
 class LoaderNCChloro(Loader):
     def __init__(self):
-        self.varname = 'CHL'
+        self.varname = ['CHL']
 
     def read_pos_and_value(self,filename):
         rla_lon, rla_lat, _FillValue, nc = \
@@ -202,7 +202,6 @@ class LoaderNCChloro(Loader):
             rla_depth = np.ndarray(shape=(nb_lats,nb_lons),dtype=float, order='F')
             rla_depth[:,:] = 0
         nc.close()
-
         return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, _FillValue
 
 class LoaderNCBioArgo(Loader):
@@ -578,7 +577,10 @@ class NmlLoader(Loader):
             param_dict['insitu_corr'] = db.get('GLOBAL', 'corr_pot')
         except:
             param_dict['insitu_corr'] = False
-
+        try:
+            param_dict['Design_GODAE_file'] = db.get('GLOBAL', 'Design_GODAE_file')
+        except:
+            param_dict['Design_GODAE_file'] = False
         param_dict['dirmodel'] = db.get('input_dir', 'DATA_IN')
         param_dict['nb_level'] = int(db.get('GLOBAL', 'LEVELS'))
         param_dict['zoom'] = int(db.get('GLOBAL', 'zoom'))
@@ -744,7 +746,7 @@ class NmlLoader(Loader):
             param_dict['coordinates_SMOC'] = db.get('static','fic_coordinates_SMOC')
         except:
             param_dict['coordinates_SMOC'] = ""
-        try: 
+        try:
             param_dict['bathy_file'] = db.get('static','fic_bathy')
         except:
             param_dict['bathy_file'] = ""

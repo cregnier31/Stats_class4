@@ -96,7 +96,7 @@ class Interpolator(object):
         return w1, w2
 
     def read_input_modeldata(self, param_dict, date, leadtime, lead_int):
-        self.log.info(f"Selection of input model {param_dict['data_type']}")
+        self.log.info(f"Selection of input model {param_dict['data_type']} {param_dict['data_format']}")
         self.log.info(f"{leadtime=}")
         self.log.info('========================================================')
         self.list_input_file, self.ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], self.log).\
@@ -191,7 +191,6 @@ class Interpolator(object):
         self.read_input_modeldata(param_dict, date, leadtime, lead_int)
         ## Find input model files
         # Selection of the input model data
-        #self.log.info(f"Selection of input model {param_dict['data_type']}")
         #self.log.info('========================================================')
         #list_input_file, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], self.log).\
         #    factory("GLOBAL_INPUT_MODEL_DATA").run(param_dict, date, leadtime, lead_int)
@@ -351,6 +350,7 @@ class Interpolator(object):
                                         param_dict['cl_typemod'].upper()+'_idw' +
                                         str(nb_ptsinterp) + 'pt.p', file_out)
                 variable = []
+                #variable.append(param_dict['varname_select'][0].upper()+'_mean')
                 variable.append(param_dict['varname_select'][0].upper()+'_mean')
                 nlon, nlat = self.search_dims(param_dict['coord_clim'])
                 tuple_coord = (nlon, nlat)
@@ -492,7 +492,8 @@ class Interpolator(object):
                if not ll_miss:
                   if len(np.unique(depth)) == 1:
                       index_time=0
-                      if key.lower() == "clim": index_time=find_index_month(date)-1
+                      #if key.lower() == "clim": index_time=find_index_month(date)-1
+                      if key.lower() == "clim" and param_dict['data_type'].lower() != 'chloro': index_time=find_index_month(date)-1
                       self.log.debug("Unique depth for all the observations")
                       if len(np.shape(depth)) == 1 :
                           depthval = depth[0]
@@ -945,7 +946,7 @@ class Interpolator(object):
 
         if len(var_in.shape) == 3:
             if ll_single:
-               var_in = var_in[time, :, :].values
+                var_in = var_in[time, :, :].values
             else:
                var_in1 = var_in[ind_depth1, :, :].values
                var_in2 = var_in[ind_depth2, :, :].values
