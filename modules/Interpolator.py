@@ -491,11 +491,11 @@ class Interpolator(object):
                               (str(end - start), " seconds ~~~~~~~~~~~~"))
 
             # Interp model file for different lead times
-            self.log.debug('Variable to interpolate {} '.format(variable))
+            self.log.debug(f'Variable to interpolate {variable}')
             tab_results = {}
             list_file = []
             list_file = self.list_input_file[key]
-            self.log.debug("Work on {} variables".format(len(variable)))
+            self.log.debug(f"Work on {len(variable)} variables")
             ## loop on variable
             for var in range(len(variable)):
                ## Get the correct file
@@ -601,6 +601,7 @@ class Interpolator(object):
                      self.log.debug("Profile case variable : {}".format(variable[var]))
                      self.log.debug(f"{depth=} {ind_max=} ")
                      self.log.debug(f"{tab_indexes=}")
+                     self.log.debug(f"{file_input=}")
                      #try:
                      if param_dict['data_format'] in self.list_insitu:
                          obs_tab = None
@@ -1111,7 +1112,7 @@ class Interpolator(object):
                 nc_file = Dataset(file,'r')
                 var_in = nc_file.variables[tab_var_clim[variable]][:, :, :]
             except:
-                self.log.error("Missing variable {} in file {}".format(variable, file))
+                self.log.error("Missing variable variable in file {file}")
                 raise
         else:
             try:
@@ -1119,9 +1120,14 @@ class Interpolator(object):
                 #dataset_in = xr.open_mfdataset(file,parallel=True,combine='by_coords')
                 nlons, nlats, ndepths, depth_mod = self.read_dims(dataset_in)
                 self.log.debug(f"{nlons, nlats, ndepths, depth_mod}")
-                var_in = dataset_in[variable][time, :, :, :].values
+                if len(np.shape(dataset_in[variable])) == 3:
+                    var_in = dataset_in[variable][:, :, :].values
+                elif len(np.shape(dataset_in[variable])) == 4:
+                    var_in = dataset_in[variable][time, :, :, :].values
+                else:
+                    self.log.error(f"Dimension not known {len(np.shape(dataset_in[variable]))}")
             except:
-                self.log.error("Missing variable {} in file {}".format(variable, file))
+                self.log.error(f"Problem with variable {variable} and file {file}")
                 raise
         end = timer()
         self.log.debug('~~~~~~~~ Time elapsed read files : {} {}'.format

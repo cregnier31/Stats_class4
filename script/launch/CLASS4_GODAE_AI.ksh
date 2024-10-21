@@ -9,14 +9,15 @@
 #SBATCH --time=06:00:00
 module load nco
 CONFIG="XIhe-local"
+CONFIG="GLONET"
 DATE1="20240104"
 DATE2="20240713"
 #DATE2="20240104"
-#typedata="profile"
 #typedata="DRIFTER"
 #typedata="DRIFTER_filtr"
 typedata="SST"
 typedata="SLA"
+typedata="profile"
 #typedata="profile"
 typemod="pgs_ai"
 dirlog="/home/cregnier/Gitlab/TEP_CLASS4_creation/script/log/"

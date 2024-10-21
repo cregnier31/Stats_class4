@@ -63,7 +63,6 @@ class Selector(object):
 
         jdatemin = SyDate(dateval)
         type_run = param_dict['type_run']
-        sys.exit(1)
 
 
     def find_next_month_year(self, dateval):
@@ -305,12 +304,39 @@ class SelectListModelData(Selector):
         self.leadtime = lead_fin
         return param_dict
 
+    def find_file(self, directory, modele, dateval, gridname_list):
+        # List of possible date formats
+        date_formats = [
+            dateval,  # Assuming it's already formatted correctly
+            f"{dateval[:4]}-{dateval[4:6]}-{dateval[6:]}",  # Convert %Y%m%d to %Y-%m-%d
+            f"{dateval[:2]}{dateval[2:4]}{dateval[4:]}",  # Convert %Y%m%d to %YYMMDD
+            f"{dateval[:4]}_{dateval[4:6]}_{dateval[6:]}"  # Convert to another variant if needed
+        ]
+
+        # Results to store all matching files
+        all_files = []
+        # Iterate over gridtypes and apply the date format logic
+        for i, gridname in enumerate(gridname_list):
+            # Iterate over different date formats and try to find matching files
+            for dateval_formatted in date_formats:
+                file_pattern = f"{directory}/{modele}_{dateval_formatted}_{gridname}.nc"
+                file_tmp = glob(file_pattern)
+                # If files are found, store them in the list
+                if file_tmp:
+                    all_files.extend(file_tmp)  # Add found files to the results
+        # Return all found files or an empty list if none are found
+        return all_files if all_files else None
+
     def run(self, param_dict, dateval, leadtime, lead_int):
         list = OrderedDict()
         self.log.debug(f'Param dict {param_dict}')
         param_dict = self.set_gridtype(param_dict)
         self.log.debug(f'Data type {self.data_type}')
         MONTH = str(dateval)[4:6]
+        YEAR = dateval[:4]
+        DAY = dateval[6:]
+        # Format the date with dashes
+        dateval_formatted = f'{YEAR}-{MONTH}-{DAY}'
         self.log.debug(f"Grid type {param_dict['gridtype']} {self.dirmodel=}")
         # loop on lead time
         new_naming = False
@@ -628,10 +654,11 @@ class SelectListModelData(Selector):
                             list_file.extend(list_file_tmp)
                     self.log.debug(f'{list_file=}')
                 elif self.typemod == "pgs_ai":
-                    list_file = []
-                    for i, gridname in enumerate(param_dict['gridtype']):
-                        list_file_tmp = glob(f"{self.dirmodel}{directory}/{self.modele}_{dateval}_{gridname}.nc")
-                        list_file.extend(list_file_tmp)
+                    list_file = self.find_file(f"{self.dirmodel}/{directory}",
+                                               self.modele,
+                                               dateval,
+                                               param_dict['gridtype'])
+                    self.log.debug(f'{list_file=}')
                 else:
                     self.log.debug('other directory %s' % (dirmodel_new+'/'+year+'/'+month))
                     list_file = glob(dirmodel_new+"/"+year+'/'+month+'/'+self.modele+"_"+ \
