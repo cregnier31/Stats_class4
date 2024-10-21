@@ -193,7 +193,7 @@ class LoaderNCChloro(inputdata_loader):
     def read_pos_and_value(self, filename, param_dict):
         rla_lon, rla_lat, _FillValue, nc = \
           self.generic_read_pos_and_value(filename, self.varname[0])
-        self.log.info(f"Rad filename {filename=}")
+        self.log.info(f"Read filename {filename=}")
         rla_value = nc.variables[self.varname[0]][0, :, :]
         nb_obs = int(np.shape(rla_value.flatten())[0])
         self.log.info(f"{nb_obs=}")
@@ -905,7 +905,6 @@ class LoaderNCgodae(inputdata_loader):
 
     def read_pos_and_value(self, filename, param_dict):
         param_dict['Design_GODAE_file'] = True
-        print(f'{self.varname}')
         rla_lon, rla_lat, _FillValue, nc = \
          self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][:]
@@ -1143,7 +1142,7 @@ class LoaderCMEMSDrifter_filtr(inputdata_loader):
         nb_obs = len(lon)
         _FillValue = np.nan
         tab_dims = {}
-        param_dict['Design_GODAE_file'] = False
+        param_dict['Design_GODAE_file'] = True
         #for dims in dimensions.keys():
         #    sizedim = dimensions[dims].size
         #    if dims == 'numfcsts':
@@ -1163,10 +1162,11 @@ class LoaderCMEMSDrifter(inputdata_loader):
         lon, lat, depth, depth_qc, time, u, v, ll_var,\
             u_qc, v_qc, wind_u, wind_v, current_test, current_test_qc,\
             position_qc, time_qc, dc_reference = read_drifter(filename)
+
         nb_obs = len(lon)
         _FillValue = np.nan
         tab_dims = {}
-        param_dict['Design_GODAE_file'] = False
+        param_dict['Design_GODAE_file'] = True
         #for dims in dimensions.keys():
         #    sizedim = dimensions[dims].size
         #    if dims == 'numfcsts':

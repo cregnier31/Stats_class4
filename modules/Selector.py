@@ -235,11 +235,12 @@ class SelectListModelData(Selector):
         self.log.debug(f"Time {time=}")
         self.log.debug(f"-----------------------")
         if  time == 'forecast':
-            if param_dict['cl_config'][0:6] == 'BIOMER':
-                lead_new = [time[0]+time[4]+time[6:8]]
-                self.log.debug("Config biomer")
-            else:
-                lead_new = [time[0]+time[4]+time[6:8]+element for element in lead_new ]
+            #if param_dict['cl_config'][0:6] == 'BIOMER':
+            #    lead_new = [time[0]+time[4]+time[6:8]]
+            #    self.log.debug("Config biomer")
+            #else:
+            #    lead_new = [time[0]+time[4]+time[6:8]+element for element in lead_new ]
+            lead_new = [time[0]+time[4]+time[6:8]+element for element in lead_new ]
             lead_fin = lead_new
         elif time == 'persistence':
             self.log.info(param_dict['lead_time'])
@@ -347,6 +348,7 @@ class SelectListModelData(Selector):
                     dirmodel_new = param_dict['dirmodel']+"FORECAST/"
                 elif directory == 'fcst' and param_dict['daily_pref'] in self.list_daily:
                     self.log.debug('define forecast path')
+                    dirmodel_new = param_dict['dirmodel']
             else:
                 if directory == 'hdct':
                     if param_dict['daily_pref'] == '7dAV':
@@ -484,21 +486,30 @@ class SelectListModelData(Selector):
                     list_file = glob(dirmodel_new+"/"+template+"*.nc")
                 else:
                     #directory = dirmodel_new+'/'+year+'/'+month+'/'
-                    dir_input = dirmodel_new
-                    list_file = glob(dir_input+self.modele+"_*"+ \
-                    param_dict['daily_pref']+"_"+dateval+"*_*3DT-"+param_dict['varname'][0]+"_*.nc")
-                    if not list_file:
-                        if datev.month < 9:
-                            month2 = '0' + str(datev.month+1)
-                            year2 = str(datev.year)
-                        elif datev.month == 12:
-                            month2 = '01'
-                            year2 = str(datev.year+1)
-                        else:
-                            month2 = str(datev.month+1)
-                            year2 = str(datev.year)
-                        list_file = glob(dirmodel_new+"/"+year2+'/'+month2+'/'+self.modele+"_"+ \
-                        param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['varname'][0]+"*.nc")
+                    #dir_input = dirmodel_new
+                    #list_file = glob(dir_input+self.modele+"_*"+ \
+                    #param_dict['daily_pref']+"_"+dateval+"*_*3DT-"+param_dict['varname'][0]+"_*.nc")
+                    ##  To be defined CHR
+                    dirmodel_new = param_dict['dirmodel']
+                    list_file = []
+                    for i, gridname in enumerate(param_dict['gridtype']):
+                        template = f"{dirmodel_new}{directory}/{self.modele}_{param_dict['daily_pref']}_{dateval}*{gridname}*nc"
+                        self.log.debug(template)
+                        list_file_tmp = glob(template)
+                        list_file.extend(list_file_tmp)
+                    self.log.debug(f'{list_file=}')
+                    #if not list_file:
+                    #    if datev.month < 9:
+                    #        month2 = '0' + str(datev.month+1)
+                    #        year2 = str(datev.year)
+                    #    elif datev.month == 12:
+                    #        month2 = '01'
+                    #        year2 = str(datev.year+1)
+                    #    else:
+                    #        month2 = str(datev.month+1)
+                    #        year2 = str(datev.year)
+                    #    list_file = glob(dirmodel_new+"/"+year2+'/'+month2+'/'+self.modele+"_"+ \
+                    #    param_dict['daily_pref']+"_"+dateval+"*_*"+param_dict['varname'][0]+"*.nc")
             else:
                 if self.typemod == "pgn":
                     if directory == "clim":

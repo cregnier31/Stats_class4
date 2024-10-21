@@ -9,7 +9,7 @@ import dask
 
 __version__ = 0.1
 __date__ = "February 2019"
-__authors__ = "C.REGNIER & C.SZCZYPTA" 
+__authors__ = "C.REGNIER & C.SZCZYPTA"
 
 
 def read_mask_polar(params_conf):
@@ -215,6 +215,18 @@ def read_drifter(file):
     else:
         u = None ; v = None
         u_qc = None ; v_qc = None
+
+    if 'EWCT_WS' and 'NSCT_WS' in variables.keys():
+        ll_var_ws = True
+        u_ws = ncdata['EWCT_WS'].values
+        v_ws = ncdata['NSCT_WS'].values
+        u_ws_qc = ncdata['EWCT_WS_QC'].values
+        v_ws_qc = ncdata['NSCT_WS_QC'].values
+    else:
+        u_ws = None ; v_ws = None
+        u_ws_qc = None ; v_ws_qc = None
+
+
     if 'WSTN_MODEL' and 'WSTE_MODEL' in variables.keys():
         wind_v = ncdata['WSTN_MODEL'].values
         wind_u = ncdata['WSTE_MODEL'].values
@@ -263,6 +275,7 @@ def read_drifter_filt(file):
     ncdata = xr.open_dataset(file)
     variables = ncdata.data_vars
     ll_var = False
+    ll_var_ws = False
     if 'EWCT_FILTR' and 'NSCT_FILTR' in variables.keys():
         ll_var = True
         u_filtr = ncdata['EWCT_FILTR'].values
@@ -272,6 +285,18 @@ def read_drifter_filt(file):
     else:
         u_filtr = None ; v_filtr = None
         u_filtr_qc = None ; v_filtr_qc = None
+    
+    if 'EWCT_WS_FILTR' and 'NSCT_WS_FILTR' in variables.keys():
+        ll_var_ws = True
+        u_filtr_ws = ncdata['EWCT_WS_FILTR'].values
+        v_filtr_ws = ncdata['NSCT_WS_FILTR'].values
+        u_filtr_ws_qc = ncdata['EWCT_WS_FILTR_QC'].values
+        v_filtr_ws_qc = ncdata['NSCT_WS_FILTR_QC'].values
+    else:
+        u_filtr_ws = None ; v_filtr_ws = None
+        u_filtr_ws_qc = None ; v_filtr_ws_qc = None
+    
     return lon, lat, depth, depth_qc, time, u, v, u_filtr, v_filtr, ll_var,\
             u_qc, v_qc, u_filtr_qc, v_filtr_qc, wind_u, wind_v, current_test, current_test_qc,\
             position_qc, time_qc, dc_reference
+            # u_filtr_ws, v_filtr_ws, u_filtr_ws_qc, v_filtr_ws_qc

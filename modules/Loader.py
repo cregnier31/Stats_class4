@@ -29,6 +29,7 @@ from reader import *
 from ast import literal_eval
 from os.path import dirname
 from QCcontrol import QCcontroller
+import ast
 
 ##############################################################
 # C.REGNIER Juin 2014
@@ -580,9 +581,10 @@ class NmlLoader(Loader):
         except:
             param_dict['insitu_corr'] = False
         try:
-            param_dict['Design_GODAE_file'] = db.get('GLOBAL', 'Design_GODAE_file')
+            param_dict['Design_GODAE_file'] = ast.literal_eval(db.get('GLOBAL', 'Design_GODAE_file'))
         except:
             param_dict['Design_GODAE_file'] = False
+        # param_dict['Design_GODAE_file'] = db.get('GLOBAL', 'Design_GODAE_file')
         param_dict['dirmodel'] = db.get('input_dir', 'DATA_IN')
         param_dict['nb_level'] = int(db.get('GLOBAL', 'LEVELS'))
         param_dict['zoom'] = int(db.get('GLOBAL', 'zoom'))
@@ -760,7 +762,7 @@ class NmlLoader(Loader):
             param_dict['dirwork'] = param_dict['dirwork']
             param_dict['diroutput'] = param_dict['diroutput']
             date_ini = SyDate(str(param_dict['date1']))
-            if param_dict['prefix_data'] == "L3mCHL": param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
+            #if param_dict['prefix_data'] == "L3mCHL": param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
         else:
             param_dict['dirwork'] = param_dict['dirwork']
             param_dict['diroutput'] = param_dict['diroutput']

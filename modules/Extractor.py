@@ -322,8 +322,9 @@ class Extract_CHLORO(Extractor):
     def run_list(self, param_dict, dateval):
         liste_tot = []
         #liste_file = glob(param_dict['dirdata']+'/'+dateval+'*REP'+'*.nc')
+        self.log.info('Extract_CHLORO')
         liste_file = glob(param_dict['dirdata']+'/'+dateval+'*.nc')
-
+        self.log.info(f"{param_dict['dirdata']}/{dateval}'*.nc")
         if np.size(liste_file) > 0:
             liste_file = liste_file
         else:
@@ -665,6 +666,7 @@ class Extract_UVDrifters_filtr(Extractor):
         #nc_fid = Dataset(file_new, 'w', format='NETCDF4', locking=True)
         ## Filtered unrealistic values with longitude > 180°
         nc_file = xr.open_dataset(file, decode_times=False)
+        variables = nc_file.data_vars
         lon_obs  = nc_file['LONGITUDE_FILTR'].values
         lat_obs = nc_file['LATITUDE_FILTR'].values
         time_obs =  nc_file['TIME'].values
@@ -728,6 +730,13 @@ class Extract_UVDrifters_filtr(Extractor):
         nc_plateform.long_name = "Platform code"
         nc_plateform.standard_name = "platform"
 
+        nc_ws_qc  = nc_fid_rewrite.createVariable('windage_qc', 'i1',('numobs','numvars'),fill_value=self.fillvalue_b)
+        nc_ws_qc.long_name =  "Windage quality flag"
+        nc_ws_qc.valid_min = 0
+        nc_ws_qc.valid_max = 9
+        nc_ws_qc.flag_values = "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
+        nc_ws_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
+
         nc_time = nc_fid_rewrite.createVariable('obs_time', 'f8',('numobs'))
         nc_time.setncatts({'long_name': u"Time",\
                     'standard_name': u"time",\
@@ -743,6 +752,10 @@ class Extract_UVDrifters_filtr(Extractor):
         nc_time_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
         nc_obs = nc_fid_rewrite.createVariable('observation', 'f4',('numobs', 'numvars', 'numdeps'),fill_value=missing_value)
         nc_obs.setncatts({'long_name' : u"3-day filtered currents from in situ drifters",\
+                                        "units" : u"m s-1",\
+                                        'comment': u"3-day Lanczos filter" })
+        nc_ws = nc_fid_rewrite.createVariable('windage', 'f4',('numobs', 'numvars', 'numdeps'),fill_value=missing_value)
+        nc_ws.setncatts({'long_name' : u"wind slippage correction at the drog depth",\
                                         "units" : u"m s-1",\
                                         'comment': u"3-day Lanczos filter" })
         #variables = nc_file.data_vars
@@ -763,7 +776,25 @@ class Extract_UVDrifters_filtr(Extractor):
         v_obs_filt = v_obs_filt[mask]
         u_obs_qc = u_obs_qc[mask]
         v_obs_qc = v_obs_qc[mask]
-        nc_fid_rewrite.variables['latitude'][:] = lat_obs 
+        if 'EWCT_WS_FILTR' and 'NSCT_WS_FILTR' in variables.keys():
+            ll_var_ws = True
+            u_filtr_ws = nc_file['EWCT_WS_FILTR'].values
+            v_filtr_ws = nc_file['NSCT_WS_FILTR'].values
+            u_filtr_ws_qc = nc_file['EWCT_WS_FILTR_QC'].values
+            v_filtr_ws_qc = nc_file['NSCT_WS_FILTR_QC'].values
+            u_filtr_ws = u_filtr_ws[mask]
+            v_filtr_ws = v_filtr_ws[mask]
+            u_filtr_ws_qc = u_filtr_ws_qc[mask]
+            v_filtr_ws_qc = v_filtr_ws_qc[mask]
+        else:
+            u_filtr_ws = np.full(u_obs_filt.shape, np.nan)
+            v_filtr_ws = np.full(v_obs_filt.shape, np.nan)
+            u_filtr_ws_qc = np.copy(u_obs_qc)
+            v_filtr_ws_qc = np.copy(v_obs_qc)
+            u_filtr_ws_qc[:, :] = 9
+            v_filtr_ws_qc[:, :] = 9
+
+        nc_fid_rewrite.variables['latitude'][:] = lat_obs
         nc_fid_rewrite.variables['longitude'][:] = lon_obs
         nc_fid_rewrite.variables['obs_time'][:] = time_obs
         nc_fid_rewrite.variables['time_qc'][:] = time_obs_qc
@@ -776,6 +807,10 @@ class Extract_UVDrifters_filtr(Extractor):
         nc_fid_rewrite.variables['observation'][:,1,:] = v_obs_filt[:,:]
         nc_fid_rewrite.variables['observation_qc'][:,0] = u_obs_qc[:,:]
         nc_fid_rewrite.variables['observation_qc'][:,1] = v_obs_qc[:,:]
+        nc_fid_rewrite.variables['windage'][:,0,:] = u_filtr_ws[:,:]
+        nc_fid_rewrite.variables['windage'][:,1,:] = v_filtr_ws[:,:]
+        nc_fid_rewrite.variables['windage_qc'][:,0] = u_filtr_ws_qc
+        nc_fid_rewrite.variables['windage_qc'][:,1] = v_filtr_ws_qc
 
         # Add global attributs
         nc_fid_rewrite.institution = 'MERCATOR OCEAN'
@@ -835,6 +870,7 @@ class Extract_UVDrifters(Extractor):
         # Open Dataset
         self.log.info("Open file {}".format(file))
         nc_file = xr.open_dataset(file, decode_times=False)
+        variables = nc_file.data_vars
         # Create File
         self.log.info("Write new file {}".format(file_new))
         self.nb_fcst = nb_fcst
@@ -884,6 +920,13 @@ class Extract_UVDrifters(Extractor):
         nc_plateform.long_name = "Platform code"
         nc_plateform.standard_name = "platform"
 
+        nc_ws_qc  = nc_fid.createVariable('windage_qc', 'i1',('numobs','numvars'),fill_value=self.fillvalue_b)
+        nc_ws_qc.long_name =  "Windage quality flag"
+        nc_ws_qc.valid_min = 0
+        nc_ws_qc.valid_max = 9
+        nc_ws_qc.flag_values = "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
+        nc_ws_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
+
         nc_time = nc_fid.createVariable('obs_time', 'f8',('numobs'))
         nc_time.setncatts({'long_name': u"Time",\
                     'standard_name': u"time",\
@@ -903,6 +946,10 @@ class Extract_UVDrifters(Extractor):
         nc_obs = nc_fid.createVariable('observation', 'f4',('numobs', 'numvars', 'numdeps'),fill_value=missing_value)
         nc_obs.setncatts({'long_name' : u"currents from in situ drifters",\
                                         "units" : u"m s-1" })
+        nc_ws = nc_fid.createVariable('windage', 'f4',('numobs', 'numvars', 'numdeps'),fill_value=missing_value)
+        nc_ws.setncatts({'long_name' : u"wind slippage correction at the drog depth",\
+                                        "units" : u"m s-1",\
+                                        'comment': u"raw data" })
         nc_var = nc_fid.createVariable('varname', 'S1',('numvars','string_length'))
         variables_vel = ['eastward_velocity ','northward_velocity']
         nc_var.setncatts({'long_name': u"name of variables"})
@@ -920,6 +967,7 @@ class Extract_UVDrifters(Extractor):
         u_obs_qc = nc_file['EWCT_QC'].values
         v_obs_qc = nc_file['NSCT_QC'].values 
         code_values_obs = nc_file['PLATFORM_CODE'].values
+        #variables = ncdata.data_vars
         mask = lon_obs <= 180
         lon_obs = lon_obs[mask]
         lat_obs = lat_obs[mask]
@@ -933,6 +981,26 @@ class Extract_UVDrifters(Extractor):
         v_obs = v_obs[mask]
         u_obs_qc = u_obs_qc[mask]
         v_obs_qc = v_obs_qc[mask]
+        ll_var_ws = False
+        if 'EWCT_WS' and 'NSCT_WS' in variables.keys():
+            ll_var_ws = True
+            print('Windage ok')
+            u_ws = nc_file['EWCT_WS'].values
+            v_ws = nc_file['NSCT_WS'].values
+            u_ws_qc = nc_file['EWCT_WS_QC'].values
+            v_ws_qc = nc_file['NSCT_WS_QC'].values
+            u_ws = u_ws[mask]
+            v_ws = v_ws[mask]
+            u_ws_qc = u_ws_qc[mask] 
+            v_ws_qc = v_ws_qc[mask]
+        else:
+            print('No Windage')
+            u_ws = np.full(u_obs.shape, np.nan)
+            v_ws = np.full(v_obs.shape, np.nan)
+            u_ws_qc = np.copy(u_obs_qc)
+            v_ws_qc = np.copy(v_obs_qc)
+            u_ws_qc[:, :] = 9
+            v_ws_qc[:, :] = 9
         nc_fid.variables['longitude'][:] = lon_obs 
         nc_fid.variables['latitude'][:] = lat_obs
         nc_fid.variables['obs_time'][:] = time_obs
@@ -960,6 +1028,10 @@ class Extract_UVDrifters(Extractor):
         nc_fid.variables['observation'][:,1,:] = v_obs[:,:]
         nc_fid.variables['observation_qc'][:,0] = u_obs_qc
         nc_fid.variables['observation_qc'][:,1] = v_obs_qc
+        nc_fid.variables['windage'][:,0,:] = u_ws[:,:]
+        nc_fid.variables['windage'][:,1,:] = v_ws[:,:]
+        nc_fid.variables['windage_qc'][:,0] = u_ws_qc
+        nc_fid.variables['windage_qc'][:,1] = v_ws_qc
 
         # Add global attributs
         nc_fid.institution = 'MERCATOR OCEAN'

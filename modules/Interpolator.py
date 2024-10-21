@@ -257,9 +257,13 @@ class Interpolator(object):
         self.log.debug("---------------------------------")
         if self.nb_fcst > 0:
             if 'nb_fcsts' not in tab_dims.keys():
+                ## CHR add option for BIO CHL 2D files
                 nb_fcst = len(param_dict['lead_int'])
-                fcst_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst, nb_profs),
-                                      dtype=float, order='F')
+                if param_dict['data_origin'] == "GLOBCOLOUR":
+                    fcst_tab = np.ndarray(shape=(nb_obs, 1, nb_fcst, 1), dtype=float, order='F')
+                else:
+                    fcst_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst, nb_profs),
+                                          dtype=float, order='F')
             else:
                 fcst_tab = np.ndarray(shape=(nb_obs, len(variable), tab_dims['nb_fcsts'], nb_profs),
                                       dtype=float, order='F')
@@ -267,7 +271,10 @@ class Interpolator(object):
             ll_fcst = True
         else:
             if param_dict['fcst_mode']:
-                fcst_tab = np.ndarray(shape=(nb_obs, len(variable), tab_dims['nb_fcsts'], nb_profs),
+                if param_dict['data_origin'] == "GLOBCOLOUR":
+                    fcst_tab = np.ndarray(shape=(nb_obs, 1, 1, 1), dtype=float, order='F')
+                else:
+                    fcst_tab = np.ndarray(shape=(nb_obs, len(variable), tab_dims['nb_fcsts'], nb_profs),
                                       dtype=float, order='F')
                 fcst_tab[:, :, :, :] = self.missing_value
 
@@ -312,6 +319,7 @@ class Interpolator(object):
         ll_bathy = False
         tab_depth = {}
         tab_results = {}
+        indice = 0
 
         for i, key in enumerate(self.list_input_file.keys()):
             self.log.debug(f"Lead time {key}")
@@ -648,10 +656,23 @@ class Interpolator(object):
                        indice = int(key[4])
                    else:
                        indice = 0
-                   self.log.debug("Fead forecast indice %i " % (indice))
+                   self.log.debug(f"Fead forecast {var=} {indice=} {ll_uniq=}")
                    if ll_unique :
                        try:
                           fcst_tab[:, var, indice, 0] = interp_values
+                          #self.log.debug(f"Ok!!")
+                          #threshold = 1e35
+                          ## Filter out values greater than the threshold
+                          #filtered_data = interp_values[interp_values < threshold]
+                          #self.log.debug(f"Ok2!!")
+                          ## Find the maximum value in the filtered array
+                          #if filtered_data.size > 0:
+                          #     max_value = np.max(filtered_data)
+                          #     self.log.info(f"Max value Fead {var=} {indice=} {max_value}")
+                          #else:
+                          #    self.log.info(f"Max value  Fead nan")
+                          #self.log.info('-------------------------------')
+                          ###
                           if self.compute and var == len(variable)-1:
                              self.log.debug(f'Compute correction fcst {indice}')
                              fcst_tab[:, 0, indice, 0] = fcst_tab[:, 0, indice, 0] * \
@@ -664,6 +685,7 @@ class Interpolator(object):
                            self.log.debug(f"Error for the forecast variable {var} {indice} {data_file}")
                    else:
                        fcst_tab[:, var, indice, :] = interp_values
+                        ##
                elif key[0:4] == 'nwct':
                    indice = 0
                    self.log.debug("%s Persistence nwct indice  %i " %(key,indice))
@@ -782,12 +804,19 @@ class Interpolator(object):
                     lat_obs.shape[0], lon_obs.shape[0])
             tab_results['best_estimate'] = hdct_tab
         if ll_fcst:
-            if param_dict['data_origin'] == "GLOBCOLOUR":
-                fcst_tab = fcst_tab[:, 0, 0, 0].reshape(
+            self.log.debug(f"Forecast leadtime {indice} {ll_clim}")
+            if param_dict['data_origin'] == "GLOBCOLOUR" and not ll_clim:
+                fcst_tab = fcst_tab[:, 0, indice, 0].reshape(
                     lat_obs.shape[0], lon_obs.shape[0])
             tab_results['forecast'] = fcst_tab
         else:
             if param_dict['fcst_mode']:
+                if param_dict['data_origin'] == "GLOBCOLOUR" and not ll_clim:
+                    fcst_tab = fcst_tab[:, 0, indice, 0].reshape(
+                        lat_obs.shape[0], lon_obs.shape[0])
+                elif param_dict['data_origin'] == "GLOBCOLOUR" and ll_clim:
+                    fcst_tab = fcst_tab[:, 0, 0, 0].reshape(
+                        lat_obs.shape[0], lon_obs.shape[0])
                 tab_results['forecast'] = fcst_tab
         if ll_pers:
             tab_results['persistence'] = pers_tab
@@ -1061,7 +1090,7 @@ class Interpolator(object):
         variable_names_set = set(variable_names)
         list_lon = ['x', 'X', 'lon', 'LON', 'lons', 'longitude', 'LONGITUDE']
         list_lat = ['y', 'Y', 'lat', 'LAT', 'LATS', 'latitude', 'LATITUDE']
-        list_depth = ['deptht', 'depth', 'z', 'Z', 'DEPTH', 'd']
+        list_depth = ['deptht', 'depth', 'depthu', 'depthv', 'z', 'Z', 'DEPTH', 'd']
         try:
             tab_lon = { k: dimensions[k] for k in dimensions.keys() & set(list_lon)}
             #tab_lon = {k: dimensions.sizes[k] for k in dimensions.sizes.keys() & set(list_lon)}
