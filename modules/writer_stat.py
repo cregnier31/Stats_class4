@@ -10,6 +10,7 @@ from timeit import default_timer as timer
 import time
 import cl4errors as cl4err
 import pickle
+import warnings
 
 ########################################################
 #     Class Writer to write output file in NetCDF
@@ -73,6 +74,8 @@ class writer_stat():
 
     """ Class to write different type of file """
 
+    def __init__(self):
+        warnings.filterwarnings("ignore")
 
     def compute_percentile(self, nb_fcst, nb_layers, nb_vars, stat_bias, nb_obs, stat_percent, params_conf):
         stat_percent = _compute_percentile(nb_fcst, nb_layers, nb_vars, stat_bias, nb_obs, stat_percent, params_conf)

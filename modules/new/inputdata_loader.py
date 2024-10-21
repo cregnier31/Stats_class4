@@ -296,7 +296,7 @@ class loaderNCcorio_tac(inputdata_loader):
         return position
 
     def read_pos_and_value(self, filename, param_dict, qc_level=0):
-        self.log.info(f"Read pos and value {filename}")
+        self.log.debug(f"Read pos and value corio tac {filename}")
         ds = xr.open_dataset(filename)
         param_dict['Design_GODAE_file'] = True
         # Get the list of variable names

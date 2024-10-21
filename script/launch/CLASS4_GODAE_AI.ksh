@@ -8,17 +8,19 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --time=06:00:00
 module load nco
-CONFIG="GLO12V4-PGS"
-DATE1="20240701"
+CONFIG="XIhe-local"
+CONFIG="GLONET"
+DATE1="20240104"
 DATE2="20240713"
-#typedata="profile"
+#DATE2="20240104"
 #typedata="DRIFTER"
 #typedata="DRIFTER_filtr"
 typedata="SST"
 typedata="SLA"
 typedata="profile"
-typemod="pgs"
-dirlog="/home/ext/mr/smer/regnierc/SAVE/INSTALL/TEP_CLASS4_creation/script/log/"
+#typedata="profile"
+typemod="pgs_ai"
+dirlog="/home/cregnier/Gitlab/TEP_CLASS4_creation/script/log/"
 
 #srcdata="CMEMS_013_048"
 case $typedata in
