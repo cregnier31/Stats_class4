@@ -234,6 +234,7 @@ def read_drifter(file):
     #variables = ncdata.data_vars
     nc = netCDF4.Dataset(file, 'r')
     variables = nc.variables
+    #variables = ncdata.data_vars
     ll_var = False
     if 'EWCT' and 'NSCT' in variables.keys():
         ll_var = True

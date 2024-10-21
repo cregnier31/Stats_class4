@@ -11,8 +11,7 @@ import tarfile
 import netCDF4
 #import custom as c
 #from sydate import SyDate
-#from sytoolkit.sydate import SyDate
-from lib_pyt.libtools.sydate import SyDate
+from sytoolkit.sydate import SyDate
 from Logger import Logger
 from gz import ZipManipulator
 from os.path import dirname
@@ -99,12 +98,10 @@ class Extractor(object):
         liste_tot = []
         YEAR = dateval[0:4]
         liste_file = glob(param_dict['dirdata']+'/'+YEAR+'/*'+dateval+'*.nc')
-        self.log.debug(f"Search file {param_dict['dirdata']}/{YEAR}/{dateval}*nc")
         for file in liste_file:
             try:
                 filename = os.path.basename(file)
-                if not os.path.exists(param_dict['dirwork']+filename):
-                    shutil.copy(file, param_dict['dirwork']+filename)
+                shutil.copy(file, param_dict['dirwork']+filename)
                 liste_tot.append(param_dict['dirwork']+filename)
             except IOError as e:
                 print ("I/O error({0}): {1}".format(e.errno, e.strerror))
@@ -293,8 +290,7 @@ class Extract_BGC_ARGO(Extractor):
 
     def run_list(self, param_dict, dateval):
         liste_tot = []
-        self.log.info(f"Inside Extract_BGC_ARGO {dateval}")
-        liste_file = glob(f"{param_dict['dirdata']}/*{dateval[0:6]}*.nc")
+        liste_file = glob(param_dict['dirdata']+'/*/'+param_dict['prefix_data']+'*'+dateval+'*.nc')
         for file in liste_file:
             try:
                 filename = os.path.basename(file)
@@ -303,7 +299,7 @@ class Extract_BGC_ARGO(Extractor):
             except IOError as e:
                 self.log ("I/O error({0}): {1}".format(e.errno, e.strerror))
                 sys.exit(1)
-        self.log.info(f"liste {liste_tot}")
+
         return liste_tot
 
 
@@ -365,7 +361,7 @@ class Extract_corio_raw(Extractor):
             # Convert to date
             dateval=[SyDate.__str__(self.date.setfromjulian(int(valeurj))) for valeurj in v]
             ind=0
-            for val in dateval :
+            for val in dateval : 
                 if SyDate(val).tojulian() < 16189 :
                    self.log.error("Probleme  : %s %i  "%(val,ind))
                 else :
@@ -390,12 +386,12 @@ class Extract_corio_raw(Extractor):
             # Convert to date
             dateval=[SyDate.__str__(self.date.setfromjulian(int(valeurj))) for valeurj in v]
             ind=0
-            for val in dateval :
+            for val in dateval : 
                 if SyDate(val).tojulian() < 16189 :
-                    self.log.error("Probleme  : %s %i  "%(val,ind))
+                   self.log.error("Probleme  : %s %i  "%(val,ind))
                 else :
                     file_out=str(val)+'_'+frame+'_profile_'+str(ind)+'.nc'
-                    nco.ncks(input=file,output=dirtmp+file_out, fortran=True ,dimension=str(dimprof)+','+str(ind+1),options=options)
+                    nco.ncks(input=file,output=dirtmp+file_out, fortran=True ,dimension=str(dimprof)+','+str(ind+1),options=options)              
                     liste_tot.append(dirtmp+file_out)
                     # self.log.info('Day %s ' % (dateval))
                 ind+=1
@@ -415,7 +411,7 @@ class Extract_corio(Extractor):
         self.log.info('Day %s ' % (dateval))
         frame=param_dict['dir_data']+'/*'+dateval.strip()+'*.nc'
         liste_file=glob(frame)
-        self.log.info('Liste file %s ' % (liste_file))
+        self.log.info('Liste file %s ' % (liste_file)) 
         for new_file in liste_file :
             try :
                 filename=os.path.basename(new_file)
@@ -611,7 +607,7 @@ class Extract_UVDrifters_filtr(Extractor):
         self.log.info(f"Write new filtered file {file_new}")
         self.nb_fcst = nb_fcst
         self.nb_fcst2 = nb_fcst2
-        nc_fid = Dataset(file_new, 'w', format='NETCDF4', locking=True)
+        nc_fid = Dataset(file_new, 'w', format='NETCDF4')
         nc_fid.createDimension('numobs', None)
         nc_fid.createDimension('numvars', self.nb_vars)
         nc_fid.createDimension('numdeps', self.nb_depths)
@@ -652,6 +648,14 @@ class Extract_UVDrifters_filtr(Extractor):
         nc_obsfiltr_qc.valid_max = 9
         nc_obsfiltr_qc.flag_values = "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
         nc_obsfiltr_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
+
+        nc_ws_qc  = nc_fid.createVariable('windage_qc', 'i1',('numobs','numvars'),fill_value=self.fillvalue_b)
+        nc_ws_qc.long_name =  "Windage quality flag"
+        nc_ws_qc.valid_min = 0
+        nc_ws_qc.valid_max = 9
+        nc_ws_qc.flag_values = "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
+        nc_ws_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
+ 
         nc_plateform = nc_fid.createVariable('plateform_code','c',('numobs','string64'))
         nc_plateform.long_name = "Platform code"
         nc_plateform.standard_name = "platform"
@@ -675,28 +679,91 @@ class Extract_UVDrifters_filtr(Extractor):
         nc_obs.setncatts({'long_name' : u"3-day filtered currents from in situ drifters",\
                                         "units" : u"m s-1",\
                                         'comment': u"3-day Lanczos filter" })
+        nc_ws = nc_fid.createVariable('windage', 'f4',('numobs', 'numvars', 'numdeps'),fill_value=missing_value)
+        nc_ws.setncatts({'long_name' : u"wind slippage correction at the drog depth",\
+                                        "units" : u"m s-1",\
+                                        'comment': u"3-day Lanczos filter" })
         nc_file = xr.open_dataset(file, decode_times=False)
+        variables = nc_file.data_vars
         #variables = nc_file.data_vars
         nc_var = nc_fid.createVariable('varname', 'S1',('numvars','string_length'))
         variables_vel = ['eastward_velocity ','northward_velocity']
         nc_var.setncatts({'long_name': u"name of variables"})
         nc_var[:] = netCDF4.stringtochar(np.array(variables_vel, 'S'))
-        nc_fid.variables['latitude'][:] = nc_file['LATITUDE_FILTR'].values
-        nc_fid.variables['longitude'][:] = nc_file['LONGITUDE_FILTR'].values
-        nc_fid.variables['obs_time'][:] = nc_file['TIME'].values
-        nc_fid.variables['time_qc'][:] = nc_file['TIME_QC'].values
-        nc_fid.variables['position_qc'][:] = nc_file['POSITION_QC'].values
-        nc_fid.variables['depth'][:,:] = nc_file['DEPH'].values
-        nc_fid.variables['depth_qc'][:] = nc_file['DEPH_QC'].values
-        code_values = nc_file['PLATFORM_CODE'].values
-        code_values2 = [var.decode("utf-8") for var in code_values]
+        ## Filtered unrealistic values with longitude > 180°
+        lon_obs  = nc_file['LONGITUDE_FILTR'].values
+        lat_obs = nc_file['LATITUDE_FILTR'].values
+        time_obs =  nc_file['TIME'].values
+        time_obs_qc = nc_file['TIME_QC'].values
+        position_qc = nc_file['POSITION_QC'].values
+        depth_obs = nc_file['DEPH'].values
+        depth_obs_qc = nc_file['DEPH_QC'].values
+        code_values_obs = nc_file['PLATFORM_CODE'].values
+        u_obs_filt = nc_file['EWCT_FILTR'].values
+        v_obs_filt = nc_file['NSCT_FILTR'].values
+        u_obs_qc = nc_file['EWCT_FILTR_QC'].values
+        v_obs_qc = nc_file['NSCT_FILTR_QC'].values 
+        ll_var_ws = False
+
+        mask = lon_obs <= 180
+        lon_obs = lon_obs[mask]
+        lat_obs = lat_obs[mask]
+        time_obs = time_obs[mask]
+        time_obs_qc = time_obs_qc[mask]
+        position_qc = position_qc[mask]
+        depth_obs = depth_obs[mask]
+        depth_obs_qc = depth_obs_qc[mask]
+        code_values_obs = code_values_obs[mask]
+        u_obs_filt = u_obs_filt[mask]
+        v_obs_filt = v_obs_filt[mask]
+        u_obs_qc = u_obs_qc[mask]
+        v_obs_qc = v_obs_qc[mask]
+        if 'EWCT_WS_FILTR' and 'NSCT_WS_FILTR' in variables.keys():
+            ll_var_ws = True
+            print('Windage ok')
+            u_filtr_ws = nc_file['EWCT_WS_FILTR'].values
+            v_filtr_ws = nc_file['NSCT_WS_FILTR'].values
+            u_filtr_ws_qc = nc_file['EWCT_WS_FILTR_QC'].values
+            v_filtr_ws_qc = nc_file['NSCT_WS_FILTR_QC'].values
+            u_filtr_ws = u_filtr_ws[mask]
+            v_filtr_ws = v_filtr_ws[mask]
+            u_filtr_ws_qc = u_filtr_ws_qc[mask]
+            v_filtr_ws_qc = v_filtr_ws_qc[mask]
+        else:
+            u_filtr_ws = None ; v_filtr_ws = None
+            u_filtr_ws_qc = None ; v_filtr_ws_qc = None
+        #nc_fid.variables['latitude'][:] = nc_file['LATITUDE_FILTR'].values
+        #nc_fid.variables['longitude'][:] = nc_file['LONGITUDE_FILTR'].values
+        #nc_fid.variables['obs_time'][:] = nc_file['TIME'].values
+        #nc_fid.variables['time_qc'][:] = nc_file['TIME_QC'].values
+        #nc_fid.variables['position_qc'][:] = nc_file['POSITION_QC'].values
+        #nc_fid.variables['depth'][:,:] = nc_file['DEPH'].values
+        #nc_fid.variables['depth_qc'][:] = nc_file['DEPH_QC'].values
+        #code_values = nc_file['PLATFORM_CODE'].values
+        nc_fid.variables['latitude'][:] = lat_obs 
+        nc_fid.variables['longitude'][:] = lon_obs
+        nc_fid.variables['obs_time'][:] = time_obs
+        nc_fid.variables['time_qc'][:] = time_obs_qc
+        nc_fid.variables['position_qc'][:] = position_qc
+        nc_fid.variables['depth'][:,:] = depth_obs
+        nc_fid.variables['depth_qc'][:] = depth_obs_qc
+        code_values2 = [var.decode("utf-8") for var in code_values_obs]
         nc_fid.variables['plateform_code'][:] = code_values2
-        u_cur_filtr = nc_file['EWCT_FILTR'].values
-        v_cur_filtr = nc_file['NSCT_FILTR'].values
-        nc_fid.variables['observation'][:,0,:] = u_cur_filtr[:,:]
-        nc_fid.variables['observation'][:,1,:] = v_cur_filtr[:,:]
-        nc_fid.variables['observation_qc'][:,0] = nc_file['EWCT_FILTR_QC'].values
-        nc_fid.variables['observation_qc'][:,1] = nc_file['NSCT_FILTR_QC'].values
+        #u_cur_filtr = nc_file['EWCT_FILTR'].values
+        #v_cur_filtr = nc_file['NSCT_FILTR'].values
+        #nc_fid.variables['observation'][:,0,:] = u_cur_filtr[:,:]
+        #nc_fid.variables['observation'][:,1,:] = v_cur_filtr[:,:]
+        #nc_fid.variables['observation_qc'][:,0] = nc_file['EWCT_FILTR_QC'].values
+        #nc_fid.variables['observation_qc'][:,1] = nc_file['NSCT_FILTR_QC'].values
+        nc_fid.variables['observation'][:,0,:] = u_obs_filt[:,:]
+        nc_fid.variables['observation'][:,1,:] = v_obs_filt[:,:]
+        nc_fid.variables['observation_qc'][:,0] = u_obs_qc[:,:]
+        nc_fid.variables['observation_qc'][:,1] = v_obs_qc[:,:]
+        nc_fid.variables['windage'][:,0,:] = u_filtr_ws[:,:]
+        nc_fid.variables['windage'][:,1,:] = v_filtr_ws[:,:]
+        nc_fid.variables['windage_qc'][:,0] = u_filtr_ws_qc[:,:]
+        nc_fid.variables['windage_qc'][:,1] = v_filtr_ws_qc[:,:]
+
         # Add global attributs
         nc_fid.institution = 'MERCATOR OCEAN'
         nc_fid.contact = 'cregnier@mercator-ocean.fr'
@@ -706,16 +773,12 @@ class Extract_UVDrifters_filtr(Extractor):
         nc_fid.close()
         nc_file.close()
         nc_fid = Dataset(file_new, 'r+')
-
     def run_list(self,param_dict, daterun):
         liste_tot=[]
-        year = daterun[0:4]
-        month = daterun[4:6]
-        #liste_file=glob(param_dict['dirdata']+'/'+daterun[0:4]+'/*'+daterun+'*.nc')
-        liste_file=glob(param_dict['dirdata'] + '/' + year + '/' + month + '/*' + daterun+'*.nc')
+        liste_file=glob(param_dict['dirdata']+'/'+daterun[0:4]+'/*'+daterun+'*.nc')
         if not liste_file:
-            self.log.error(f"Missing Drifters files {param_dict['dirdata']}/{year}/{month}/*{daterun}*nc")
-            return []
+            self.log.error("Missing Drifters files {} {}".format(param_dict['dirdata'], daterun))
+            sys.exit(1)
         self.log.info('Liste file UV drifters {}'.format(liste_file))
         nb_fcst = len(param_dict['lead_int'])
         nb_fcst2 = len(param_dict['lead_int2'])
@@ -754,11 +817,12 @@ class Extract_UVDrifters(Extractor):
         # Open Dataset
         self.log.info("Open file {}".format(file))
         nc_file = xr.open_dataset(file, decode_times=False)
+        variables = nc_file.data_vars
         # Create File
         self.log.info("Write new file {}".format(file_new))
         self.nb_fcst = nb_fcst
         self.nb_fcst2 = nb_fcst2
-        nc_fid = Dataset(file_new, 'w', format='NETCDF4', locking=True)
+        nc_fid = Dataset(file_new, 'w', format='NETCDF4')
         nc_fid.createDimension('numobs', None)
         nc_fid.createDimension('numvars', self.nb_vars)
         nc_fid.createDimension('numdeps', self.nb_depths)
@@ -799,6 +863,13 @@ class Extract_UVDrifters(Extractor):
         nc_obs_qc.flag_values = "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
         nc_obs_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
         
+        nc_ws_qc  = nc_fid.createVariable('windage_qc', 'i1',('numobs','numvars'),fill_value=self.fillvalue_b)
+        nc_ws_qc.long_name =  "Windage quality flag"
+        nc_ws_qc.valid_min = 0
+        nc_ws_qc.valid_max = 9
+        nc_ws_qc.flag_values = "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
+        nc_ws_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
+         
         nc_plateform = nc_fid.createVariable('plateform_code','c',('numobs','string64'))
         nc_plateform.long_name = "Platform code"
         nc_plateform.standard_name = "platform"
@@ -822,26 +893,87 @@ class Extract_UVDrifters(Extractor):
         nc_obs = nc_fid.createVariable('observation', 'f4',('numobs', 'numvars', 'numdeps'),fill_value=missing_value)
         nc_obs.setncatts({'long_name' : u"currents from in situ drifters",\
                                         "units" : u"m s-1" })
+        nc_ws = nc_fid.createVariable('windage', 'f4',('numobs', 'numvars', 'numdeps'),fill_value=missing_value)
+        nc_ws.setncatts({'long_name' : u"wind slippage correction at the drog depth",\
+                                        "units" : u"m s-1",\
+                                        'comment': u"raw data" })
         nc_var = nc_fid.createVariable('varname', 'S1',('numvars','string_length'))
         variables_vel = ['eastward_velocity ','northward_velocity']
         nc_var.setncatts({'long_name': u"name of variables"})
         nc_var[:] = netCDF4.stringtochar(np.array(variables_vel, 'S'))
-        nc_fid.variables['longitude'][:] = nc_file['LONGITUDE'].values
-        nc_fid.variables['latitude'][:] = nc_file['LATITUDE'].values
-        nc_fid.variables['obs_time'][:] = nc_file['TIME'].values
-        nc_fid.variables['time_qc'][:] = nc_file['TIME_QC'].values
-        nc_fid.variables['position_qc'][:] = nc_file['POSITION_QC'].values
-        nc_fid.variables['depth'][:,:] = nc_file['DEPH'].values
-        nc_fid.variables['depth_qc'][:] = nc_file['DEPH_QC'].values
-        code_values = nc_file['PLATFORM_CODE'].values
-        code_values2 = [var.decode("utf-8") for var in code_values]
+        lon_obs  = nc_file['LONGITUDE'].values
+        lat_obs = nc_file['LATITUDE'].values
+        time_obs =  nc_file['TIME'].values
+        time_obs_qc = nc_file['TIME_QC'].values
+        position_qc = nc_file['POSITION_QC'].values
+        depth_obs = nc_file['DEPH'].values
+        depth_obs_qc = nc_file['DEPH_QC'].values
+        code_values_obs = nc_file['PLATFORM_CODE'].values
+        u_obs = nc_file['EWCT'].values
+        v_obs = nc_file['NSCT'].values
+        u_obs_qc = nc_file['EWCT_QC'].values
+        v_obs_qc = nc_file['NSCT_QC'].values 
+        code_values_obs = nc_file['PLATFORM_CODE'].values
+        #variables = ncdata.data_vars
+        ll_var_ws = False
+        if 'EWCT_WS' and 'NSCT_WS' in variables.keys():
+            ll_var_ws = True
+            print('Windage ok')
+            u_ws = nc_file['EWCT_WS'].values
+            v_ws = nc_file['NSCT_WS'].values
+            u_ws_qc = nc_file['EWCT_WS_QC'].values
+            v_ws_qc = nc_file['NSCT_WS_QC'].values
+        else:
+            u_ws = None ; v_ws = None
+            u_ws_qc = None ; v_ws_qc = None
+        mask = lon_obs <= 180
+        lon_obs = lon_obs[mask]
+        lat_obs = lat_obs[mask]
+        time_obs = time_obs[mask]
+        time_obs_qc = time_obs_qc[mask]
+        position_qc = position_qc[mask]
+        depth_obs = depth_obs[mask]
+        depth_obs_qc = depth_obs_qc[mask]
+        code_values_obs = code_values_obs[mask]
+        u_obs = u_obs[mask]
+        v_obs = v_obs[mask]
+        u_obs_qc = u_obs_qc[mask]
+        v_obs_qc = v_obs_qc[mask]
+        u_ws = u_ws[mask]
+        v_ws = v_ws[mask]
+        u_ws_qc = u_ws_qc[mask] 
+        v_ws_qc = v_ws_qc[mask]
+        nc_fid.variables['longitude'][:] = lon_obs 
+        nc_fid.variables['latitude'][:] = lat_obs
+        nc_fid.variables['obs_time'][:] = time_obs
+        nc_fid.variables['time_qc'][:] = time_obs_qc
+        nc_fid.variables['position_qc'][:] = position_qc
+        nc_fid.variables['depth'][:,:] = depth_obs
+        nc_fid.variables['depth_qc'][:] = depth_obs_qc 
+        #nc_fid.variables['longitude'][:] = nc_file['LONGITUDE'].values
+        #nc_fid.variables['latitude'][:] = nc_file['LATITUDE'].values
+        #nc_fid.variables['obs_time'][:] = nc_file['TIME'].values
+        #nc_fid.variables['time_qc'][:] = nc_file['TIME_QC'].values
+        #nc_fid.variables['position_qc'][:] = nc_file['POSITION_QC'].values
+        #nc_fid.variables['depth'][:,:] = nc_file['DEPH'].values
+        #nc_fid.variables['depth_qc'][:] = nc_file['DEPH_QC'].values
+        #code_values = nc_file['PLATFORM_CODE'].values
+        code_values2 = [var.decode("utf-8") for var in code_values_obs]
         nc_fid.variables['plateform_code'][:] = code_values2
-        u_cur = nc_file['EWCT'].values
-        v_cur = nc_file['NSCT'].values
-        nc_fid.variables['observation'][:,0,:] = u_cur[:,:]
-        nc_fid.variables['observation'][:,1,:] = v_cur[:,:]
-        nc_fid.variables['observation_qc'][:,0] = nc_file['EWCT_QC'].values
-        nc_fid.variables['observation_qc'][:,1] = nc_file['NSCT_QC'].values
+        #u_cur = nc_file['EWCT'].values
+        #v_cur = nc_file['NSCT'].values
+        #nc_fid.variables['observation'][:,0,:] = u_cur[:,:]
+        #nc_fid.variables['observation'][:,1,:] = v_cur[:,:]
+        #nc_fid.variables['observation_qc'][:,0] = nc_file['EWCT_QC'].values
+        #nc_fid.variables['observation_qc'][:,1] = nc_file['NSCT_QC'].values
+        nc_fid.variables['observation'][:,0,:] = u_obs[:,:]
+        nc_fid.variables['observation'][:,1,:] = v_obs[:,:]
+        nc_fid.variables['observation_qc'][:,0] = u_obs_qc
+        nc_fid.variables['observation_qc'][:,1] = v_obs_qc
+        nc_fid.variables['windage'][:,0,:] = u_ws[:,:]
+        nc_fid.variables['windage'][:,1,:] = v_ws[:,:]
+        nc_fid.variables['windage_qc'][:,0] = u_ws_qc
+        nc_fid.variables['windage_qc'][:,1] = v_ws_qc
 
         # Add global attributs
         nc_fid.institution = 'MERCATOR OCEAN'
@@ -863,13 +995,10 @@ class Extract_UVDrifters(Extractor):
 
     def run_list(self,param_dict, daterun):
         liste_tot=[]
-        #liste_file=glob(param_dict['dirdata']+'/'+daterun[0:4]+'/*'+daterun+'*.nc')
-        year = daterun[0:4]
-        month = daterun[4:6]
-        liste_file=glob(param_dict['dirdata'] + '/' + year + '/' + month + '/*' + daterun+'*.nc')
+        liste_file=glob(param_dict['dirdata']+'/'+daterun[0:4]+'/*'+daterun+'*.nc')
         if not liste_file:
             self.log.error("Missing Drifters files {} {}".format(param_dict['dirdata'], daterun))
-            return []
+            sys.exit(1)
         self.log.info('Liste file UV drifters {}'.format(liste_file))
         nb_fcst = len(param_dict['lead_int'])
         nb_fcst2 = len(param_dict['lead_int2'])
@@ -935,10 +1064,6 @@ class Extract_GODAE(Extractor):
                         ## Change numfcts dim
                         options = []
                         options.extend(['-h','-O','-a','numfcsts'])
-                        self.log.debug(f"Write output file {dirtmp}{filename}")
-                        # If it doesn't exist, create it
-                        if not os.path.exists(dirtmp):
-                            os.makedirs(dirtmp)
                         nco.ncwa(input=new_file, output=dirtmp+filename, fortran=True ,options=options)
                         nc = netCDF4.Dataset(dirtmp+filename, 'r')
                         variables = nc.variables.keys()
@@ -962,7 +1087,7 @@ class Extract_GODAE(Extractor):
                             options = []
                             options.extend(['-h','-O','-v','leadtime_new,leadtime'])
                             nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
-                        self.log.debug("add new dim ok {}".format(dirtmp+filename))
+                        self.log.info("add new dim ok {}".format(dirtmp+filename))
                     elif typedata == "current":
                         options = []
                         shutil.copy(dirdata+filename,dirtmp)
@@ -982,7 +1107,7 @@ class Extract_GODAE(Extractor):
                         nc.createVariable('varname','c',('numvars','string_length8'))
                         nc.variables['varname'][:]='ileadfra'
                         nc.close
-                    self.log.debug('Fichier extracted %s ' % (dirtmp+filename)) 
+                    self.log.info('Fichier extracted %s ' % (dirtmp+filename)) 
                     liste_tot.append(dirtmp+filename)
                     # Design output File
                     # Design_file('GODAE').run(dirtmp+filename)
