@@ -63,7 +63,7 @@ case $typedata in
 esac
 loglevel=1
 DIR_BIN="/data/rd_exchange/qualif/anaconda3/envs/env_py311/bin/"
-${DIR_BIN}python ../TEP_CLASS4_kdtree_new.py \
+${DIR_BIN}python ../TEP_CLASS4_kdtree_optim.py \
                  --config=${CONFIG} --date1=${DATE1} --date2=${DATE2} \
                  --src=${srcdata} --data=${typedata} --typemod=${typemod} \
                  --loglevel=${loglevel} ${options} --dirlog=${dirlog}
