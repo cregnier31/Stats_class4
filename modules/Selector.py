@@ -156,7 +156,7 @@ class SelectListModelData(Selector):
             param_dict['gridtype_clim'] = ["SAL"]
             param_dict['gridtype_light'] = ["SN.B"]
             param_dict['varname_clim'] = ["salinity"]
-        elif self.data_type.lower() == "sla":
+        elif self.data_type.lower() == "sla" or self.data_type.lower() == "sla-l3":
             param_dict['gridtype'] = [param_dict['grid2DT']]
             param_dict['gridtype_light'] = ["SLA.B"]
         elif self.data_type.lower() == "chloro":

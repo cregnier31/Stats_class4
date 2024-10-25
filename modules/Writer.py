@@ -43,6 +43,7 @@ class Writer():
                 'CORA5.2_NC_CORIO': {'code': 'INSITU_profile', 'varname':True, 'variable':'', 'defaults': {'name': 'In Situ profiles from CORA product INSITU_GLO_PHY_TS_DISCRETE_MY_013_001'}},
                 'SST_GODAE': {'code': 'SST_DB', 'varname':True, 'variable':'SST', 'defaults': {'name': 'SST Drifting buoy'}},
                 'SLA_GODAE': {'code': 'SLA_L3S', 'varname':True, 'variable':'SLA', 'defaults': {'name': 'SLA CMEMS L3S'}},
+                'SLA-L3_CMS': {'code': 'SLA-L3_CMS', 'varname':True, 'variable':'phy_l3_1hz', 'defaults': {'name': 'SLA CMEMS L3S_1hz'}},
                 'aice_GODAE': {'code': 'SEA_CONC', 'varname':False, 'variable':'aice', 'defaults': {'name': 'Sea ice concentration from AMSR2 brightness temperature'}},
                 'chloro_GLOBCOLOUR': {'code': 'CHLORO-A_L3S', 'variable':'chl', 'defaults': {'name': 'log10-chlorophyll A Satellite'}},
                 'SIT-legos': {'code': 'SEA_SIT', 'defaults': {'name': 'Sea ice thickness at 20 Hz from LEGOS'}},
@@ -596,6 +597,12 @@ class Writer():
             self.log.debug(f"{param_dict['cl_src']}")
             self.log.debug(f"{variable=}")
             list_file = glob(f"{param_dict['dirwork']}{frame}")
+            if not list_file:
+                frame = f"*{variable}*{dateval}*.nc"
+                list_file = glob(f"{param_dict['dirwork']}{frame}")
+            if not list_file:
+                self.log.error(f"Files are missing")
+                sys.exit(1)
             self.log.debug(f"{frame=}")
             self.log.debug(f"{param_dict['dirwork']}")
             self.log.debug(f"{list_file=}")
@@ -899,8 +906,9 @@ class Writer():
             nc_fid.createDimension('numvars', nparams)
         else:
             self.log.debug('numvars ok')
-        if 'numfcsts' not in list_dimensions:
-            self.log.debug("Creation numfcsts")
+        #if 'numfcsts' not in list_dimensions:
+        if nfcsts is not None and 'numfcsts' not in list_dimensions:
+            self.log.debug(f"Creation numfcsts {nfcsts}")
             nc_fid.createDimension('numfcsts', nfcsts)
 
     def write_output_frompickle(self, filename, tab_out, dateval, system, variable, ll_GODAE):
@@ -928,7 +936,10 @@ class Writer():
             self.log.debug("open ok")
             if 'varname' in tab_out.keys():
                 varname_data = tab_out['varname']
-            self.log.debug("Write write_output_frompickle")
+            else:
+                self.log.debug(f"varname_data not in tab_out")
+                sys.exit(1)
+            self.log.debug(f"Write write_output_frompickle {filename}")
             ll_varname = self.type_data.get(variable, {}).get('varname')
             if 'best_estimate' in list_keys : #and np.any(tab_out['best_estimate']):
                 nb_dims = len(np.shape((tab_out['best_estimate'])))
@@ -941,18 +952,19 @@ class Writer():
                                      nlevels=nlevels,
                                      nparams=nparams)
                 if ll_varname:
+                    ndim_int = 20
                     if 'varname' not in list_variables:
-                        ndim_int = 20
                         self.log.debug("Create varname")
                         #varname = nc_fid.createVariable('varname', 'S1', ('numvars', 'string_length20'))
                         varname = nc_fid.createVariable('varname', 'S1', ('numvars', 'string_length20'), zlib=True, complevel=4)
                         varname.setncatts({'long_name': u"Variable name"})
-                        self.log.debug(f'{varname_data=}')
+                        self.log.debug(f'{varname=}')
                         for i, var_name in enumerate(varname_data):
                             varname[i, :] = list(var_name.ljust(ndim_int))
                         self.log.debug(f'Add varname ok {filename}')
                     elif 'varname' in tab_out.keys():
                         for i, var_name in enumerate(varname_data):
+                            self.log.debug(f'Add varname{var_name} {ndim_int}')
                             nc_fid.variables['varname'][i, :] = list(var_name.ljust(ndim_int))
                         self.log.debug(f'Add varname ok {filename}')
 
@@ -963,7 +975,6 @@ class Writer():
                     hdct_tab = tab_out['best_estimate'][:, :]
                 self.log.info(f'Hindcast not empty {ll_GODAE}')
                 if 'best_estimate' not in list_variables:
-                    print(ll_GODAE)
                     if ll_GODAE is True:
                         self.log.info('Create Var GODAE')
                         nc_best = nc_fid.createVariable(
@@ -1057,9 +1068,10 @@ class Writer():
             ## Create observation variable
             if 'observation' in list_keys and np.any(tab_out['observation']):
                 obs_tab = tab_out['observation']
-                nprofs, nparams, nlevels = np.shape(tab_out['observation'])
+                if len(np.shape(obs_tab)) == 3:
+                    nprofs, nparams, nlevels = np.shape(tab_out['observation'])
+                    self.log.debug(f'Dimensions Observations {nprofs=} {nparams=} {nlevels=}')
                 self.log.debug('Observation not empty')
-                self.log.debug(f'Dimensions Observations {nprofs=} {nparams=} {nlevels=}')
                 if 'observation' not in list_variables:
                     nc_obs = nc_fid.createVariable(
                             'observation', 'f4', ('numobs', 'numvars', 'numdeps'),
@@ -1068,7 +1080,10 @@ class Writer():
                     nc_obs.setncatts(
                             {'long_name': u"Observation value"})
                 try:
-                    nc_fid.variables['observation'][:, :, :] = obs_tab[:, :, :]
+                    if len(np.shape(obs_tab)) == 1:
+                        nc_fid.variables['observation'][:, 0, 0] = obs_tab[:]
+                    else:
+                        nc_fid.variables['observation'][:, :, :] = obs_tab[:, :, :]
                 except ValueError as e:
                     raise BroadcastError(f"Error with observations: {e}")
 

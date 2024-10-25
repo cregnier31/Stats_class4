@@ -71,6 +71,7 @@ class Loader(object):
         if type == "bathymetrie": return bathy_coords()
         if type == "Legos_SIT": return read_Legos_SIT()
         if type == "2ease_coords": return ease_coords_Loader()
+        if type == "L3_SEALEVEL": return L3_SEALEVEL_Loader()
         assert 0, "Format not known: " + type
 
     def generic_read_pos_and_value(self,filename, varname):
@@ -561,7 +562,8 @@ class NmlLoader(Loader):
         param_dict['nml_dir'] = param_dict['dirhome']+'NAMELIST/'
         param_dict['dir_log'] = param_dict['dirhome']+'log/'
         # Add new parameters in the dictionnary
-        if param_dict['data_type'] == "SLA":
+        if 'sla' in param_dict['data_type'].lower(): 
+       # if param_dict['data_type'] == "SLA" :
             param_dict['cl_msshFile'] = db.get('static','cl_msshFile')
             param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
         param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
@@ -680,7 +682,7 @@ class NmlLoader(Loader):
         param_dict['template'] = param_dict['cl_conf'] + \
             '_'+param_dict['model_type'].lower()
         #param_dict['lead_time'] = db.get('input_dir', 'LEAD_TIME').split()
-        param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
+        #param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
         param_dict['coloc_rep'] = db.get('output_dir', 'DIRCOLOC')
         param_dict['gridtemp'] = db.get('GLOBAL', 'gridtemp')
         param_dict['gridsal'] = db.get('GLOBAL', 'gridsal')
@@ -727,8 +729,8 @@ class NmlLoader(Loader):
         except:
             param_dict['varname_tides'] = ""
         try:
-            param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT2').split()
-            param_dict['lead_int2'] = param_dict['lead_int']
+            param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
+            param_dict['lead_int2'] = param_dict['lead_int2']
         except:
             param_dict['lead_int2'] = ""
         try:
@@ -921,6 +923,36 @@ class LoaderSSSVessel(Loader):
         # Optional Read juld
         # variable='juld'
         # rla_juld= nc.variables[variable][:]
+
+
+class L3_SEALEVEL_Loader(Loader):
+
+    """ Loader for L3_SEALEVEL dataset """
+
+    def __init__(self):
+        self.varname = 'observation'
+
+    def read_pos(self,filename):
+        nc = netCDF4.Dataset(filename,'r')
+        variable = 'longitude'
+        rla_lon = nc.variables[variable][:]
+        variable = 'latitude'
+        rla_lat = nc.variables[variable][:]
+        n_profiles=len(rla_lon[:])
+        # Optional Read juld
+        variable='time'
+        rla_juld= nc.variables[variable][:]
+        position=np.ndarray(shape=(n_profiles,2),dtype=float, order='F')
+        il_val=0
+        for il_ind in range(n_profiles):
+            position[il_val,0] = rla_lon[il_ind]
+            position[il_val,1] = rla_lat[il_ind]
+            il_val = il_val+1
+        np.set_printoptions(suppress=True)
+        nc.close()
+        return position
+
+
 
 class LoaderNCgodae(Loader):
 
