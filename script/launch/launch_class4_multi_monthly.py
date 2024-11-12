@@ -17,7 +17,7 @@ def get_srcdata_and_options(typedata):
         options = '--SMOC --best --clim --bathy --stokes --tides'
     elif typedata == "CORA5.2":
         srcdata = "NC_CORIO"
-        options = '--best'  # '--clim' commented out as in the original script
+        options = '--all'  # '--clim' commented out as in the original script
     else:
         raise ValueError(f"'{typedata}' not known")
 

@@ -10,7 +10,8 @@ from datetime import datetime
 import traceback
 import logging
 from loader_post import load_db
-
+from datetime import datetime, timedelta
+import yaml
 
 __version__ = 0.2
 __date__ = "Octobre 2021"
@@ -23,6 +24,15 @@ def mkdir(path):
     '''
     if not os.path.exists(path):
         os.makedirs(path)
+
+def yaml_loader(path):
+    try:
+        with open(path, 'r') as file:
+            patterns = yaml.safe_load(file)
+        return patterns
+    except Exception as e:
+        raise(f"Failed to load patterns from {path}: {e}")
+        sys.exit(1)
 
 def loader(options):
     '''
@@ -134,6 +144,15 @@ def isValiDate(var, type_param):
         sys.exit(f"Value {var} for {type_param} not a valid date")
 
     return isValiDate
+
+def generate_date_list(start, end):
+    # Convert strings to datetime objects
+    start_date = datetime.strptime(start, "%Y%m%d")
+    end_date = datetime.strptime(end, "%Y%m%d")
+    # Generate list of dates between start_date and end_date
+    date_list = [(start_date + timedelta(days=x)).strftime("%Y%m%d") for x in range((end_date - start_date).days + 1)]
+    return date_list
+
 
 def create_launcher_multi(tab_conf, nbtasks='30', timecounter='06:00:00', batch='#SBATCH', nb_procs='2'):
     ## Create qsub job

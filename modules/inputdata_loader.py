@@ -75,6 +75,7 @@ class inputdata_loader(object):
         if type == "bathymetrie": return bathy_coords(self.log)
         if type == "Legos_SIT": return read_Legos_SIT()
         if type == "2ease_coords": return ease_coords_Loader()
+        if type == "L3_SEALEVEL": return L3_SEALEVEL_Loader()
         assert 0, "Format not known: " + type
 
     def generic_read_pos_and_value(self,filename, varname):
@@ -320,12 +321,12 @@ class loaderNCcorio_tac(inputdata_loader):
             return True  # File is locked
 
     def read_pos_and_value(self, filename, param_dict, qc_level=0):
-        self.log.debug(f"Read pos and value {filename}")
-        if not self.is_file_locked(filename):
-            ds = xr.open_dataset(filename)
-        else:
-            print(f"File {filename} is currently being used by another process.")
-            sys.exit(1)
+        self.log.debug(f"Read pos and value {filename} {self.is_file_locked(filename)}")
+        #if not self.is_file_locked(filename):
+        ds = xr.open_dataset(filename)
+        #else:
+        #    print(f"File {filename} is currently being used by another process.")
+        #    sys.exit(1)
         #nc = netCDF4.Dataset(filename, 'r')
         param_dict['Design_GODAE_file'] = True
         # Get the list of variable names
@@ -855,6 +856,49 @@ class LoaderSSSVessel(inputdata_loader):
         # variable='juld'
         # rla_juld= nc.variables[variable][:]
 
+class L3_SEALEVEL_Loader(inputdata_loader):
+
+    """ Loader for L3_SEALEVEL dataset """
+
+    def __init__(self):
+        self.varname = 'sla_filtered'
+    
+    def read_pos_and_value(self, filename, param_dict):
+        param_dict['Design_GODAE_file'] = True
+        rla_lon, rla_lat, _FillValue, nc = \
+          self.generic_read_pos_and_value(filename, self.varname)
+        
+        rla_value = nc.variables[self.varname][:]
+        dimensions = nc.dimensions
+        nb_fcsts = None
+        tab_dims = {}
+        for dims in dimensions.keys():
+            sizedim = dimensions[dims].size
+            if dims == 'numfcsts':
+                tab_dims['nb_fcsts'] = sizedim
+            elif dims == 'numobs':
+                tab_dims['nb_obs'] = sizedim
+            elif dims == 'numdeps':
+                tab_dims['nb_depths'] = sizedim
+
+        if 'depth' in nc.variables.keys():
+            rla_depth = nc.variables['depth'][:]
+        elif 'DEPH' in nc.variables.keys():
+            rla_depth = nc.variables['DEPH'][:]
+        elif 'pres' in nc.variables.keys():
+            rla_depth = nc.variables['pres'][:]
+        elif 'PRES' in nc.variables.keys():
+            rla_depth = nc.variables['PRES'][:]
+        else:
+            ## No depth: surface variable
+            nb_obs = np.shape(rla_value)[0]
+            nb_deps = 1
+            rla_depth = np.ndarray(shape=(nb_obs,nb_deps),dtype=float, order='F')
+            rla_depth[:, 0] = 0
+        param_dict['varname_select'] = param_dict['varname']
+        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, tab_dims, param_dict, _FillValue
+
+
 class LoaderNCgodae(inputdata_loader):
 
     """Loader for GODAE dataset"""
@@ -938,9 +982,7 @@ class LoaderNCgodae(inputdata_loader):
         nb_obs = len(rla_value)
         param_dict['ll_PSAL'] = True
         param_dict['ll_TEMP'] = True
-        ### TODO Return the dimensions of the forecast
-        ## CREGNIER
-        #ncdata.close()
+        param_dict['varname_select'] = param_dict['varname']
         nc.close()
         return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, tab_dims, param_dict, _FillValue
 

@@ -274,10 +274,11 @@ class Interpolator(object):
                 if param_dict['data_origin'] == "GLOBCOLOUR":
                     fcst_tab = np.ndarray(shape=(nb_obs, 1, 1, 1), dtype=float, order='F')
                 else:
-                    fcst_tab = np.ndarray(shape=(nb_obs, len(variable), tab_dims['nb_fcsts'], nb_profs),
+                    nb_fcst = len(param_dict['lead_int'])
+                    #fcst_tab = np.ndarray(shape=(nb_obs, len(variable), tab_dims['nb_fcsts'], nb_profs),
+                    fcst_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst, nb_profs),
                                       dtype=float, order='F')
                 fcst_tab[:, :, :, :] = self.missing_value
-
         ll_pers = False
         if self.nb_pers > 0 or self.nb_nwct >0:
             if 'nb_fcsts' not in tab_dims.keys():
@@ -287,7 +288,9 @@ class Interpolator(object):
                 pers_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst, nb_profs),
                                       dtype=float, order='F')
             else:
-                pers_tab = np.ndarray(shape=(nb_obs, len(variable), tab_dims['nb_fcsts'], nb_profs),
+                nb_fcst = len(param_dict['lead_int'])
+                #pers_tab = np.ndarray(shape=(nb_obs, len(variable), tab_dims['nb_fcsts'], nb_profs),
+                pers_tab = np.ndarray(shape=(nb_obs, len(variable), nb_fcst, nb_profs),
                                       dtype=float, order='F')
             pers_tab[:, :, :, :] = self.missing_value
             ll_pers = True

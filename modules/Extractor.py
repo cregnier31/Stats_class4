@@ -21,6 +21,7 @@ from nco.nco import Nco
 import xarray as xr
 from netCDF4 import Dataset
 import subprocess
+from datetime import datetime
 
 ##############################################################
 # C.REGNIER Juin 2014
@@ -65,8 +66,10 @@ class Extractor(object):
         if type == "001_048" : return Extract_CMEMS_drifters(self.log)
         if type == "sssdata_netcdf_good_FNAV" or type == "sssdata_netcdf_all": return Extract_SSSData(self.log)
         if type == "Legos_SIT" : return Extract_Legos_SIT(self.log)
+        if type == "MDS_L3_SLA" : return Extract_MDS_L3_SLA(self.log)
 
     def timelinespace(self, date1, date2):
+        
         """
          Create a list for a defined time range
          Arguments
@@ -1078,6 +1081,64 @@ class Extract_UVDrifters(Extractor):
                 self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
                 raise
         liste_tot.append(param_dict['dirwork']+file_new)
+        return liste_tot
+
+class Extract_MDS_L3_SLA(Extractor):
+    """ Extract MDS L3 SLA file """
+
+    def __init__(self, log):
+        self.log = log
+
+    # Function to extract dates and calculate differences
+    def find_largest_date_difference(self, files):
+        date_diffs = []
+        date_pattern = re.compile(r"_(\d{8})_(\d{8})\.nc")
+        print(files)
+
+        for file in files:
+            match = date_pattern.search(file)
+            if match:
+                start_date = datetime.strptime(match.group(1), "%Y%m%d")
+                end_date = datetime.strptime(match.group(2), "%Y%m%d")
+                day_difference = (end_date - start_date).days
+                date_diffs.append((file, day_difference))
+                # Find the file with the largest day difference
+        largest_diff_file = max(date_diffs, key=lambda x: x[1])
+        return largest_diff_file[0]
+
+    def run_list(self, param_dict, dateval):
+        liste_tot=[]
+        year = dateval[0:4]
+        dirdata = param_dict['dirdata']
+        list_files = glob(f'{dirdata}{year}/nrt_global_*{dateval}*.nc')
+        self.log.debug(f'{list_files=} {dateval}')
+        if len(list_files) == 0:
+            list_files = glob(f'{dirdata}{year- 1}/nrt_global_*{dateval}*.nc')
+            year = str(int(year) - 1)
+        list_sat = {os.path.basename(filename).split("_")[2] for filename in list_files}
+        self.log.debug(f'{list_sat=}')
+        nb_sat = 0
+        for sat in list_sat:
+            frame = "nrt_global_" + sat + "_phy_l3_1hz_"
+            list_files = glob(f'{dirdata}{year}/{frame}{dateval}*.nc')
+            if len(list_files) == 0:
+                continue
+            nb_sat += 1
+            choose_file = self.find_largest_date_difference(list_files)
+            #latest_file = max(list_files, key=os.path.getctime)
+            #self.log.info(f"Satellite {sat} and latest file {latest_file}")
+            self.log.info(f"Satellite {sat} and choose file {choose_file}")
+            #date_sat = os.path.basename(latest_file).split("_")[6].split(".")[0]
+            try:
+                filename = os.path.basename(choose_file)
+                if not os.path.exists(param_dict['dirwork']+filename):
+                    shutil.copy(choose_file, param_dict['dirwork']+filename)
+                liste_tot.append(param_dict['dirwork']+filename)
+            except IOError as e:
+                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                sys.exit(1)
+        self.log.debug(f"Nb Sats {nb_sat}")
+
         return liste_tot
 
 class Extract_GODAE(Extractor):

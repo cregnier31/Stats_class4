@@ -39,8 +39,13 @@ def extract_file_info(dirout, file_path):
 
         # Create a symlink to the file in the forecast directory
         new_file_path = os.path.join(forecast_dir, file_name)
-        os.symlink(file_path, new_file_path)
-
+        print(new_file_path)
+        print(file_path)
+        if not os.path.islink(new_file_path):
+            os.symlink(file_path, new_file_path)
+            print(f"Create link {new_file_path}")
+        else:
+            print('nok')
         return {
             'system': system,
             'file_type': file_type,
@@ -54,9 +59,9 @@ def extract_file_info(dirout, file_path):
         return None
 
 # Example usage
-DIR_IN = "/scratch/work/elmoussaouia/BIO4GLO12/BGC_MODEL/FORECAST/"
+#DIR_IN = "/scratch/work/elmoussaouia/BIO4GLO12/BGC_MODEL/FORECAST/"
+DIR_IN = "/scratch/work/regnierc/SORT/HEBDO/BIO4GLO12/FORECAST/"
 dirout = "/scratch/work/regnierc/SORT/HEBDO/BIO4GLO12/"
-for file_path in glob(f"{DIR_IN}*nc"):
-    print(file_path)
+for file_path in glob(f"{DIR_IN}*202409*nc"):
     file_info = extract_file_info(dirout, file_path)
     print(file_info)
