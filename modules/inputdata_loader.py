@@ -982,9 +982,7 @@ class LoaderNCgodae(inputdata_loader):
         nb_obs = len(rla_value)
         param_dict['ll_PSAL'] = True
         param_dict['ll_TEMP'] = True
-        ### TODO Return the dimensions of the forecast
-        ## CREGNIER
-        #ncdata.close()
+        param_dict['varname_select'] = param_dict['varname']
         nc.close()
         return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, tab_dims, param_dict, _FillValue
 

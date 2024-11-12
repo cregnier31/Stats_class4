@@ -1,0 +1,9 @@
+profile_NC_CORIO:
+  pattern: "([A-Za-z0-9_]+)_(\\d{8})"
+  name_format: "class4_{date_part}_{name_sys}_{variable_part}.nc"
+  groups: ["variable_part", "date_part"]
+
+SLA-L3_CMS:
+  pattern: "([A-Za-z0-9_]+)_([A-Za-z0-9_]+)_([A-Za-z0-9_]+)_([A-Za-z0-9_]+)_([A-Za-z0-9_]+)_([A-Za-z0-9_]+)_(\\d{8})_(\\d{8})"
+  name_format: "class4_{date_part}_{name_sys}_{sat}-{format_data}-{typedata}.nc"
+  groups: ["variable_part", "region", "sat", "typedata", "format_data", "freq", "date_part", "date_run"]
