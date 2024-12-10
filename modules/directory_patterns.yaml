@@ -76,9 +76,23 @@ file_handling:
     clim:
       glob_pattern: "{dirmodel}/*M{month}*nc"
     non_clim:
-      glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*{gridname}*nc"
+      type_run:
+         RTR:
+            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*{gridtype}*nc"
+         OPER:
+            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*{gridtype}*nc"
+         OPER-FCST:
+            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*nc"
 
   pgs_ai:
+    clim:
+      glob_pattern: "{dirmodel}/*M{month}*nc"
+    non_clim:
+      type_run:
+         RTR:
+             glob_pattern: "{dirmodel}/{directory}/{modele}_{dateval}_{gridtype}*nc"
+         OPER:
+             glob_pattern: "{dirmodel}/{directory}/{modele}_{dateval}_{gridtype}*nc"
     default:
       glob_pattern: "{dirmodel}/{directory}/{modele}_{dateval}_{gridtype}*nc"
 

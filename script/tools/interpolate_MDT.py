@@ -58,11 +58,15 @@ def define_coords(lon, lat):
                     }
     return dict_coords
 
-
+SYSTEM = "GLONET14"
+#SYSTEM = "GLONET"
+resol = "1deg"
+resol = "025deg"
 file_in = "/data/rd_exchange/cregnier/static//MDT/GLO-MFC_001_030_mdt.nc"
-file_out = "/data/rd_exchange/cregnier/SORT/GLONET//fcst1/GLONET_2024-01-05_all.nc"
+#file_out = "/data/rd_exchange/cregnier/SORT/GLONET//fcst1/GLONET_2024-01-05_all.nc"
+file_out = f"/data/rd_exchange/cregnier/SORT/GLONET_14//fcst1/{SYSTEM}_2024-01-05_all.nc"
 path_weight = '/data/rd_exchange/cregnier/TMP/'
-weight_file = f'{path_weight}GLO-MFC_001_030_mdt_1deg.p'
+weight_file = f'{path_weight}GLO-MFC_001_030_mdt_{resol}.p'
 dir_out = "/data/rd_exchange/cregnier/static/"
 variable = 'mssh'
 # Interp options
@@ -78,6 +82,6 @@ tab_out, lon, lat = interpolator_2D(x1, x2, y1, y2, file_in,\
 
 if ll_save:
     print(f'Save interp file')
-    outnc = f'{dir_out}GLO-MFC_001_030_mdt_1deg.nc'
+    outnc = f'{dir_out}GLO-MFC_001_030_mdt_{resol}.nc'
     create_netcdf(outnc, lon, lat, tab_out)
 
