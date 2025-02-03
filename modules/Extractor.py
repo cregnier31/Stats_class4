@@ -1235,7 +1235,8 @@ class Extract_GODAE(Extractor):
                             self.log.info('no modeljuld !!')
                         options = []
                         if typedata == "SLA" :
-                            options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference,leadtime,modeljuld'])
+                            #options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference,leadtime,modeljuld'])
+                            options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference,leadtime,modeljuld,varname'])
                         else :
                             options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,leadtime,modeljuld'])
                         nco.ncks(input=dirtmp+filename,output=dirtmp+filename, fortran=True ,options=options)

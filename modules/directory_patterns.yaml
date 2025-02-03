@@ -5,8 +5,9 @@ directory_patterns:
       nitrate: "{dirmodel}"
       ph: "{dirmodel}"
       chl: "{dirmodel}"
-      REA: "{dirmodel}{year}/{month}/"
+      chloro: "{dirmodel}"
       RTR: "{dirmodel}"
+      REA: "{dirmodel}HEBDO/{modele}/"
       config_d: "{dirmodel}HEBDO/{config}/{config_lower}/"
       PSY4: "{dirmodel}HEBDO/{modele}/{modele_lower}/"
 
@@ -23,6 +24,7 @@ directory_patterns:
     default:
       GLO12: "{dirmodel}DAILY/{config}/{config_lower}/"
       PSY4: "{dirmodel}DAILY/{modele}/{modele_lower}/"
+      BIO4: "{dirmodel}"
 
   clim: "{dirclim}/"
   smoc: "{dirmodel}DAILY/SMOC/nwct/"
@@ -71,6 +73,47 @@ file_handling:
             glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
     default:
         glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}.nc"
+
+  pgncg:
+    clim:
+      chloro:
+        1d-m:
+            glob_pattern: "{dirmodel}/1998{month}{day}*.nc"
+        1dAV:
+            glob_pattern: "{dirmodel}/1998{month}{day}*.nc"
+        1h-m:
+           glob_pattern: "{dirmodel}/1998{month}*.nc"
+        1mAV:
+           glob_pattern: "{dirmodel}/1998{month}*.nc"
+      drifter_filtr:
+        1d-m:
+           glob_pattern: "{dirmodel}/*_monthlymeans.nc"
+        1dAV:
+           glob_pattern: "{dirmodel}/*_monthlymeans.nc"
+      drifter:
+        1d-m:
+           glob_pattern: "{dirmodel}/*_monthlymeans.nc"
+        1dAV:
+           glob_pattern: "{dirmodel}/*_monthlymeans.nc"
+      current:
+        1d-m:
+           glob_pattern: "{dirmodel}/*_monthlymeans.nc"
+        1dAV:
+           glob_pattern: "{dirmodel}/*_monthlymeans.nc"
+
+    non_clim:
+      type_run:
+         REA:
+            glob_pattern: "{dirmodel}/coarsed_grid/ALLEGES_CONCAT/RUN/{modele}*{daily_pref}{dateval}*{gridtype}*"
+         free:
+            glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
+         RTR:
+            glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
+         default:
+            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
+    default:
+        glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}.nc"
+
 
   pgs:
     clim:

@@ -206,6 +206,8 @@ class SelectListModelData(Selector):
             param_dict['suffix'] = "0.25deg_P1D-m"
         elif self.typemod == "pgs_ai":
             self.dirmodel = param_dict['dirmodel_pgs']
+        elif self.typemod == "pgncg":
+            self.dirmodel = param_dict['dirmodel_pgncg']
         elif self.typemod == "allege" or "allege_new" \
              or self.typemod == "allege_now":
             self.dirmodel = param_dict['dirmodel_light']
@@ -338,8 +340,14 @@ class SelectListModelData(Selector):
                     dirmodel_new = self.config['directory_patterns']['hdct']['default'][self.data_type.lower()].format(dirmodel=self.dirmodel)
                 else:
                     run_type = param_dict['type_run']
+                    print(run_type)
+                    print(self.config['directory_patterns']['hdct']['default'])
                     if run_type in self.config['directory_patterns']['hdct']['default']:
-                        dirmodel_new = self.config['directory_patterns']['hdct']['default'][run_type].format(dirmodel=self.dirmodel, year=year, month=month)
+                        if run_type == 'REA':
+                            print(self.config['directory_patterns']['hdct']['default'][run_type])
+                            dirmodel_new = self.config['directory_patterns']['hdct']['default'][run_type].format(dirmodel=self.dirmodel, modele=config)
+                        else:
+                            dirmodel_new = self.config['directory_patterns']['hdct']['default'][run_type].format(dirmodel=self.dirmodel, year=year, month=month)
                     else:
                         if param_dict.get('naming') == 'new':
                             config_slice = config[0:5]
@@ -372,7 +380,10 @@ class SelectListModelData(Selector):
                                     dirmodel=self.dirmodel,
                                     modele=config_slice,
                                     modele_lower=self.modele.lower())
-
+                elif param_dict.get('naming') == 'bio':
+                    config_slice = self.modele[0:4]
+                    dirmodel_new = self.config['directory_patterns']['fcst']['default']['BIO4'].format(
+                                    dirmodel=self.dirmodel)
         elif directory == 'clim':
             dirmodel_new = self.config['directory_patterns']['clim'].format(dirclim=param_dict['dirclim'])
 
@@ -444,6 +455,7 @@ class SelectListModelData(Selector):
             # Access mapping from YAML
             dirmodel_new, dirmodel_new_next = self.get_directory(directory, dateval, param_dict)
             self.log.debug(f"Get directory {dirmodel_new} {dirmodel_new_next}")
+            self.log.debug(f"{self.config} {dirmodel_new} {self.modele} {self.type_run}")
             # Handle different type of file
             file_handler = FileHandler(self.config,
                                        dirmodel_new,

@@ -4,8 +4,9 @@ from lib_pyt.libtools.sydate import SyDate
 import os
 import sys
 class FileHandler:
-    def __init__(self, config, dirmodel,
-                 modele, typemod, data_type,
+    def __init__(self, config,
+                 dirmodel, modele,
+                 typemod, data_type,
                  directory, type_run,
                  dateval, param_dict, log):
         #module_dir = os.path.dirname(__file__)
@@ -30,13 +31,17 @@ class FileHandler:
         date_formats = [
             dateval,  # Assuming it's already formatted correctly
             f"{dateval[:4]}-{dateval[4:6]}-{dateval[6:]}"  # Convert %Y%m%d to %Y-%m-%d
-            #f"{dateval[:2]}{dateval[2:4]}{dateval[4:]}",  # Convert %Y%m%d to %YYMMDD
             #f"{dateval[:4]}_{dateval[4:6]}_{dateval[6:]}"  # Convert to another variant if needed
         ]
         # Results to store all matching files
         all_files = []
         # Iterate over gridtypes and apply the date format logic
         for i, gridname in enumerate(gridname_list):
+            self.log.debug(gridname)
+            self.log.debug(self.dirmodel)
+            self.log.debug(self.modele)
+            self.log.debug(self.daily_pref)
+            self.log.debug(self.directory)
             # Iterate over different date formats and try to find matching files
             for dateval_formatted in date_formats:
                 formatted_pattern = pattern.format(
@@ -47,13 +52,14 @@ class FileHandler:
                                     gridtype=gridname,
                                     directory=self.directory
                                 )
+                self.log.debug(dateval_formatted)
+                self.log.debug(formatted_pattern)
                 file_tmp = glob(formatted_pattern)
                 # If files are found, store them in the list
                 if file_tmp:
                     self.log.error(f'File OK {file_tmp}')
                     all_files.extend(file_tmp)  # Add found files to the results
-        self.log.info(f"List file {all_files}")
-
+                    self.log.debug(f"{gridname} Add file {file_tmp}")
         # Return all found files or an empty list if none are found
         return all_files if all_files else None
 
@@ -85,9 +91,11 @@ class FileHandler:
         datev = SyDate(str(self.dateval))
         year = str(datev.year)
         month = str(datev.month)
+        day = str(datev.day)
         if datev.month < 10:
             month = '0' + str(datev.month)
-        day = str(datev.day)
+        if datev.day < 10:
+            day = f'0{datev.day}'
         if self.directory != "clim":
             self.directory_path = "non_clim"
         # Get the specific directory configuration
@@ -122,9 +130,12 @@ class FileHandler:
                 pattern = list_actions[action]
                 file_select = self.find_file(pattern,
                                  self.param_dict.get('gridtype', ''))
+                self.log.debug(f"Pattern = {pattern}")
                 if file_select:
                     self.log.info(f"File ok {file_select}")
                     list_file.extend(file_select)
+                else:
+                    self.log.debug(f"File nok {pattern} {self.param_dict.get('gridtype', '')}")
             #else:
             #    # Handle default case for non-clim
             #    default_actions = type_run_dict.get('default', [])
