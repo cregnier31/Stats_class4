@@ -1031,6 +1031,7 @@ class Interpolator(object):
             self.log.info(f'Shift {rp_mssh_shift}')
             dataset_mssh = xr.open_dataset(cl_msshFile)
             tab_mssh = dataset_mssh['mssh'].values
+            self.log.info(f"Compute sla equiv with shift {rp_mssh_shift} {cl_msshFile}")
         if len(var_in.shape) == 3:
             if ll_single:
                 if isinstance(var_in, xr.DataArray):

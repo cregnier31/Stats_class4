@@ -57,6 +57,7 @@ class FileHandler:
                 file_tmp = glob(formatted_pattern)
                 # If files are found, store them in the list
                 if file_tmp:
+                    self.log.error(f'File OK {file_tmp}')
                     all_files.extend(file_tmp)  # Add found files to the results
                     self.log.debug(f"{gridname} Add file {file_tmp}")
         # Return all found files or an empty list if none are found
@@ -112,6 +113,9 @@ class FileHandler:
                 day=day
             )
             list_file.extend(glob(glob_pattern))
+        elif self.directory == "bathy":
+            filename = self.param_dict['bathy_file']
+            list_file.append(filename)
         else:
             # For non-clim cases, handle type_run configurations
             type_run_config = config_section.get(self.directory_path, config_section.get('type_run', {}))
