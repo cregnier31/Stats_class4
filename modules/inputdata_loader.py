@@ -323,7 +323,8 @@ class loaderNCcorio_tac(inputdata_loader):
     def read_pos_and_value(self, filename, param_dict, qc_level=0):
         self.log.debug(f"Read pos and value {filename} {self.is_file_locked(filename)}")
         #if not self.is_file_locked(filename):
-        ds = xr.open_dataset(filename)
+        #ds = xr.open_dataset(filename)
+        ds = xr.open_dataset(filename, engine="netcdf4")
         #else:
         #    print(f"File {filename} is currently being used by another process.")
         #    sys.exit(1)
@@ -480,14 +481,17 @@ class loaderNCcorio_tac(inputdata_loader):
                              (var_prof_adjusted_qc[ind, :] == b'7')).sum()
                 if ll_depth_adj or ll_pres_adj:
                     rla_prof[ind, :] = ds[var_prof_adj][ind, :].values
+                    rla_prof[rla_prof < 0] = self.fillvalue_dep
                 else:
                     rla_prof[ind, :] = ds[var_prof][ind, :].values
+                    rla_prof[rla_prof < 0] = self.fillvalue_dep
                 if ll_pres:
                     if ll_pres_adj:
                         rla_pres[ind, :] = ds[var_pres_adj][ind, :].values
+                        rla_pres[rla_pres < 0] = self.fillvalue_dep
                     else:
                         rla_pres[ind, :] = ds[var_pres][ind, :].values
-
+                        rla_pres[rla_pres < 0] = self.fillvalue_dep
                 #else:
                 #    self.log.debug(f"Missing pres {DATA_MODE[ind]}")
 
@@ -621,8 +625,10 @@ class loaderNCcorio_tac(inputdata_loader):
                         rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] == 1, 0, rla_qc_psal[ind, :])
                         rla_qc_psal[ind, :] = np.where(rla_qc_psal[ind, :] > 1, 9, rla_qc_psal[ind, :])
                 rla_prof[ind, :] = ds[var_prof][ind, :].values
+                rla_prof[rla_prof < 0] = self.fillvalue_dep
                 if ll_pres:
                     rla_pres[ind, :] = ds[var_pres][ind, :].values
+                    rla_pres[rla_pres < 0] = self.fillvalue_dep
                 #else:
                 #    self.log.debug(f"Missing pres {DATA_MODE[ind]}")
         rla_prof = np.nan_to_num(rla_prof, nan=self.fillvalue_dep)
@@ -709,7 +715,7 @@ class LoaderNCcorio(inputdata_loader):
                           'thetao_glor', 'thetao_cglo', 'thetao_oras']
         self.list_psal = ['vosaline', 'so', 'salinity',\
                           'so_glor', 'so_cglo', 'so_oras']
-
+        self.depth_fillval = 99999.
     def read_pos(self,filename):
         nc = netCDF4.Dataset(filename,'r')
         variable = 'LONGITUDE'
@@ -782,6 +788,7 @@ class LoaderNCcorio(inputdata_loader):
         else :
             print ('Not pres and depth')
             sys.exit(1)
+        rla_depth[rla_depth < 0] = self.depth_fillval
         #"if 'depth' in nc.variables.keys():
         #"    rla_depth = nc.variables['depth'][:,0,:]
         #"elif 'DEPH' in nc.variables.keys():
@@ -813,7 +820,7 @@ class LoaderNCcorio(inputdata_loader):
         else:
            param_dict['ll_TEMP'] = True
         param_dict['varname_select'] = list_mod
-        ## Qc control  
+        ## Qc control
         QCflag = QCcontroller(param_dict['data_type'],param_dict['data_origin']).factory().QCrun(filename, qc_level)
         param_dict['qc'] = QCflag
         nc.close()

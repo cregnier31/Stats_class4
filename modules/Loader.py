@@ -304,7 +304,7 @@ class InputLoader(Loader):
         cl_schedule = 'd'
         cl_data_id = ""
         list_LEAD_TIME = []
-        list_inputtype = ['pgs', 'pgs_ai', 'pgn', 'allege','2ease', 'allege_new', 'allege_now']
+        list_inputtype = ['pgs', 'pgs_ai', 'pgn', 'pgncg', 'allege','2ease', 'allege_new', 'allege_now']
         #try:
         #    opts, args = getopt.getopt(options, "h", [keywords])
         #except getopt.GetoptError:
@@ -566,12 +566,25 @@ class NmlLoader(Loader):
        # if param_dict['data_type'] == "SLA" :
             param_dict['cl_msshFile'] = db.get('static','cl_msshFile')
             param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
-        param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
-        param_dict['dirmodel'] = param_dict['dirmodel_pgn']
-        try:
+        if param_dict['cl_typemod'].lower() == 'pgn':
+            param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
+            param_dict['dirmodel'] = param_dict['dirmodel_pgn']
+            param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION')
+            param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable_ng'))
+            param_dict['coordinates'] = db.get('static', 'fic_coordinates')
+        elif param_dict['cl_typemod'].lower() == 'pgs' or param_dict['cl_typemod'].lower() == 'pgs_ai':
             param_dict['dirmodel_pgs'] = db.get('input_dir', 'DATA_IN_PGS')
-        except:
-            param_dict['dirmodel_pgs'] = ''
+            param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION')
+            param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable_sg'))
+            param_dict['coordinates'] = db.get('static', 'fic_coordinates')
+        elif param_dict['cl_typemod'].lower() == 'pgncg':
+            param_dict['dirmodel_pgncg'] = db.get('input_dir', 'DATA_IN_PGN_CG')
+            param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION_CG')
+            param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable_cg'))
+            param_dict['coordinates'] = db.get('static', 'fic_coordinates_cg')
+        else:
+            self.log.error('Input not known /= pgn pgs pgs_ai pgn_cg')
+            sys.exit(1)
         if 'dirdata' not in param_dict.keys():
             param_dict['dirdata'] = db.get('input_dir', 'INPUTDATA')
         try:
@@ -591,6 +604,7 @@ class NmlLoader(Loader):
         param_dict['nb_level'] = int(db.get('GLOBAL', 'LEVELS'))
         param_dict['zoom'] = int(db.get('GLOBAL', 'zoom'))
         param_dict['write_geojson'] = int(db.get('GLOBAL', 'write_geojson'))
+        param_dict['cl_config_h'] = re.sub("QV", "V", param_dict['cl_config'])
         if param_dict['write_geojson']:
             # Write Geojson file
             log.debug("Write Geojson file")
@@ -675,8 +689,6 @@ class NmlLoader(Loader):
         param_dict['daily_pref'] = db.get('GLOBAL', 'DAILY_PREF')
         param_dict['data_origin'] = db.get('input_dir', 'DATA_ORIGIN')
         param_dict['cl_conf'] = db.get('GLOBAL', 'CONF')
-        param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION')
-        param_dict['cl_config_h'] = re.sub("QV", "V", param_dict['cl_config'])
         #param_dict['template'] = param_dict['cl_config_h'] + \
         #    '_'+param_dict['model_type'].lower()
         param_dict['template'] = param_dict['cl_conf'] + \
@@ -708,7 +720,6 @@ class NmlLoader(Loader):
             param_dict['naming'] = 'old'
         param_dict['type_run'] = db.get('GLOBAL', 'TYPE_RUN')
         param_dict['type_archi'] = db.get('GLOBAL', 'TYPE_ARCHI')
-        param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable'))
         param_dict['nb_points'] = int(db.get('GLOBAL', 'nb_points_interp'))
         param_dict['schedule'] = db.get('GLOBAL', 'SCHEDULE')
         param_dict['ll_zip'] = literal_eval(db.get('GLOBAL', 'll_zip'))
@@ -747,7 +758,6 @@ class NmlLoader(Loader):
             param_dict['lon_max'] = int(param_dict.get('GLOBAL', 'LONMAX'))
             param_dict['lat_min'] = int(param_dict.get('GLOBAL', 'LATMIN'))
             param_dict['lat_max'] = int(param_dict.get('GLOBAL', 'LATMAX'))
-        param_dict['coordinates'] = db.get('static', 'fic_coordinates')
         try:
             param_dict['coordinates_SMOC'] = db.get('static','fic_coordinates_SMOC')
         except:
