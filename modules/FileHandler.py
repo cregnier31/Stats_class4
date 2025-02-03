@@ -4,7 +4,10 @@ from lib_pyt.libtools.sydate import SyDate
 import os
 import sys
 class FileHandler:
-    def __init__(self, config, dirmodel, modele, typemod, data_type, directory, type_run, dateval, param_dict):
+    def __init__(self, config, dirmodel,
+                 modele, typemod, data_type,
+                 directory, type_run,
+                 dateval, param_dict, log):
         #module_dir = os.path.dirname(__file__)
         #config_path = os.path.join(module_dir, config_path)
         #with open(config_path, 'r') as f:
@@ -19,22 +22,21 @@ class FileHandler:
         self.dateval = dateval
         self.param_dict = param_dict
         self.daily_pref = self.param_dict['daily_pref']
+        self.log = log
 
     def find_file(self, pattern, gridname_list):
         dateval = self.dateval
         # List of possible date formats
         date_formats = [
             dateval,  # Assuming it's already formatted correctly
-            f"{dateval[:4]}-{dateval[4:6]}-{dateval[6:]}",  # Convert %Y%m%d to %Y-%m-%d
-            f"{dateval[:2]}{dateval[2:4]}{dateval[4:]}",  # Convert %Y%m%d to %YYMMDD
-            f"{dateval[:4]}_{dateval[4:6]}_{dateval[6:]}"  # Convert to another variant if needed
+            f"{dateval[:4]}-{dateval[4:6]}-{dateval[6:]}"  # Convert %Y%m%d to %Y-%m-%d
+            #f"{dateval[:2]}{dateval[2:4]}{dateval[4:]}",  # Convert %Y%m%d to %YYMMDD
+            #f"{dateval[:4]}_{dateval[4:6]}_{dateval[6:]}"  # Convert to another variant if needed
         ]
         # Results to store all matching files
         all_files = []
         # Iterate over gridtypes and apply the date format logic
         for i, gridname in enumerate(gridname_list):
-            print(self.dirmodel, self.modele,self.daily_pref, gridname, self.directory)
-
             # Iterate over different date formats and try to find matching files
             for dateval_formatted in date_formats:
                 formatted_pattern = pattern.format(
@@ -48,7 +50,10 @@ class FileHandler:
                 file_tmp = glob(formatted_pattern)
                 # If files are found, store them in the list
                 if file_tmp:
+                    self.log.error(f'File OK {file_tmp}')
                     all_files.extend(file_tmp)  # Add found files to the results
+        self.log.info(f"List file {all_files}")
+
         # Return all found files or an empty list if none are found
         return all_files if all_files else None
 
@@ -100,6 +105,9 @@ class FileHandler:
                 day=day
             )
             list_file.extend(glob(glob_pattern))
+        elif self.directory == "bathy":
+            filename = self.param_dict['bathy_file']
+            list_file.append(filename)
         else:
             # For non-clim cases, handle type_run configurations
             type_run_config = config_section.get(self.directory_path, config_section.get('type_run', {}))
@@ -115,10 +123,8 @@ class FileHandler:
                 file_select = self.find_file(pattern,
                                  self.param_dict.get('gridtype', ''))
                 if file_select:
-                    print(f"File ok {file_select}")
+                    self.log.info(f"File ok {file_select}")
                     list_file.extend(file_select)
-                else:
-                    print(f"File nok {pattern} {self.param_dict.get('gridtype', '')}")
             #else:
             #    # Handle default case for non-clim
             #    default_actions = type_run_dict.get('default', [])

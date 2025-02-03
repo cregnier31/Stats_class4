@@ -292,28 +292,28 @@ class SelectListModelData(Selector):
         self.leadtime = lead_fin
         return param_dict
 
-    def find_file(self, directory, modele, dateval, gridname_list):
-        # List of possible date formats
-        date_formats = [
-            dateval,  # Assuming it's already formatted correctly
-            f"{dateval[:4]}-{dateval[4:6]}-{dateval[6:]}",  # Convert %Y%m%d to %Y-%m-%d
-            f"{dateval[:2]}{dateval[2:4]}{dateval[4:]}",  # Convert %Y%m%d to %YYMMDD
-            f"{dateval[:4]}_{dateval[4:6]}_{dateval[6:]}"  # Convert to another variant if needed
-        ]
+  #  def find_file(self, directory, modele, dateval, gridname_list):
+  #      # List of possible date formats
+  #      date_formats = [
+  #          dateval,  # Assuming it's already formatted correctly
+  #          f"{dateval[:4]}-{dateval[4:6]}-{dateval[6:]}",  # Convert %Y%m%d to %Y-%m-%d
+  #          f"{dateval[:2]}{dateval[2:4]}{dateval[4:]}",  # Convert %Y%m%d to %YYMMDD
+  #          f"{dateval[:4]}_{dateval[4:6]}_{dateval[6:]}"  # Convert to another variant if needed
+  #      ]
 
-        # Results to store all matching files
-        all_files = []
-        # Iterate over gridtypes and apply the date format logic
-        for i, gridname in enumerate(gridname_list):
-            # Iterate over different date formats and try to find matching files
-            for dateval_formatted in date_formats:
-                file_pattern = f"{directory}/{modele}_{dateval_formatted}_{gridname}.nc"
-                file_tmp = glob(file_pattern)
-                # If files are found, store them in the list
-                if file_tmp:
-                    all_files.extend(file_tmp)  # Add found files to the results
-        # Return all found files or an empty list if none are found
-        return all_files if all_files else None
+  #      # Results to store all matching files
+  #      all_files = []
+  #      # Iterate over gridtypes and apply the date format logic
+  #      for i, gridname in enumerate(gridname_list):
+  #          # Iterate over different date formats and try to find matching files
+  #          for dateval_formatted in date_formats:
+  #              file_pattern = f"{directory}/{modele}_{dateval_formatted}_{gridname}.nc"
+  #              file_tmp = glob(file_pattern)
+  #              # If files are found, store them in the list
+  #              if file_tmp:
+  #                  all_files.extend(file_tmp)  # Add found files to the results
+  #      # Return all found files or an empty list if none are found
+  #      return all_files if all_files else None
 
 
     def get_directory(self, directory, dateval, param_dict):
@@ -366,7 +366,7 @@ class SelectListModelData(Selector):
                                     dirmodel=self.dirmodel,
                                     config=config_slice,
                                     config_lower=config.lower())
-                else:
+                elif param_dict.get('naming') == 'old':
                     config_slice = self.modele[0:4]
                     dirmodel_new = self.config['directory_patterns']['fcst']['default']['PSY4'].format(
                                     dirmodel=self.dirmodel,
@@ -392,12 +392,14 @@ class SelectListModelData(Selector):
                                 dirmodel=self.dirmodel,
                                 config=config_slice,
                                 config_lower=self.config_d.lower())
-            else:
+            elif param_dict.get('naming') == 'old':
                 config_slice = f"{self.modele[0:4]}Q"
                 dirmodel_new = self.config['directory_patterns']['fcst']['default']['PSY4'].format(
                                 dirmodel=self.dirmodel,
                                 modele=config_slice,
                                 modele_lower=self.modele.lower())
+            else:
+                dirmodel_new = self.dirmodel
 
         # Continue with the logic to return or log the directory paths
         return dirmodel_new, dirmodel_new_next
@@ -451,7 +453,8 @@ class SelectListModelData(Selector):
                                        directory,
                                        self.type_run,
                                        dateval,
-                                       param_dict)
+                                       param_dict,
+                                       self.log)
             list_file = file_handler.load_files()
             self.log.debug('directory %s' % (dirmodel_new))
 
