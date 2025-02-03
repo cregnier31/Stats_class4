@@ -410,6 +410,12 @@ class Interpolator(object):
                             self.log.debug("PGN coordinates")
                             lon_mod, lat_mod, mask_tab, depth_mod = inputdata_loader(self.log).factory('PGN_coords').\
                                 read_pos(param_dict['coordinates'])
+
+                    elif param_dict['cl_typemod'].lower() == "pgncg":
+                        self.log.debug("PGNCG coordinates")
+                        lon_mod, lat_mod, mask_tab, depth_mod = inputdata_loader(self.log).factory('PGN_coords').\
+                                read_pos(param_dict['coordinates'])
+
                     elif param_dict['cl_typemod'].lower() == "allege":
                         lon_mod, lat_mod, mask_tab, depth_mod = inputdata_loader(self.log).factory('alleges_coords').\
                             read_pos(param_dict['coordinates'])
@@ -958,6 +964,14 @@ class Interpolator(object):
            ll_reshape = False
         return ll_reshape
 
+    def is_netcdf_xarray(self, filename):
+        try:
+            # Open dataset without loading into memory
+            with xr.open_dataset(filename, engine="netcdf4"):
+                return True
+        except Exception:
+            return False
+
     def interp_2D(self, weight, inds, file, nbpts_interp, variable, param_dict,\
             depth=0, time=0, key=None, fillvalue=None, nblon=None, nblat=None,
             lon_mod=None, lat_mod=None, missing_value=np.nan, same_grid=False):
@@ -979,12 +993,19 @@ class Interpolator(object):
         self.log.debug('Interp2D Read input file : {}'.format(file))
         self.log.debug(f'Variable in interp_2D : {variable}')
         self.log.debug("-------------------------------------------------------")
-        try:
-            dataset_in = xr.open_dataset(file,decode_times=False)
-            var_in = dataset_in[variable]
-        except:
-            self.log.error("Missing File or variable {} in file {}".format(variable, file))
-            raise
+        ## Implement cg reading
+        ll_nc = self.is_netcdf_xarray(file)
+        if ll_nc:
+            try:
+                dataset_in = xr.open_dataset(file,decode_times=False)
+                var_in = dataset_in[variable]
+            except:
+                self.log.error("Missing File or variable {} in file {}".format(variable, file))
+                raise
+        else:
+            self.log.debug(f"Read binary file called alleges {file}")
+            self.log.debug(f"Open lighout file {file}")
+            var_in, lon, lat = ReadModel().read_lightout(file)
         ll_single = False
         ll_nan = False
         if depth > 0.5 :
@@ -1003,27 +1024,55 @@ class Interpolator(object):
         else:
             # Surface case
             ll_single = True
-        if variable in self.list_ssh or param_dict['data_type'] == "SLA":
+        if variable in self.list_ssh : #or param_dict['data_type'] == "SLA":
             cl_msshFile = param_dict['cl_msshFile']
             rp_mssh_shift = param_dict['rp_mssh_shift']
-            self.log.debug(f'{cl_msshFile=}')
+            self.log.info(f'Correction mssh {cl_msshFile=}')
+            self.log.info(f'Shift {rp_mssh_shift}')
             dataset_mssh = xr.open_dataset(cl_msshFile)
             tab_mssh = dataset_mssh['mssh'].values
         if len(var_in.shape) == 3:
             if ll_single:
-                var_in = var_in[time, :, :].values
+                if isinstance(var_in, xr.DataArray):
+                    var_in = var_in[time, :, :].values
+                    print("var_in is an xarray DataArray")
+                elif isinstance(var_in, np.ndarray):
+                    print("var_in is a NumPy array")
+                    var_in = var_in[time, :, :]
+                else:
+                    self.log.error("var_in is neither an xarray DataArray nor a NumPy array")
+                    sys.exit(1)
             else:
-               var_in1 = var_in[ind_depth1, :, :].values
-               var_in2 = var_in[ind_depth2, :, :].values
+                if isinstance(var_in, xr.DataArray):
+                    var_in1 = var_in[ind_depth1, :, :].values
+                    var_in2 = var_in[ind_depth2, :, :].values
+                else:
+                    var_in1 = var_in[ind_depth1, :, :]
+                    var_in2 = var_in[ind_depth2, :, :]
 
         elif len(var_in.shape) == 4:
             if ll_single:
-               var_in = var_in[time, 0, :, :].values
-               ll_single = True
+              ##
+                if isinstance(var_in, xr.DataArray):
+                    var_in = var_in[time, 0, :, :].values
+                elif isinstance(var_in, np.ndarray):
+                    var_in = var_in[time, 0, :, :]
+                else:
+                    self.log.error("var_in is neither an xarray DataArray nor a NumPy array")
+                    sys.exit(1)
+              ##
+                ll_single = True
             else:
-               var_in1 = var_in[time, ind_depth1, :, :].values
-               var_in2 = var_in[time, ind_depth2, :, :].values
-        if variable in self.list_ssh or  param_dict['data_type'] == "SLA":
+                if isinstance(var_in, xr.DataArray):
+                    var_in1 = var_in[time, ind_depth1, :, :].values
+                    var_in2 = var_in[time, ind_depth2, :, :].values
+                elif isinstance(var_in, np.ndarray):
+                    var_in1 = var_in[time, ind_depth1, :, :]
+                    var_in2 = var_in[time, ind_depth2, :, :]
+                else:
+                    self.log.error("var_in is neither an xarray DataArray nor a NumPy array")
+                    sys.exit(1)
+        if variable in self.list_ssh : #or  param_dict['data_type'] == "SLA":
             var_in = np.where(var_in != fillvalue,  var_in - tab_mssh - rp_mssh_shift, var_in)
         if same_grid:
             ## The output grid is the same than the input grid
@@ -1071,7 +1120,7 @@ class Interpolator(object):
 
         return tab_interp, ll_nan
 
-    def compute_3D_weight(self, ind,var_in, inds,\
+    def compute_3D_weight(self, ind, var_in, inds,\
                        weight, ind_max, nbpts_interp):
         tab_ind = inds[ind,:,:]
         if np.isnan(inds).all():
@@ -1097,14 +1146,8 @@ class Interpolator(object):
         list_depth = ['deptht', 'depth', 'depthu', 'depthv', 'z', 'Z', 'DEPTH', 'd']
         try:
             tab_lon = { k: dimensions[k] for k in dimensions.keys() & set(list_lon)}
-            #tab_lon = {k: dimensions.sizes[k] for k in dimensions.sizes.keys() & set(list_lon)}
             tab_lat = { k: dimensions[k] for k in dimensions.keys() & set(list_lat)}
-            #tab_lat = {k: dimensions.sizes[k] for k in dimensions.sizes.keys() & set(list_lat)}
-            #tab_depth = {k: dimensions.sizes[k] for k in dimensions.sizes.keys() & set(list_depth)}
             tab_depth = { k:dimensions[k] for k in dimensions.keys() & set(list_depth)}
-            #tab_lon = {k: dimensions.sizes[k] for k in dimensions.sizes.keys() & set(list_lon)}
-            #tab_lat = {k: dimensions.sizes[k] for k in dimensions.sizes.keys() & set(list_lat)}
-            #tab_depth = {k: dimensions.sizes[k] for k in dimensions.sizes.keys() & set(list_depth)}
 
         except:
             self.log.error('lon lat or depth not defined')
@@ -1172,6 +1215,7 @@ class Interpolator(object):
         nb_obs, nb_profs = np.shape(depth)
         self.log.debug(f'Before computing {nb_obs=} {nb_profs=}{ind_max=}')
         start = timer()
+        missing_value = 99999
         if np.isnan(inds).all():
             #values_interp = fillvalue*np.zeros((nb_obs, nb_profs))
             values_interp = np.full((nb_obs, nb_profs), np.nan)
@@ -1209,14 +1253,12 @@ class Interpolator(object):
                 end = timer()
                 self.log.debug('~~~~~~~~ Time elapsed loops on levels : %s %s' %
                                 (str(end - start), " seconds ~~~~~~~~~~~~"))
-                #if nb_profs > 1:
                 values_interp = fillvalue*np.zeros((nb_obs, nb_profs))
                 self.log.debug(f'~~~~ Start loop {nb_obs}~~~~')
                 start = timer()
                 self.log.debug(f'{depth}')
                 self.log.debug(f'{np.shape(values_interp)}')
                 nprof, nlevel = np.shape(values_interp)
-                #if nlevel > 1:
                 for ind_prof in range (nb_obs):
                     self.log.debug(f'{ind_prof}/{nb_obs}')
                     profondeur = depth[ind_prof, :]
@@ -1225,22 +1267,38 @@ class Interpolator(object):
                     self.log.debug(f'Model Value {tab_mod_ma=}')
                     self.log.debug(f"{len(depth_mod[0:ind_max])}")
                     self.log.debug(f"{depth_mod[0:ind_max]}")
+                    self.log.debug(f"Ind min O Ind max {ind_max}")
+                    # Identify non-missing values
+                    non_missing = profondeur != missing_value
+                    # Count non-missing values
+                    non_missing_count = np.sum(non_missing)
                     if len(profondeur) == 1 and profondeur < depth_mod[0]:
                         values_interp[ind_prof,:] =  tab_mod_ma[0]
                     else:
                         fixture = vertical.Column(tab_mod_ma, depth_mod[0:ind_max])
                         self.log.debug('Profondeurs profiles {}'.format(profondeur[0:100]))
                         self.log.debug('Profondeurs modele {}'.format(depth_mod[0:ind_max]))
+                        self.log.debug(f'non_missing_count: {non_missing_count}')
+
                         if np.any(~np.isnan(tab_mod_ma[:])):
                             val_interp = fixture.interpolate(profondeur)
                             values_interp[ind_prof,:] = val_interp[:]
+                            if profondeur[0]  < depth_mod[0]:
+                                values_interp[ind_prof, 0]= tab_mod_ma[0]
                             if np.ma.isMaskedArray(val_interp):
                                 values_interp[ind_prof,:] = np.where(val_interp.mask, fillvalue, values_interp[ind_prof,:])
-                        else:
-                            values_interp[ind_prof,:] = np.nan
-                    self.log.debug(f'{values_interp[ind_prof,:]}=')
-            #self.log.debug('Valeurs profile {}'.format(obs[:]))
-            #self.log.debug('--------------------------------------------')
+                        self.log.debug(f'{len(profondeur)=}')
+                        if non_missing_count <= 2:
+                            self.log.debug(f'missing_count {non_missing_count}')
+                            self.log.debug(f'missing_count {data_file}')
+                            non_missing_values = profondeur[(profondeur != missing_value) & (profondeur < depth_mod[0])]
+                            non_missing_indices = np.where((profondeur != missing_value) & (profondeur < depth_mod[0]))[0]
+                            values_interp[ind_prof, non_missing_indices] = tab_mod_ma[0]
+                    self.log.debug(f'--------------------------------')
+                    self.log.debug(f'Valeurs interp :{values_interp[ind_prof,:]}=')
+                    self.log.debug(f'--------------------------------')
+            self.log.debug('Valeurs profile {}'.format(obs[:]))
+            self.log.debug('--------------------------------------------')
             if ll_verif:
                 # Plot profiles
                 dir_out = './img2/'
@@ -1249,11 +1307,6 @@ class Interpolator(object):
                 title = dateval+" "+variable+" "+label
                 label1 = "Insitu"
                 label2 = "Model"
-                #self.log("Profile {}".format(ind_prof))
-                #self.log('Profondeurs profiles {}'.format(profondeur[340:360]))
-                #self.log('Valeur interp {}'.format(values_interp[ind_prof,340:360]))
-                #self.log('Valeur modele {}'.format(tab_mod_ma[27:34]))
-                #self.log('Profondeur modele {}'.format(depth_mod[27:34]))
                 ll_compare = True
                 prof_max = np.nanmax(profondeur)
                 ind_prof_max = np.argmax(depth_mod[:])
@@ -1283,8 +1336,8 @@ class Interpolator(object):
                                        output=dir_out+dateval+"_comparaison_"+variable+"_profile_num"+str(ind_prof),
                                        var=variable)
 
-                #self.log.debug('Valeurs modèle {}'.format(tab_interp_tmp[0:30,ind_prof]))
-                #self.log.debug('Interp modèle onto profiles {} / {}'.format(ind_prof, nb_obs))
+                self.log.debug('Valeurs modèle {}'.format(tab_interp_tmp[0:30,ind_prof]))
+                self.log.debug('Interp modèle onto profiles {} / {}'.format(ind_prof, nb_obs))
             end = timer()
             self.log.debug('~~~~~~~~ Time elapsed interp levels on profiles: %s %s' %
                             (str(end - start), " seconds ~~~~~~~~~~~~"))

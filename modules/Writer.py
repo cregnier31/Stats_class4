@@ -602,7 +602,8 @@ class Writer():
                 list_file = glob(f"{param_dict['dirwork']}{frame}")
             if not list_file:
                 self.log.error(f"Files are missing")
-                sys.exit(1)
+                continue
+                #sys.exit(1)
             self.log.debug(f"{frame=}")
             self.log.debug(f"{param_dict['dirwork']}")
             self.log.debug(f"{list_file=}")
@@ -787,7 +788,8 @@ class Writer():
                                              #param_dict['data_type'])
                 dest = param_dict['diroutput']
                 filename = os.path.basename(file_out)
-                name_sys = "_".join([param_dict['cl_config_h'],param_dict['model_type'].lower()])
+                #name_sys = "_".join([param_dict['cl_config_h'],param_dict['model_type'].lower()])
+                name_sys = "_".join([param_dict['cl_conf'],param_dict['model_type'].lower()])
                 fileout = FileRenamer(dest, name_sys, self.log).create_name(filename,
                                                                             param_dict['data_type'],
                                                                             param_dict['cl_src'])
@@ -815,8 +817,8 @@ class Writer():
             self.log.debug('numobs ok')
         if 'string_length8' not in list_dimensions:
             nc_fid.createDimension('string_length8', 8)
-        #if 'string_length20' not in list_dimensions:
-        #    nc_fid.createDimension('string_length20', 20)
+        if 'string_length20' not in list_dimensions:
+            nc_fid.createDimension('string_length20', 20)
         if 'numdeps' not in list_dimensions:
             nc_fid.createDimension('numdeps', nlevels)
         else:
@@ -857,7 +859,7 @@ class Writer():
                 varname_data = tab_out['varname']
             else:
                 self.log.debug(f"varname_data not in tab_out")
-                sys.exit(1)
+                #sys.exit(1)
             self.log.debug(f"Write write_output_frompickle {filename}")
             ll_varname = self.type_data.get(variable, {}).get('varname')
             if 'best_estimate' in list_keys : #and np.any(tab_out['best_estimate']):
@@ -871,11 +873,12 @@ class Writer():
                                      nlevels=nlevels,
                                      nparams=nparams)
                 if ll_varname:
-                    ndim_int = 8
+                    ndim_int = 20
+                    #ndim_int = 8
                     if 'varname' not in list_variables:
                         self.log.debug("Create varname")
-                        #varname = nc_fid.createVariable('varname', 'S1', ('numvars', 'string_length20'))
-                        varname = nc_fid.createVariable('varname', 'S1', ('numvars', 'string_length8'), zlib=True, complevel=4)
+                        varname = nc_fid.createVariable('varname', 'S1', ('numvars', 'string_length20'))
+                        #varname = nc_fid.createVariable('varname', 'S1', ('numvars', 'string_length8'), zlib=True, complevel=4)
                         varname.setncatts({'long_name': u"Variable name"})
                         self.log.debug(f'{varname=}')
                         for i, var_name in enumerate(varname_data):
@@ -1208,7 +1211,8 @@ class Writer():
     def write_coriolis_file_raw(self, filename, tab_res, dateval, model, variable, varname_data):
         nc_fid = Dataset(filename, 'r+') #, format='NETCDF3_CLASSIC')
         list_keys = tab_res.keys()
-        nc_fid.createDimension('string_length8', 8)
+        #nc_fid.createDimension('string_length8', 8)
+        nc_fid.createDimension('string_length8', 20)
 
         if 'best' in list_keys and np.any(tab_res['best']):
             nprofs, nparams, nlevels = np.shape(tab_res['best'])
@@ -1218,11 +1222,13 @@ class Writer():
             if 'numdeps' not in list_keys: nc_fid.createDimension('numdeps', nlevels)
             if 'numvars' not in list_keys: nc_fid.createDimension('numvars', nparams)
             #varname = nc_fid.createVariable('varname', 'c', ('numvars', 'string_length7'))
-            varname = nc_fid.createVariable('varname', 'S1', ('numvars', 'string_length8'))
+            #varname = nc_fid.createVariable('varname', 'S1', ('numvars', 'string_length8'))
+            varname = nc_fid.createVariable('varname', 'S1', ('numvars', 'string_length20'))
             varname.setncatts(
                               {'long_name': u"Variable name"})
             for i, var_name in enumerate(varname_data):
-                varname[i, :] = list(var_name.ljust(8))
+                #varname[i, :] = list(var_name.ljust(8))
+                varname[i, :] = list(var_name.ljust(20))
             hdct_tab = tab_res['best'][:, :, :]
             #self.log.debug(f"Dimensions best {np.shape(tab_res['best'][:, :, :])}")
             self.log.info('Hindcast not empty OK1')

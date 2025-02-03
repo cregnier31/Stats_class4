@@ -177,10 +177,12 @@ class interp_KDtree(object):
 
         return d1, inds_idw1
 
-    def get_weight(self, d1):
+    def get_weight(self, d1, max_weight=1e10):
 
         if np.any(d1 != 0):
-            weight = 1.0 / d1**2
+            #weight = 1.0 / d1**2
+            weight = np.where(d1 != 0, 1.0 / d1**2, max_weight)
+            #weight = np.where(d1 != 0, 1.0 / d1**2, 0)
         else:
             # Handle the case when d1 is zero, e.g., set weight to a default value or take alternative action
             weight = np.nan
