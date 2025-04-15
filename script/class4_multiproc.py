@@ -1,35 +1,44 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vim: set ts=4 sw=4 expandtab:
-""" Description :
+"""
+Description:
     New CLASS4 launcher to compute CLASS4 with CLASS4 coming from GODAE,
     ARMOR, CORIOLIS, different ASCII files
-    History: Juillet 2014  : Creation C.REGNIER
-             Novembre 2014 :  Ajout différentes échéances pour l'interpolation+
-             clims + gestion enchaînement des runs
-             Decembre 2014 :  MAJ pour le cas particulier du zoom
-             November 2016 :  New version with KDtree method for coloc and interp
-             November/Dec 2017 :  Add modules in a generic lib for CLASS4
-             portability Generic KDtree for SLA,SST,SSS
-             September 2018 :  Add interpolator for 2D variables
-             September 2018 : Refactoring
-    Developer  : C.REGNIER
+
+History:
+    July 2014       : Creation - C. REGNIER
+    November 2014   : Add multiple forecast lead times for interpolation,
+                      clims, and run chaining
+    December 2014   : Update for zoomed region case
+    November 2016   : New version with KDTree method for coloc/interp
+    Nov/Dec 2017    : Modular refactor for CLASS4 portability (SLA, SST, SSS)
+    September 2018  : Add interpolator for 2D variables, refactoring
+    July 2020       : Add 3D in-situ profiles
+    April 2025      : Editorial version
+
+Developer:
+    C. REGNIER
 """
-#
+
 from __future__ import generators
+
 import os
 import sys
-import numpy as np
 from os.path import dirname
-sys.path.append(dirname(__file__)+'/../modules/')
+import numpy as np
+# Import local modules (add path first)
+if __name__ == "__main__":
+    sys.path.append(os.path.join(dirname(__file__), '../modules/'))
+
 import resource
+
 # Import local modules
 from Selector import Selector
 from Loader import Loader
 from Interpolator import Interpolator
 from Writer import Writer
 from mpi4py import MPI
-import pickle
 from utils import create_dict
 # Set Stack to unlimited
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
@@ -49,7 +58,7 @@ def main(level=2):
     log.debug('          Load input options and parameter file         ')
     log.debug('========================================================')
     # Load db configuration file
-    conf_path = dirname(__file__) #os.getcwd()
+    conf_path = dirname(__file__)
     filename = conf_path + '/cfg/' + param_dict['confname']
     param_dict = Loader.factory('NML').load(filename, level, param_dict, log)
     # Create dictionnary
@@ -60,19 +69,19 @@ def main(level=2):
     # *********** MPI section to split dates on each processor ***********
     comm = MPI.COMM_WORLD
     ndate = len(list_keys['keyvalues'])
-    irest  = np.mod(ndate,comm.size)
-    ntask  = ndate // comm.size
+    irest = np.mod(ndate, comm.size)
+    ntask = ndate//comm.size
     istart = int(ntask*comm.rank)
-    iend   = int(istart + ntask - 1)
+    iend = int(istart+ntask-1)
     cla_date = np.array(list_keys['keyvalues'][istart:iend+1]).tolist()
     iend_tot = ntask*comm.size-1
     if irest > 0 and comm.rank < irest:
         cla_date.append(list_keys['keyvalues'][iend_tot+comm.rank+1])
-    # ==========================================================================
+    # ==================================================================
     # PART-2 - Loop for a given time range
-    # ==========================================================================
+    # ==================================================================
     if comm.rank == 0:
-        log.debug('========================================================')
+        log.debug('====================================================')
         log.debug('              Launch time loop                          ')
         log.debug('========================================================')
         log.info(f"Number of date {ndate}")
@@ -87,9 +96,14 @@ def main(level=2):
         # Selection of the input data
         if comm.rank == 0:
             log.info(f'Selection of input data for {dateval}')
-            log.info('========================================================')
-        input_list_files, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], log).\
-            factory("GLOBAL_INPUT_DATA").run(param_dict, dateval)
+            log.info('====================================================')
+        selector = Selector(
+            param_dict['data_format'],
+            param_dict['data_type'],
+            log
+        )
+        global_input = selector.factory("GLOBAL_INPUT_DATA")
+        input_list_files, ll_miss = global_input.run(param_dict, dateval)
         if ll_miss:
             if comm.rank == 0:
                 log.info(f'File is missing for the observation {dateval}')
@@ -108,14 +122,19 @@ def main(level=2):
                     if comm.rank == 0:
                         log.debug('Intermediate file exist')
                     continue
-                #if not read_outputnp(file_out):
-                tab_results, file_out = Interpolator(log, dask=param_dict['dask']).read_and_interp(
-                    file, param_dict, date=dateval, leadtime=leadtime, lead_int=lead_int)
+                interpolator = Interpolator(log, dask=param_dict['dask'])
+                tab_results, file_out = interpolator.read_and_interp(
+                    file,
+                    param_dict,
+                    date=dateval,
+                    leadtime=leadtime,
+                    lead_int=lead_int
+                )
                 # Write output file
                 if comm.rank == 0:
-                    log.info("========================================================")
+                    log.info("===============================================")
                     log.info(f'Write interp file for day {dateval} {file_out}')
-                    log.info("========================================================")
+                    log.info("===============================================")
                 Writer(log).write_outputnp(file_out,
                                            tab_results,
                                            param_dict,
@@ -123,12 +142,12 @@ def main(level=2):
                                            leadtime,
                                            lead_int)
     comm.Barrier()
-    ## Recombine output files
+    # Recombine output files
     if comm.rank == 0:
-        log.info(f'Recombine files')
+        log.info('Recombine files')
         Writer(log).write_class4_out(param_dict, list_keys)
         log.info(f"End of code {param_dict['date1']} {param_dict['date2']}")
-# Set the level of logger
-#log_level = 1
+
+
 # Run the main code
 main()

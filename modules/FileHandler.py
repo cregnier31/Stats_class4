@@ -63,26 +63,6 @@ class FileHandler:
         # Return all found files or an empty list if none are found
         return all_files if all_files else None
 
-#    def find_file(self, pattern, list_grids):
-#        """
-#            Find files based on the specified pattern, with formatting to include model,
-#            daily prefix, date, grid types, and directory.
-#        """
-#        files = []
-#        for gridtype in list_grids:
-#            # Format the pattern with all necessary variables
-#            formatted_pattern = pattern.format(
-#                                dirmodel=self.dirmodel,
-#                                modele=self.modele,
-#                                daily_pref=self.daily_pref,
-#                                dateval=self.dateval,
-#                                gridtype=gridtype,
-#                                directory=self.directory
-#                            )
-#            # Use glob to find matching files for the formatted pattern
-#            files.extend(glob(formatted_pattern))
-#        return files
-
     def load_files(self):
         # Determine the configuration section based on typemod and directory
         config_section = self.config.get('file_handling', {}).get(self.typemod, {})
@@ -133,7 +113,6 @@ class FileHandler:
                 self.log.debug(f"Pattern = {pattern}")
                 if file_select:
                     self.log.info(f"File ok {file_select}")
-                    sys.exit(1)
                     list_file.extend(file_select)
                 else:
                     self.log.debug(f"File nok {pattern} {self.param_dict.get('gridtype', '')}")

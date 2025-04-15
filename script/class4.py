@@ -1,37 +1,45 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # vim: set ts=4 sw=4 expandtab:
-""" Description :
+"""
+Description:
     New CLASS4 launcher to compute CLASS4 with CLASS4 coming from GODAE,
     ARMOR, CORIOLIS, different ASCII files
-    History: Juillet 2014  : Creation C.REGNIER
-             Novembre 2014 :  Ajout différentes échéances pour l'interpolation+
-             clims + gestion enchaînement des runs
-             Decembre 2014 :  MAJ pour le cas particulier du zoom
-             November 2016 :  New version with KDtree method for coloc and interp
-             November/Dec 2017 :  Add modules in a generic lib for CLASS4
-             portability Generic KDtree for SLA,SST,SSS
-             September 2018 :  Add interpolator for 2D variables
-             September 2018 : Refactoring
-             Juillet 2020 : Add 3D insitu profiles 
-    Developer  : C.REGNIER
+
+History:
+    July 2014       : Creation - C. REGNIER
+    November 2014   : Add multiple forecast lead times for interpolation,
+                      clims, and run chaining
+    December 2014   : Update for zoomed region case
+    November 2016   : New version with KDTree method for coloc/interp
+    Nov/Dec 2017    : Modular refactor for CLASS4 portability (SLA, SST, SSS)
+    September 2018  : Add interpolator for 2D variables, refactoring
+    July 2020       : Add 3D in-situ profiles
+    April 2025      : Editorial version
+
+Developer:
+    C. REGNIER
 """
-#
+
 from __future__ import generators
+
 import os
 import sys
 from os.path import dirname
-sys.path.append(dirname(__file__)+'/../modules/')
+
+# Import local modules (add path first)
+if __name__ == "__main__":
+    sys.path.append(os.path.join(dirname(__file__), '../modules/'))
+
 import resource
+from timeit import default_timer as timer
+
 # Import local modules
 from Selector import Selector
 from Loader import Loader
 from Interpolator import Interpolator
 from Writer import Writer
-from timeit import default_timer as timer
 from utils import create_dict
-from glob import glob
-import numpy as np
 # Set Stack to unlimited
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
                                            resource.RLIM_INFINITY))
@@ -45,12 +53,12 @@ def main(level=2):
     # ==================================================================
     #  PART-1 -  Load input parameters
     # ==================================================================
-    param_dict,log = Loader().factory('INPUT').load(sys.argv[1:], level)
+    param_dict, log = Loader().factory('INPUT').load(sys.argv[1:], level)
     log.debug('========================================================')
     log.debug('          Load input options and parameter file         ')
     log.debug('========================================================')
     # Load db configuration file
-    conf_path = dirname(__file__) #os.getcwd()
+    conf_path = dirname(__file__)
     filename = conf_path + '/cfg/' + param_dict['confname']
     param_dict = Loader.factory('NML').load(filename, level, param_dict, log)
     # ==========================================================================
@@ -59,28 +67,40 @@ def main(level=2):
     log.info('========================================================')
     log.info('              Launch time loop                          ')
     log.info('========================================================')
-    valeurj = param_dict['date1']
-    ## Create dictionnary
+    # Create dictionnary
     list_keys = create_dict(param_dict['date1'],
                             param_dict['date2'],
                             param_dict['lead_time'],
                             param_dict['lead_int'])
     log.debug(f'Keys {list_keys}')
-    unique_dates = sorted({int(key.split('-')[0]) for key in list_keys['keyvalues']})
-    unique_leadtime = sorted({key.split('-')[1] for key in list_keys['keyvalues']})
-    unique_leadtime_unit = sorted({int(key.split('-')[2]) for key in list_keys['keyvalues']})
+    unique_leadtime = sorted({
+        key.split('-')[1]
+        for key in list_keys['keyvalues']
+    })
+    unique_leadtime_unit = sorted({
+        int(key.split('-')[2])
+        for key in list_keys['keyvalues']
+    })
     log.debug(f'{unique_leadtime=}')
     log.debug(f'{unique_leadtime_unit=}')
     for keyvalue in list_keys['keyvalues']:
         dateval, leadtime, lead_int = keyvalue.split('-')
         start = timer()
         log.info(f'Interp day {dateval} {leadtime} leadtime {lead_int}')
-        log.info('========================================================')
+        log.info('=================================================')
         # Selection of the input data
-        log.info(f"Selection of input data {param_dict['data_format']} {param_dict['data_type']}")
-        log.info('========================================================')
-        input_list_files, ll_miss = Selector(param_dict['data_format'], param_dict['data_type'], log).\
-            factory("GLOBAL_INPUT_DATA").run(param_dict, dateval)
+        log.info(
+            f"Selection of input data {param_dict['data_format']} "
+            f"{param_dict['data_type']}"
+        )
+        log.info('=================================================')
+        selector = Selector(
+            param_dict['data_format'],
+            param_dict['data_type'],
+            log
+        )
+        global_input = selector.factory("GLOBAL_INPUT_DATA")
+        input_list_files, ll_miss = global_input.run(param_dict, dateval)
         if ll_miss:
             log.info(f'File is missing for the observation {dateval}')
             continue
@@ -96,13 +116,18 @@ def main(level=2):
                                            lead_int):
                     log.info(f'Intermediate file exist {file}')
                     continue
-                #if not read_outputnp(file_out):
-                tab_results, file_out = Interpolator(log, dask=param_dict['dask']).read_and_interp(
-                    file, param_dict, date=dateval, leadtime=leadtime, lead_int=lead_int)
+                interpolator = Interpolator(log, dask=param_dict['dask'])
+                tab_results, file_out = interpolator.read_and_interp(
+                    file,
+                    param_dict,
+                    date=dateval,
+                    leadtime=leadtime,
+                    lead_int=lead_int
+                )
                 # Write output file
-                log.info("========================================================")
+                log.info("=================================================")
                 log.info(f'Write interp file for day {dateval} {file_out}')
-                log.info("========================================================")
+                log.info("=================================================")
                 log.debug(tab_results.keys())
                 Writer(log).write_outputnp(file_out,
                                            tab_results,
@@ -111,12 +136,18 @@ def main(level=2):
                                            leadtime,
                                            lead_int)
         end = timer()
-        log.info('~~~~~~~~ Time elapsed to process day {} : {} {}'.format
-                           (str(dateval),str(end - start), " seconds ~~~~~~~~~~~~"))
+        log.info(
+            "~~~~~~~~ Time elapsed to process day {} : {} {} ~~~~".format(
+                dateval,
+                end - start,
+                "seconds"
+                )
+        )
     # Write output file
     log.info('Write output file')
     Writer(log).write_class4_out(param_dict, list_keys)
     log.info('End')
+
 
 # Set the level of logger (log_level = 2)
 # Run the main code
