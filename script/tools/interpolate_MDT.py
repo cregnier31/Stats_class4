@@ -62,15 +62,16 @@ SYSTEM = "GLONET14"
 #SYSTEM = "GLONET"
 resol = "1deg"
 resol = "025deg"
-file_in = "/data/rd_exchange/cregnier/static//MDT/GLO-MFC_001_030_mdt.nc"
+nbpts_interp = 1
+file_in = "/data/rd_exchange/cregnier/static//MDT/HYBRID_MSSH_V5_ORCA12_r1.nc"
+#file_in = "/data/rd_exchange/cregnier/static//MDT/GLO-MFC_001_030_mdt.nc"
 #file_out = "/data/rd_exchange/cregnier/SORT/GLONET//fcst1/GLONET_2024-01-05_all.nc"
 file_out = f"/data/rd_exchange/cregnier/SORT/GLONET_14//fcst1/{SYSTEM}_2024-01-05_all.nc"
 path_weight = '/data/rd_exchange/cregnier/TMP/'
-weight_file = f'{path_weight}GLO-MFC_001_030_mdt_{resol}.p'
+weight_file = f'{path_weight}{SYSTEM}_mdt_{resol}_nbpts{nbpts_interp}.p'
 dir_out = "/data/rd_exchange/cregnier/static/"
 variable = 'mssh'
 # Interp options
-nbpts_interp = 4
 x1 = 'longitude'
 x2 = 'lon'
 y1 = 'latitude'
@@ -80,8 +81,11 @@ tab_out, lon, lat = interpolator_2D(x1, x2, y1, y2, file_in,\
                                     file_out, weight_file,
                                     nbpts_interp, variable, save=True)
 
+print('ok')
+sys.exit(1)
 if ll_save:
     print(f'Save interp file')
-    outnc = f'{dir_out}GLO-MFC_001_030_mdt_{resol}.nc'
+    #outnc = f'{dir_out}GLO-MFC_001_030_mdt_{resol}.nc'
+    outnc = f'{dir_out}GLO-MFC_{SYSTEM}_mdt_{resol}.nc'
     create_netcdf(outnc, lon, lat, tab_out)
 

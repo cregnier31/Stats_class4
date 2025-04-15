@@ -55,8 +55,10 @@ def extract_file_info(dirout, file_path):
 # Example usage
 #DIR_IN = "/data/rd_exchange/aelaouni/XIHE_oper/"
 #dirout = "/data/rd_exchange/cregnier/SORT/XIHE_oper/"
-DIR_IN = "/data/rd_exchange/aelaouni/GLONET/"
-dirout = "/data/rd_exchange/cregnier/SORT/GLONET/"
+#DIR_IN = "/data/rd_exchange/aelaouni/GLONET/"
+#dirout = "/data/rd_exchange/cregnier/SORT/GLONET/"
+DIR_IN = "/data/rd_exchange/olegallou/IA_FORECAST/"
+dirout = "/data/rd_exchange/cregnier/SORT/GLO12V4_PGS/"
 for file_path in glob(f"{DIR_IN}*/*nc"):
     print(file_path)
     file_info = extract_file_info(dirout, file_path)
