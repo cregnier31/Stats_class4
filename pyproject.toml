@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tep_class4"
+version = "0.1.0"
+description = "Package to create class4 files"
+authors = [
+    { name = "Charly Regnier", email = "cregnier@mercator-ocean.fr" }
+]
+dependencies = []
+
+[tool.hatch.metadata]
+name = "tep_class4"
+version = "0.1.0"
+description = "Package to create class4 files"
+authors = ["Charly Regnier <cregnier@mercator-ocean.fr>"]
+
+# Specify the package's main entry points
+# These are the scripts users can call from the command line after installing the package
+
+[tool.hatch.scripts]
+class4 = "tep_class4.cli.class4:main"
+class4-multiproc = "tep_class4.cli.class4_multiproc:main"
+
+# Include additional files (like config files)
+[tool.hatch.build]
+include = [
+    "src/tep_class4/cfg/*",
+    "src/tep_class4/cli/*",  # Include the CLI folder
+    "src/tep_class4/core/*",  # Include the core module
+    # Add any other necessary directories or files
+]
+
+[tool.hatch.envs]
+# Define environments for various workflows if you need them
+# This section is useful for managing environments during development
+# But you can leave it empty if you're using default behavior
+
+[tool.hatch.version]
+# Define versioning scheme
+version = "0.1.0"
+
+[tool.hatch.vcs]
+# VCS settings for versioning, e.g., Git integration
+enabled = true

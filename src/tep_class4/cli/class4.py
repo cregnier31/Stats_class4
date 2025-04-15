@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # vim: set ts=4 sw=4 expandtab:
 """
@@ -26,19 +26,19 @@ from __future__ import generators
 import os
 import sys
 from os.path import dirname
-import numpy as np
+
 # Import local modules (add path first)
 if __name__ == "__main__":
     sys.path.append(os.path.join(dirname(__file__), '../modules/'))
 
 import resource
+from timeit import default_timer as timer
 
 # Import local modules
 from Selector import Selector
 from Loader import Loader
 from Interpolator import Interpolator
 from Writer import Writer
-from mpi4py import MPI
 from utils import create_dict
 # Set Stack to unlimited
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
@@ -61,42 +61,39 @@ def main(level=2):
     conf_path = dirname(__file__)
     filename = conf_path + '/cfg/' + param_dict['confname']
     param_dict = Loader.factory('NML').load(filename, level, param_dict, log)
+    # ==========================================================================
+    # PART-2 - Loop for a given time range
+    # ==========================================================================
+    log.info('========================================================')
+    log.info('              Launch time loop                          ')
+    log.info('========================================================')
     # Create dictionnary
     list_keys = create_dict(param_dict['date1'],
                             param_dict['date2'],
                             param_dict['lead_time'],
                             param_dict['lead_int'])
-    # *********** MPI section to split dates on each processor ***********
-    comm = MPI.COMM_WORLD
-    ndate = len(list_keys['keyvalues'])
-    irest = np.mod(ndate, comm.size)
-    ntask = ndate//comm.size
-    istart = int(ntask*comm.rank)
-    iend = int(istart+ntask-1)
-    cla_date = np.array(list_keys['keyvalues'][istart:iend+1]).tolist()
-    iend_tot = ntask*comm.size-1
-    if irest > 0 and comm.rank < irest:
-        cla_date.append(list_keys['keyvalues'][iend_tot+comm.rank+1])
-    # ==================================================================
-    # PART-2 - Loop for a given time range
-    # ==================================================================
-    if comm.rank == 0:
-        log.debug('====================================================')
-        log.debug('              Launch time loop                          ')
-        log.debug('========================================================')
-        log.info(f"Number of date {ndate}")
-        log.debug(f'Date to run {cla_date}')
-        log.debug(f"Size of the comm {comm.size}")
-        log.debug(f'Number of tasks {ntask}')
-        log.debug(f"irest = {irest}")
-        log.debug(f"Start {istart} End {iend}")
-        log.debug(f"iend_tot = {iend_tot}")
-    for keyvalue in cla_date:
+    log.debug(f'Keys {list_keys}')
+    unique_leadtime = sorted({
+        key.split('-')[1]
+        for key in list_keys['keyvalues']
+    })
+    unique_leadtime_unit = sorted({
+        int(key.split('-')[2])
+        for key in list_keys['keyvalues']
+    })
+    log.debug(f'{unique_leadtime=}')
+    log.debug(f'{unique_leadtime_unit=}')
+    for keyvalue in list_keys['keyvalues']:
         dateval, leadtime, lead_int = keyvalue.split('-')
+        start = timer()
+        log.info(f'Interp day {dateval} {leadtime} leadtime {lead_int}')
+        log.info('=================================================')
         # Selection of the input data
-        if comm.rank == 0:
-            log.info(f'Selection of input data for {dateval}')
-            log.info('====================================================')
+        log.info(
+            f"Selection of input data {param_dict['data_format']} "
+            f"{param_dict['data_type']}"
+        )
+        log.info('=================================================')
         selector = Selector(
             param_dict['data_format'],
             param_dict['data_type'],
@@ -105,11 +102,9 @@ def main(level=2):
         global_input = selector.factory("GLOBAL_INPUT_DATA")
         input_list_files, ll_miss = global_input.run(param_dict, dateval)
         if ll_miss:
-            if comm.rank == 0:
-                log.info(f'File is missing for the observation {dateval}')
+            log.info(f'File is missing for the observation {dateval}')
             continue
-        if comm.rank == 0:
-            log.debug(f'{input_list_files}')
+        log.debug(f'{input_list_files}')
         if not ll_miss:
             # Interpolation of the data
             for file in input_list_files:
@@ -119,8 +114,7 @@ def main(level=2):
                                            dateval,
                                            leadtime,
                                            lead_int):
-                    if comm.rank == 0:
-                        log.debug('Intermediate file exist')
+                    log.info(f'Intermediate file exist {file}')
                     continue
                 interpolator = Interpolator(log, dask=param_dict['dask'])
                 tab_results, file_out = interpolator.read_and_interp(
@@ -131,23 +125,31 @@ def main(level=2):
                     lead_int=lead_int
                 )
                 # Write output file
-                if comm.rank == 0:
-                    log.info("===============================================")
-                    log.info(f'Write interp file for day {dateval} {file_out}')
-                    log.info("===============================================")
+                log.info("=================================================")
+                log.info(f'Write interp file for day {dateval} {file_out}')
+                log.info("=================================================")
+                log.debug(tab_results.keys())
                 Writer(log).write_outputnp(file_out,
                                            tab_results,
                                            param_dict,
                                            dateval,
                                            leadtime,
                                            lead_int)
-    comm.Barrier()
-    # Recombine output files
-    if comm.rank == 0:
-        log.info('Recombine files')
-        Writer(log).write_class4_out(param_dict, list_keys)
-        log.info(f"End of code {param_dict['date1']} {param_dict['date2']}")
+        end = timer()
+        log.info(
+            "~~~~~~~~ Time elapsed to process day {} : {} {} ~~~~".format(
+                dateval,
+                end - start,
+                "seconds"
+                )
+        )
+    # Write output file
+    log.info('Write output file')
+    Writer(log).write_class4_out(param_dict, list_keys)
+    log.info('End')
 
 
+# Set the level of logger (log_level = 2)
 # Run the main code
-main()
+if __name__ == "__main__":
+    main()
