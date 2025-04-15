@@ -1,6 +1,6 @@
 import yaml
 from glob import glob
-from lib_pyt.libtools.sydate import SyDate
+from sydate import SyDate
 import os
 import sys
 class FileHandler:
@@ -37,11 +37,11 @@ class FileHandler:
         all_files = []
         # Iterate over gridtypes and apply the date format logic
         for i, gridname in enumerate(gridname_list):
-            self.log.debug(gridname)
-            self.log.debug(self.dirmodel)
-            self.log.debug(self.modele)
-            self.log.debug(self.daily_pref)
-            self.log.debug(self.directory)
+            self.log.debug(f'{gridname=}')
+            self.log.debug(f'{self.dirmodel=}')
+            self.log.debug(f'{self.modele=}')
+            self.log.debug(f'{self.daily_pref=}')
+            self.log.debug(f'{self.directory=}')
             # Iterate over different date formats and try to find matching files
             for dateval_formatted in date_formats:
                 formatted_pattern = pattern.format(
@@ -133,16 +133,8 @@ class FileHandler:
                 self.log.debug(f"Pattern = {pattern}")
                 if file_select:
                     self.log.info(f"File ok {file_select}")
+                    sys.exit(1)
                     list_file.extend(file_select)
                 else:
                     self.log.debug(f"File nok {pattern} {self.param_dict.get('gridtype', '')}")
-            #else:
-            #    # Handle default case for non-clim
-            #    default_actions = type_run_dict.get('default', [])
-            #    for action in default_actions:
-            #        glob_pattern = default_actions[action]
-            #        file_select = self.find_file(glob_pattern,
-            #                         self.param_dict.get('gridtype', '')))
-            #        if file_select:
-            #            list_file.extend(file_select)
         return list_file

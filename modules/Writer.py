@@ -6,8 +6,6 @@ import shutil
 from glob import glob
 import re
 import numpy as np
-import geojson
-from geojson import MultiPoint
 import shelve
 import json
 from Logger import Logger

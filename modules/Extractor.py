@@ -9,12 +9,8 @@ import numpy as np
 import logging
 import tarfile
 import netCDF4
-#import custom as c
-#from sydate import SyDate
-#from sytoolkit.sydate import SyDate
-from lib_pyt.libtools.sydate import SyDate
+from sydate import SyDate
 from Logger import Logger
-from gz import ZipManipulator
 from os.path import dirname
 sys.path.append(dirname(__file__))
 from nco.nco import Nco

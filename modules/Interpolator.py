@@ -6,19 +6,13 @@ import numpy.ma as ma
 import json
 from scipy.spatial import cKDTree
 import xarray as xr
-import dask
 import vertical
-from lib_pyt.libtools import *
-from lib_pyt.reader.reader import ReadModel
+from reader import ReadModel
 from utils import find_index_month
 from inputdata_loader import inputdata_loader
 from collections import OrderedDict
 from Interp_kdtree import interp_KDtree
-from interpolate import search_orca, search_orca_4pts
 from scipy.interpolate import InterpolatedUnivariateSpline, interp1d
-from lib_pyt.plot.Profile import plot_2profiles, plot_3profiles, plot_2profiles_2
-import matplotlib.pyplot as plt
-from matplotlib import style
 from Writer import Writer
 from glob import glob
 from reader import read_GODAE_profile
@@ -26,8 +20,8 @@ from Selector import Selector
 from netCDF4 import Dataset
 import netCDF4
 from timeit import default_timer as timer
-import dask
-from dask.distributed import Client, SSHCluster
+#import dask
+#from dask.distributed import Client, SSHCluster
 from joblib import Parallel, delayed
 import warnings
 
@@ -1300,45 +1294,6 @@ class Interpolator(object):
                     self.log.debug(f'--------------------------------')
             self.log.debug('Valeurs profile {}'.format(obs[:]))
             self.log.debug('--------------------------------------------')
-            if ll_verif:
-                # Plot profiles
-                dir_out = './img2/'
-                dir_out2 = './img3/'
-                label = "prof "+str(ind_prof)
-                title = dateval+" "+variable+" "+label
-                label1 = "Insitu"
-                label2 = "Model"
-                ll_compare = True
-                prof_max = np.nanmax(profondeur)
-                ind_prof_max = np.argmax(depth_mod[:])
-                ind1, ind2 = self.getnearpos(prof_max, depth_mod)
-                label1 = "Obs"
-                label2 = "Interp"
-                plot_2profiles_2(-profondeur[:], obs[ind_prof,:], -profondeur, val_interp[:], label1,\
-                                label2, title=title, save=False,
-                                output=dir_out2+dateval+"_compprof_"+variable+"_profile_num"+str(ind_prof),
-                                var=variable)
-                label1 = "Raw"
-                label2 = "Interp"
-                plot_2profiles_2(-depth_mod[0:ind2], tab_interp_tmp[0:ind2,ind_prof] ,-profondeur, values_interp[ind_prof,:], label1,\
-                                  label2, title=title, save=False,
-                                  output=dir_out2+dateval+"_interp_"+variable+"_profile_num"+str(ind_prof),
-                                  var=variable)
-                if ll_compare == True:
-                    ## Read other profile
-                    dir_class4 = "/sortref/calval/DATA_COLOCATIONS/T_S_data_new/PSY4V3R1/data_CLASS4_GODAE/"
-                    filename = glob(dir_class4+"*"+dateval+"*profile.nc")
-                    label3 = "Model2"
-                    if filename:
-                        prof2, model_best, obs = read_GODAE_profile(variable, filename[0])
-                        plot_3profiles(-profondeur, obs[ind_prof,:], values_interp[ind_prof,:],-prof2[ind_prof,:],
-                                       model_best[ind_prof,:], label1,
-                                       label2, label3, title=title, save=False,
-                                       output=dir_out+dateval+"_comparaison_"+variable+"_profile_num"+str(ind_prof),
-                                       var=variable)
-
-                self.log.debug('Valeurs modèle {}'.format(tab_interp_tmp[0:30,ind_prof]))
-                self.log.debug('Interp modèle onto profiles {} / {}'.format(ind_prof, nb_obs))
             end = timer()
             self.log.debug('~~~~~~~~ Time elapsed interp levels on profiles: %s %s' %
                             (str(end - start), " seconds ~~~~~~~~~~~~"))

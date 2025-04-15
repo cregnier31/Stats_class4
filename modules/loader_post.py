@@ -1,25 +1,14 @@
 import os
 import sys
 from getopt import getopt
-if sys.version_info[0] >= 3:
-    import configparser as ConfigParser
-else:
-    import ConfigParser
+import configparser as ConfigParser
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 import logging
-import define_config
-import param.Def_param_bulletin as params
-import supobs
 # Serialization
-if sys.version_info[0] >=  3:
-    import pickle as cPickle
-else:
-    import cPickle
-#sys.path.append('/home/cregnier/SVN/mo/sytoolkit_branche/sytoolkit_python3/')
-from lib_pyt.libtools.sydate import SyDate
-#from sytoolkit.sydate import SyDate
+import pickle as cPickle
+from sydate import SyDate
 
 __author__      = "C.REGNIER"
 __version__ = 0.1

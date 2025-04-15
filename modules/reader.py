@@ -3,14 +3,133 @@ import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 import utilities
-import param.Def_param_bulletin as params
 import xarray as xr
-import dask
 import os
 
 __version__ = 0.1
 __date__ = "February 2019"
 __authors__ = "C.REGNIER & C.SZCZYPTA"
+
+
+class GenericReader(object):
+
+    def __init__(self, loglevel=2):
+        self.log = Logger("Reader").run(loglevel)
+
+class ReadModel(GenericReader):
+
+    def read_lightout(self, lightout_file, typemod=None, maskfile=None):
+        """
+        M.Hamon 03/2016
+        Lecture des fichiers alleges :
+            - Lecture de l'entete du fichier binaire sur les 54 premiers bytes.
+            - Lecture de la variable (Entier en 16 bits) à partir du 62eme byte jusqu'a la fin du fichier moins 4 bytes.
+            - Conversion des valeurs.
+        ALLEGE = read_lightout(lightout_file)
+        C.REGNIER 06/2016
+        Ajout des lon lat en fonction du type en entree
+        """ 
+        import os, sys, re
+        from math import tan, atan, pi
+        import numpy as np
+        import struct
+
+        def totuple(a):
+            try:
+                return tuple(totuple(i) for i in a)
+            except TypeError:
+                return a
+
+        self.log.debug("Inside lightout file {}".format(lightout_file))
+        if not os.path.isfile(str(lightout_file)):
+           liberr.LibPytReadError("No such file or directory {} Please Check the path/name of the file".format(lightout_file))
+        try:
+            f = open(lightout_file, mode='rb')
+            fileContent = f.read()
+            f.close()
+            DIM = struct.unpack(">13fh", fileContent[:54])
+            offsetbyte = 62  # nombre de bytes du header
+            # le header est étrangement range!
+            LON = int(DIM[1])
+            LAT = int(DIM[4])
+            LEVEL = int(DIM[7])
+            AUXMIN = DIM[10]
+            AUXMAX = DIM[11]
+            UNDEFO = DIM[12]
+            MAXINT = DIM[13]
+            nbbytes = len(fileContent)
+            dimensions = LON * LAT * LEVEL
+            var = np.zeros(dimensions)
+            encodagevar = '>' + str(dimensions) + 'h'
+            var = struct.unpack(encodagevar, fileContent[offsetbyte:nbbytes - 4])
+            self.log.debug("AUXMIN: {} AUXMAX: {} undef:{}".format(AUXMIN, AUXMAX, UNDEFO))
+            # ind_neg=np.where(np.array(var) != MAXINT)
+            # if AUXMIN >= 0 :
+            #    ## Cas unsign short
+            #    print ("cas unsign short")
+            #    minval=np.min(var)
+            #    maxval=np.max(var)
+            #    var_tmp=np.array(var)
+            #    ind_ocean=np.where(np.array(var) != MAXINT)
+            #    var_tmp[ind_ocean]=(np.array(var)[ind_ocean])*-1
+            #    totuplevar=totuple(var_tmp)
+            #    var=totuplevar
+            # else :
+            #    print ("cas sign short")
+            AUXMID = (AUXMIN + AUXMAX) / 2.
+            scale = AUXMAX - AUXMID
+            if(scale != 0.):
+               scale = 4. / scale
+            else:
+               scale = 1.
+            self.log.debug("scale :{}".format(scale))
+            self.log.debug("auxmid : {}".format(AUXMID))
+            ATANMAX = atan((AUXMAX - AUXMID) * scale) / pi
+            ATANMIN = atan((AUXMIN - AUXMID) * scale) / pi
+            RMAXINT = MAXINT - 1
+            self.log.debug("Maxint :{}".format(MAXINT))
+            var_ok = np.nan * np.zeros(dimensions)
+            for ii in np.arange(dimensions):
+                    if var[ii] != MAXINT:
+                            var_ok[ii] = tan(var[ii] / (RMAXINT / ATANMAX) * pi) / scale + AUXMID
+            ALLEGE = var_ok.reshape((LEVEL, LAT, LON))
+        except:
+            self.log.error("Pb during reading lightened file")
+            raise
+        if int(LAT) == 1019. and int(LON) == 1440.:
+            typemod = "PSY4"
+        elif typemod:
+            typemod = typemod
+        else:
+            typemod = "other"
+        # # Read lon lat value an compute decimation
+        self.log.debug('Typemod {}'.format(typemod))
+        try:
+            if typemod in ['PSY4', 'PSY3', 'PSY2']:
+                if typemod == "PSY4":
+                    maskfile = Statics().get_resource('coord_PSY4.nc')
+                    il_sampling = 3
+                elif typemod == "PSY3":
+                    maskfile = Statics().get_resource('coord_PSY3.nc')
+                    il_sampling = 2
+                elif typemod == "PSY2":
+                    maskfile = Statics().get_resource('coord_PSY2.nc')
+                    il_sampling = 3
+        except:
+            self.log.error("Mask file not defined")
+            raise
+        # # Read maskfile
+        nc_file = netCDF4.Dataset(maskfile, 'r')
+        nav_lat = nc_file.variables['nav_lat'][:,:]
+        nav_lon = nc_file.variables['nav_lon'][:,:]
+        nbiraw = nav_lon.shape[1]
+        nbjraw = nav_lon.shape[0]
+        nav_lon_ligth = nav_lon[2:nbjraw - 1:il_sampling, 1:nbiraw - 1:il_sampling]
+        nav_lat_ligth = nav_lat[2:nbjraw - 1:il_sampling, 1:nbiraw - 1:il_sampling]
+        self.log.debug('min out : {}'.format(np.nanmin(ALLEGE)))
+        self.log.debug('max out : {} '.format(np.nanmax(ALLEGE)))
+        self.log.debug(' Shape : {} '.format(nav_lon_ligth.shape))
+        return ALLEGE, nav_lon_ligth, nav_lat_ligth
 
 def read_outputnp(file_out):
     if os.path.exists(file_out) and os.path.getsize(file_out) != 0:

@@ -7,8 +7,6 @@ from glob import glob
 import re
 import numpy as np
 import netCDF4
-import geojson
-from geojson import MultiPoint
 import json
 if sys.version_info[0] >= 3:
     import configparser as ConfigParser
@@ -20,14 +18,13 @@ import datetime as dt
 import errno
 import pandas as pd
 from datetime import date
-from lib_pyt.libtools.sydate import SyDate
-from lib_pyt.libtools.utilities import date_range
 from Logger import Logger
 from calendar import monthrange
-from lib_pyt.libtools.utilities import date_range
 from reader import *
 from ast import literal_eval
 from os.path import dirname
+from sydate import SyDate
+from utils import date_range
 from QCcontrol import QCcontroller
 import ast
 
@@ -158,24 +155,6 @@ class InputDataLoader(Loader):
                 position=Loader.factory(param_dict['data_format']).read_pos_amsr(fichier)
             else :
                 position=Loader.factory(param_dict['data_format']).read_pos(fichier)
-            #else:
-            #    lon, lat, obs_value = Loader.factory(param_dict['data_format'])\
-            #    .read_pos_and_value(fichier)
-            #if param_dict['write_geojson']:
-            #    nb_obs = int(np.shape(lat)[0])
-            #    new_position = np.ndarray(
-            #        shape=(nb_obs, 2), dtype=float, order='F')
-            #    new_position[:, 0] = lon
-            #    new_position[:, 1] = lat
-            ## Create Geojson file for coloc verification with Qgis
-            #if param_dict['write_geojson'] : 
-            #    liste_type=['GLO','XB','CT','DC','BA','GL','ML','PF','TE','DB','FB','MO','TS']
-            #    for type_var in liste_type : 
-            #        ## Write files with positions of dataset
-            #        file_out=dirtmp+'Positions_'+type_var+'_'+data_format+'_'+data_type+'_D'+SyDate.__str__(date1)+'_'+SyDate.__str__(date2)+'.geojson'
-            #        Writer(log).write_geojson_fromdb(type_var,file_out,file_db)
-            #    file_out2=dirtmp+'Positions_coloc_'+data_type+'_'+data_format+'_'+data_type+'_D'+SyDate.__str__(date1)+'_'+SyDate.__str__(date2)+'.geojson'
-            #    Writer(log).write_geojson_fromdb('coloc',file_out2,file_db2)
 
         return position, ll_interp
         #return lon, lat, ll_interp

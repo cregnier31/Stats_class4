@@ -12,7 +12,8 @@ def main():
     # Determine srcdata and options
     if typedata in ["SST", "SLA", "profile", "aice"]:
         srcdata = "GODAE"
-        options = "--best"
+        #ioptions = "--best"
+        options = "--fcst"
     elif typedata in ["SLA-L3"]:
         srcdata="CMS"
         options = "--best"
@@ -24,7 +25,7 @@ def main():
         sys.exit(1)
 
     loglevel = 7
-    python_bin = "/home/ext/mr/smer/regnierc/anaconda3/envs/env_py38/bin/python"
+    python_bin = "/opt/conda/envs/myenv_class4/bin/python"
     script_path = "../TEP_CLASS4_kdtree_optim.py"
 
     command = [
@@ -32,9 +33,14 @@ def main():
         f"--src={srcdata} --data={typedata} --typemod={typemod} --loglevel={loglevel} {options}"
     ]
 
-    # Execute the sbatch command
+    # Execute the command
     try:
-        subprocess.run(sbatch_command, check=True)
+        print(command)
+        subprocess.run(command, check=True)
         print("Run submitted successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error submitting job: {e}")
+
+
+if __name__ == "__main__":
+    main()

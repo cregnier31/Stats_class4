@@ -12,10 +12,12 @@ import logging
 from loader_post import load_db
 from datetime import datetime, timedelta
 import yaml
+from dateutil.relativedelta import relativedelta
 
 __version__ = 0.2
 __date__ = "Octobre 2021"
 __author__ = "C.REGNIER"
+
 
 
 def mkdir(path):
@@ -435,3 +437,12 @@ def split_year_into_months(year):
             last_day = datetime(year, month + 1, 1) - timedelta(days=1)
         months.append((first_day.strftime('%Y%m%d'), last_day.strftime('%Y%m%d')))
     return months
+
+def date_range(start_date, end_date, increment, period):
+    result = []
+    nxt = start_date
+    delta = relativedelta(**{period:increment})
+    while nxt <= end_date:
+        result.append(nxt)
+        nxt += delta
+    return result
