@@ -26,7 +26,7 @@ def main():
 
     loglevel = 7
     python_bin = "/opt/conda/envs/myenv_class4/bin/python"
-    script_path = "../class4.py"
+    script_path = "../src/tep_class4/cli/class4.py"
 
     command = [
         f"{python_bin} {script_path} --config={config} --date1={date1} --date2={date2} "

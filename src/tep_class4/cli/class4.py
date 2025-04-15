@@ -21,15 +21,18 @@ Developer:
     C. REGNIER
 """
 
-from __future__ import generators
+#from __future__ import generators
 
 import os
 import sys
 from os.path import dirname
 
-# Import local modules (add path first)
+# Import local modules
 if __name__ == "__main__":
-    sys.path.append(os.path.join(dirname(__file__), '../modules/'))
+    # Ensure the path to the 'core' directory is added to sys.path
+    core_path = os.path.join(dirname(__file__), '../core')
+    if core_path not in sys.path:
+        sys.path.append(core_path)
 
 import resource
 from timeit import default_timer as timer
