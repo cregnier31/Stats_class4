@@ -11,7 +11,7 @@ import datetime
 import re
 
 # local package
-import syerrors as syerr
+from . import syerrors as syerr
 
 __all__= ('SyDate',)
 

@@ -7,16 +7,16 @@ import json
 from scipy.spatial import cKDTree
 import xarray as xr
 import vertical
-from reader import ReadModel
-from utils import find_index_month
-from inputdata_loader import inputdata_loader
+from .reader import ReadModel
+from tep_class4.core.utils import find_index_month
+from .inputdata_loader import inputdata_loader
 from collections import OrderedDict
-from Interp_kdtree import interp_KDtree
+from .Interp_kdtree import interp_KDtree
 from scipy.interpolate import InterpolatedUnivariateSpline, interp1d
-from Writer import Writer
+from .Writer import Writer
 from glob import glob
-from reader import read_GODAE_profile
-from Selector import Selector
+from .reader import read_GODAE_profile
+from .Selector import Selector
 from netCDF4 import Dataset
 import netCDF4
 from timeit import default_timer as timer

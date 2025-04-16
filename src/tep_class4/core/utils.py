@@ -9,7 +9,7 @@ import shlex,subprocess
 from datetime import datetime
 import traceback
 import logging
-from loader_post import load_db
+from .loader_post import load_db
 from datetime import datetime, timedelta
 import yaml
 from dateutil.relativedelta import relativedelta

@@ -2,9 +2,9 @@ import sys
 import os
 import re
 import glob
-from sydate import SyDate
-from sydate import SyDate as sy
-from Logger import Logger
+from .sydate import SyDate
+from .sydate import SyDate as sy
+from .Logger import Logger
 from ModuleTime import Time
 ##############################################################
 # C.REGNIER Juin 2014

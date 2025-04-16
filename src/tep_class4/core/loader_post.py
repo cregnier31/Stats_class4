@@ -8,7 +8,7 @@ from netCDF4 import Dataset
 import logging
 # Serialization
 import pickle as cPickle
-from sydate import SyDate
+from .sydate import SyDate
 
 __author__      = "C.REGNIER"
 __version__ = 0.1

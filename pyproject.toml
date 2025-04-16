@@ -11,6 +11,12 @@ authors = [
 ]
 dependencies = []
 
+
+[project.scripts]
+class4 = "tep_class4.cli.class4:main"
+class4-multiproc = "tep_class4.cli.class4_multiproc:main"
+
+
 [tool.hatch.metadata]
 name = "tep_class4"
 version = "0.1.0"
@@ -29,8 +35,9 @@ include = ["tep_class4/cli/cfg/*"]
 
 # Include additional files (like config files)
 [tool.hatch.build]
+# Tell Hatch where your source code lives
+sources = ["src"]
 include = [
-    "src/tep_class4/cli/cfg/*",
     "src/tep_class4/cli/*",  # Include the CLI folder
     "src/tep_class4/core/*",  # Include the core module
     # Add any other necessary directories or files

@@ -29,22 +29,27 @@ from os.path import dirname
 import numpy as np
 
 # Import local modules
-if __name__ == "__main__":
-    # Ensure the path to the 'core' directory is added to sys.path
-    core_path = os.path.join(dirname(__file__), '../core')
-    if core_path not in sys.path:
-        sys.path.append(core_path)
+#if __name__ == "__main__":
+#    # Ensure the path to the 'core' directory is added to sys.path
+#    core_path = os.path.join(dirname(__file__), '../core')
+#    if core_path not in sys.path:
+#        sys.path.append(core_path)
 
 import resource
 
 # Import local modules
-from Selector import Selector
-from Loader import Loader
-from Interpolator import Interpolator
-from Writer import Writer
-from mpi4py import MPI
-from utils import create_dict
+from tep_class4.core.Selector import Selector
+from tep_class4.core.Loader import Loader
+from tep_class4.core.Interpolator import Interpolator
+from tep_class4.core.Writer import Writer
+from tep_class4.core.utils import create_dict
+#from .Selector import Selector
+#from .Loader import Loader
+#from .Interpolator import Interpolator
+#from .Writer import Writer
+#from .utils import create_dict
 # Set Stack to unlimited
+from mpi4py import MPI
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
                                            resource.RLIM_INFINITY))
 

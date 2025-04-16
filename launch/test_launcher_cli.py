@@ -26,7 +26,7 @@ def main():
 
     # Use installed CLI entry point instead of raw script path
     command = [
-        "tep-class4",
+        "class4",
         f"--config={config}",
         f"--date1={date1}",
         f"--date2={date2}",

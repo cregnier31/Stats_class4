@@ -3,19 +3,19 @@ import os, sys, string, shutil, re
 from glob import glob
 import numpy as np
 import json
-from Loader import Loader
-from nco.nco import Nco
-from QCcontrol import QCcontroller
+from .Loader import Loader
+from .nco.nco import Nco
+from .QCcontrol import QCcontroller
 import logging
 import shelve
-from Writer import Writer
+from .Writer import Writer
 import itertools
-from Extractor import Extractor
-from sydate import SyDate
+from .Extractor import Extractor
+from .sydate import SyDate
 from collections import OrderedDict
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from FileHandler import FileHandler
+from .FileHandler import FileHandler
 import yaml
 
 #######################################################################################

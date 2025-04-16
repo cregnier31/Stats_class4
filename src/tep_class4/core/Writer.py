@@ -8,7 +8,7 @@ import re
 import numpy as np
 import shelve
 import json
-from Logger import Logger
+from .Logger import Logger
 from datetime import date
 from netCDF4 import Dataset
 import netCDF4
@@ -16,7 +16,7 @@ import gzip
 import pickle
 import fcntl
 import time
-from FileRenamer import FileRenamer
+from .FileRenamer import FileRenamer
 ##############################################################
 # C.REGNIER Juin 2014
 # Class Writer to write output file in ASCII or Geojson

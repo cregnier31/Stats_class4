@@ -3,7 +3,7 @@ import os,sys,string,shutil,glob,re
 import numpy as np
 import netCDF4
 import xarray as xr
-from NetcdReader import *
+from .NetcdReader import *
 
 #######################################################################################
 ## C.REGNIER Juin 2014 

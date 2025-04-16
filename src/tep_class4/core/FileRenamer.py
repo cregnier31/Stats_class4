@@ -1,6 +1,6 @@
 import re
 import sys
-from utils import yaml_loader
+from tep_class4.core.utils import yaml_loader
 import os
 """
     Class to rename observation files to common output names

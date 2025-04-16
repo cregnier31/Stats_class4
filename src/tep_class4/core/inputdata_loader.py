@@ -19,14 +19,14 @@ import datetime as dt
 import errno
 import pandas as pd
 from datetime import date
-from Logger import Logger
+from .Logger import Logger
 from calendar import monthrange
-from utils import date_range
-from sydate import SyDate
-from reader import *
+from tep_class4.core.utils import date_range
+from .sydate import SyDate
+from .reader import *
 from ast import literal_eval
 from os.path import dirname
-from QCcontrol import QCcontroller
+from .QCcontrol import QCcontroller
 import seawater as sw
 
 ##############################################################

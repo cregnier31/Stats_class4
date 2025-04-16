@@ -25,22 +25,27 @@ def main():
         sys.exit(1)
 
     loglevel = 7
-    python_bin = "/opt/conda/envs/myenv_class4/bin/python"
+    #python_bin = "/opt/conda/envs/myenv_class4/bin/python"
+    python_bin = "/homelocal-px/px-167/sauvegarde/cregnier/Program_files/mambaforge-pypy3/envs/env_py311/bin/python"
     script_path = "../src/tep_class4/cli/class4.py"
 
     command = [
-        f"{python_bin} {script_path} --config={config} --date1={date1} --date2={date2} "
-        f"--src={srcdata} --data={typedata} --typemod={typemod} --loglevel={loglevel} {options}"
-    ]
+        python_bin,
+        script_path,
+        f"--config={config}",
+        f"--date1={date1}",
+        f"--date2={date2}",
+        f"--src={srcdata}",
+        f"--data={typedata}",
+        f"--typemod={typemod}",
+        f"--loglevel={loglevel}",
+    ] + options.split()
 
-    # Execute the command
     try:
-        print(command)
         subprocess.run(command, check=True)
         print("Run submitted successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error submitting job: {e}")
-
 
 if __name__ == "__main__":
     main()

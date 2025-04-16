@@ -1,8 +1,9 @@
 import yaml
 from glob import glob
-from sydate import SyDate
+from .sydate import SyDate
 import os
 import sys
+
 class FileHandler:
     def __init__(self, config,
                  dirmodel, modele,

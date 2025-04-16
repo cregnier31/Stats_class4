@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
-import utilities
+from . import utilities
 import xarray as xr
 import os
 

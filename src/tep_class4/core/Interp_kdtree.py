@@ -13,10 +13,10 @@ except ImportError:
     except ImportError:
         raise ImportError('Either pykdtree or scipy must be available')
 import xarray as xr
-from utils import *
-import utilities as utils
+from tep_class4.core.utils import *
+from . import utilities as utils
 import netCDF4
-from Logger import Logger
+from .Logger import Logger
 
 if sys.version_info[0] >=  3:
     import pickle

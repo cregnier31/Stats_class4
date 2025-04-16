@@ -18,14 +18,14 @@ import datetime as dt
 import errno
 import pandas as pd
 from datetime import date
-from Logger import Logger
+from .Logger import Logger
 from calendar import monthrange
-from reader import *
+from .reader import *
 from ast import literal_eval
 from os.path import dirname
-from sydate import SyDate
-from utils import date_range
-from QCcontrol import QCcontroller
+from .sydate import SyDate
+from tep_class4.core.utils import date_range
+from .QCcontrol import QCcontroller
 import ast
 
 ##############################################################

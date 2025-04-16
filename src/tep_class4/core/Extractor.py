@@ -9,11 +9,11 @@ import numpy as np
 import logging
 import tarfile
 import netCDF4
-from sydate import SyDate
-from Logger import Logger
 from os.path import dirname
 sys.path.append(dirname(__file__))
-from nco.nco import Nco
+from .sydate import SyDate
+from .Logger import Logger
+from .nco.nco import Nco
 import xarray as xr
 from netCDF4 import Dataset
 import subprocess
