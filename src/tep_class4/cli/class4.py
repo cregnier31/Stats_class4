@@ -15,27 +15,18 @@ History:
     Nov/Dec 2017    : Modular refactor for CLASS4 portability (SLA, SST, SSS)
     September 2018  : Add interpolator for 2D variables, refactoring
     July 2020       : Add 3D in-situ profiles
-    April 2025      : Editorial version
+    April 2025      : Edito version
 
 Developer:
     C. REGNIER
 """
 
-#from __future__ import generators
-
 import os
 import sys
 from os.path import dirname
-
-# Import local modules
-#if __name__ == "__main__":
-#    # Ensure the path to the 'core' directory is added to sys.path
-#    core_path = os.path.join(dirname(__file__), '../core')
-#    if core_path not in sys.path:
-#        sys.path.append(core_path)
-
 import resource
 from timeit import default_timer as timer
+import argparse
 
 # Import local modules
 from tep_class4.core.Selector import Selector
@@ -43,12 +34,6 @@ from tep_class4.core.Loader import Loader
 from tep_class4.core.Interpolator import Interpolator
 from tep_class4.core.Writer import Writer
 from tep_class4.core.utils import create_dict
-#from .Selector import Selector
-#from .Loader import Loader
-#from .Interpolator import Interpolator
-#from .Writer import Writer
-#from .utils import create_dict
-# Set Stack to unlimited
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
                                            resource.RLIM_INFINITY))
 
@@ -57,6 +42,18 @@ def main(level=2):
     """
     Main TEP CLASS4 function
     """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", required=True)
+    parser.add_argument("--date1", required=True)
+    parser.add_argument("--date2", required=True)
+    parser.add_argument("--src", required=True)
+    parser.add_argument("--data", required=True)
+    parser.add_argument("--typemod", required=True)
+    parser.add_argument("--loglevel", type=int, default=2)
+    parser.add_argument("--fcst (only forecasts)", action="store_true")
+    parser.add_argument("--hdct (only hindcast)", action="store_true")
+    parser.add_argument("--all (hdct fcst and pers)", action="store_true")
+    args = parser.parse_args()
 
     # ==================================================================
     #  PART-1 -  Load input parameters
