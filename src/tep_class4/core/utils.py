@@ -13,12 +13,31 @@ from .loader_post import load_db
 from datetime import datetime, timedelta
 import yaml
 from dateutil.relativedelta import relativedelta
+from datetime import datetime, timedelta
 
 __version__ = 0.2
 __date__ = "Octobre 2021"
 __author__ = "C.REGNIER"
 
+class Parameters:
+    def __init__(self, config_file):
+        self.parameters = self.load_parameters(config_file)
 
+    def load_parameters(self, config_file):
+        with open(config_file, 'r') as file:
+            return yaml.safe_load(file)
+
+    def get_parameter(self, category, key):
+        return self.parameters.get(category, {}).get(key)
+
+    def get_category(self, category):
+        return self.parameters.get(category, {})
+
+    def set_parameter(self, category, key, value):
+        if category in self.parameters:
+            self.parameters[category][key] = value
+        else:
+            self.parameters[category] = {key: value}
 
 def mkdir(path):
     '''
@@ -47,7 +66,9 @@ def loader(options):
     list_config = ['FOAM', 'GIOPS', 'CMCC', 'CGOFS', 'BLK', 'PSY3V3R3',
                    'HYCOM_RTOFS', 'PSY4V2R2', 'PSY4V3R1', 'BIOMER4',
                    'FREEBIORYS2', 'NERSC', 'BIOMER4V2','ENSMEAN', 'GLO12',
-                   'GLO12V4', 'GLO4', 'FOAM12']
+                   'GLO12V4', 'GLO4', 'FOAM12', 'GLORYS12V1', 'GLO12V5-130',
+                   'GREP-mean', 'GLO12V5-140', 'GLO12V5-150', 'BIO4GLO12',
+                   'XIHE', 'GLONET', 'GLONET14', 'GLO12V4_PGS']
     tab_options['config'] = list_config
     list_mask = ['basin','basin_pol','box','bins2d','bins2d_arc','bins2d_ant','bins4d']
     tab_options['fmt_mask'] = list_mask
@@ -55,7 +76,7 @@ def loader(options):
     tab_options['bilan'], tab_options['fmt_ascii'], tab_options['daily_off'], tab_options['percent'] =  (['on','off'], ) * 4
     tab_options['day1'] = []
     tab_options['day2'] = []
-    list_nblevel = ['50','75']
+    list_nblevel = ['50','75', '23']
     tab_options['nb_levels'] = list_nblevel
     tab_conf ={}
     list_options = ['config','day1','day2','typemod','fmt_mask','bilan','fmt_ascii','daily_off','percent','nb_levels']
@@ -87,18 +108,20 @@ def loader(options):
             usage5()
         if len(cla_opts[1]) == 9:
             usage6()
-        if len(cla_opts[1]) == 10:
-            usage7()
+        #if len(cla_opts[1]) == 10:
+        #    usage7()
 
     except getopt.GetoptError as err:
         raise (f'Error {err} Missing options {keywords}')
 
     tab_conf['pbsworkdir'] = os.path.dirname(os.path.realpath(__file__))
-    tab_conf['sub'] = tab_conf['pbsworkdir'] + '/../sub/'
-    _DBFILE_ = tab_conf['pbsworkdir'] + "/../postraitement/python/compute_stats/cfg/global_params.cfg"
+    _DBFILE_ = f"{tab_conf['pbsworkdir']}/../cfg/global_params.cfg"
+    _DBFILE2_ = f"{tab_conf['pbsworkdir']}/../cfg/environment_{tab_conf['config']}.cfg"
     db = load_db(_DBFILE_)
+    db2 = load_db(_DBFILE2_)
+    tab_conf['dirout'] = db2.get('output_dir', 'DIR_OUT')
     tab_conf['dir_bin'] = db.get('PARAMS', 'py_env') + 'bin/'
-
+    tab_conf['sub'] = f"{tab_conf['dirout']}/sub/"
     mkdir(tab_conf['sub'])
 
     return tab_conf
@@ -162,10 +185,12 @@ def create_launcher_multi(tab_conf, nbtasks='30', timecounter='06:00:00', batch=
         typejob = 'timeserie'
     elif tab_conf['bilan'] != None:
         typejob = 'bilan'
+    elif tab_conf['percent'] != None:
+        typejob = 'percent'
     else:
         typejob = 'others'
-    _DBFILE_ = tab_conf['pbsworkdir'] + "/../postraitement/python/compute_stats/cfg/environment_"+tab_conf['config']+".cfg"
-    EXE = os.path.join(tab_conf['pbsworkdir'],'../postraitement/python/compute_stats/exe_compute_stats_CMEMS_areas_multiprocess_2.py')
+    _DBFILE_ = f"{tab_conf['pbsworkdir']}/../cfg/environment_{tab_conf['config']}.cfg"
+    EXE = os.path.join(tab_conf['pbsworkdir'],'../exe_compute_stats_CMEMS_areas_multiprocess.py')
     dir_bin  = tab_conf['dir_bin']
     day1  = tab_conf['day1']
     day2  = tab_conf['day2']
@@ -184,13 +209,17 @@ def create_launcher_multi(tab_conf, nbtasks='30', timecounter='06:00:00', batch=
     obFichier = open(Jobfile,'w+')
     obFichier.write('#!/usr/bin/env python'+'\n')
     obFichier.write(batch + ' -J '+'Class4_post_' + typejob + '_' + tab_conf['day1'] + '_' + tab_conf['day2'] + '\n')
-    obFichier.write(batch + ' -e CLASS4_postjob_' + tab_conf['config'] + '_' +\
-            tab_conf['day1'] + '_' + tab_conf['day2']+'_%j.e'+'\n')
-    obFichier.write(batch + ' -o CLASS4_postjob_' + tab_conf['config'] + '_' +\
-            tab_conf['day1'] + '_' + tab_conf['day2']+'_%j.o'+'\n')
-    obFichier.write(batch + ' -p multi'+'\n')
+    file_out = f"{tab_conf['sub']}CLASS4_{typejob}_postjob_{tab_conf['config']}_{tab_conf['day1']}_{tab_conf['day2']}_%j.o"
+    file_err = f"{tab_conf['sub']}CLASS4_{typejob}_postjob_{tab_conf['config']}_{tab_conf['day1']}_{tab_conf['day2']}_%j.e"
+    obFichier.write(f'{batch} -e {file_err} \n')
+    obFichier.write(f'{batch} -o {file_out} \n')
+    if nb_procs== "12":
+        obFichier.write(batch + ' -p multi12'+'\n')
+        obFichier.write(batch + ' -q qosmulti12'+'\n')
+    else:
+        obFichier.write(batch + ' -p multi'+'\n')
+        obFichier.write(batch + ' -q qosmulti'+'\n')
     obFichier.write(batch + ' -N ' + nb_procs+'\n')
-    obFichier.write(batch + ' -q qosmulti'+'\n')
     obFichier.write(batch + ' --exclusive'+'\n')
     obFichier.write(batch + ' --ntasks-per-node='+ nbtasks +'\n')
     obFichier.write(batch + ' --time='+ timecounter +'\n')
@@ -218,7 +247,7 @@ def launch_sbatch(Jobfile):
 def usage1():
     print(" *************************** DEFAULT CASE **************************")
     print(" ")
-    print("     Save stats computed at the daily time step over CMEMS areas    ")
+    print("     Case 1 Save stats computed at the daily time step over CMEMS areas    ")
     print("                     on netCDF format file                          ")
     print(" ")
     print(" ****************************************************************** ")
@@ -226,7 +255,7 @@ def usage1():
 def usage2():
     print( " ")
     print( " ------------------------------------------------------------------------------")
-    print( "     -->   Define the type of mask (default case : CMEMS areas)  <--           ")
+    print( "     -->   Case 2 Define the type of mask (default case : CMEMS areas)  <--           ")
     print( "                Available masks : basin/basin_pol/box/bins2d/bins4d            ")
     print( " ------------------------------------------------------------------------------")
     print( " ")
@@ -234,7 +263,7 @@ def usage2():
 def usage3():
     print( " ")
     print( " ------------------------------------------------------------------------------")
-    print( "     -->   Define the type of mask (default case : CMEMS areas)  <--           ")
+    print( "     -->   Case 3 Define the type of mask (default case : CMEMS areas)  <--           ")
     print( "                Available masks : basin/box/bins2d/bins4d                      ")
     print( "                                     &                                         ")
     print( "        -->   Activate/Deactivate save of stats computed over  <--             ")
@@ -245,7 +274,7 @@ def usage3():
 def usage4():
     print( " ")
     print( " ------------------------------------------------------------------------------")
-    print( "     -->   Define the type of mask (default case : CMEMS areas)  <--           ")
+    print( "     -->   Case 4 Define the type of mask (default case : CMEMS areas)  <--           ")
     print( "                Available masks : basin/box/bins2d/bins4d                      ")
     print( "                                     &                                         ")
     print( "        -->   Activate/Deactivate save of stats computed over  <--             ")
@@ -259,7 +288,7 @@ def usage4():
 def usage5():
     print( " ")
     print( " ------------------------------------------------------------------------------")
-    print( "     -->   Define the type of mask (default case : CMEMS areas)  <--           ")
+    print( "     -->   Case 5 Define the type of mask (default case : CMEMS areas)  <--           ")
     print( "                Available masks : basin/box/bins2d/bins4d                      ")
     print( "                                     &                                         ")
     print( "        -->   Activate/Deactivate save of stats computed over  <--             ")
@@ -275,7 +304,7 @@ def usage5():
 def usage6():
     print( " ")
     print( " ------------------------------------------------------------------------------")
-    print( "     -->   Define the type of mask (default case : CMEMS areas)  <--           ")
+    print( "     -->   Case 6 Define the type of mask (default case : CMEMS areas)  <--           ")
     print( "                Available masks : basin/box/bins2d/bins4d                      ")
     print( "                                     &                                         ")
     print( "        -->   Activate/Deactivate save of stats computed over  <--             ")
@@ -294,7 +323,7 @@ def usage6():
 def usage7():
     print( " ")
     print( " ------------------------------------------------------------------------------")
-    print( "     -->   Define the type of mask (default case : CMEMS areas)  <--           ")
+    print( "     -->   Case 7 Define the type of mask (default case : CMEMS areas)  <--           ")
     print( "                Available masks : basin/box/bins2d/bins4d                      ")
     print( "                                     &                                         ")
     print( "        -->   Activate/Deactivate save of stats computed over  <--             ")
@@ -425,7 +454,6 @@ def create_dict(date1, date2, lead_time, lead_int):
     return list_keys
 
 
-from datetime import datetime, timedelta
 
 def split_year_into_months(year):
     months = []
@@ -446,3 +474,151 @@ def date_range(start_date, end_date, increment, period):
         result.append(nxt)
         nxt += delta
     return result
+
+def get_quarters(base_year):
+    quarters =  {}
+    for quarter in range(1, 5):
+        # Determine the start and end dates for each quarter
+        start_month = (quarter - 1) * 3 + 1
+        end_month = start_month + 2
+        print(start_month, end_month)
+        # Handle the case where end_month exceeds 12
+        if end_month > 12:
+            end_month -= 12
+            base_year += 1
+
+        # Determine the last day of the last month in the quarter
+        last_day_of_last_month = (datetime(base_year, end_month % 12 + 1, 1) - timedelta(days=1)).day
+        start_date = datetime(base_year, start_month, 1)
+        end_date = datetime(base_year, end_month, last_day_of_last_month)
+        # Get the first letter of each month in uppercase
+        start_month_name = start_date.strftime("%b").upper()[:1]
+        mid_month_name = (end_date + timedelta(days=-46)).strftime("%b").upper()[:1]
+        end_month_name = end_date.strftime("%b").upper()[:1]
+        #Use the first letter of each month as keys in the dictionary
+        key = f"{start_month_name}{mid_month_name}{end_month_name}"
+        quarters[key] = (start_date.strftime("%Y%m%d"), end_date.strftime("%Y%m%d"))
+
+    return quarters
+
+def process_netCDF_stats(system, fileName, config_file, resol):
+    params = Parameters(config_file)
+    ## Read grid
+    if resol == "bins2d":
+        input_grid = params.get_category('grid_input_2deg')
+    elif resol == "bins4d":
+        input_grid = params.get_category('grid_input_4deg')
+    #input_grid = params.parameters['grid_input']
+    #list_forecasts = params.parameters['list_forecasts']
+    list_forecasts = params.get_category('list_forecasts')
+    nc_file  = netCDF4.Dataset(input_grid, 'r')
+    lon = nc_file.variables['longitude'][:,:]
+    lat = nc_file.variables['latitude'][:,:]
+    mask = nc_file.variables['mask'][:,:]
+    nlat, nlon = np.shape(lon)
+    nc_file.close()
+    nc_file2 = netCDF4.Dataset(str(fileName), 'r')
+    depths = nc_file2.variables['depths'][:]
+    forecasts = nc_file2.variables['forecasts'][:]
+    list_variables = filter(lambda x: x.startswith("stats"), nc_file2.variables.keys())
+    list_skill = filter(lambda x: x.startswith("skill"), nc_file2.variables.keys())
+    list_stats = nc_file2.variables['metric_names'][:]
+    area_names = pull_names(list_stats)
+    #key_value_pairs = [(key, list_forecasts[key]) for key in list_forecasts if list_forecasts[key] in forecasts]
+    key_value_pairs = [key for key in list_forecasts if list_forecasts[key] in forecasts]
+    def process_area_stat(stat_name, variable_data):
+        #print(f"{stat_name=}")
+        #print(f"{frcst=}")
+        #print(f"{prof=}")
+        #print(f"{stat=}")
+        stat_data = nc_file2.variables[variable_data][frcst, prof, stat, :]
+        return np.ma.masked_invalid(stat_data)
+    results = {}
+    results[system] = {}
+    for variable in list_variables:
+        variable_tmp = variable.replace("stats_", "")
+        results[system][variable_tmp] = {}
+        #variable_results = {}
+        #print(variable)
+       # np.empty((len(depths), len(list_forecasts), len(area_names)), dtype=object)
+        list_dimensions = nc_file2.variables[variable].dimensions
+        if 'depths' in list_dimensions:
+            nb_depths = len(nc_file2.dimensions['depths'])
+        else:
+            nb_depths = 1
+
+        for prof in range(nb_depths):
+            profvalue = str(depths[prof])
+            if nb_depths > 1 :
+                if prof >  0:
+                    bprofvalue = f'{int(depths[prof-1])}-{int(depths[prof])}m'
+                else:
+                    bprofvalue = f'0-{int(depths[prof])}m'
+            else:
+                bprofvalue = "0m"
+            ## Add 1 value case for the surface
+            results[system][variable_tmp][bprofvalue] = {}
+
+            for frcst, fcst_value in enumerate(key_value_pairs):
+                results[system][variable_tmp][bprofvalue][fcst_value] = {}
+                for stat in range(len(area_names)):
+                    stat_name = str(area_names[stat])
+                    stat_data = process_area_stat(stat_name, variable)
+                    if stat_name.startswith("number of data values"):
+                        nb_obs = stat_data
+                    elif stat_name.startswith("mean of reference"):
+                        mean_obs = process_area_stat("mean of reference", variable)
+                    elif stat_name.startswith("mean of product"):
+                        mean_mod = process_area_stat("mean of product", variable)
+                    elif stat_name.startswith("mean squared error"):
+                        msd =  process_area_stat("mean squared error", variable)
+                    elif stat_name.startswith("anomaly correlation"):
+                        anomaly_corr = stat_data
+                    elif stat_name.startswith("mean squared reference"):
+                        MS_obs = stat_data
+                    elif stat_name.startswith("variance of reference"):
+                        VAR_obs = stat_data
+                    elif stat_name.startswith("mean absolute error"):
+                        MAE = stat_data
+                    elif stat_name.startswith("scatter index"):
+                        Scatter_index = stat_data
+                    elif stat_name.startswith("explained variance"):
+                        VE = stat_data
+                forecast_results = {
+                        'MD': np.full((nlat, nlon), np.nan),
+                        'MD_norm': np.full((nlat, nlon), np.nan),
+                        'RMSD': np.full((nlat, nlon), np.nan),
+                        'VE': np.full((nlat, nlon), np.nan),
+                        'MAE': np.full((nlat, nlon), np.nan),
+                        'SI': np.full((nlat, nlon), np.nan),
+                        'anomaly corr': np.full((nlat, nlon), np.nan),
+                        'nb_obs': np.where(nb_obs.mask, np.nan, nb_obs)
+                }
+                # Create an index array to map valmask to 0-based indexing
+                valmask_index = mask - 1
+                misfit = mean_obs - mean_mod
+                rmsd = np.sqrt(msd)
+                #VE = 100 - np.multiply(100, np.divide(np.sqrt(msd), np.sqrt(MS_obs-mean_obs)**2))
+                SI = np.multiply(100, np.divide(np.sqrt(msd), np.sqrt(MS_obs)))
+                #SI = np.multiply(100, np.divide(np.sqrt(msd), np.sqrt(MS_obs)))
+                MD_norm = np.multiply(100, np.divide(abs(misfit) , np.sqrt(MS_obs)))
+                #VE = np.multiply(stat_data)
+                #SI = np.multiply(100, np.divide(np.sqrt(msd), np.sqrt(MS_obs)))
+                #print(VE)
+                #print(np.nanmax(VE))
+                #print(np.nanmin(VE))
+                #VE = ma.masked_where(VE > 200, VE)
+                #VE = ma.masked_where(VE < -100, VE)
+                #SI = ma.masked_where(SI < 0, VE)
+                # Reshape the results to 2D
+                forecast_results['MD'] = misfit[valmask_index].reshape((nlat, nlon))
+                forecast_results['anomaly_corr'] = anomaly_corr[valmask_index].reshape((nlat, nlon))
+                forecast_results['RMSD'] = rmsd[valmask_index].reshape((nlat, nlon))
+                forecast_results['VE'] = VE[valmask_index].reshape((nlat, nlon))
+                forecast_results['MD_norm'] = MD_norm[valmask_index].reshape((nlat, nlon))
+                forecast_results['SI'] = SI[valmask_index].reshape((nlat, nlon))
+                forecast_results['MAE'] = MAE[valmask_index].reshape((nlat, nlon))
+                results[system][variable_tmp][bprofvalue][fcst_value] = forecast_results
+        print(f'{variable=} ok')
+
+    return lon, lat, results

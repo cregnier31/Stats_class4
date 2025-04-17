@@ -6,6 +6,10 @@ import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 import logging
+import param.Def_param_bulletin as params
+import supobs
+from ast import literal_eval
+
 # Serialization
 import pickle as cPickle
 from .sydate import SyDate
@@ -184,11 +188,16 @@ def input_params(arg, log):
         'PARAMS', 'CONFIGMDL').upper()
     params_conf['config_obs'] = params_conf['db'].get(
         'PARAMS', 'CONFIGOBS').upper()
+    try:
+        params_conf['list_TAC_profiles'] = literal_eval(params_conf['db'].get('PARAMS', 'list_TAC_profiles'))
+    except Exception as e:
+        print(f'Missing option list_TAC_profiles {e}')
     params_conf['cgrid'] = params_conf['db'].get('NETCDF', 'grid')
     params_conf['dirNCin'] = params_conf['db'].get('input_dir', 'DIR_IN')
     params_conf['dirNCout'] = params_conf['db'].get('output_dir', 'DIR_OUT_NC')
     params_conf['dirBOXout'] = params_conf['db'].get(
         'output_dir', 'DIR_OUT_BOX')
+    params_conf['path_out'] = params_conf['db'].get('output_dir', 'DIR_OUT')
     params_conf['dirASCIIout'] = params_conf['db'].get(
         'output_dir', 'DIR_OUT_ASCII')
     params_conf['cl_layerFile'] = params_conf['db'].get('LAYER', 'layerFile'+params_conf['nblevel'])
@@ -202,7 +211,7 @@ def input_params(arg, log):
     params_conf['cl_ref'] = params_conf['db'].get('NETCDF', 'REF')
     params_conf['cl_fmt'] = params_conf['db'].get('NETCDF', 'FMT')
     params_conf['dir_static'] = params_conf['db'].get('NETCDF', 'DIR_MASK_IN')
-    params_conf['cla_metricname'] = params.cla_metricname
+    params_conf['cla_metricname'] = params.cla_metricname2
     params_conf['metric_percent'] = params.cla_metricname_Q
     params_conf['cmems_basin'] = params.liste_zone
 
@@ -273,13 +282,17 @@ def load_param(db_file):
     return params_conf
 
 
-def stat_mod_obs(stat, num_col, amask, nobs, mean_obs, rms_obs, mean_prod, rms_prod, rmse, cor, tab_prof, yout):
+#def stat_mod_obs(stat, num_col, amask, nobs, mean_obs, rms_obs, mean_prod, rms_prod, rmse, cor, tab_prof, yout):
+def stat_mod_obs(stat, num_col, amask, nobs, mean_obs, rms_obs, mean_prod, rms_prod, rmse, cor):#, tab_prof, yout):
 
-    if num_col == 0:
-        for ncol in range(yout):
-            stat[ncol, :, 1, amask] = mean_obs
-            stat[ncol, :, 2, amask] = np.square(rms_obs)
-
+    #if num_col == 0:
+    #    for ncol in range(yout):
+    #        print(f'{num_col=}')
+    #        print(f'{ncol=}')
+    #        stat[ncol, :, 1, amask] = mean_obs
+    #        stat[ncol, :, 2, amask] = np.square(rms_obs)
+    stat[num_col, :, 1, amask] = mean_obs
+    stat[num_col, :, 2, amask] = np.square(rms_obs)
     stat[num_col, :, 0, amask] = nobs
     stat[num_col, :, 3, amask] = mean_prod
     stat[num_col, :, 4, amask] = np.square(rms_prod)
@@ -301,12 +314,14 @@ def stat_obs_glob(stat, yout, ilayer, mean, rms):
 
 # -----------------------------------------------------------------------------------------------------------------
 
-def stat_mod_glob(stat, num_col, ilayer, nobs, mean, rms, rmse, cor):
+def stat_mod_glob(stat, num_col, ilayer, nobs, mean, rms, rmse, cor, mae, VE):
     stat[num_col, ilayer, 0] = nobs
     stat[num_col, ilayer, 3] = mean
     stat[num_col, ilayer, 4] = np.square(rms)
     stat[num_col, ilayer, 5] = np.square(rmse)
     stat[num_col, ilayer, 6] = cor
+    stat[num_col, ilayer, 7] = mae
+    stat[num_col, ilayer, 8] = VE
     num_col += 1
 
     return stat, num_col
@@ -314,14 +329,16 @@ def stat_mod_glob(stat, num_col, ilayer, nobs, mean, rms, rmse, cor):
 
 # -----------------------------------------------------------------------------------------------------------------
 
-def stat_mod_glob2(stat, num_col, ilayer, nobs, mean, rms, rmse, cor, meandiff, rmsdiff):
+def stat_mod_glob2(stat, num_col, ilayer, nobs, mean_obs, rms_obs, mean, rms, rmse, cor, mae, VE):
     stat[num_col, ilayer, 0] = nobs
+    stat[num_col, ilayer, 1] = mean_obs
+    stat[num_col, ilayer, 2] = np.square(rms_obs)
     stat[num_col, ilayer, 3] = mean
     stat[num_col, ilayer, 4] = np.square(rms)
     stat[num_col, ilayer, 5] = np.square(rmse)
     stat[num_col, ilayer, 6] = cor
-    stat[num_col, ilayer, 7] = meandiff
-    stat[num_col, ilayer, 8] = rmsdiff
+    stat[num_col, ilayer, 7] = mae
+    stat[num_col, ilayer, 8] = VE
     num_col += 1
 
     return stat, num_col
