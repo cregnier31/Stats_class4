@@ -15,6 +15,8 @@ dependencies = []
 [project.scripts]
 class4 = "tep_class4.cli.class4:main"
 class4-multiproc = "tep_class4.cli.class4_multiproc:main"
+stats-class4 = "tep_class4.cli.stats_class4_mono:main"
+stats-class4-multi = "tep_class4.cli.stats_class4_multiproc:main"
 
 
 [tool.hatch.metadata]
@@ -29,6 +31,8 @@ authors = ["Charly Regnier <cregnier@mercator-ocean.fr>"]
 [tool.hatch.scripts]
 class4 = "tep_class4.cli.class4:main"
 class4-multiproc = "tep_class4.cli.class4_multiproc:main"
+stats-class4 = "tep_class4.cli.stats_class4_mono:main"
+stats-class4-multi = "tep_class4.cli.stats_class4_multiproc:main"
 
 [tool.poetry.package]
 include = ["tep_class4/cli/cfg/*"]
