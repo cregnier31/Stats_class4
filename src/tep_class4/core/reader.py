@@ -6,7 +6,7 @@ from . import utilities
 import xarray as xr
 import os
 import datetime as dt
-from utils import echeance
+from tep_class4.core.utils import echeance
 
 __version__ = 0.1
 __date__ = "February 2019"

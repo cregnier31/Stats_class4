@@ -154,7 +154,37 @@ class Interpolator(object):
         bathy = {k for k, v in list_input_file.items() if "bathy" in k}
         return len(best), len(fcst), len(pers), len(clim), len(nwct), len(clim), len(bathy)
 
-    #def read_and_interp(self, data_file, list_input_file, param_dict, date=None):
+    def interp_class4(self, data_file, model_data, date=None, leadtime=None, lead_int=None):
+        """
+        Read and Interp data files
+        Read input file, compute coloc value and interp with KDtree
+        Arguments
+        --------------------
+        data_file : input data file
+        model_data : input xarray file
+        param_dict : dictionnary with all the parameters
+        Returns
+        --------------------
+        tab_results : dictionnary with interpolated arrays
+        file_out : name of output file
+        """
+        # Initialisation
+        ll_clim = False
+        # Read input obs value
+        self.log.debug(f"Format of the data {param_dict['data_format']}")
+        if param_dict['prefix_data'].startswith("BGC_ARGO"):
+            variable_obs = param_dict['prefix_data'].split('BGC_ARGO_')[1]+'_ADJUSTED'
+            lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = \
+                    inputdata_loader(self.log).factory(param_dict['data_format']).\
+                    read_pos_and_value(data_file, param_dict, varname=variable_obs)
+        else:
+            self.log.debug(f"Read pos and value : {param_dict['data_format']}")
+            lon_obs, lat_obs, obs_value, nb_obs, depth, tab_dims, param_dict,  _FillValue = \
+                    inputdata_loader(self.log).factory(param_dict['data_format']).\
+                    read_pos_and_value(data_file, param_dict)
+        tuple_obs = (np.shape(lon_obs)[0], np.shape(lat_obs)[0])
+        print('ok')
+
     def read_and_interp(self, data_file, param_dict, date=None, leadtime=None, lead_int=None):
         """
         Read and Interp data files

@@ -433,6 +433,66 @@ def find_index_month(date):
     dateval = pd.to_datetime(date)
     index = dateval.month
     return index
+from datetime import datetime, timedelta
+
+def generate_dateslist(daterun: str, start_date: str = "20250101") -> list:
+    """
+    Generate a list of dates from start_date to daterun (inclusive).
+
+    Parameters:
+    - daterun (str): End date in format %Y%m%d (e.g., '20250430').
+    - start_date (str): Start date in format %Y%m%d. Default is '20250101'.
+
+    Returns:
+    - list of datetime.date objects from start_date to daterun.
+    """
+    try:
+        date_start = datetime.strptime(start_date, "%Y%m%d").date()
+        date_end = datetime.strptime(daterun, "%Y%m%d").date()
+    except ValueError as e:
+        raise ValueError(f"Invalid date format: {e}")
+
+    if date_end < date_start:
+        raise ValueError("daterun must be greater than or equal to start_date")
+
+    delta = date_end - date_start
+    return [date_start + timedelta(days=i) for i in range(delta.days + 1)]
+
+from datetime import datetime, timedelta
+from typing import List
+
+def generate_nbdateslist(daterun: str, nb_dates: int, direction: str = "forward") -> List[str]:
+    """
+    Generate a list of date strings from daterun in forward or backward direction.
+
+    Parameters:
+    - daterun (str): Starting date in format %Y%m%d (e.g., '20250430').
+    - nb_dates (int): Number of dates to generate (including daterun).
+    - direction (str): 'forward' (default) or 'backward'.
+
+    Returns:
+    - List[str]: List of date strings in format %Y%m%d.
+    """
+    try:
+        start_date = datetime.strptime(daterun, "%Y%m%d").date()
+    except ValueError as e:
+        raise ValueError(f"Invalid daterun format: {e}")
+
+    if nb_dates <= 0:
+        raise ValueError("nb_dates must be a positive integer")
+
+    if direction == "forward":
+        return [
+            (start_date + timedelta(days=i)).strftime("%Y%m%d")
+            for i in range(nb_dates)
+        ]
+    elif direction == "backward":
+        return [
+            (start_date - timedelta(days=i)).strftime("%Y%m%d")
+            for i in reversed(range(nb_dates))
+        ]
+    else:
+        raise ValueError("direction must be 'forward' or 'backward'")
 
 def create_dict(date1, date2, lead_time, lead_int):
     list_keys = {}

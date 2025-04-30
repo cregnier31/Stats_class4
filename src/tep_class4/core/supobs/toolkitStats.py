@@ -5,9 +5,8 @@ import netCDF4
 import numpy as np
 import datetime as dt
 from os.path import dirname
-import arithm
-sys.path.append(dirname(__file__)+'/../')
-import utilities
+from tep_class4.core import arithm
+from tep_class4.core import utilities
 import xarray as xr
 import traceback
 

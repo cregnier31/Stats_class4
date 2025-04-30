@@ -256,7 +256,7 @@ class InputLoader(Loader):
         keywords = ['date1=', 'date2=', 'delta=', 'nbdate=', 'daterun=',
         'config=', 'data=', 'src=', 'nbproc=', 'typemod=', 'schedule=',
         'data_id=','loglevel=','daymax=','dirinput=','diroutput=', 'dirlog=',
-        'best','fcst','pers','all','clim','bathy','SMOC','stokes','tides']
+        'best','fcst','pers','all','clim','bathy','SMOC','stokes','tides','zarr']
         ll_delta = None
         ll_date1 = None
         ll_date2 = None
@@ -280,6 +280,8 @@ class InputLoader(Loader):
         ll_persistence = False
         list_var = []
         nb_proc = 0
+        ll_zarr = False
+        ll_netcdf = True
         cl_schedule = 'd'
         cl_data_id = ""
         list_LEAD_TIME = []
@@ -370,6 +372,9 @@ class InputLoader(Loader):
                 list_LEAD_TIME.append('climatology')
             elif o in ['--all']:
                 list_LEAD_TIME=['best_estimate', 'forecast', 'persistence']
+            elif o in ['--zarr']:
+                ll_zarr = True
+                ll_netcdf = False
         # LOGGER
         if ll_dirlog:
             log = Logger(f"TEP_CLASS4_{cl_data}_{cl_config}",dirlog=dirlog).run(level)
@@ -508,6 +513,8 @@ class InputLoader(Loader):
         param_dict['lead_time'] = list_LEAD_TIME
         param_dict['lead_int'] = self.lead_int
         param_dict['fcst_mode'] = ll_forecast
+        param_dict['is_zarr'] = ll_zarr
+        param_dict['is_netcdf'] = ll_netcdf
         if ll_input : param_dict['dirdata'] = dirinput
         if ll_output : param_dict['diroutput'] =  diroutput
         if ll_dirlog : param_dict['dirlog'] =  dirlog
@@ -578,6 +585,10 @@ class NmlLoader(Loader):
             param_dict['Design_GODAE_file'] = ast.literal_eval(db.get('GLOBAL', 'Design_GODAE_file'))
         except:
             param_dict['Design_GODAE_file'] = False
+        try:
+            param_dict['EDITO'] = db.get('input_dir', 'EDITO')
+        except:
+            param_dict['EDITO'] = ''
         # param_dict['Design_GODAE_file'] = db.get('GLOBAL', 'Design_GODAE_file')
         param_dict['dirmodel'] = db.get('input_dir', 'DATA_IN')
         param_dict['nb_level'] = int(db.get('GLOBAL', 'LEVELS'))

@@ -6,8 +6,8 @@ import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 import logging
-import param.Def_param_bulletin as params
-import supobs
+from tep_class4.core.supobs import toolkitStats 
+from tep_class4.core.param  import Def_param_bulletin as params
 from ast import literal_eval
 
 # Serialization
@@ -166,14 +166,14 @@ def input_params(arg, log):
     # *********************  Define input date / fmt date  *********************
 
     if not ll_date1 and not ll_date2:
-        cl_start_date, cl_end_date = supobs.toolkitStats.datenow()
+        cl_start_date, cl_end_date = toolkitStats.datenow()
     params_conf['ll_arc'] = False
     params_conf['ll_ant'] = False
     if "arc" in params_conf['fmt_mask']:
         params_conf['ll_arc'] = True
     if "ant" in params_conf['fmt_mask']:
         params_conf['ll_ant'] = True
-    params_conf['cla_dates'] = supobs.toolkitStats.char_period(
+    params_conf['cla_dates'] = toolkitStats.char_period(
         cl_start_date, cl_end_date)
     params_conf['cl_start_jdate'] = str(SyDate(cl_start_date).tojulian())
     params_conf['cl_end_jdate'] = str(SyDate(cl_end_date).tojulian())

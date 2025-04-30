@@ -11,7 +11,7 @@ def main():
     # Determine srcdata and options
     if typedata in ["SST", "SLA", "profile", "aice"]:
         srcdata = "GODAE"
-        options = "--fcst"
+        options = "--fcst --zarr"
     elif typedata in ["SLA-L3"]:
         srcdata = "CMS"
         options = "--best"
