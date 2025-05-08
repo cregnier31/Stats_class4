@@ -39,7 +39,7 @@ def list_zarr_datasets_for_system(system: str) -> List[str]:
 # Example: list available Zarr datasets for GLO12
 system = "GLO12"
 system = "WENHAI"
-system = "XIHE"
+#system = "XIHE"
 #system = "GLO-NET_FULL"
 available_zarrs = list_zarr_datasets_for_system(system)
 print(available_zarrs)

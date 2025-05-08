@@ -581,8 +581,11 @@ class Writer():
 
     def write_class4_out(self, param_dict, list_keys):
         unique_dates = sorted({int(key.split('-')[0]) for key in list_keys['keyvalues']})
+        print(unique_dates)
         unique_leadtime = sorted({key.split('-')[1] for key in list_keys['keyvalues']})
+        print(unique_leadtime)
         unique_leadtime_unit = sorted({int(key.split('-')[2]) for key in list_keys['keyvalues']})
+        print(unique_leadtime_unit)
         tab_out = {}
         for dateval in unique_dates:
             fcst_tab = None
@@ -620,6 +623,7 @@ class Writer():
                         modified_filename = modified_filename.replace(substring, "")
                     modified_list_pfile_test.append(modified_filename)
                 modified_list_pfile_test = [ name.split('.')[0] for name in modified_list_pfile_test ]
+                self.log.debug(f"Modified list {modified_list_pfile_test=}")
                 if 'observation' in modified_list_pfile_test:
                     # Read observation and varname
                     frame = f"{type_file}*{dateval}_observation.p"
@@ -685,6 +689,7 @@ class Writer():
                             self.log.debug(f" Best estimate {nb_obs=} {variable=} {nb_profs=}")
                     if leadtime == "forecast"  or leadtime == "persistence":
                         self.log.debug("Inside Forecast or persistence")
+                        ll_create = False
                         for int_val, lead_rang in enumerate(unique_leadtime_unit):
                             frame = f"{type_file}*{dateval}_{leadtime}_{lead_rang}.p"
                             list_pickle_file = glob(f"{param_dict['dirwork']}{frame}")
@@ -694,32 +699,62 @@ class Writer():
                                 self.log.debug(f"{pickle_file=}")
                                 with open(pickle_file, 'rb') as handle:
                                     stats_tmp = pickle.load(handle)
-                                if int_val == 0:
+                                if int_val == 0 or not ll_create:
                                     nb_dims = len(np.shape(stats_tmp))
+                                    self.log.debug(f"number of dimensions {nb_dims=}")
                                     if nb_dims == 2:
                                         nlons, nlats = np.shape(stats_tmp)
+                                    elif nb_dims == 3:
+                                        nb_obs, variable, nb_profs = np.shape(stats_tmp)
+                                        nb_fcst = len(unique_leadtime_unit)
                                     else:
                                         nb_obs, variable, nb_fcst, nb_profs = np.shape(stats_tmp)
                                     if leadtime == "forecast":
                                         if nb_dims == 2:
                                             nb_profs = 1
                                             nb_fcst = len(unique_leadtime_unit)
-                                            fcst_tab = np.ndarray(shape=(nlons, nlats, nb_fcst),
-                                                                         dtype=float, order='F')
+                                            fcst_tab = np.full(
+                                                shape=(nlons, nlats, nb_fcst),
+                                                fill_value=netCDF4.default_fillvals['f4'],
+                                                dtype=float,
+                                                order='F'
+                                            )
                                             fcst_tab[:, : , int(lead_rang)] = stats_tmp[:, :]
                                             self.log.debug(f"Create array Forecast {nlons=} {nlats=} {variable=} {nb_fcst=} ")
+                                        elif nb_dims == 3:
+                                            print("Case 3")
+                                            fcst_tab = np.full(
+                                                shape=(nb_obs, variable, nb_fcst, nb_profs),
+                                                fill_value=netCDF4.default_fillvals['f4'],
+                                                dtype=float,
+                                                order='F'
+                                                )
+                                            fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , :]
+                                            self.log.debug(f"Create array Forecast {nb_obs=} {variable=} {nb_fcst=} {nb_profs=}")
                                         else:
-                                            fcst_tab = np.ndarray(shape=(nb_obs, variable, nb_fcst, nb_profs),
-                                                                         dtype=float, order='F')
+                                            fcst_tab = np.full(
+                                                shape=(nb_obs, variable, nb_fcst, nb_profs),
+                                                fill_value=netCDF4.default_fillvals['f4'],
+                                                dtype=float,
+                                                order='F'
+                                                )
                                             fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
                                             self.log.debug(f"Create array Forecast {nb_obs=} {variable=} {nb_fcst=} {nb_profs=}")
                                         ll_fcst = True
                                     if leadtime == "persistence":
-                                        pers_tab = np.ndarray(shape=(nb_obs, variable, nb_fcst, nb_profs),
-                                                              dtype=float, order='F')
+                                        pers_tab = np.full(
+                                            shape=(nb_obs, variable, nb_fcst, nb_profs),
+                                            fill_value=netCDF4.default_fillvals['f4'],
+                                            dtype=float,
+                                            order='F'
+                                            )
                                         ll_pers = True
-                                        pers_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
+                                        if nb_dims == 3:
+                                            pers_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang)]
+                                        else:
+                                            pers_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
                                         self.log.debug(f"Create array Persistence leadtime O {nb_obs=} {variable=} {nb_fcst=} {nb_profs=}")
+                                        ll_create = True
                                 else:
                                     if leadtime == "forecast":
                                         ll_fcst = True
@@ -733,11 +768,16 @@ class Writer():
                                             self.log.debug(f"Min {np.max(stats_tmp)}")
                                             self.log.debug(f"Max {np.max(stats_tmp)}")
                                             fcst_tab[:, : , int(lead_rang)] = stats_tmp[:, :]
+                                        elif nb_dims == 3:
+                                            fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , :]
                                         else:
                                             fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
                                     if leadtime == "persistence":
                                         ll_pers = True
-                                        pers_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
+                                        if nb_dims == 3:
+                                            pers_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , :]
+                                        elif nb_dims == 4:
+                                            pers_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
                                         self.log.debug(f"{pers_tab[0:10, 0 , int(lead_rang), 0:10]}")
                     if leadtime == 'climatology':
                         frame = f"{type_file}*{dateval}_climatology_0.p"
@@ -988,6 +1028,7 @@ class Writer():
             ## Create observation variable
             if 'observation' in list_keys and np.any(tab_out['observation']):
                 obs_tab = tab_out['observation']
+                self.log.debug(f"Dimensions Observations np.shape{obs_tab}")
                 if len(np.shape(obs_tab)) == 3:
                     nprofs, nparams, nlevels = np.shape(tab_out['observation'])
                     self.log.debug(f'Dimensions Observations {nprofs=} {nparams=} {nlevels=}')
@@ -1003,6 +1044,7 @@ class Writer():
                     if len(np.shape(obs_tab)) == 1:
                         nc_fid.variables['observation'][:, 0, 0] = obs_tab[:]
                     else:
+                        print(np.shape(obs_tab))
                         nc_fid.variables['observation'][:, :, :] = obs_tab[:, :, :]
                 except ValueError as e:
                     raise BroadcastError(f"Error with observations: {e}")

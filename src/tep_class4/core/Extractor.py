@@ -1184,7 +1184,10 @@ class Extract_GODAE(Extractor):
                         filename=filename
                     else:
                         template1 = filename.split('_')[0:]
-                        template_tmp = template1[2]+'_'+template1[3]+'_'+template1[4]
+                        if len(template1) > 5:
+                            template_tmp = template1[2]+'_'+template1[3]+'_'+template1[4]
+                        else:
+                            template_tmp = template1[2]+'_'+template1[3]
                         filename=re.sub(template_tmp, template, filename)
                     # Copy extracted value of GODAE file with nco module
                     if typedata != "aice" and typedata != 'current':

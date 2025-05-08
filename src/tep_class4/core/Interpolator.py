@@ -11,6 +11,7 @@ from .reader import ReadModel
 from tep_class4.core.utils import find_index_month
 from .inputdata_loader import inputdata_loader
 from collections import OrderedDict
+from collections import Counter
 from .Interp_kdtree import interp_KDtree
 from scipy.interpolate import InterpolatedUnivariateSpline, interp1d
 from .Writer import Writer
@@ -41,6 +42,8 @@ class Interpolator(object):
     def __init__(self, log, dask=False):
         warnings.filterwarnings("ignore")
         self.log = log
+        self.lonnames = ['lon', 'Lon', 'longitude', 'longitudes', 'Longitude', 'Longitudes']
+        self.latnames = ['lat', 'Lat', 'latitude', 'latitudes', 'Latitude', 'Latitudes']
         self.missing_value = netCDF4.default_fillvals['f4']
         self.list_ssh = ["sossheig", "ssh", "zos"]
         self.ll_UVcorr = False
@@ -62,7 +65,16 @@ class Interpolator(object):
         else:
             self.log.debug("Dask server not defined")
 
+    def find_lon_lat_names(self, ds):
+        coords = ds.coords.keys()
+        lon_name = next((name for name in coords if name in self.lonnames), None)
+        lat_name = next((name for name in coords if name in self.latnames), None)
 
+        if lon_name is None or lat_name is None:
+            raise ValueError("Could not find both latitude and longitude coordinate names.")
+
+        return lon_name, lat_name
+        
     def getneardepth(self, array, value):
        idx = (np.abs(array-value)).argmin()
        return idx
@@ -154,37 +166,154 @@ class Interpolator(object):
         bathy = {k for k, v in list_input_file.items() if "bathy" in k}
         return len(best), len(fcst), len(pers), len(clim), len(nwct), len(clim), len(bathy)
 
-    def interp_class4(self, data_file, model_data, date=None, leadtime=None, lead_int=None):
+    def interp_class4(self, obs_data , model_data, variable, param_dict, datevalue=None, leadtime=None):
         """
         Read and Interp data files
         Read input file, compute coloc value and interp with KDtree
         Arguments
         --------------------
-        data_file : input data file
-        model_data : input xarray file
+        obs_data : tuple for the observations
+        model_data : input xarray file or zarr array
+        variable: name of the variable
         param_dict : dictionnary with all the parameters
         Returns
         --------------------
         tab_results : dictionnary with interpolated arrays
-        file_out : name of output file
         """
         # Initialisation
+        tab_results = {}
+        nb_ptsinterp = param_dict['nb_points']
+        tuple_obs = (np.shape(obs_data.lon)[0], np.shape(obs_data.lat)[0])
+        tab_results['lon'] = obs_data.lon
+        tab_results['lat'] = obs_data.lat
+ 
+        if 'varname_select' in param_dict.keys():
+            tab_results['varname_select'] = param_dict['varname_select']
+        if 'qc' in param_dict.keys():
+            tab_results['qc'] = param_dict['qc']
+        # Get lon_mod / lat_mod
+        lon_name, lat_name = self.find_lon_lat_names(model_data)
+        lon_mod = model_data[lon_name].values
+        lat_mod = model_data[lat_name].values
+        #depth_mod = model_data['depth'].values
+        ll_singleobs = False
+        same_grid = False
+        ll_light = False
         ll_clim = False
-        # Read input obs value
-        self.log.debug(f"Format of the data {param_dict['data_format']}")
-        if param_dict['prefix_data'].startswith("BGC_ARGO"):
-            variable_obs = param_dict['prefix_data'].split('BGC_ARGO_')[1]+'_ADJUSTED'
-            lon_obs, lat_obs, obs_value, nb_obs, depth, _FillValue = \
-                    inputdata_loader(self.log).factory(param_dict['data_format']).\
-                    read_pos_and_value(data_file, param_dict, varname=variable_obs)
-        else:
-            self.log.debug(f"Read pos and value : {param_dict['data_format']}")
-            lon_obs, lat_obs, obs_value, nb_obs, depth, tab_dims, param_dict,  _FillValue = \
-                    inputdata_loader(self.log).factory(param_dict['data_format']).\
-                    read_pos_and_value(data_file, param_dict)
-        tuple_obs = (np.shape(lon_obs)[0], np.shape(lat_obs)[0])
-        print('ok')
+        ll_case2 = False
+        ll_nan = False
+        ll_uniq = False
+        if param_dict['cl_typemod'].lower() == "pgs" or param_dict['cl_typemod'].lower() == "pgs_ai":
+            self.log.debug("PGS coordinates")    
+            lon_mod, lat_mod, mask_tab, depth_mod = inputdata_loader(self.log).factory('PGS_coords').\
+                read_pos(param_dict['coordinates'])
+        if len(np.unique(obs_data.depth)) == 1 or len(np.shape(obs_data.depth))==1 :
+            tab_results['depth'] = np.expand_dims(obs_data.depth, axis=0)
+            reshaped_obs = obs_data.obs_value.reshape((*obs_data.obs_value.shape, 1, 1))
+            tab_results['observation'] = reshaped_obs
+            ll_singleobs = True
+            ll_uniq = True
+            #tab_results[leadtime] = {}
+            self.log.debug("Uniq depth for all the observations")
+            if ~np.isnan(obs_data.lon).all() and ~np.isnan(obs_data.lat).all():
+                self.log.debug("Compute tree")
+                TreeObj = interp_KDtree(self.log) #level=self.log.level)
+                d1, indexes = TreeObj.tree_and_query(lon_mod, lat_mod,
+                                                     obs_data.lon, obs_data.lat, nb_ptsinterp,
+                                                     weight_file='',save=False)
+                weights = TreeObj.get_weight(d1)
+                self.log.debug("Compute tree ok")
+                if len(np.shape(obs_data.depth)) == 1 :
+                    depthval = obs_data.depth[0]
+                elif len(np.shape(obs_data.depth)) == 2 :
+                    depthval =  obs_data.depth[0,0]
+                else:
+                    self.log.error("Case not known")
+                self.log.debug(f"Interp 2D {variable=} {depthval}")
+                for var in range(len(variable)):
+                    varname = variable[var] 
+                    interp_values = self.interp_2D(weights, indexes,
+                                                   model_data,
+                                                   nb_ptsinterp,
+                                                   varname, param_dict,
+                                                   depth=depthval, fillvalue=obs_data.FillValue,
+                                                   time=0, nblon=tuple_obs[0], nblat=tuple_obs[1],
+                                                   lon_mod=lon_mod, lat_mod=lat_mod,
+                                                   missing_value=self.missing_value,
+                                                   same_grid=same_grid)
+                    self.log.debug(f"Interp value {interp_values}")
+                    #tab_results[leadtime][varname] = np.expand_dims(interp_values, axis=0)
+                    reshaped = interp_values.reshape((*interp_values.shape, 1, 1))
+                    tab_results[leadtime] = reshaped
+                    #tab_results[leadtime] = np.expand_dims(interp_values, axis=0)
 
+            else:
+                self.log.error("Missing lon/lat")
+                sys.exit(1)
+        else:
+            self.log.debug("Multiple depths")
+            self.log.debug("Profile case variable")
+            ll_case2 = True
+            ## Compte weight file
+            nb_obs, nb_profs = np.shape(obs_data.depth)
+            tab_results['depth'] = obs_data.depth
+            tab_results['observation'] =  obs_data.obs_value
+            self.log.debug(f"Nb_profils {nb_obs} Nb levels {nb_profs}")
+            maxdepth =  np.nanmax(obs_data.depth)
+            self.log.debug(f'maxdepth {maxdepth}')
+            ind_depth = self.getneardepth(depth_mod, maxdepth)
+            ind_tot = len(depth_mod)
+            ## Loop on levels
+            if ind_depth < ind_tot-2:
+                ind_max = ind_depth+2
+            else:
+                #ind_max = ind_depth + 1
+                ind_max = ind_depth
+            self.log.debug(f'maxdepth {maxdepth} maxind {ind_max} nearest depth model {depth_mod[ind_depth]}')
+            ## Compute weight
+            TreeObj = interp_KDtree(self.log)
+            tab_weight = np.nan*np.zeros((nb_obs,nb_ptsinterp,ind_max),dtype=float)
+            tab_indexes = np.ndarray(shape=(nb_obs, nb_ptsinterp,ind_max), dtype=int, order='F')
+            start = timer()
+            ## Parallelize Loop on levels
+            self.log.debug(f'Dimensions {len(obs_data.lon)}')
+            nb_compute = len(obs_data.lon)
+            num_cores = -1
+            # Compute weight
+            # Implement lon/lat = 0 for all the values:
+            with Parallel(n_jobs=num_cores, prefer="threads", verbose=1) as parallel:
+                weight, indexes  = zip(*parallel(delayed(self.compute_weight)(ind,TreeObj,lon_mod,lat_mod,np.array(obs_data.lon),\
+                                    np.array(obs_data.lat), nb_ptsinterp,\
+                                    mask_tab[ind,:,:]) for ind in range(ind_max)))
+            tab_weight = np.asarray(weight)
+            tab_indexes = np.asarray(indexes)
+            end = timer()
+            self.log.debug('~~~~~~~~ Time elapsed compute weight on levels: %s %s' %
+                            (str(end - start), " seconds ~~~~~~~~~~~~"))
+            self.log.debug(f"{obs_data.depth=} {ind_max=} ")
+            self.log.debug(f"{tab_indexes=}")
+            tab_results[leadtime] = {}
+            for var in range(len(variable)):
+                varname = variable[var]
+                if param_dict['data_format'] in self.list_insitu:
+                    obs_tab = None
+                else:
+                    obs_tab = obs_data.obs_value[:,var,:]
+                interp_values = self.interp_3D(tab_weight,
+                                               tab_indexes,
+                                               ind_max,
+                                               model_data, nb_ptsinterp,
+                                               varname, obs_data.depth, ll_verif = param_dict['verif'],
+                                               obs = obs_tab,
+                                               dateval=datevalue, lon=obs_data.lon, lat=obs_data.lat, light=ll_light,
+                                               clim=ll_clim, depth_mod=depth_mod,
+                                               fillvalue=self.missing_value, data_file='',
+                                               ll_uniq=ll_uniq, ll_nan=ll_nan, ll_case2=ll_case2)
+                print(interp_values)
+                tab_results[leadtime][varname] = interp_values
+        
+        return tab_results
+        
     def read_and_interp(self, data_file, param_dict, date=None, leadtime=None, lead_int=None):
         """
         Read and Interp data files
@@ -1017,18 +1146,15 @@ class Interpolator(object):
         self.log.debug('Interp2D Read input file : {}'.format(file))
         self.log.debug(f'Variable in interp_2D : {variable}')
         self.log.debug("-------------------------------------------------------")
-        ## Implement cg reading
-        ll_nc = self.is_netcdf_xarray(file)
-        if ll_nc:
+        # Load variable
+        if isinstance(file, (xr.Dataset, xr.DataArray)) or self.is_netcdf_xarray(file):
             try:
-                dataset_in = xr.open_dataset(file,decode_times=False)
+                dataset_in = file if isinstance(file, (xr.Dataset, xr.DataArray)) else xr.open_dataset(file, decode_times=False)
                 var_in = dataset_in[variable]
-            except:
-                self.log.error("Missing File or variable {} in file {}".format(variable, file))
+            except Exception:
+                self.log.error(f"Missing variable {variable} in {file}")
                 raise
         else:
-            self.log.debug(f"Read binary file called alleges {file}")
-            self.log.debug(f"Open lighout file {file}")
             var_in, lon, lat = ReadModel().read_lightout(file)
         ll_single = False
         ll_nan = False
@@ -1048,6 +1174,8 @@ class Interpolator(object):
         else:
             # Surface case
             ll_single = True
+            
+        # Apply MSSH correction if needed
         if variable in self.list_ssh : #or param_dict['data_type'] == "SLA":
             cl_msshFile = param_dict['cl_msshFile']
             rp_mssh_shift = param_dict['rp_mssh_shift']
@@ -1056,94 +1184,140 @@ class Interpolator(object):
             dataset_mssh = xr.open_dataset(cl_msshFile)
             tab_mssh = dataset_mssh['mssh'].values
             self.log.info(f"Compute sla equiv with shift {rp_mssh_shift} {cl_msshFile}")
-        if len(var_in.shape) == 3:
-            if ll_single:
-                if isinstance(var_in, xr.DataArray):
-                    var_in = var_in[time, :, :].values
-                    print("var_in is an xarray DataArray")
-                elif isinstance(var_in, np.ndarray):
-                    print("var_in is a NumPy array")
-                    var_in = var_in[time, :, :]
-                else:
-                    self.log.error("var_in is neither an xarray DataArray nor a NumPy array")
-                    sys.exit(1)
-            else:
-                if isinstance(var_in, xr.DataArray):
-                    var_in1 = var_in[ind_depth1, :, :].values
-                    var_in2 = var_in[ind_depth2, :, :].values
-                else:
-                    var_in1 = var_in[ind_depth1, :, :]
-                    var_in2 = var_in[ind_depth2, :, :]
 
-        elif len(var_in.shape) == 4:
-            if ll_single:
-              ##
-                if isinstance(var_in, xr.DataArray):
-                    var_in = var_in[time, 0, :, :].values
-                elif isinstance(var_in, np.ndarray):
-                    var_in = var_in[time, 0, :, :]
-                else:
-                    self.log.error("var_in is neither an xarray DataArray nor a NumPy array")
-                    sys.exit(1)
-              ##
-                ll_single = True
+        if isinstance(var_in, xr.Dataset):
+            if len(var_in.data_vars) == 1:
+                var_in = list(var_in.data_vars.values())[0]
             else:
-                if isinstance(var_in, xr.DataArray):
-                    var_in1 = var_in[time, ind_depth1, :, :].values
-                    var_in2 = var_in[time, ind_depth2, :, :].values
-                elif isinstance(var_in, np.ndarray):
-                    var_in1 = var_in[time, ind_depth1, :, :]
-                    var_in2 = var_in[time, ind_depth2, :, :]
-                else:
-                    self.log.error("var_in is neither an xarray DataArray nor a NumPy array")
-                    sys.exit(1)
-        if variable in self.list_ssh : #or  param_dict['data_type'] == "SLA":
-            var_in = np.where(var_in != fillvalue,  var_in - tab_mssh - rp_mssh_shift, var_in)
-        if same_grid:
-            ## The output grid is the same than the input grid
-            tab_interp = np.array(var_in).flatten()
+                raise ValueError(f"Expected a single variable but got multiple: {list(var_in.data_vars)}")
+        if isinstance(var_in, xr.DataArray):
+            var_data = var_in.values
         else:
-            if np.isnan(inds).all():
-                nb_obs = len(inds)
-                #tab_interp = fillvalue*np.zeros((nb_obs))
-                ndims = np.shape(inds)
-                #tab_interp = np.full((ndims), np.nan).flatten()
-                tab_interp = np.full(nb_obs, np.nan).flatten()
-                self.log.info('All missing values for indexes interp_2D')
-                ll_nan = True
+            raise TypeError(f"Unsupported variable type: {type(var_in)}")
+        if var_data.ndim == 3:
+            var_data = var_data[time] if ll_single else (var_data[ind_depth1], var_data[ind_depth2])
+        elif var_data.ndim == 4:
+            if ll_single:
+                var_data = var_data[time, 0]
             else:
-                if nbpts_interp > 1:
-                    # Distance weight interpolation
-                    self.log.debug(f"Distance weight interpolation {ll_single}")
-                    if ll_single :
-                       self.log.debug('Dimension longitude {}'.format(nblon))
-                       self.log.debug('Dimension latitude {}'.format(nblat))
-                       ll_reshape = self.test_lonlat(var_in, nblon, nblat)
-                       self.log.debug('Reshape {}'.format(ll_reshape))
-                       if ll_reshape : var_in = np.transpose(var_in)
-                       ## Modif cregnier
-                       tab_interp = np.sum(weight * np.array(var_in).flatten()
-                                           [inds], axis=1) / np.sum(weight, axis=1)
-                    else:
-                       self.log.debug('depth > 0.5')
+                var_data = (var_data[time, ind_depth1], var_data[time, ind_depth2])
+        # Apply SSH correction
+        if variable in self.list_ssh and ll_single:
+            var_data = np.where(var_data != fillvalue,  var_data - tab_mssh - rp_mssh_shift, var_data)
+        # Handle same grid case
+        if same_grid:
+            return np.array(var_data).flatten(), False
+        # Interpolation
+        if np.isnan(inds).all():
+            tab_interp = np.full(len(inds), np.nan)
+            self.log.info("All missing values for indexes in interp_2D")
+            return tab_interp, True
 
-                       tab_interp_1 = np.sum(weight * np.array(var_in1).flatten()
-                                           [inds], axis=1) / np.sum(weight, axis=1)
-                       tab_interp_2 = np.sum(weight * np.array(var_in2).flatten()
-                                           [inds], axis=1) / np.sum(weight, axis=1)
-                       tab_interp = (w1 * tab_interp_1) + (w2 * tab_interp_2)
-                else:
-                    # Nearest neighbour interpolation
-                    self.log.debug("Interp nearest")
-                    if ll_single :
-                        tab_interp = ma.array(var_in).flatten()[inds]
-                    else:
-                        tab_interp =  (w1 * ma.array(var_in1).flatten()[inds])+ (w2 * ma.array(var_in2).flatten()[inds])
+        flat_func = lambda x: np.array(x).flatten()[inds]
+        if nbpts_interp > 1:
+            if ll_single:
+                if self.test_lonlat(var_data, nblon, nblat):
+                    var_data = np.transpose(var_data)
+                tab_interp = np.sum(weight * flat_func(var_data), axis=1) / np.sum(weight, axis=1)
+            else:
+                interp1 = np.sum(weight * flat_func(var_data[0]), axis=1) / np.sum(weight, axis=1)
+                interp2 = np.sum(weight * flat_func(var_data[1]), axis=1) / np.sum(weight, axis=1)
+                tab_interp = w1 * interp1 + w2 * interp2
+        else:
+            tab_interp = flat_func(var_data) if ll_single else w1 * flat_func(var_data[0]) + w2 * flat_func(var_data[1])
 
-        # Put nan to missing values
         tab_interp = np.where(np.isnan(tab_interp), missing_value, tab_interp)
+        return tab_interp
+        
+        ##
+        #if len(var_in.shape) == 3:
+        #    if ll_single:
+        #        if isinstance(var_in, xr.DataArray):
+        #            var_in = var_in[time, :, :].values
+        #            print("var_in is an xarray DataArray")
+        #        elif isinstance(var_in, np.ndarray):
+        #            print("var_in is a NumPy array")
+        #            var_in = var_in[time, :, :]
+        #        else:
+        #            self.log.error("var_in is neither an xarray DataArray nor a NumPy array")
+        #            sys.exit(1)
+        #    else:
+        #        if isinstance(var_in, xr.DataArray):
+        #            var_in1 = var_in[ind_depth1, :, :].values
+        #            var_in2 = var_in[ind_depth2, :, :].values
+        #        else:
+        #            var_in1 = var_in[ind_depth1, :, :]
+        #            var_in2 = var_in[ind_depth2, :, :]
+        #
+        #elif len(var_in.shape) == 4:
+        #    if ll_single:
+        #      ##
+        #        if isinstance(var_in, xr.DataArray):
+        #            var_in = var_in[time, 0, :, :].values
+        #        elif isinstance(var_in, np.ndarray):
+        #            var_in = var_in[time, 0, :, :]
+        #        else:
+        #            self.log.error("var_in is neither an xarray DataArray nor a NumPy array")
+        #            sys.exit(1)
+        #      ##
+        #        ll_single = True
+        #    else:
+        #        if isinstance(var_in, xr.DataArray):
+        #            var_in1 = var_in[time, ind_depth1, :, :].values
+        #            var_in2 = var_in[time, ind_depth2, :, :].values
+        #        elif isinstance(var_in, np.ndarray):
+        #            var_in1 = var_in[time, ind_depth1, :, :]
+        #            var_in2 = var_in[time, ind_depth2, :, :]
+        #        else:
+        #            self.log.error("var_in is neither an xarray DataArray nor a NumPy array")
+        #            sys.exit(1)
+        #if variable in self.list_ssh : #or  param_dict['data_type'] == "SLA":
+        #    var_in = np.where(var_in != fillvalue,  var_in - tab_mssh - rp_mssh_shift, var_in)
+        #if same_grid:
+        #    ## The output grid is the same than the input grid
+        #    tab_interp = np.array(var_in).flatten()
+        #else:
+        #    if np.isnan(inds).all():
+        #        nb_obs = len(inds)
+        #        #tab_interp = fillvalue*np.zeros((nb_obs))
+        #        ndims = np.shape(inds)
+        #        #tab_interp = np.full((ndims), np.nan).flatten()
+        #      tab_interp = np.full(nb_obs, np.nan).flatten()
+        #        self.log.info('All missing values for indexes interp_2D')
+        #        ll_nan = True
+        #    else:
+        #        if nbpts_interp > 1:
+        #            # Distance weight interpolation
+        #            self.log.debug(f"Distance weight interpolation {ll_single}")
+        #            if ll_single :
+        #               self.log.debug('Dimension longitude {}'.format(nblon))
+        #               self.log.debug('Dimension latitude {}'.format(nblat))
+        #               ll_reshape = self.test_lonlat(var_in, nblon, nblat)
+        #               self.log.debug('Reshape {}'.format(ll_reshape))
+        #               if ll_reshape : var_in = np.transpose(var_in)
+        #               ## Modif cregnier
+        #               tab_interp = np.sum(weight * np.array(var_in).flatten()
+        #                                   [inds], axis=1) / np.sum(weight, axis=1)
+        #            else:
+        #               self.log.debug('depth > 0.5')
+        #
+        #               tab_interp_1 = np.sum(weight * np.array(var_in1).flatten()
+        #                                   [inds], axis=1) / np.sum(weight, axis=1)
+        #               tab_interp_2 = np.sum(weight * np.array(var_in2).flatten()
+        #                                   [inds], axis=1) / np.sum(weight, axis=1)
+        #               tab_interp = (w1 * tab_interp_1) + (w2 * tab_interp_2)
+        #        else:
+        #            # Nearest neighbour interpolation
+        #            self.log.debug("Interp nearest")
+        #            if ll_single :
+        #                tab_interp = ma.array(var_in).flatten()[inds]
+        #            else:
+        #                tab_interp =  (w1 * ma.array(var_in1).flatten()[inds])+ (w2 * ma.array(var_in2).flatten()[inds])
 
-        return tab_interp, ll_nan
+        ## Put nan to missing values
+        #tab_interp = np.where(np.isnan(tab_interp), missing_value, tab_interp)
+
+        #return tab_interp, ll_nan
 
     def compute_3D_weight(self, ind, var_in, inds,\
                        weight, ind_max, nbpts_interp):
@@ -1220,8 +1394,15 @@ class Interpolator(object):
                 raise
         else:
             try:
-                dataset_in = xr.open_dataset(file, decode_times=False)
-                #dataset_in = xr.open_mfdataset(file,parallel=True,combine='by_coords')
+                # Load variable
+                if isinstance(file, (xr.Dataset, xr.DataArray)) or self.is_netcdf_xarray(file):
+                    try:
+                        dataset_in = file if isinstance(file, (xr.Dataset, xr.DataArray)) else xr.open_dataset(file, decode_times=False)
+                        var_in = dataset_in[variable]
+                    except Exception:
+                        self.log.error(f"Missing variable {variable} in {file}")
+                        raise
+                ##
                 nlons, nlats, ndepths, depth_mod = self.read_dims(dataset_in)
                 self.log.debug(f"{nlons, nlats, ndepths, depth_mod}")
                 if len(np.shape(dataset_in[variable])) == 3:

@@ -494,6 +494,30 @@ def generate_nbdateslist(daterun: str, nb_dates: int, direction: str = "forward"
     else:
         raise ValueError("direction must be 'forward' or 'backward'")
 
+
+def create_dict_list(date1, date2, lead_time, lead_int):
+    list_keys = {}
+    list_keys_values = []
+    list_uniq = ['best_estimate', 'climatology', 'bathymetrie']
+    date_start = datetime.strptime(date1, "%Y%m%d").date()
+    date_end = datetime.strptime(date2, "%Y%m%d").date()
+    #date_start = datetime.strptime(date1, "%Y%M%D").date()
+    #date_end = datetime.strptime(date2, "%Y%M%D").date()
+    delta = date_end - date_start
+    for i in range(delta.days + 1):
+        dateval = date_start + timedelta(days=i)
+        dateval = dateval.strftime("%Y%m%d")
+        for lead in lead_time:
+            if lead in list_uniq:
+                list_int = [0]
+            else:
+                list_int = lead_int
+            for int_val in list_int:
+                keyvalue = f'{dateval}-{lead}-{int_val}'
+                list_keys_values.append(keyvalue)
+    list_keys['keyvalues'] = list_keys_values
+    return list_keys
+
 def create_dict(date1, date2, lead_time, lead_int):
     list_keys = {}
     valeurj = date1
