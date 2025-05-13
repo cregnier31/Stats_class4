@@ -602,9 +602,9 @@ class Writer():
                 frame = f"*{variable}*{dateval}*.nc"
                 list_file = glob(f"{param_dict['dirwork']}{frame}")
             if not list_file:
-                self.log.error(f"Files are missing")
+                self.log.error(f"Files are missing {dateval} {variable}")
+                sys.exit(1)
                 continue
-                #sys.exit(1)
             self.log.debug(f"{frame=}")
             self.log.debug(f"{param_dict['dirwork']}")
             self.log.debug(f"{list_file=}")

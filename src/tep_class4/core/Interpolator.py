@@ -195,7 +195,7 @@ class Interpolator(object):
         lon_name, lat_name = self.find_lon_lat_names(model_data)
         lon_mod = model_data[lon_name].values
         lat_mod = model_data[lat_name].values
-        #depth_mod = model_data['depth'].values
+        depth_mod = model_data['depth'].values
         ll_singleobs = False
         same_grid = False
         ll_light = False
@@ -292,14 +292,20 @@ class Interpolator(object):
                             (str(end - start), " seconds ~~~~~~~~~~~~"))
             self.log.debug(f"{obs_data.depth=} {ind_max=} ")
             self.log.debug(f"{tab_indexes=}")
-            tab_results[leadtime] = {}
+            array_results = np.full(
+                                  shape=(nb_obs, len(variable), nb_profs),
+                                         fill_value=netCDF4.default_fillvals['f4'],
+                                         dtype=float,
+                                         order='F'
+                                         )
+
             for var in range(len(variable)):
                 varname = variable[var]
                 if param_dict['data_format'] in self.list_insitu:
                     obs_tab = None
                 else:
                     obs_tab = obs_data.obs_value[:,var,:]
-                interp_values = self.interp_3D(tab_weight,
+                array_results[:,var,:] = self.interp_3D(tab_weight,
                                                tab_indexes,
                                                ind_max,
                                                model_data, nb_ptsinterp,
@@ -309,8 +315,7 @@ class Interpolator(object):
                                                clim=ll_clim, depth_mod=depth_mod,
                                                fillvalue=self.missing_value, data_file='',
                                                ll_uniq=ll_uniq, ll_nan=ll_nan, ll_case2=ll_case2)
-                print(interp_values)
-                tab_results[leadtime][varname] = interp_values
+            tab_results[leadtime] = array_results
         
         return tab_results
         

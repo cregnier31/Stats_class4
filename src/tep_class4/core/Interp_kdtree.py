@@ -51,7 +51,7 @@ class interp_KDtree(object):
 
     #@timeit
     def tree_and_query(self, X1, Y1, lon_out, lat_out, nbpts_interp,\
-                       weight_file=None,save=False, mask=None):
+                       weight_file='',save=False, mask=None):
 
         """
             Compute tree and search weight files
