@@ -26,7 +26,7 @@ def main():
 
     loglevel = 7
     #python_bin = "/opt/conda/envs/myenv_class4/bin/python"
-    python_bin = "/opt/conda/envs/class4env/bin/python"
+    python_bin = "python"
     script_path = "../src/tep_class4/cli/class4_zarr.py"
 
     command = [

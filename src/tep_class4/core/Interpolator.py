@@ -195,7 +195,13 @@ class Interpolator(object):
         lon_name, lat_name = self.find_lon_lat_names(model_data)
         lon_mod = model_data[lon_name].values
         lat_mod = model_data[lat_name].values
-        depth_mod = model_data['depth'].values
+        #print(list(model_data.data_vars))
+        if param_dict['cl_typemod'].lower() == "pgs" or param_dict['cl_typemod'].lower() == "pgs_ai":
+            self.log.debug("PGS coordinates")    
+            lon_mod, lat_mod, mask_tab, depth_mod = inputdata_loader(self.log).factory('PGS_coords').\
+                read_pos(param_dict['coordinates'])
+        if 'depth' in list(model_data.data_vars):
+            depth_mod = model_data['depth'].values
         ll_singleobs = False
         same_grid = False
         ll_light = False
@@ -203,10 +209,6 @@ class Interpolator(object):
         ll_case2 = False
         ll_nan = False
         ll_uniq = False
-        if param_dict['cl_typemod'].lower() == "pgs" or param_dict['cl_typemod'].lower() == "pgs_ai":
-            self.log.debug("PGS coordinates")    
-            lon_mod, lat_mod, mask_tab, depth_mod = inputdata_loader(self.log).factory('PGS_coords').\
-                read_pos(param_dict['coordinates'])
         if len(np.unique(obs_data.depth)) == 1 or len(np.shape(obs_data.depth))==1 :
             tab_results['depth'] = np.expand_dims(obs_data.depth, axis=0)
             reshaped_obs = obs_data.obs_value.reshape((*obs_data.obs_value.shape, 1, 1))

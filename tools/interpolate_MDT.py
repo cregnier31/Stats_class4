@@ -59,22 +59,23 @@ def define_coords(lon, lat):
     return dict_coords
 
 SYSTEM = "GLONET14"
+SYSTEM = "WENHAI"
 #SYSTEM = "GLONET"
 resol = "1deg"
-resol = "025deg"
-file_in = "/data/rd_exchange/cregnier/static//MDT/GLO-MFC_001_030_mdt.nc"
-#file_out = "/data/rd_exchange/cregnier/SORT/GLONET//fcst1/GLONET_2024-01-05_all.nc"
-file_out = f"/data/rd_exchange/cregnier/SORT/GLONET_14//fcst1/{SYSTEM}_2024-01-05_all.nc"
-path_weight = '/data/rd_exchange/cregnier/TMP/'
-weight_file = f'{path_weight}GLO-MFC_001_030_mdt_{resol}.p'
-dir_out = "/data/rd_exchange/cregnier/static/"
+resol = "0125deg"
+file_in = "/home/onyxia/work/TEP_CLASS4_creation/statics/GLO-MFC_001_030_mdt.nc"
+EDITO="https://minio.dive.edito.eu/project-oceanbench/public/WENHAI/"
+file_out = f"{EDITO}20240904.zarr"
+path_weight = '../statics/'
+weight_file = f'../statics/GLO-MFC_001_030_mdt_{resol}.p'
+dir_out = "../statics/"
 variable = 'mssh'
 # Interp options
 nbpts_interp = 4
 x1 = 'longitude'
-x2 = 'lon'
+x2 = 'longitude'
 y1 = 'latitude'
-y2 = 'lat'
+y2 = 'latitude'
 ll_save = True
 tab_out, lon, lat = interpolator_2D(x1, x2, y1, y2, file_in,\
                                     file_out, weight_file,
@@ -82,6 +83,6 @@ tab_out, lon, lat = interpolator_2D(x1, x2, y1, y2, file_in,\
 
 if ll_save:
     print(f'Save interp file')
-    outnc = f'{dir_out}GLO-MFC_001_030_mdt_{resol}.nc'
+    outnc = f'{dir_out}GLO-MFC_001_030_mdt_{SYSTEM}.nc'
     create_netcdf(outnc, lon, lat, tab_out)
 

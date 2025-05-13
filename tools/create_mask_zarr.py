@@ -1,30 +1,35 @@
 import xarray as xr
 import numpy as np
+import sys
 
 SYSTEM="GLONET14"
 SYSTEM="WENHAI"
+SYSTEM="XIHE"
 # Open the existing NetCDF file
-output_file = f'/home/onyxia/work/CLASS4/TEP_CLASS4_creation/statics/'
-input_filename = f"https://minio.dive.edito.eu/project-oceanbench/public/WENHAI/20240904.zarr"
+output_file = f'/home/onyxia/work/TEP_CLASS4_creation/statics/{SYSTEM}_mask.nc'
+input_filename = f"https://minio.dive.edito.eu/project-oceanbench/public/{SYSTEM}/20240904.zarr"
 # Open the dataset using xarray
 ds = xr.open_dataset(input_filename, engine="zarr")
-
 # Extract relevant variables: lat, lon, depth, and thetao
 lat = ds['latitude']
 lon = ds['longitude']
 depth = ds['depth']
-thetao = ds['thetao']
+thetao = ds['thetao'][0,:,:,:]
 
 # Create a mask: 1 where thetao is not NaN, 0 where it is NaN
 mask = xr.where(np.isnan(thetao), 0, 1)
 # Set attributes for the mask variable
 mask.name = 'mask'
 mask.attrs['_FillValue'] = 0
-mask = mask[0, :, :, :]
+mask = mask[:, :, :]
+print(np.shape(mask))
+print(np.shape(depth))
+print(np.shape(lat))
+print(np.shape(lon))
 # Create a mask with the same shape as thetao, and set all values to 0
 mask = xr.DataArray(
     mask,
-    dims=['depth', 'lat', 'lon'],
+    dims=['depth', 'latitude', 'longitude'],
     coords={'depth': depth, 'latitude': lat, 'longitude': lon},
     name='mask'
 )
