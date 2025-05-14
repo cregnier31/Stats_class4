@@ -210,8 +210,15 @@ class Interpolator(object):
         ll_nan = False
         ll_uniq = False
         if len(np.unique(obs_data.depth)) == 1 or len(np.shape(obs_data.depth))==1 :
-            tab_results['depth'] = np.expand_dims(obs_data.depth, axis=0)
-            reshaped_obs = obs_data.obs_value.reshape((*obs_data.obs_value.shape, 1, 1))
+            nb_obs = np.shape(obs_data.depth)[0]
+            self.log.info(f"Dimensions obs {nb_obs}")
+            if len(variable)==1 :
+                reshaped_obs = obs_data.obs_value.reshape((*obs_data.obs_value.shape, 1, 1))
+                tab_results['depth'] = np.expand_dims(obs_data.depth, axis=0)
+            else:
+                reshaped_obs = obs_data.obs_value.reshape((*obs_data.obs_value.shape, 1))
+                tab_results['depth'] = np.expand_dims(obs_data.depth, axis=1)
+            
             tab_results['observation'] = reshaped_obs
             ll_singleobs = True
             ll_uniq = True
@@ -232,6 +239,12 @@ class Interpolator(object):
                 else:
                     self.log.error("Case not known")
                 self.log.debug(f"Interp 2D {variable=} {depthval}")
+                array_results = np.full(
+                                        shape=(nb_obs, len(variable), 1),
+                                        fill_value=netCDF4.default_fillvals['f4'],
+                                        dtype=float,
+                                        order='F'
+                                        )
                 for var in range(len(variable)):
                     varname = variable[var] 
                     interp_values = self.interp_2D(weights, indexes,
@@ -243,10 +256,12 @@ class Interpolator(object):
                                                    lon_mod=lon_mod, lat_mod=lat_mod,
                                                    missing_value=self.missing_value,
                                                    same_grid=same_grid)
-                    self.log.debug(f"Interp value {interp_values}")
+                    self.log.debug(f"Interp value {interp_values[0:20]}{var}")
+                    array_results[:, var, 0] = interp_values
+                tab_results[leadtime] = array_results
                     #tab_results[leadtime][varname] = np.expand_dims(interp_values, axis=0)
-                    reshaped = interp_values.reshape((*interp_values.shape, 1, 1))
-                    tab_results[leadtime] = reshaped
+                ##    reshaped = interp_values.reshape((*interp_values.shape, 1, 1))
+                ##    tab_results[leadtime] = reshaped
                     #tab_results[leadtime] = np.expand_dims(interp_values, axis=0)
 
             else:
@@ -255,9 +270,9 @@ class Interpolator(object):
         else:
             self.log.debug("Multiple depths")
             self.log.debug("Profile case variable")
+            nb_obs, nb_profs = np.shape(obs_data.depth)
             ll_case2 = True
             ## Compte weight file
-            nb_obs, nb_profs = np.shape(obs_data.depth)
             tab_results['depth'] = obs_data.depth
             tab_results['observation'] =  obs_data.obs_value
             self.log.debug(f"Nb_profils {nb_obs} Nb levels {nb_profs}")

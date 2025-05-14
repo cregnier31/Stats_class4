@@ -594,7 +594,10 @@ def read_drifter(file):
         time = ncdata['time'].values
     elif 'obs_time' in variables.keys():
         time = ncdata['obs_time'].values
-
+    if 'observation' in variables.keys():
+        observation = ncdata['observation'].values
+        u = observation[:, 0, 0]
+        v = observation[:, 1, 0]
     #lon_value = np.nanmean(lon)
     #lat_value = np.nanmean(lat)
     ncdata.close()

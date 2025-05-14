@@ -581,11 +581,8 @@ class Writer():
 
     def write_class4_out(self, param_dict, list_keys):
         unique_dates = sorted({int(key.split('-')[0]) for key in list_keys['keyvalues']})
-        print(unique_dates)
         unique_leadtime = sorted({key.split('-')[1] for key in list_keys['keyvalues']})
-        print(unique_leadtime)
         unique_leadtime_unit = sorted({int(key.split('-')[2]) for key in list_keys['keyvalues']})
-        print(unique_leadtime_unit)
         tab_out = {}
         for dateval in unique_dates:
             fcst_tab = None
@@ -693,6 +690,7 @@ class Writer():
                         for int_val, lead_rang in enumerate(unique_leadtime_unit):
                             frame = f"{type_file}*{dateval}_{leadtime}_{lead_rang}.p"
                             list_pickle_file = glob(f"{param_dict['dirwork']}{frame}")
+                            self.log.debug(f"Leadtime {int_val=}")
                             #pickle_file = glob(f"{param_dict['dirwork']}{frame}")[0]
                             if  list_pickle_file:
                                 pickle_file = list_pickle_file[0]
@@ -701,7 +699,7 @@ class Writer():
                                     stats_tmp = pickle.load(handle)
                                 if int_val == 0 or not ll_create:
                                     nb_dims = len(np.shape(stats_tmp))
-                                    self.log.debug(f"number of dimensions {nb_dims=}")
+                                    self.log.info(f"number of dimensions {nb_dims=}")
                                     if nb_dims == 2:
                                         nlons, nlats = np.shape(stats_tmp)
                                     elif nb_dims == 3:
@@ -731,6 +729,9 @@ class Writer():
                                                 )
                                             fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , :]
                                             self.log.debug(f"Create array Forecast {nb_obs=} {variable=} {nb_fcst=} {nb_profs=}")
+                                            #print('case1 create table')
+                                            #print(fcst_tab[0:10, 0, 0, :])
+                                            #print(fcst_tab[0:10, 1, 0, :])
                                         else:
                                             fcst_tab = np.full(
                                                 shape=(nb_obs, variable, nb_fcst, nb_profs),
@@ -741,6 +742,7 @@ class Writer():
                                             fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
                                             self.log.debug(f"Create array Forecast {nb_obs=} {variable=} {nb_fcst=} {nb_profs=}")
                                         ll_fcst = True
+                                        ll_create = True
                                     if leadtime == "persistence":
                                         pers_tab = np.full(
                                             shape=(nb_obs, variable, nb_fcst, nb_profs),
@@ -770,6 +772,9 @@ class Writer():
                                             fcst_tab[:, : , int(lead_rang)] = stats_tmp[:, :]
                                         elif nb_dims == 3:
                                             fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , :]
+                                            #print('case2 {lead_rang}')
+                                            #print(fcst_tab[0:10, 0, 1, :])
+                                            #print(fcst_tab[0:10, 1, 1, :])
                                         else:
                                             fcst_tab[:, : , int(lead_rang), :] = stats_tmp[:, : , int(lead_rang), :]
                                     if leadtime == "persistence":
@@ -893,6 +898,7 @@ class Writer():
             list_dimensions = nc_fid.dimensions
             list_variables = list(nc_fid.variables)
             self.log.debug("open ok")
+            self.log.info(list_dimensions)
             if 'varname' in tab_out.keys():
                 varname_data = tab_out['varname']
             else:
@@ -981,6 +987,7 @@ class Writer():
                             zlib=True, complevel=4)
                         nc_fcst.setncatts(
                             {'long_name': u"Model forecast counterpart of obs. value"})
+                        print('create var')
                     else:
                         nc_best = nc_fid.createVariable(
                               'forecast', 'f4', ('lat', 'lon', 'numfcsts'),
@@ -1044,8 +1051,11 @@ class Writer():
                     if len(np.shape(obs_tab)) == 1:
                         nc_fid.variables['observation'][:, 0, 0] = obs_tab[:]
                     else:
-                        print(np.shape(obs_tab))
-                        nc_fid.variables['observation'][:, :, :] = obs_tab[:, :, :]
+                        print(len(np.shape(obs_tab)))
+                        if len(np.shape(obs_tab)) == 3:
+                            nc_fid.variables['observation'][:, :, :] = obs_tab[:, :, :]
+                        elif len(np.shape(obs_tab)) == 4:
+                            nc_fid.variables['observation'][:, :, :] = obs_tab[:, :, :, 0]
                 except ValueError as e:
                     raise BroadcastError(f"Error with observations: {e}")
 
@@ -1079,7 +1089,7 @@ class Writer():
                     raise BroadcastError(f"Error with latitudes: {e}")
             if 'depth' in list_keys and np.any(tab_out['depth']):
                 depth_tab = tab_out['depth']
-                self.log.debug('depth not empty')
+                self.log.info('depth not empty')
                 if 'depth' not in list_variables:
                     nc_obs = nc_fid.createVariable(
                             'depth', 'f4', ('numobs', 'numdeps'),
@@ -1087,10 +1097,10 @@ class Writer():
                             zlib=True, complevel=4)
                     nc_obs.setncatts(
                             {'long_name': u"Depths of observations"})
-                try:
-                    nc_fid.variables['depth'][:, :] = depth_tab[:, :]
-                except ValueError as e:
-                    raise BroadcastError(f"Error with depth: {e}")
+                    try:
+                        nc_fid.variables['depth'][:, :] = depth_tab[:, :]
+                    except ValueError as e:
+                        raise BroadcastError(f"Error with depth: {e}")
             if 'qc' in list_keys: # and np.isnan(tab_out['qc']).any():
             #if 'qc' in list_keys and np.any(tab_out['qc']):
                 qc_tab = tab_out['qc']
@@ -1247,7 +1257,7 @@ class Writer():
             raise NetCDFFileError(error_message) from e
         except Exception as e:
             raise NetCDFFileError("Exception Error: {e}")
-
+    
     def write_coriolis_file_raw(self, filename, tab_res, dateval, model, variable, varname_data):
         nc_fid = Dataset(filename, 'r+') #, format='NETCDF3_CLASSIC')
         list_keys = tab_res.keys()

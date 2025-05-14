@@ -1221,8 +1221,9 @@ class LoaderCMEMSDrifter(inputdata_loader):
         #        tab_dims['nb_obs'] = sizedim
         #    elif dims == 'numdeps':
         #        tab_dims['nb_depths'] = sizedim
-
-        return lon, lat, [u, v], nb_obs, depth, tab_dims, param_dict, _FillValue
+        combined_UV = np.stack((u, v), axis=1)
+        #return lon, lat, [u, v], nb_obs, depth, tab_dims, param_dict, _FillValue
+        return lon, lat, combined_UV, nb_obs, depth, tab_dims, param_dict, _FillValue
 
 class SMOC_coords_Loader(inputdata_loader):
     """

@@ -19,7 +19,8 @@ def main():
         options = "--best"
     elif typedata in ["DRIFTER", "DRIFTER_filtr"]:
         srcdata = "CMEMS_013_048"
-        options = "--SMOC --best --clim --bathy --stokes --tides"
+        #options = "--SMOC --best --clim --bathy --stokes --tides"
+        options = "--fcst --zarr"
     else:
         print(f"{typedata} not known")
         sys.exit(1)
