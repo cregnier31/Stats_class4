@@ -6,6 +6,7 @@ import datetime as dt
 import os, sys
 import getopt
 import shlex,subprocess
+import xarray as xr
 from datetime import datetime
 import traceback
 import logging
@@ -38,6 +39,57 @@ class Parameters:
             self.parameters[category][key] = value
         else:
             self.parameters[category] = {key: value}
+
+def save_metrics_to_netcdf(tab_rmsd, tab_cumul_sq_diff, tab_n_obs, lead_times, output_path):
+    """
+    Save computed metrics to a NetCDF file with lead time as coordinate.
+
+    Parameters
+    ----------
+    tab_rmsd : np.ndarray
+        Array of RMSD values.
+    tab_cumul_sq_diff : np.ndarray
+        Array of cumulative squared differences.
+    tab_n_obs : np.ndarray
+        Array of number of valid observations.
+    lead_times : list or np.ndarray
+        The lead times (coordinate).
+    output_path : str
+        Path to save the output NetCDF file.
+    """
+
+    da_rmsd = xr.DataArray(
+        data=tab_rmsd,
+        coords={"leadtime": lead_times},
+        dims=["leadtime"],
+        name="rmsd"
+    )
+
+    da_cumul = xr.DataArray(
+        data=tab_cumul_sq_diff,
+        coords={"leadtime": lead_times},
+        dims=["leadtime"],
+        name="cumul_squared_diff"
+    )
+
+    da_nobs = xr.DataArray(
+        data=tab_n_obs,
+        coords={"leadtime": lead_times},
+        dims=["leadtime"],
+        name="n_obs"
+    )
+
+    # Combine into one Dataset
+    ds = xr.Dataset({
+        "rmsd": da_rmsd,
+        "cumul_squared_diff": da_cumul,
+        "n_obs": da_nobs
+    })
+
+    # Save to NetCDF
+    ds.to_netcdf(output_path)
+    print(f"Saved metrics to {output_path}")
+
 
 def mkdir(path):
     '''

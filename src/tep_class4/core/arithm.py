@@ -3,9 +3,101 @@ import sys
 import datetime
 from copy import deepcopy
 import numpy.ma as ma
-
-__author__      = "L.ZAWADZKI"
+import netCDF4
+__author__      = "C.REGNIER"
 __version__ = 0.1
+
+import numpy as np
+
+
+def init_array_1D(size):
+    return np.full(size, netCDF4.default_fillvals['f4'], dtype=float, order='F')
+
+import numpy as np
+
+def compute_rmsd(data1, data2):
+    """
+    Compute RMSD between two arrays, skipping invalid/masked values.
+
+    Returns:
+        rmsd: root mean square difference
+        cumul_sq_diff: sum of squared differences
+        n_obs: number of valid observations
+    """
+    # Convert to masked arrays if not already
+    data1 = np.ma.masked_invalid(data1)
+    data2 = np.ma.masked_invalid(data2)
+
+    # Mask positions where either data1 or data2 is masked
+    combined_mask = np.ma.mask_or(data1.mask, data2.mask)
+    diff = data1 - data2
+    diff = np.ma.masked_array(diff, mask=combined_mask)
+
+    # Count valid observations
+    n_obs = diff.count()
+    if n_obs == 0:
+        return np.nan, 0.0, 0  # Or use np.ma.masked for rmsd if you prefer
+
+    cumul_sq_diff = np.sum(diff**2)
+    rmsd = np.sqrt(cumul_sq_diff / n_obs)
+
+    return rmsd, cumul_sq_diff, n_obs
+
+
+def compute_rmsd_old(a, b, fill_value=None):
+    """
+    Compute the Root Mean Square Difference (RMSD) between two arrays,
+    handling NaNs or a custom fill value.
+
+    Parameters:
+    -----------
+    a, b : np.ndarray or np.ma.MaskedArray
+        Arrays to compare. Must be the same shape.
+    fill_value : float or None
+        Fill value to ignore in both arrays. Use None to skip fill filtering.
+
+    Returns:
+    --------
+    rmsd : float
+        Root Mean Square Difference
+    cum_squared_diff : float
+        Cumulative squared difference (sum of squared differences)
+    n_obs : int
+        Number of valid observations used in computation
+    """
+    if a.shape != b.shape:
+        raise ValueError("Input arrays must have the same shape")
+
+    a = np.asarray(a)
+    b = np.asarray(b)
+
+    # Build valid mask
+    if np.ma.isMaskedArray(a) or np.ma.isMaskedArray(b):
+        # Combine masks if using masked arrays
+        mask = np.ma.getmaskarray(a) | np.ma.getmaskarray(b)
+    else:
+        mask = np.zeros_like(a, dtype=bool)
+
+    if fill_value is not None:
+        mask |= (a == fill_value) | (b == fill_value)
+
+    # Also ignore NaNs
+    mask |= np.isnan(a) | np.isnan(b)
+
+    valid = ~mask
+    diff_squared = (a[valid] - b[valid]) ** 2
+
+    cum_squared_diff = np.sum(diff_squared)
+    n_obs = np.count_nonzero(valid)
+
+    if n_obs == 0:
+        rmsd = np.nan
+    else:
+        rmsd = np.sqrt(cum_squared_diff / n_obs)
+
+    return rmsd, cum_squared_diff, n_obs
+
+
 
 def fillVal2nan(data,fillVal):
     return np.ma.filled(np.ma.masked_array(data,(data==fillVal)), fill_value=np.nan)

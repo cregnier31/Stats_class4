@@ -209,7 +209,9 @@ class Interpolator(object):
         ll_case2 = False
         ll_nan = False
         ll_uniq = False
+        is_2D = False
         if len(np.unique(obs_data.depth)) == 1 or len(np.shape(obs_data.depth))==1 :
+            is_2D = True
             nb_obs = np.shape(obs_data.depth)[0]
             self.log.info(f"Dimensions obs {nb_obs}")
             if len(variable)==1 :
@@ -241,7 +243,8 @@ class Interpolator(object):
                 self.log.debug(f"Interp 2D {variable=} {depthval}")
                 array_results = np.full(
                                         shape=(nb_obs, len(variable), 1),
-                                        fill_value=netCDF4.default_fillvals['f4'],
+                                        #fill_value=netCDF4.default_fillvals['f4'],
+                                        fill_value=np.nan,
                                         dtype=float,
                                         order='F'
                                         )
@@ -254,7 +257,8 @@ class Interpolator(object):
                                                    depth=depthval, fillvalue=obs_data.FillValue,
                                                    time=0, nblon=tuple_obs[0], nblat=tuple_obs[1],
                                                    lon_mod=lon_mod, lat_mod=lat_mod,
-                                                   missing_value=self.missing_value,
+                                                   #missing_value=self.missing_value,
+                                                   missing_value=np.nan,
                                                    same_grid=same_grid)
                     self.log.debug(f"Interp value {interp_values[0:20]}{var}")
                     array_results[:, var, 0] = interp_values
@@ -311,7 +315,8 @@ class Interpolator(object):
             self.log.debug(f"{tab_indexes=}")
             array_results = np.full(
                                   shape=(nb_obs, len(variable), nb_profs),
-                                         fill_value=netCDF4.default_fillvals['f4'],
+                                         #fill_value=netCDF4.default_fillvals['f4'],
+                                         fill_value=np.nan,
                                          dtype=float,
                                          order='F'
                                          )
@@ -334,7 +339,7 @@ class Interpolator(object):
                                                ll_uniq=ll_uniq, ll_nan=ll_nan, ll_case2=ll_case2)
             tab_results[leadtime] = array_results
         
-        return tab_results
+        return tab_results, is_2D
         
     def read_and_interp(self, data_file, param_dict, date=None, leadtime=None, lead_int=None):
         """
