@@ -335,7 +335,8 @@ class Interpolator(object):
                                                obs = obs_tab,
                                                dateval=datevalue, lon=obs_data.lon, lat=obs_data.lat, light=ll_light,
                                                clim=ll_clim, depth_mod=depth_mod,
-                                               fillvalue=self.missing_value, data_file='',
+                                               fillvalue=np.nan, data_file='',
+                                               #fillvalue=self.missing_value, data_file='',
                                                ll_uniq=ll_uniq, ll_nan=ll_nan, ll_case2=ll_case2)
             tab_results[leadtime] = array_results
         
@@ -1187,12 +1188,6 @@ class Interpolator(object):
         ll_nan = False
         if depth > 0.5 :
             ## Find the 2 points that enclose the depth value
-            #varname_depth = 'deptht'
-            #if variable == 'uo':
-            #    varname_depth = 'depthu'
-            #elif variable == 'vo':
-            #    varname_depth = 'depthv'
-            #depth_mod = dataset_in[varname_depth][:].values
             nlons, nlats, ndepths, depth_mod = self.read_dims(dataset_in)
             ind_depth1, ind_depth2 = self.getnearpos(depth, depth_mod)
             w1, w2 = self.getweight(depth_mod[ind_depth1], depth_mod[ind_depth2], depth)
@@ -1255,96 +1250,6 @@ class Interpolator(object):
 
         tab_interp = np.where(np.isnan(tab_interp), missing_value, tab_interp)
         return tab_interp
-        
-        ##
-        #if len(var_in.shape) == 3:
-        #    if ll_single:
-        #        if isinstance(var_in, xr.DataArray):
-        #            var_in = var_in[time, :, :].values
-        #            print("var_in is an xarray DataArray")
-        #        elif isinstance(var_in, np.ndarray):
-        #            print("var_in is a NumPy array")
-        #            var_in = var_in[time, :, :]
-        #        else:
-        #            self.log.error("var_in is neither an xarray DataArray nor a NumPy array")
-        #            sys.exit(1)
-        #    else:
-        #        if isinstance(var_in, xr.DataArray):
-        #            var_in1 = var_in[ind_depth1, :, :].values
-        #            var_in2 = var_in[ind_depth2, :, :].values
-        #        else:
-        #            var_in1 = var_in[ind_depth1, :, :]
-        #            var_in2 = var_in[ind_depth2, :, :]
-        #
-        #elif len(var_in.shape) == 4:
-        #    if ll_single:
-        #      ##
-        #        if isinstance(var_in, xr.DataArray):
-        #            var_in = var_in[time, 0, :, :].values
-        #        elif isinstance(var_in, np.ndarray):
-        #            var_in = var_in[time, 0, :, :]
-        #        else:
-        #            self.log.error("var_in is neither an xarray DataArray nor a NumPy array")
-        #            sys.exit(1)
-        #      ##
-        #        ll_single = True
-        #    else:
-        #        if isinstance(var_in, xr.DataArray):
-        #            var_in1 = var_in[time, ind_depth1, :, :].values
-        #            var_in2 = var_in[time, ind_depth2, :, :].values
-        #        elif isinstance(var_in, np.ndarray):
-        #            var_in1 = var_in[time, ind_depth1, :, :]
-        #            var_in2 = var_in[time, ind_depth2, :, :]
-        #        else:
-        #            self.log.error("var_in is neither an xarray DataArray nor a NumPy array")
-        #            sys.exit(1)
-        #if variable in self.list_ssh : #or  param_dict['data_type'] == "SLA":
-        #    var_in = np.where(var_in != fillvalue,  var_in - tab_mssh - rp_mssh_shift, var_in)
-        #if same_grid:
-        #    ## The output grid is the same than the input grid
-        #    tab_interp = np.array(var_in).flatten()
-        #else:
-        #    if np.isnan(inds).all():
-        #        nb_obs = len(inds)
-        #        #tab_interp = fillvalue*np.zeros((nb_obs))
-        #        ndims = np.shape(inds)
-        #        #tab_interp = np.full((ndims), np.nan).flatten()
-        #      tab_interp = np.full(nb_obs, np.nan).flatten()
-        #        self.log.info('All missing values for indexes interp_2D')
-        #        ll_nan = True
-        #    else:
-        #        if nbpts_interp > 1:
-        #            # Distance weight interpolation
-        #            self.log.debug(f"Distance weight interpolation {ll_single}")
-        #            if ll_single :
-        #               self.log.debug('Dimension longitude {}'.format(nblon))
-        #               self.log.debug('Dimension latitude {}'.format(nblat))
-        #               ll_reshape = self.test_lonlat(var_in, nblon, nblat)
-        #               self.log.debug('Reshape {}'.format(ll_reshape))
-        #               if ll_reshape : var_in = np.transpose(var_in)
-        #               ## Modif cregnier
-        #               tab_interp = np.sum(weight * np.array(var_in).flatten()
-        #                                   [inds], axis=1) / np.sum(weight, axis=1)
-        #            else:
-        #               self.log.debug('depth > 0.5')
-        #
-        #               tab_interp_1 = np.sum(weight * np.array(var_in1).flatten()
-        #                                   [inds], axis=1) / np.sum(weight, axis=1)
-        #               tab_interp_2 = np.sum(weight * np.array(var_in2).flatten()
-        #                                   [inds], axis=1) / np.sum(weight, axis=1)
-        #               tab_interp = (w1 * tab_interp_1) + (w2 * tab_interp_2)
-        #        else:
-        #            # Nearest neighbour interpolation
-        #            self.log.debug("Interp nearest")
-        #            if ll_single :
-        #                tab_interp = ma.array(var_in).flatten()[inds]
-        #            else:
-        #                tab_interp =  (w1 * ma.array(var_in1).flatten()[inds])+ (w2 * ma.array(var_in2).flatten()[inds])
-
-        ## Put nan to missing values
-        #tab_interp = np.where(np.isnan(tab_interp), missing_value, tab_interp)
-
-        #return tab_interp, ll_nan
 
     def compute_3D_weight(self, ind, var_in, inds,\
                        weight, ind_max, nbpts_interp):

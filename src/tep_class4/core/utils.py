@@ -40,6 +40,54 @@ class Parameters:
         else:
             self.parameters[category] = {key: value}
 
+def save_stats_to_netcdf(results_stats, lead_times, depth_labels, output_path):
+
+    ds_out = xr.Dataset()
+
+    for var, stats in results_stats.items():
+        tab_rmsd = stats['rmsd']
+        tab_cumul_sq_diff = stats['sq_diff_cumul']
+        tab_n_obs = stats['nb_obs']
+
+        if var in ['SST', 'SLA', 'aice', 'DRIFTER_filtr', 'DRIFTER']:  # 2D vars
+            dims = ['leadtime']
+            coords = {'leadtime': lead_times}
+            ds_out[f'{var}_rmsd'] = xr.DataArray(tab_rmsd, dims=dims, coords=coords)
+            ds_out[f'{var}_sq_diff_cumul'] = xr.DataArray(tab_cumul_sq_diff, dims=dims, coords=coords)
+            ds_out[f'{var}_nb_obs'] = xr.DataArray(tab_n_obs, dims=dims, coords=coords)
+
+        else:  # 3D vars like temperature, salinity (index 0, 1)
+            dims = ['leadtime', 'depth_bin']
+            variable_names = ['temperature', 'salinity']
+            coords = {
+                'leadtime': lead_times,
+                'depth_bin': depth_labels,  # You could also use mid-depths or similar
+            }
+            for ind_var, variable in enumerate(variable_names):
+                ds_out[f'{variable}_rmsd'] = xr.DataArray(tab_rmsd[:, :, ind_var], dims=dims, coords=coords)
+                ds_out[f'{variable}_sq_diff_cumul'] = xr.DataArray(tab_cumul_sq_diff[:, :, ind_var], dims=dims, coords=coords)
+                ds_out[f'{variable}_nb_obs'] = xr.DataArray(tab_n_obs[:, :, ind_var], dims=dims, coords=coords)
+    ds_out.to_netcdf(output_path)
+
+def save_all_metrics(file_list, list_date, fileout):
+    # Convert to datetime64
+    time_counter = pd.to_datetime(list_date, format="%Y%m%d")
+    # Convert to Julian days since 1950-01-01
+    dates_dt = pd.to_datetime(list_date, format="%Y%m%d")
+    ref_date = pd.Timestamp("1950-01-01")
+    julian_days = (dates_dt - ref_date).days
+    # Open and concatenate
+    ds = xr.open_mfdataset(file_list,
+                           concat_dim="time",
+                           combine="nested",
+                           parallel=True
+                           )
+
+    # Add time_counter to the dataset
+    ds = ds.assign_coords(time=("time", time_counter))
+    # Optionally save
+    ds.to_netcdf(fileout)
+
 def save_metrics_to_netcdf(tab_rmsd, tab_cumul_sq_diff, tab_n_obs, lead_times, output_path):
     """
     Save computed metrics to a NetCDF file with lead time as coordinate.
@@ -88,8 +136,6 @@ def save_metrics_to_netcdf(tab_rmsd, tab_cumul_sq_diff, tab_n_obs, lead_times, o
 
     # Save to NetCDF
     ds.to_netcdf(output_path)
-    print(f"Saved metrics to {output_path}")
-
 
 def mkdir(path):
     '''
@@ -182,7 +228,6 @@ def generic_test(list_var,var,type_param):
     """
        Generic test for values
     """
-    #print (f"{type_param=}")
     if type_param == 'day1' or type_param == 'day2':
         if not var: sys.exit(f'{type_param} is missing need {list_var}')
         isValiDate(var, type_param)
@@ -228,6 +273,18 @@ def generate_date_list(start, end):
     end_date = datetime.strptime(end, "%Y%m%d")
     # Generate list of dates between start_date and end_date
     date_list = [(start_date + timedelta(days=x)).strftime("%Y%m%d") for x in range((end_date - start_date).days + 1)]
+    return date_list
+
+def generate_date_list_week(start, end, delta=7):
+    # Convert strings to datetime objects
+    start_date = datetime.strptime(start, "%Y%m%d")
+    end_date = datetime.strptime(end, "%Y%m%d")
+    # Generate list of weekly dates
+    date_list = []
+    current_date = start_date
+    while current_date <= end_date:
+        date_list.append(current_date.strftime("%Y%m%d"))
+        current_date += timedelta(days=delta)
     return date_list
 
 
@@ -290,7 +347,6 @@ def launch_sbatch(Jobfile):
     SUBEXE="/usr/bin/sbatch"
     code_launch=f'{SUBEXE} {Jobfile}'
     args   = shlex.split(code_launch)
-    #print(args)
     try :   subprocess.run(args)
     except :
         print (f'Launch {Jobfile} failed')

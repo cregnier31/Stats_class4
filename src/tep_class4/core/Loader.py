@@ -58,6 +58,7 @@ class Loader(object):
         if type == "NML": return NmlLoader()
         if type == "DAT": return ColocLoader()
         if type == "INPUT": return InputLoader()
+        if type == "INPUTSTATS": return InputLoader_stats()
         if type == "INPUT_DATA": return InputDataLoader()
         if type == "PGN_coords": return PGN_coords_Loader()
         if type == "PGN_coords_clim": return PGN_coords_clim_Loader()
@@ -247,6 +248,75 @@ class LoaderNCClim(Loader):
         rla_lon, rla_lat, nc = self.generic_read_pos(filename)
         return rla_lon, rla_lat
 
+class InputLoader_stats(Loader):
+    def __init__(self):
+        self.lead_int = 0 # list(range(10))
+    
+    def load(self, options, level):
+        """Loader for input options"""
+        keywords = ['date1=', 'date2=', 'config=', 'typemod=', 
+                    'loglevel=', 'best','fcst','pers','all',
+                    'clim', 'bathy', 'listdata=', 'typedata=', 'zarr']
+        list_inputtype = ['pgs', 'pgs_ai', 'pgn', 'pgncg']
+        
+        cla_opts = getopt.getopt(options, 'd', keywords)
+        list_LEAD_TIME = [] 
+        ll_listdata = True
+        ll_netcdf = False
+        cl_data_id = ""
+        for o, p in cla_opts[0]:
+            if o in ['--date1']:
+                ll_date1 = True
+                cl_start_date = p
+            elif o in ['--date2']:
+                ll_date2 = True
+                cl_end_date = p
+            elif o in ['--typemod']:
+                cl_typemod = p
+                if cl_typemod not in list_inputtype:
+                    print('input data type not known : ')
+                    print(f'must be {list_inputtype} not {cl_typemod}')
+                    sys.exit(1)
+            elif o in ['--fcst']:
+                list_LEAD_TIME.append('forecast')
+                ll_forecast = True
+            elif o in ['--daterun']:
+                ll_daterun = True
+            elif o in ['--config']:
+                ll_config = True
+                cl_config = p
+            elif o in ['--loglevel']:
+                level = int(p)
+            elif o in ['--listdata']:
+                ll_listdata = True
+                list_data = p
+            elif o in ['--all']:
+                list_LEAD_TIME=['best_estimate', 'forecast', 'persistence']
+            elif o in ['--zarr']:
+                ll_zarr = True
+            elif o in ['--netcdf']:
+                ll_netcdf = True
+        # LOGGER
+        log = Logger(f"TEP_CLASS4_{cl_config}_{cl_start_date}_{cl_end_date}").run(level)
+        log.debug("Loglevel {}".format(log))
+        confname = 'config_' + str(cl_config) + '_allvars' + '.cfg'
+        # Create dictionnary
+        param_dict={}
+        #param_dict['listdata'] = list_data
+        param_dict['date1'] = cl_start_date
+        param_dict['date2'] = cl_end_date
+        param_dict['cl_config'] = cl_config
+        param_dict['lead_time'] = list_LEAD_TIME
+        param_dict['lead_int'] = self.lead_int
+        param_dict['fcst_mode'] = ll_forecast
+        param_dict['is_zarr'] = ll_zarr
+        param_dict['is_netcdf'] = ll_netcdf
+        param_dict['cl_typemod'] = cl_typemod.upper()
+        param_dict['confname'] = confname
+        param_dict['cl_data_id'] = cl_data_id
+        return param_dict, log
+
+
 class InputLoader(Loader):
     def __init__(self):
         self.lead_int = 0 # list(range(10))
@@ -256,7 +326,8 @@ class InputLoader(Loader):
         keywords = ['date1=', 'date2=', 'delta=', 'nbdate=', 'daterun=',
         'config=', 'data=', 'src=', 'nbproc=', 'typemod=', 'schedule=',
         'data_id=','loglevel=','daymax=','dirinput=','diroutput=', 'dirlog=',
-        'best','fcst','pers','all','clim','bathy','SMOC','stokes','tides','zarr']
+        'best','fcst','pers','all','clim','bathy','SMOC','stokes',
+        'listdata=', 'typedata=', 'tides','zarr']
         ll_delta = None
         ll_date1 = None
         ll_date2 = None
@@ -278,6 +349,7 @@ class InputLoader(Loader):
         ll_bathy = False
         ll_forecast = False
         ll_persistence = False
+        ll_listdata = False
         list_var = []
         nb_proc = 0
         ll_zarr = False
@@ -298,6 +370,7 @@ class InputLoader(Loader):
         #    elif opt == "--best":
         #        print("Performing the best operation.")
         cla_opts = getopt.getopt(options, 'd', keywords)
+        
         for o, p in cla_opts[0]:
             if o in ['--delta']:
                 ll_delta = True
@@ -370,6 +443,13 @@ class InputLoader(Loader):
                 list_LEAD_TIME.append('smoc')
             elif o in ['--clim']:
                 list_LEAD_TIME.append('climatology')
+            elif o in ['--listdata']:
+                ll_listdata = True
+                ll_data = True
+                ll_src = True
+                cl_data = "all"
+                cl_src = "all"
+                list_data = p
             elif o in ['--all']:
                 list_LEAD_TIME=['best_estimate', 'forecast', 'persistence']
             elif o in ['--zarr']:
@@ -440,6 +520,8 @@ class InputLoader(Loader):
                 cl_schedule = 'y'
             else:
                 log.error("Input date must be in year month or day")
+                date1 = cl_start_date
+                date2 = cl_end_date
         elif ll_daterun and ll_nbdate and ll_delta:
             log.debug("Case 3 Backward run")
             jrun = SyDate(cl_daterun)
@@ -498,6 +580,8 @@ class InputLoader(Loader):
         log.debug("Daterun %s " %(cl_daterun))
         # Create dictionnary
         param_dict={}
+        if ll_listdata:
+            param_dict['listdata'] = list_data
         param_dict['date1'] = date1
         param_dict['date2'] = date2
         param_dict['confname'] = confname
@@ -519,6 +603,8 @@ class InputLoader(Loader):
         if ll_output : param_dict['diroutput'] =  diroutput
         if ll_dirlog : param_dict['dirlog'] =  dirlog
         # Create time vector between date1 and date2
+        #param_dict['date1'] = pd.to_datetime(param_dict['date1']).strftime('%Y%m%d')
+        #param_dict['date2'] = pd.to_datetime(param_dict['date2']).strftime('%Y%m%d')
         start_date = dt.datetime(year=int(str(param_dict['date1'])[0:4]),\
                                  month=int(str(param_dict['date1'])[4:6]),\
                                  day=int(str(param_dict['date1'])[6:8]))
@@ -548,10 +634,10 @@ class NmlLoader(Loader):
         param_dict['nml_dir'] = param_dict['dirhome']+'NAMELIST/'
         param_dict['dir_log'] = param_dict['dirhome']+'log/'
         # Add new parameters in the dictionnary
-        if 'sla' in param_dict['data_type'].lower(): 
+        #if 'sla' in param_dict['data_type'].lower(): 
        # if param_dict['data_type'] == "SLA" :
-            param_dict['cl_msshFile'] = db.get('static','cl_msshFile')
-            param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
+        param_dict['cl_msshFile'] = db.get('static','cl_msshFile')
+        param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
         if param_dict['cl_typemod'].lower() == 'pgn':
             param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
             param_dict['dirmodel'] = param_dict['dirmodel_pgn']
@@ -589,6 +675,27 @@ class NmlLoader(Loader):
             param_dict['EDITO'] = db.get('input_dir', 'EDITO')
         except:
             param_dict['EDITO'] = ''
+        try:
+            param_dict['typedata'] = literal_eval(db.get('GLOBAL', 'typedata'))
+        except:
+            param_dict['typedata'] = ''
+        try:
+            param_dict['list_variables'] = literal_eval(db.get('GLOBAL', 'list_variables'))
+        except:
+            param_dict['list_variables'] = ''
+        try:
+            param_dict['good_qc'] = literal_eval(db.get('GLOBAL', 'good_qc'))
+        except:
+            param_dict['good_qc'] = ''
+        try:
+            param_dict['DEPTHS'] = literal_eval(db.get('GLOBAL', 'DEPTHS'))
+        except:
+            param_dict['DEPTHS'] = [0, 5, 100, 300, 600]
+        try:
+            param_dict['time_centered'] = literal_eval(db.get('GLOBAL', 'time_centered'))
+        except:
+            param_dict['time_centered'] = False
+        
         # param_dict['Design_GODAE_file'] = db.get('GLOBAL', 'Design_GODAE_file')
         param_dict['dirmodel'] = db.get('input_dir', 'DATA_IN')
         param_dict['nb_level'] = int(db.get('GLOBAL', 'LEVELS'))
@@ -646,7 +753,11 @@ class NmlLoader(Loader):
         log.debug('Sort rep : %s' % (param_dict['sort_rep']))
         param_dict['do_decomp'] = int(db.get('GLOBAL', 'do_decomp'))
         param_dict['model_type'] = db.get('GLOBAL', 'MODELTYPE')
-        param_dict['data_format'] = db.get('input_dir', 'DATA_FMT')
+        try:
+            param_dict['data_format'] = literal_eval(db.get('input_dir', 'DATA_FMT'))
+        except: 
+            param_dict['data_format'] = []
+
         param_dict['dirwork'] = db.get('output_dir', 'DIRTMP')
         if not os.path.exists(param_dict['dirwork']):
             try:
@@ -675,9 +786,15 @@ class NmlLoader(Loader):
             param_dict['coordinates_hgr'] = ""
 
         param_dict['dirtmp'] = param_dict['dirwork'] + 'ext-'
-        param_dict['prefix_data'] = db.get('input_dir', 'PREFIX')
+        try:
+            param_dict['prefix_data'] = literal_eval(db.get('input_dir', 'PREFIX'))
+        except:
+            param_dict['prefix_data'] = []
         param_dict['daily_pref'] = db.get('GLOBAL', 'DAILY_PREF')
-        param_dict['data_origin'] = db.get('input_dir', 'DATA_ORIGIN')
+        try:
+            param_dict['data_origin'] = db.get('input_dir', 'DATA_ORIGIN')
+        except:
+            param_dict['data_origin'] = []
         param_dict['cl_conf'] = db.get('GLOBAL', 'CONF')
         #param_dict['template'] = param_dict['cl_config_h'] + \
         #    '_'+param_dict['model_type'].lower()
@@ -756,6 +873,7 @@ class NmlLoader(Loader):
             param_dict['bathy_file'] = db.get('static','fic_bathy')
         except:
             param_dict['bathy_file'] = ""
+        
         if param_dict['cl_data_id']:
             param_dict['dirwork'] = param_dict['dirwork']+str(cl_data_id)+'/'
             param_dict['diroutput'] = param_dict['diroutput']+str(cl_data_id)+'/'
@@ -765,10 +883,10 @@ class NmlLoader(Loader):
             param_dict['diroutput'] = param_dict['diroutput']
             date_ini = SyDate(str(param_dict['date1']))
             #if param_dict['prefix_data'] == "L3mCHL": param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
-        else:
-            param_dict['dirwork'] = param_dict['dirwork']
-            param_dict['diroutput'] = param_dict['diroutput']
-            param_dict['dirdata'] = param_dict['dirdata']
+        
+        param_dict['dirwork'] = param_dict['dirwork']
+        param_dict['diroutput'] = param_dict['diroutput']
+        param_dict['dirdata'] = param_dict['dirdata']
 
         return param_dict
 

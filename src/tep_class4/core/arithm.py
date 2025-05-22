@@ -13,12 +13,93 @@ import numpy as np
 def init_array_1D(size):
     return np.full(size, netCDF4.default_fillvals['f4'], dtype=float, order='F')
 
-import numpy as np
+def init_array_2D(size, size2):
+    return np.full((size, size2), netCDF4.default_fillvals['f4'], dtype=float, order='F')
 
-def compute_rmsd(data1, data2):
+def init_array_3D(size, size2, size3):
+    return np.full((size, size2, size3), netCDF4.default_fillvals['f4'], dtype=float, order='F')
+
+def compute_rmsd_3d_by_depth_bins(data1, data2, depth_array, data_qc, depth_bins, good_qc):
+    """
+    Compute RMSD between data1 and data2 over specified depth bins,
+    aggregated across all profiles (not per-profile).
+
+    Parameters:
+    - data1, data2: masked arrays of shape (num_obs, num_depths)
+    - depth_array: array of shape (num_obs, num_depths), giving the actual depth of each point
+    - data_qc : ndarray (num_obs, num_depths)
+                QC flags: only values with QC == 0 are used in the statistics
+    - depth_bins: list of bin edges (e.g., [0, 5, 100, 300, 600])
+
+    Returns:
+    - rmsd_bin: list of RMSD per depth bin
+    - cumul_sq_diff_bin: list of total squared diff per bin
+    - n_obs_bin: list of valid observation counts per bin
+    """
+    
+    data1 = ma.masked_invalid(data1)
+    data2 = ma.masked_invalid(data2)
+    depth_array = ma.masked_invalid(depth_array)
+    
+    assert data1.shape == data2.shape == depth_array.shape, "Shapes of input arrays must match"
+
+    # Create QC mask (True for valid values)
+    qc_mask = (data_qc == good_qc)
+
+    rmsd_bins = []
+    cum_sq_diff_bins = []
+    n_obs_bins = []
+
+    for i in range(len(depth_bins) - 1):
+        bin_mask = (depth_array >= depth_bins[i]) & (depth_array < depth_bins[i + 1])
+
+        # Valid where bin_mask is True and both data1 and data2 are not masked
+        #valid_mask = bin_mask & (~data1.mask) & (~data2.mask)
+        
+        bin_mask_2d = np.broadcast_to(bin_mask, data1.shape)
+        valid_mask = bin_mask_2d & (~data1.mask) & (~data2.mask) & qc_mask
+
+
+        sq_diff = ma.masked_where(~valid_mask, (data1 - data2)**2)
+        cum_sq_diff = sq_diff.sum()
+        n_obs = valid_mask.sum()
+        rmsd = np.sqrt(cum_sq_diff / n_obs) if n_obs > 0 else np.nan
+
+        rmsd_bins.append(rmsd)
+        cum_sq_diff_bins.append(cum_sq_diff)
+        n_obs_bins.append(n_obs)
+        #diff = data1.data - data2.data
+        #sq_diff = np.square(diff)
+        #cumul_sq_diff_bin[i] = np.sum(sq_diff[valid_mask])
+        #n_obs_bin[i] = np.sum(valid_mask)
+
+    # Total RMSD over all bins (0 to max(depth_bins))
+    dmin_total = depth_bins[0]
+    dmax_total = depth_bins[-1]
+    total_mask = (depth_array >= dmin_total) & (depth_array <= dmax_total)
+    total_mask_2d = np.broadcast_to(total_mask, data1.shape)
+
+    valid_mask_total = total_mask_2d & (~data1.mask) & (~data2.mask) & qc_mask
+
+    sq_diff_total = ma.masked_where(~valid_mask_total, (data1 - data2)**2)
+
+    cum_sq_diff_total = sq_diff_total.sum()
+    n_obs_total = valid_mask_total.sum()
+    rmsd_total = np.sqrt(cum_sq_diff_total / n_obs_total) if n_obs_total > 0 else np.nan
+    
+    rmsd_bins.append(rmsd_total)
+    cum_sq_diff_bins.append(cum_sq_diff_total)
+    n_obs_bins.append(n_obs_total)
+    # Compute RMSD per bin
+    #rmsd_bin = [np.sqrt(cumul / n) if n > 0 else np.nan
+    #            for cumul, n in zip(cumul_sq_diff_bin, n_obs_bin)]
+
+    return rmsd_bins, cum_sq_diff_bins, n_obs_bins
+
+def compute_rmsd(data1, data2, data_qc=None, good_qc=0):
     """
     Compute RMSD between two arrays, skipping invalid/masked values.
-
+    and optionally filtering by QC flags (QC == 0 only).
     Returns:
         rmsd: root mean square difference
         cumul_sq_diff: sum of squared differences
@@ -30,8 +111,14 @@ def compute_rmsd(data1, data2):
 
     # Mask positions where either data1 or data2 is masked
     combined_mask = np.ma.mask_or(data1.mask, data2.mask)
-    diff = data1 - data2
-    diff = np.ma.masked_array(diff, mask=combined_mask)
+    
+    # If QC is provided, mask anything not QC == 0
+    if data_qc is not None:
+        qc_mask = (data_qc != good_qc)
+        combined_mask = np.logical_or(combined_mask, qc_mask)
+
+    # Apply combined mask
+    diff = ma.masked_array(data1 - data2, mask=combined_mask)
 
     # Count valid observations
     n_obs = diff.count()
@@ -42,62 +129,6 @@ def compute_rmsd(data1, data2):
     rmsd = np.sqrt(cumul_sq_diff / n_obs)
 
     return rmsd, cumul_sq_diff, n_obs
-
-
-def compute_rmsd_old(a, b, fill_value=None):
-    """
-    Compute the Root Mean Square Difference (RMSD) between two arrays,
-    handling NaNs or a custom fill value.
-
-    Parameters:
-    -----------
-    a, b : np.ndarray or np.ma.MaskedArray
-        Arrays to compare. Must be the same shape.
-    fill_value : float or None
-        Fill value to ignore in both arrays. Use None to skip fill filtering.
-
-    Returns:
-    --------
-    rmsd : float
-        Root Mean Square Difference
-    cum_squared_diff : float
-        Cumulative squared difference (sum of squared differences)
-    n_obs : int
-        Number of valid observations used in computation
-    """
-    if a.shape != b.shape:
-        raise ValueError("Input arrays must have the same shape")
-
-    a = np.asarray(a)
-    b = np.asarray(b)
-
-    # Build valid mask
-    if np.ma.isMaskedArray(a) or np.ma.isMaskedArray(b):
-        # Combine masks if using masked arrays
-        mask = np.ma.getmaskarray(a) | np.ma.getmaskarray(b)
-    else:
-        mask = np.zeros_like(a, dtype=bool)
-
-    if fill_value is not None:
-        mask |= (a == fill_value) | (b == fill_value)
-
-    # Also ignore NaNs
-    mask |= np.isnan(a) | np.isnan(b)
-
-    valid = ~mask
-    diff_squared = (a[valid] - b[valid]) ** 2
-
-    cum_squared_diff = np.sum(diff_squared)
-    n_obs = np.count_nonzero(valid)
-
-    if n_obs == 0:
-        rmsd = np.nan
-    else:
-        rmsd = np.sqrt(cum_squared_diff / n_obs)
-
-    return rmsd, cum_squared_diff, n_obs
-
-
 
 def fillVal2nan(data,fillVal):
     return np.ma.filled(np.ma.masked_array(data,(data==fillVal)), fill_value=np.nan)

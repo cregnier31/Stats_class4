@@ -565,7 +565,10 @@ def read_drifter(file):
         sys.exit(1)
     if 'CURRENT_TEST' in variables.keys():
         current_test = ncdata['CURRENT_TEST'].values
-        current_test_qc = ncdata['CURRENT_TEST_QC'].values
+        if 'CURRENT_TEST_QC' in variables.keys():
+            current_test_qc = ncdata['CURRENT_TEST_QC'].values
+        else:
+            current_test_qc = ""
     else:
         current_test = None ; current_test_qc = None
     if 'POSITION_QC' in variables.keys():

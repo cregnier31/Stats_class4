@@ -653,7 +653,7 @@ class Extract_UVDrifters_filtr(Extractor):
         self.nb_vars = 2
         self.nb_depths = 1
         self.fillvalue_b = -128
-
+    
     def rewrite(self, file, nb_fcst, nb_fcst2, file_new):
         """
             Rewrite netcdf file to the right GODAE format
@@ -819,7 +819,19 @@ class Extract_UVDrifters_filtr(Extractor):
         nc_fid_rewrite.Conventions = 'CF-1.6'
         nc_fid_rewrite.close()
 
-    def run_list(self,param_dict, daterun):
+    def list(self, daterun, dirdata, typedata):
+        liste_tot=[]
+        year = daterun[0:4]
+        month = daterun[4:6]
+        liste_file = glob(dirdata+ '/' + year + '/' + month + '/*' + daterun+'*.nc')
+        if not liste_file:
+            self.log.error(f"Missing Drifters files {dirdata}/{year}/{month}/*{daterun}*nc")
+            return [], True
+        else:
+            self.log.info('Liste file UV drifters {}'.format(liste_file))
+            return liste_file, False
+
+    def run_list(self, param_dict, daterun):
         liste_tot=[]
         year = daterun[0:4]
         month = daterun[4:6]
@@ -1089,7 +1101,6 @@ class Extract_MDS_L3_SLA(Extractor):
     def find_largest_date_difference(self, files):
         date_diffs = []
         date_pattern = re.compile(r"_(\d{8})_(\d{8})\.nc")
-        print(files)
 
         for file in files:
             match = date_pattern.search(file)
@@ -1151,7 +1162,27 @@ class Extract_GODAE(Extractor):
         except subprocess.CalledProcessError as e:
             print(f"An error occurred while checking the file type: {e}")
             return False
-
+    def list(self, daterun, dirdata, typedata):
+        if typedata != "SLA" and  typedata != "SST" and typedata != "profile" \
+            and typedata !=  "aice" and typedata !=  "AMSR" and  typedata !=  "current" :
+            self.log.error("Data %s not known !!! " %(typedata))
+            sys.exit(1)
+        #valeurj=date1
+        liste_tot=[]
+        if typedata ==  "AMSR" :
+            liste_file=glob(dirdata+'/*'+daterun+'*.nc')
+        else :
+            try:
+                liste_file = [glob(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')[0]]
+            except IndexError:
+               self.log.error(f'Missing CLASS4 {daterun} {typedata} file')
+               liste_file = []
+        if liste_file:
+            return liste_file, False
+        else:
+            self.log.error(f'file is missing for {daterun}')
+            return liste_file, True
+    
     def run(self,daterun,dirdata,dirtmp,typedata,template,nb_fcst):
 
         if typedata != "SLA" and  typedata != "SST" and typedata != "profile" \

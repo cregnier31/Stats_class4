@@ -73,7 +73,7 @@ class inputdata_loader(object):
         if type == "Legos_SIT": return read_Legos_SIT()
         if type == "2ease_coords": return ease_coords_Loader()
         if type == "L3_SEALEVEL": return L3_SEALEVEL_Loader()
-        assert 0, "Format not known: " + type
+        assert 0, f"Format not known {type}"
 
     def generic_read_pos_and_value(self,filename, varname):
         rla_lon, rla_lat, nc = self.generic_read_pos(filename)
@@ -969,7 +969,7 @@ class LoaderNCgodae(inputdata_loader):
                 tab_dims['nb_obs'] = sizedim
             elif dims == 'numdeps':
                 tab_dims['nb_depths'] = sizedim
-
+        
         if 'depth' in nc.variables.keys():
             rla_depth = nc.variables['depth'][:]
         elif 'DEPH' in nc.variables.keys():
@@ -983,12 +983,16 @@ class LoaderNCgodae(inputdata_loader):
             nb_obs, nb_vars, nb_deps = np.shape(rla_value)
             rla_depth = np.ndarray(shape=(nb_obs,nb_deps),dtype=float, order='F')
             rla_depth[:, 0] = 0
+        if 'qc' in nc.variables.keys():
+            rla_qc = nc.variables['qc'][:]
+        else:
+            rla_qc = np.nan
         nb_obs = len(rla_value)
         param_dict['ll_PSAL'] = True
         param_dict['ll_TEMP'] = True
         param_dict['varname_select'] = param_dict['varname']
         nc.close()
-        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, tab_dims, param_dict, _FillValue
+        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, rla_qc, tab_dims, param_dict, _FillValue
 
 class PGN_coords_Loader(inputdata_loader):
 
@@ -1185,7 +1189,6 @@ class LoaderCMEMSDrifter_filtr(inputdata_loader):
         lon, lat, depth, depth_qc, time, u, v, u_filtr, v_filtr, ll_var,\
             u_qc, v_qc, u_filtr_qc, v_filtr_qc, wind_u, wind_v, current_test, current_test_qc,\
             position_qc, time_qc, dc_reference = read_drifter_filt(filename)
-        nb_obs = len(lon)
         _FillValue = np.nan
         tab_dims = {}
         param_dict['Design_GODAE_file'] = True
@@ -1197,7 +1200,21 @@ class LoaderCMEMSDrifter_filtr(inputdata_loader):
         #        tab_dims['nb_obs'] = sizedim
         #    elif dims == 'numdeps':
         #        tab_dims['nb_depths'] = sizedim
-        return lon, lat, [u_filtr, v_filtr], nb_obs, depth, tab_dims, param_dict, _FillValue
+        mask = lon <= 180
+        lon = lon[mask]
+        lat = lat[mask]
+        time = time[mask]
+        u_filtr_qc = u_filtr_qc[mask]
+        v_filtr_qc = v_filtr_qc[mask]
+        depth = depth[mask]
+        u_filtr = u_filtr[mask]
+        v_filtr = v_filtr[mask]
+        nb_obs = len(lon)
+
+        combined_UV = np.stack((np.squeeze(u_filtr), np.squeeze(v_filtr)), axis=1)
+        combined_qc =  np.stack((np.squeeze(u_filtr_qc), np.squeeze(v_filtr_qc)), axis=1)
+
+        return lon, lat, combined_UV, nb_obs, depth, combined_qc,  tab_dims, param_dict, _FillValue
 
 class LoaderCMEMSDrifter(inputdata_loader):
 
