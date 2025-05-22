@@ -16,8 +16,7 @@ dependencies = []
 class4 = "tep_class4.cli.class4:main"
 class4-zarr  = "tep_class4.cli.class4_zarr:main"
 class4-multiproc = "tep_class4.cli.class4_multiproc:main"
-stats-class4 = "tep_class4.cli.stats_class4_mono:main"
-stats-class4-multi = "tep_class4.cli.stats_class4_multiproc:main"
+stats-class4 = "tep_class4.cli.class4_stats_all:main"
 
 
 [tool.hatch.metadata]
