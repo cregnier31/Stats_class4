@@ -5,9 +5,11 @@ import sys
 SYSTEM="GLONET14"
 SYSTEM="WENHAI"
 SYSTEM="XIHE"
+SYSTEM="GLO12"
 # Open the existing NetCDF file
 output_file = f'/home/onyxia/work/TEP_CLASS4_creation/statics/{SYSTEM}_mask.nc'
-input_filename = f"https://minio.dive.edito.eu/project-oceanbench/public/{SYSTEM}/20240904.zarr"
+#input_filename = f"https://minio.dive.edito.eu/project-oceanbench/public/{SYSTEM}/20240904.zarr"
+input_filename = f"https://minio.dive.edito.eu/project-glonet/public/{SYSTEM}/20240103.zarr"
 # Open the dataset using xarray
 ds = xr.open_dataset(input_filename, engine="zarr")
 # Extract relevant variables: lat, lon, depth, and thetao

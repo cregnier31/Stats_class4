@@ -16,7 +16,7 @@ challenger_datasets = {
         "https://minio.dive.edito.eu/project-glonet/public/GLO12/20240810.zarr", engine="zarr"
     ),
 }
-print(challenger_datasets["GLO12"].time)
+print(challenger_datasets["GLO-NET_FULL"].time)
 
 #challenger_datasets: List[xarray.Dataset] = [
 #        xr.open_dataset("https://minio.dive.edito.eu/project-glonet/public/glonet_full_2024/20240103.zarr",engine="zarr",),

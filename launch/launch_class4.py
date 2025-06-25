@@ -8,7 +8,7 @@ def main():
         sys.exit(1)
 
     config, date1, date2, typedata, typemod = sys.argv[1:6]
-
+    
     # Determine srcdata and options
     if typedata in ["SST", "SLA", "profile", "aice"]:
         srcdata = "GODAE"
@@ -24,7 +24,7 @@ def main():
         print(f"{typedata} not known")
         sys.exit(1)
 
-    loglevel = 7
+    loglevel = 6
     #python_bin = "/opt/conda/envs/myenv_class4/bin/python"
     python_bin = "/homelocal-px/px-167/sauvegarde/cregnier/Program_files/mambaforge-pypy3/envs/env_py311/bin/python"
     script_path = "../src/tep_class4/cli/class4.py"

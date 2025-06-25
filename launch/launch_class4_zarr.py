@@ -25,10 +25,10 @@ def main():
         print(f"{typedata} not known")
         sys.exit(1)
 
-    loglevel = 7
+    loglevel = 6
     #python_bin = "/opt/conda/envs/myenv_class4/bin/python"
     python_bin = "python"
-    script_path = "../src/tep_class4/cli/class4_zarr.py"
+    script_path = "../src/tep_class4/cli/class4_zarr3.py"
 
     command = [
         python_bin,

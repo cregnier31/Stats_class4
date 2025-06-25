@@ -28,7 +28,7 @@ def list_zarr_datasets_for_system(system: str) -> List[str]:
     except subprocess.CalledProcessError as e:
         print(f"Error listing datasets for {system}: {e}")
         return []
-    
+    print(output) 
     datasets = [
         line.split()[-1].rstrip('/').replace('.zarr', '')
         for line in output.strip().split('\n')
