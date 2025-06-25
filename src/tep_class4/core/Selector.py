@@ -4,7 +4,7 @@ from glob import glob
 import numpy as np
 import json
 from .Loader import Loader
-from .nco.nco import Nco
+#from .nco.nco import Nco
 from .QCcontrol import QCcontroller
 import logging
 import shelve

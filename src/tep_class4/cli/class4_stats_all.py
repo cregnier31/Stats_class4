@@ -124,25 +124,10 @@ def main(level=2):
                 raise KeyError(f"Variable(s) not found in dataset: {missing}")
                 sys.exit(1)
             selected_data = input_model[variable]
-            # Selection of the input data
-            #selector = Selector(
-            #                    data_format[var],
-            #                    var,
-            #                    log
-            #                   )
-            #global_input = selector.factory("GLOBAL_INPUT_DATA")
             interpolator = Interpolator(log)
-            # Create dictionnary
-            #list_keys = create_dict_list(
-            #                            list_dates[0],
-            #                            list_dates[-1],
-            #                            param_dict['lead_time'],
-            #                            param_dict['lead_int']
-            #                            )
-            # Define depth bins and labels
-            #combined_list = []
             leadtime = param_dict['lead_time'][0]
-            for ind_time, lead_day in enumerate(param_dict['lead_int']):
+            #for ind_time, lead_day in enumerate(param_dict['lead_int']):
+            for ind_time in enumerate(param_dict['lead_int']):
                 dateval = list_dates[ind_time]
                 if day_centered:
                     target_date = pd.to_datetime(dateval) + pd.Timedelta(hours=12)

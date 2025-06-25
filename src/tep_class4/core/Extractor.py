@@ -13,7 +13,6 @@ from os.path import dirname
 sys.path.append(dirname(__file__))
 from .sydate import SyDate
 from .Logger import Logger
-from .nco.nco import Nco
 import xarray as xr
 from netCDF4 import Dataset
 import subprocess
@@ -649,7 +648,7 @@ class Extract_UVDrifters_filtr(Extractor):
     def __init__(self, log):
         self.log = log
         # Nco constructor
-        self.nco = Nco()
+        #self.nco = Nco()
         self.nb_vars = 2
         self.nb_depths = 1
         self.fillvalue_b = -128

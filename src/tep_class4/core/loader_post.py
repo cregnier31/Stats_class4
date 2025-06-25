@@ -6,8 +6,7 @@ import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 import logging
-from tep_class4.core.supobs import toolkitStats 
-from tep_class4.core.param  import Def_param_bulletin as params
+#from tep_class4.core.supobs import toolkitStats 
 from ast import literal_eval
 
 # Serialization
