@@ -146,7 +146,6 @@ class InputDataLoader(inputdata_loader):
                     os.remove(fichier)
                     log.info('No position find in %s for the zoom ' %
                              (fichier))
-                    ll_file_interp = False
         else:
             # Case Global without qc
             log.info("GLOBAL MODE => SELECT ALL ")
@@ -369,9 +368,9 @@ class loaderNCcorio_tac(inputdata_loader):
             clim_temp_adj = ds['TMLEV_ADJUSTED'].values
             ll_clim_temp_adjust = True
         if 'POSITION_QC' in variable_names:
-            position_qc = ds['POSITION_QC'].values
+            ds['POSITION_QC'].values
         if 'JULD_QC' in variable_names:
-            juld_qc = ds['JULD_QC'].values
+            ds['JULD_QC'].values
         if 'TEMP_QC' in variable_names:
             temp_qc = ds['TEMP_QC'].values
         if 'TEMP_ADJUSTED_QC' in variable_names:
@@ -391,7 +390,7 @@ class loaderNCcorio_tac(inputdata_loader):
         if 'LONGITUDE' in variable_names:
             rla_lon = ds['LONGITUDE'].values
             #rla_lon_2 = nc.variables['LONGITUDE'][:]
-            sum_lon = np.nansum(ds['LONGITUDE'])
+            np.nansum(ds['LONGITUDE'])
         if 'LATITUDE' in variable_names:
             rla_lat =  ds['LATITUDE'].values
             #rla_lat_2 = nc.variables['LATITUDE'][:]
@@ -458,8 +457,6 @@ class loaderNCcorio_tac(inputdata_loader):
             if nb_pres > nb_depth:
                 var_prof = 'PRES'
                 var_prof_adj = 'PRES_ADJUSTED'
-                var_qc = 'PRES_QC'
-                var_qc_adj = 'PRES_ADJUSTED_QC'
                 if ll_pres_adj:
                     var_prof_adjusted_qc = pres_adjusted_qc
                 else:
@@ -467,8 +464,6 @@ class loaderNCcorio_tac(inputdata_loader):
             else:
                 var_prof = 'DEPH'
                 var_prof_adj = 'DEPH_ADJUSTED'
-                var_qc = 'DEPH_QC'
-                var_qc_adj = 'DEPH_ADJUSTED_QC'
                 if ll_depth_adj:
                     var_prof_adjusted_qc = depth_adjusted_qc
                 else:
@@ -477,7 +472,7 @@ class loaderNCcorio_tac(inputdata_loader):
                 self.log.debug(f'Case 1 Ajusted or Delayed Mode {ind} {DATA_MODE[ind]}')
                 #val_posqc = position_qc[ind]
                 #val_juldqc = juld_qc[ind]
-                val_depthqc=((var_prof_adjusted_qc[ind, :] == b'1') |
+                ((var_prof_adjusted_qc[ind, :] == b'1') |
                              (var_prof_adjusted_qc[ind, :] == b'0') |
                              (var_prof_adjusted_qc[ind, :] == b'7')).sum()
                 if ll_depth_adj or ll_pres_adj:
@@ -777,7 +772,7 @@ class LoaderNCcorio(inputdata_loader):
 
         tab_dims = {}
         dimension_names = nc.dimensions.keys()
-        dimensions_dict = {dim_name: len(dim) for dim_name, dim in nc.dimensions.items()}
+        {dim_name: len(dim) for dim_name, dim in nc.dimensions.items()}
 
         for dim_name in dimension_names:
             dimension = nc.dimensions[dim_name]
@@ -843,7 +838,7 @@ class LoaderSyntheticValue(inputdata_loader):
         rla_lon = nc.variables[variable][:]
         variable = 'latitude'
         rla_lat = nc.variables[variable][:]
-        n_profiles = len(rla_lon[:])
+        len(rla_lon[:])
         # Optional Read juld
         # variable='juld'
         # rla_juld= nc.variables[variable][:]
@@ -858,7 +853,7 @@ class LoaderSSSVessel(inputdata_loader):
         rla_lon = nc.variables[variable][:]
         variable = 'LAT'
         rla_lat = nc.variables[variable][:]
-        n_profiles=len(rla_lon[:])
+        len(rla_lon[:])
         rla_value = nc.variables['SSS'][:]
         _FillValue = nc.variables['SSS']._FillValue
         nb_obs = len(rla_lon)
@@ -882,7 +877,6 @@ class L3_SEALEVEL_Loader(inputdata_loader):
         
         rla_value = nc.variables[self.varname][:]
         dimensions = nc.dimensions
-        nb_fcsts = None
         tab_dims = {}
         for dims in dimensions.keys():
             sizedim = dimensions[dims].size
@@ -967,7 +961,6 @@ class LoaderNCgodae(inputdata_loader):
         #ncdata = xr.open_dataset(filename)
         #variables = ncdata.data_vars
         dimensions = nc.dimensions
-        nb_fcsts = None
         tab_dims = {}
         for dims in dimensions.keys():
             sizedim = dimensions[dims].size
@@ -1013,7 +1006,7 @@ class PGN_coords_Loader(inputdata_loader):
             lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
             depth_name = [ k for k in variables.keys() & set(list_depth)][0]
             mask_name = [ k for k in variables.keys() & set(list_mask)][0]
-        except:
+        except Exception:
             print('lon lat or depth not defined')
             raise
         rla_lon = nc.variables[lon_name][:,:]
@@ -1041,7 +1034,7 @@ class PGS_coords_Loader(inputdata_loader):
             lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
             depth_name = [ k for k in variables.keys() & set(list_depth)][0]
             mask_name = [ k for k in variables.keys() & set(list_mask)][0]
-        except:
+        except Exception:
             print('lon lat or depth not defined')
             raise
         rla_lon = nc.variables[lon_name][:]
@@ -1065,7 +1058,7 @@ class ease_coords_Loader(inputdata_loader):
         try:
             lon_name = [ k for k in variables.keys() & set(list_lon)][0]
             lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
-        except:
+        except Exception:
             print('lon lat or depth not defined')
             raise
         rla_lon = nc.variables[lon_name][:,:]
@@ -1140,7 +1133,7 @@ class read_Legos_SIT(inputdata_loader):
             if len(set(nc.variables).intersection(self.varname_list)) == 1:
                 self.varname = list(set.intersection(set(self.varname_list), set(nc.variables)))[0]
             nc.close()
-        except:
+        except Exception:
             raise cl4err.Class4FatalError("Pb read_Legos_SIT varname missing {}".format(self.varname_list))
         rla_lon, rla_lat, _FillValue, nc = \
           self.generic_read_pos_and_value(filename, self.varname)

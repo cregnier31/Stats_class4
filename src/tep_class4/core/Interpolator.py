@@ -6,21 +6,22 @@ import numpy.ma as ma
 import json
 from scipy.spatial import cKDTree
 import xarray as xr
+import vertical
 from .reader import ReadModel
 from tep_class4.core.utils import find_index_month
+from . import utilities as utils
 from .inputdata_loader import inputdata_loader
 from .Interp_kdtree import interp_KDtree
 from .Writer import Writer
-from glob import glob
-from .reader import read_GODAE_profile
 from .Selector import Selector
 from netCDF4 import Dataset
 import netCDF4
 from timeit import default_timer as timer
 #import dask
-#from dask.distributed import Client, SSHCluster
+from dask.distributed import Client, SSHCluster
 from joblib import Parallel, delayed
 import warnings
+import pickle
 
 class BroadcastError(Exception):
         pass
@@ -166,7 +167,6 @@ class Interpolator(object):
         # Initialisation
         ll_clim = False
         ll_json = False
-        ll_verif = False
         ## Todo write into a file
         nb_ptsinterp = param_dict['nb_points']
         # Read input obs value
@@ -450,7 +450,7 @@ class Interpolator(object):
                 if np.isnan(lon_obs).all() and np.isnan(lat_obs).all():
                     ll_nan = True
                     nb_obs, nb_profs = np.shape(depth)
-                    length = len(lon_obs)  # Assuming lon_obs and lat_obs are the same length
+                    len(lon_obs)  # Assuming lon_obs and lat_obs are the same length
                     weights = np.full((nb_obs, nb_profs), np.nan)
                     indexes = np.full((nb_obs, nb_profs), np.nan)
                 else:
@@ -483,7 +483,7 @@ class Interpolator(object):
                 start = timer()
                 ## Parallelize Loop on levels
                 self.log.debug(f'Dimensions {len(lon_obs)}')
-                nb_compute = len(lon_obs)
+                len(lon_obs)
                 #num_cores = int(ind_max/10)
                 #if num_cores < 1:
                 #    num_cores = 1
@@ -503,8 +503,7 @@ class Interpolator(object):
             # Interp model file for different lead times
             self.log.debug(f'Variable to interpolate {variable}')
             tab_results = {}
-            list_file = []
-            list_file = self.list_input_file[key]
+            self.list_input_file[key]
             self.log.debug(f"Work on {len(variable)} variables")
             ## loop on variable
             for var in range(len(variable)):
@@ -779,12 +778,12 @@ class Interpolator(object):
                   if ll_unique :
                       stokes_fcst_tab[:, var, indice, 0] = interp_values
                   else:
-                      stockes_fcst_tab[:, var, indice, :] = interp_values
+                      stokes_fcst_tab[:, var, indice, :] = interp_values
                elif key == 'stokes':
                   if ll_unique :
                       stokes_tab[:, var, 0] = interp_values
                   else:
-                      stockes_tab[:, var, :] = interp_values
+                      stokes_tab[:, var, :] = interp_values
                elif key[0:4] == 'tide':
                   if ll_unique :
                       tides_tab[:, var, 0] = interp_values
@@ -881,14 +880,9 @@ class Interpolator(object):
         # Compute or not weight file
         if os.path.exists(weight_file):
             log.debug("load existing tree :%s " % (weight_file))
-            if sys.version_info[0] >= 3:
-                with open(weight_file, 'rb') as f:
-                    zip_var = pickle.load(f)
-                    d, inds_idw = list(zip(*zip_var))
-            else:
-                f = file(str(weight_file), 'r')
-                zip_var = cPickle.load(f)
-                d, inds_idw = zip(*zip_var)
+            with open(weight_file, 'rb') as f:
+                zip_var = pickle.load(f)
+                d, inds_idw = list(zip(*zip_var))
             DIST = np.array(d)
             inds_idw1 = np.array(inds_idw)
             f.close
@@ -902,7 +896,7 @@ class Interpolator(object):
                 X1, Y1 = np.meshgrid(lon_in, lat_in)
 
             # Convert to cartesian
-            xs, ys, zs = lon_lat_to_cartesian(X1.flatten(), Y1.flatten())
+            xs, ys, zs = utils.lon_lat_to_cartesian(X1.flatten(), Y1.flatten())
             # Read output grid
             X2, Y2 = lon_out, lat_out
 
@@ -931,7 +925,7 @@ class Interpolator(object):
                     X2, Y2 = lon_out, lat_out
 
             # Convert to cartesian
-            xt, yt, zt = lon_lat_to_cartesian(X2.flatten(), Y2.flatten())
+            xt, yt, zt = utils.lon_lat_to_cartesian(X2.flatten(), Y2.flatten())
             if sys.version_info[0] >= 3:
                 tree = cKDTree(list(zip(xs, ys, zs)))
                 DIST, inds_idw1 = tree.query(
@@ -943,8 +937,8 @@ class Interpolator(object):
                 tree = cKDTree(zip(xs, ys, zs))
                 DIST, inds_idw1 = tree.query(zip(xt, yt, zt), k=nbpts_interp)
                 with open(weight_file, 'wb') as f:
-                    cPickle.dump(zip(DIST, inds_idw1), f,
-                                 protocol=cPickle.HIGHEST_PROTOCOL)
+                    pickle.dump(zip(DIST, inds_idw1), f,
+                                 protocol=pickle.HIGHEST_PROTOCOL)
             f.close
         WEIGHT = 1.0 / DIST**2
 
@@ -1079,7 +1073,7 @@ class Interpolator(object):
             if np.isnan(inds).all():
                 nb_obs = len(inds)
                 #tab_interp = fillvalue*np.zeros((nb_obs))
-                ndims = np.shape(inds)
+                np.shape(inds)
                 #tab_interp = np.full((ndims), np.nan).flatten()
                 tab_interp = np.full(nb_obs, np.nan).flatten()
                 self.log.info('All missing values for indexes interp_2D')
@@ -1293,7 +1287,7 @@ class Interpolator(object):
                         if non_missing_count <= 2:
                             self.log.debug(f'missing_count {non_missing_count}')
                             self.log.debug(f'missing_count {data_file}')
-                            non_missing_values = profondeur[(profondeur != missing_value) & (profondeur < depth_mod[0])]
+                            profondeur[(profondeur != missing_value) & (profondeur < depth_mod[0])]
                             non_missing_indices = np.where((profondeur != missing_value) & (profondeur < depth_mod[0]))[0]
                             values_interp[ind_prof, non_missing_indices] = tab_mod_ma[0]
                     self.log.debug('--------------------------------')
@@ -1301,45 +1295,6 @@ class Interpolator(object):
                     self.log.debug('--------------------------------')
             self.log.debug('Valeurs profile {}'.format(obs[:]))
             self.log.debug('--------------------------------------------')
-            if ll_verif:
-                # Plot profiles
-                dir_out = './img2/'
-                dir_out2 = './img3/'
-                label = "prof "+str(ind_prof)
-                title = dateval+" "+variable+" "+label
-                label1 = "Insitu"
-                label2 = "Model"
-                ll_compare = True
-                prof_max = np.nanmax(profondeur)
-                ind_prof_max = np.argmax(depth_mod[:])
-                ind1, ind2 = self.getnearpos(prof_max, depth_mod)
-                label1 = "Obs"
-                label2 = "Interp"
-                plot_2profiles_2(-profondeur[:], obs[ind_prof,:], -profondeur, val_interp[:], label1,\
-                                label2, title=title, save=False,
-                                output=dir_out2+dateval+"_compprof_"+variable+"_profile_num"+str(ind_prof),
-                                var=variable)
-                label1 = "Raw"
-                label2 = "Interp"
-                plot_2profiles_2(-depth_mod[0:ind2], tab_interp_tmp[0:ind2,ind_prof] ,-profondeur, values_interp[ind_prof,:], label1,\
-                                  label2, title=title, save=False,
-                                  output=dir_out2+dateval+"_interp_"+variable+"_profile_num"+str(ind_prof),
-                                  var=variable)
-                if ll_compare == True:
-                    ## Read other profile
-                    dir_class4 = "/sortref/calval/DATA_COLOCATIONS/T_S_data_new/PSY4V3R1/data_CLASS4_GODAE/"
-                    filename = glob(dir_class4+"*"+dateval+"*profile.nc")
-                    label3 = "Model2"
-                    if filename:
-                        prof2, model_best, obs = read_GODAE_profile(variable, filename[0])
-                        plot_3profiles(-profondeur, obs[ind_prof,:], values_interp[ind_prof,:],-prof2[ind_prof,:],
-                                       model_best[ind_prof,:], label1,
-                                       label2, label3, title=title, save=False,
-                                       output=dir_out+dateval+"_comparaison_"+variable+"_profile_num"+str(ind_prof),
-                                       var=variable)
-
-                self.log.debug('Valeurs modèle {}'.format(tab_interp_tmp[0:30,ind_prof]))
-                self.log.debug('Interp modèle onto profiles {} / {}'.format(ind_prof, nb_obs))
             end = timer()
             self.log.debug('~~~~~~~~ Time elapsed interp levels on profiles: %s %s' %
                             (str(end - start), " seconds ~~~~~~~~~~~~"))

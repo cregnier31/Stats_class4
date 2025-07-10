@@ -4,7 +4,7 @@ import sys
 import re
 import numpy as np
 from .Loader import Loader
-#from .nco.nco import Nco
+from .nco.nco import Nco
 from .QCcontrol import QCcontroller
 import logging
 import shelve
@@ -56,8 +56,8 @@ class Selector(object):
 
         """ Get the template for new model inputs  """
 
-        jdatemin = SyDate(dateval)
-        type_run = param_dict['type_run']
+        SyDate(dateval)
+        param_dict['type_run']
 
 
     def find_next_month_year(self, dateval):
@@ -216,7 +216,6 @@ class SelectListModelData(Selector):
         #lead_new = param_dict['lead_int']
         lead_new2 = param_dict['lead_int2']
         cl_config_use = param_dict['cl_config']
-        ll_single = False
         self.log.debug(f"Time {time=}")
         self.log.debug("-----------------------")
         if  time == 'forecast':
@@ -251,7 +250,6 @@ class SelectListModelData(Selector):
             cl_config_use = re.sub('Q', '', param_dict['cl_config'])
             lead_fin = ['hdct_all']
             self.log.debug('Lead fin %s ' % (lead_fin))
-            ll_single = True
         elif time == 'best_weekly':
             lead_fin = ['hdct', 'nwct']
         elif time == 'rtr':
@@ -262,9 +260,7 @@ class SelectListModelData(Selector):
             lead_fin = ['bathy']
         elif time == 'clim_lev13_A5B2':
             lead_fin = ['clim']
-            type_clim = "WOA13_A5B2"
-            dirclim = param_dict.get('climato','DIRLEV')
-            type_clim = "WOA13_A5B2"
+            param_dict.get('climato','DIRLEV')
         elif time == 'smoc':
             lead_fin = ['smoc']
         elif time == 'smoc_fcst':
@@ -417,34 +413,29 @@ class SelectListModelData(Selector):
         self.data_type = param_dict['data_type']
         self.type_run = param_dict['type_run']
         self.log.debug(f'Data type {self.data_type}')
-        MONTH = str(dateval)[4:6]
-        YEAR = dateval[:4]
-        DAY = dateval[6:]
+        str(dateval)[4:6]
+        dateval[:4]
+        dateval[6:]
         # Format the date with dashes
-        dateval_formatted = f'{YEAR}-{MONTH}-{DAY}'
         self.log.debug(f"Grid type {param_dict['gridtype']} {self.dirmodel=}")
         # loop on lead time
-        new_naming = False
         if  param_dict['naming'] == 'new':
-            new_naming = True
+            pass
         #for time in param_dict['lead_time']:
-        list_tmp = []
         self.log.debug(f'Lead Time {leadtime}')
         #lead_new = param_dict['lead_int']
         #lead_new2 = param_dict['lead_int2']
-        cl_config_use = param_dict['cl_config']
-        config = param_dict['cl_conf']
-        ll_single = False
+        param_dict['cl_config']
+        param_dict['cl_conf']
         param_dict = self.set_leadtime(leadtime, param_dict, lead_int)
         ## Find and Load the good file
-        ind = 0
         ll_miss = False
         for directory in self.leadtime:
             self.log.debug("directory {}".format(directory))
             ll_miss_rep = False
             datev = SyDate(str(dateval))
-            year = str(datev.year)
-            month_up = datev.month + 1
+            str(datev.year)
+            datev.month + 1
             # Access mapping from YAML
             dirmodel_new, dirmodel_new_next = self.get_directory(directory, dateval, param_dict)
             self.log.debug(f"Get directory {dirmodel_new} {dirmodel_new_next}")
@@ -616,11 +607,10 @@ class SelectCorio(Selector):
         #  Index of valid profiles
         index= [i for i,x in enumerate(QCflag) if x == "1"]
         log.info('Profiles Totaux : %i / Valides : %i ' % (len(QCflag),len(index)))
-        nb_prof_clean=len(index)
+        len(index)
         ## Loop on valid profil to find if it
         il_ind=0
         il_ind2=0
-        list_file=[]
         list_index=[]
         tab_new=np.ndarray(shape=(1,2),dtype=float, order='F')
         # init

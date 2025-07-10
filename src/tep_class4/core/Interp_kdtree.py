@@ -93,7 +93,7 @@ class interp_KDtree(object):
                 self.log.debug('Only one step')
 
         # 1D cases
-        if  lon_out.ndim  == 0 or ll_onevalue == True:
+        if  lon_out.ndim  == 0 or ll_onevalue:
             self.log.debug('1D not regular')
             X2, Y2 = lon_out, lat_out
         elif lon_out.ndim < 2:
@@ -129,46 +129,25 @@ class interp_KDtree(object):
             coords2[:, 2] = zt
         ## Compute weight file
         if os.path.exists(weight_file):
-            #print ("load existing tree :%s "%(weight_file))
-            if sys.version_info[0] >=  3:
-                with open(weight_file, 'rb') as f:
-                    zip_var = pickle.load(f)
-                    d, inds_idw = list(zip(*zip_var))
-            else:
-                f = file(str(weight_file), 'r')
-                zip_var = cPickle.load(f)
-                d, inds_idw = zip(*zip_var)
+            with open(weight_file, 'rb') as f:
+               zip_var = pickle.load(f)
+               d, inds_idw = list(zip(*zip_var))
             d1 = np.array(d)
             inds_idw1 = np.array(inds_idw)
             f.close
         else :
-            ll_tree = True
-            if sys.version_info[0] >= 3:
-                if self.kdname == 'pykdtree':
-                    # --- pykdtree method ---
-                    tree = KDTree(coords)
-                    d1, inds_idw1 = tree.query(coords2, k = nbpts_interp, mask = mask)
-                else:
-                    # --- cKDTree method ---
-                    tree = cKDTree(list(zip(xs, ys, zs)))
-                    d1, inds_idw1 = tree.query(list(zip(xt, yt, zt)), k = nbpts_interp)
-                if save :
-                    with open(weight_file, 'wb') as f:
-                        pickle.dump(list(zip(d1, inds_idw1)), f, pickle.HIGHEST_PROTOCOL)
-                        f.close
-            else :
-                if self.kdname == 'pykdtree':
-                    # --- pykdtree method ---
-                    tree = KDTree(coords)
-                    d1, inds_idw1 = tree.query(coords2, k = nbpts_interp)
-                else:
-                    # --- cKDTree method ---
-                    tree = cKDTree(zip(xs, ys, zs))
-                    d1, inds_idw1 = tree.query(zip(xt, yt, zt), k = nbpts_interp)
-                if save :
-                    with open(weight_file, 'wb') as f:
-                        cPickle.dump(zip(d1,inds_idw1),f,protocol=cPickle.HIGHEST_PROTOCOL)
-                        f.close
+            if self.kdname == 'pykdtree':
+                # --- pykdtree method ---
+                tree = KDTree(coords)
+                d1, inds_idw1 = tree.query(coords2, k = nbpts_interp, mask = mask)
+            else:
+                # --- cKDTree method ---
+                tree = cKDTree(list(zip(xs, ys, zs)))
+                d1, inds_idw1 = tree.query(list(zip(xt, yt, zt)), k = nbpts_interp)
+            if save :
+                with open(weight_file, 'wb') as f:
+                    pickle.dump(list(zip(d1, inds_idw1)), f, pickle.HIGHEST_PROTOCOL)
+                    f.close
 
 
         return d1, inds_idw1
@@ -211,7 +190,7 @@ class interp_KDtree(object):
             w = 1.0 / d1**2
         else:
             # Handle the case when d1 is zero, e.g., set weight to a default value or take alternative action
-            weight = np.nan
+            pass
         if nbpts_interp > 1 :
             ## Inverse Distance Weight interpolation
             tab_interp = np.sum(w * np.array(var_in).flatten()[inds_idw1], axis=1) / np.sum(w, axis=1)

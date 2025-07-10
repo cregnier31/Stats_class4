@@ -18,6 +18,66 @@ __version__ = 0.2
 __date__ = "Octobre 2021"
 __author__ = "C.REGNIER"
 
+def chardate2datetime(cdaylist):
+        outime = []
+        for cday in cdaylist :
+                try :
+                        dB = dt.datetime.strptime(cday,'%Y%m%d')
+                except Exception:
+                    pass
+                try :
+                        dB = dt.datetime.strptime(cday,'%d %m %Y')
+                except Exception:
+                    pass
+                try :
+                        dB = dt.datetime.strptime(cday,'%Y %m %d')
+                except Exception:
+                    pass
+
+                try :
+                    outime.append(dB)
+                except Exception:
+                        print('Unknown date format : %s' %cday)
+                        sys.exit(1)
+        return outime
+
+def char_period(cdate1,cdate2) :
+
+    """
+Returns a character-days list of the days contained in period given  \n
+by the two input dates \n
+output date format is YYYYMMDD \n\
+warning : input date format should be YYYYMMDD
+    """
+
+    rdtdates = chardate2datetime([cdate1,cdate2])
+    if rdtdates[0] == rdtdates[1] :
+        return [cdate1]
+
+    cda_dateout   = []
+    rdt      = rdtdates[0]
+    while rdt <= rdtdates[1] :
+        cda_dateout.append(rdt.strftime('%Y%m%d'))
+        rdt += dt.timedelta(1)
+
+    return cda_dateout
+
+
+def datenow() :
+    date_now = dt.datetime.now()
+    if date_now.month == 1 :
+        cl_start_date = str(date_now.year-1)+"1201"
+        cl_end_date = str(date_now.year)+"0101"
+    elif date_now.month < 10 :
+        cl_start_date = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+        cl_end_date = str(date_now.year)+"0"+str(date_now.month)+"01"
+    elif date_now.month == 10 :
+        cl_start_date = str(date_now.year)+"0"+str(date_now.month-1)+"01"
+        cl_end_date = str(date_now.year)+str(date_now.month)+"01"
+    else :
+        cl_start_date = str(date_now.year)+str(date_now.month-1)+"01"
+        cl_end_date = str(date_now.year)+str(date_now.month)+"01"
+    return cl_start_date, cl_end_date
 
 def mkdir(path):
     '''
@@ -90,7 +150,7 @@ def loader(options):
             usage7()
 
     except getopt.GetoptError as err:
-        raise (f'Error {err} Missing options {keywords}')
+        raise (f'Error {err} Missing options {err}')
 
     tab_conf['pbsworkdir'] = os.path.dirname(os.path.realpath(__file__))
     tab_conf['sub'] = tab_conf['pbsworkdir'] + '/../sub/'
@@ -142,7 +202,7 @@ def isValiDate(var, type_param):
     """
     isValiDate = True
     try:
-        datevalue = convdatetime(var)
+        convdatetime(var)
     except ValueError:
         isValiDate = False
         sys.exit(f"Value {var} for {type_param} not a valid date")
@@ -162,13 +222,13 @@ def create_launcher_multi(tab_conf, nbtasks='30', timecounter='06:00:00', batch=
     ## Create qsub job
     if tab_conf['fmt_mask'] == 'basin':
         typejob = 'timeserie'
-    elif tab_conf['bilan'] != None:
+    elif tab_conf['bilan'] is not None:
         typejob = 'bilan'
     else:
         typejob = 'others'
     _DBFILE_ = tab_conf['pbsworkdir'] + "/../postraitement/python/compute_stats/cfg/environment_"+tab_conf['config']+".cfg"
     EXE = os.path.join(tab_conf['pbsworkdir'],'../postraitement/python/compute_stats/exe_compute_stats_CMEMS_areas_multiprocess_2.py')
-    dir_bin  = tab_conf['dir_bin']
+    tab_conf['dir_bin']
     day1  = tab_conf['day1']
     day2  = tab_conf['day2']
     datatype = tab_conf['typemod']
@@ -214,8 +274,8 @@ def launch_sbatch(Jobfile):
     #print(args)
     try :
         subprocess.run(args)
-    except :
-        print (f'Launch {Jobfile} failed')
+    except Exception as e:
+        print (f'Launch {Jobfile} failed {e}')
         sys.exit(1)
 
 def usage1():
@@ -377,16 +437,10 @@ def plot(iobs, rla_lonobs, rla_latobs, region, log):
     rla_lonobs =  np.where(rla_lonobs>180,rla_lonobs-360,rla_lonobs)
     value = rla_lonobs[:].copy()
     value[:] = 1.0
-    lon_inter = 20
-    lat_inter = 20
-    zone = "GLO"
-    proj = "cyl_pac"
     if region in area_names_arc:
-        proj = "npstere"
-        zone = "Arctic2"
+        pass
     if region in area_names_ant:
-        zone = "Antarctic"
-        proj = "spstere"
+        pass
     #colormap = plt.cm.coolwarm
     #titre = 'Points in '+region+" with matplotlib meth"
     #outputfile = "Selected_points_"+region+".png"

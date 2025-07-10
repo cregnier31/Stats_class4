@@ -86,7 +86,7 @@ class FileHandler:
         # Set directory type for non-clim cases
         self.directory_path = "clim"
         datev = SyDate(str(self.dateval))
-        year = str(datev.year)
+        str(datev.year)
         month = str(datev.month)
         day = str(datev.day)
         if datev.month < 10:
@@ -97,7 +97,7 @@ class FileHandler:
             self.directory_path = "non_clim"
         # Get the specific directory configuration
         type_run_config = config_section.get(self.directory_path, config_section.get('type_run', {}))
-        directory_config = config_section.get(self.directory_path, [])
+        config_section.get(self.directory_path, [])
         # Prepare the list of files based on the configuration
         list_file = []
         if self.directory == "clim":

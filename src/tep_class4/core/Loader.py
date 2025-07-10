@@ -98,22 +98,30 @@ class Loader(object):
         nc = netCDF4.Dataset(filename, 'r')
         ll_ravel = False
         if 'longitude' in nc.variables:
-            var_lon = 'longitude' ; var_lat = 'latitude'
+            var_lon = 'longitude'
+            var_lat = 'latitude'
         elif 'lon' in nc.variables and 'lon_20hz' not in nc.variables and 'lon_20_ku' not in nc.variables:
-            var_lon = 'lon' ; var_lat = 'lat'
+            var_lon = 'lon'
+            var_lat = 'lat'
         elif 'LON' in nc.variables:
-            var_lon = 'LON' ; var_lat = 'LAT'
+            var_lon = 'LON'
+            var_lat = 'LAT'
         elif 'Lon' in nc.variables:
-            var_lon = 'Lon' ; var_lat = 'Lat'
+            var_lon = 'Lon'
+            var_lat = 'Lat'
         elif 'LONGITUDE' in nc.variables:
-            var_lon = 'LONGITUDE' ; var_lat = 'LATITUDE'
+            var_lon = 'LONGITUDE'
+            var_lat = 'LATITUDE'
         elif 'Longitude' in nc.variables:
-            var_lon = 'Longitude' ; var_lat = 'Latitude'
+            var_lon = 'Longitude'
+            var_lat = 'Latitude'
         elif 'lon_20hz' in nc.variables:
-            var_lon = 'lon_20hz' ; var_lat = 'lat_20hz'
+            var_lon = 'lon_20hz'
+            var_lat = 'lat_20hz'
             ll_ravel = True
         elif 'lon_20_ku' in nc.variables:
-            var_lon = 'lon_20_ku' ; var_lat = 'lat_20_ku'
+            var_lon = 'lon_20_ku'
+            var_lat = 'lat_20_ku'
             ll_ravel = True
         if ll_ravel:
             rla_lon = np.ravel(nc.variables[var_lon][:,:])
@@ -153,7 +161,6 @@ class InputDataLoader(Loader):
                     os.remove(fichier)
                     log.info('No position find in %s for the zoom ' %
                              (fichier))
-                    ll_file_interp = False
         else:
             # Case Global without qc
             log.info("GLOBAL MODE => SELECT ALL ")
@@ -300,18 +307,12 @@ class InputLoader(Loader):
         ll_data = None
         ll_src = None
         cl_daterun = None
-        ll_data_id = None
-        ll_cycle = None
         daymax = None
         dask = False
         ll_input = False
         ll_output = False
         ll_dirlog = False
-        ll_best = False
-        ll_clim = False
-        ll_bathy = False
         ll_forecast = False
-        ll_persistence = False
         list_var = []
         nb_proc = 0
         cl_schedule = 'd'
@@ -364,11 +365,9 @@ class InputLoader(Loader):
             elif o in ['--schedule']:
                 cl_schedule = p
             elif o in ['--nbproc']:
-                ll_optim = True
                 cl_nbproc = p
                 nb_proc = int(cl_nbproc)
             elif o in ['--data_id']:
-                ll_data_id = True
                 cl_data_id = p
             elif o in ['--loglevel']:
                 level = int(p)
@@ -605,15 +604,15 @@ class NmlLoader(Loader):
             param_dict['dirdata'] = db.get('input_dir', 'INPUTDATA')
         try:
             param_dict['dirmodel_light'] = db.get('input_dir', 'DATA_IN_LIGHT')
-        except:
+        except Exception:
             param_dict['dirmodel_light'] = ''
         try:
             param_dict['insitu_corr'] = db.get('GLOBAL', 'corr_pot')
-        except:
+        except Exception:
             param_dict['insitu_corr'] = False
         try:
             param_dict['Design_GODAE_file'] = ast.literal_eval(db.get('GLOBAL', 'Design_GODAE_file'))
-        except:
+        except Exception:
             param_dict['Design_GODAE_file'] = False
         # param_dict['Design_GODAE_file'] = db.get('GLOBAL', 'Design_GODAE_file')
         param_dict['dirmodel'] = db.get('input_dir', 'DATA_IN')
@@ -641,11 +640,11 @@ class NmlLoader(Loader):
         param_dict['maskname'] = db.get('static','maskname')
         try:
             param_dict['direxec'] = db.get('GLOBAL', 'DIRBIN')
-        except:
+        except Exception:
             param_dict['direxec'] = os.path.dirname(os.path.realpath(__file__))+'/../bin/'
         try:
             param_dict['over'] = literal_eval(db.get('GLOBAL', 'over'))
-        except:
+        except Exception:
             param_dict['over'] = False
         #==========================================================================
         # Sort model values if necessary
@@ -653,7 +652,7 @@ class NmlLoader(Loader):
         if param_dict['do_sort']:
             log.debug('              Sort Values for interp               ')
             param_dict['sort_rep'] = param_dict.get('input_dir', 'DATA_SORT')
-            file_template = param_dict['cl_config'] + \
+            param_dict['cl_config'] + \
             '_'+param_dict['daily_pref']+'_'
             if cl_schedule == "WEEKLY":
                 Sorter().run_weekly(param_dict['lead_time'], param_dict['lead_int'],
@@ -685,20 +684,20 @@ class NmlLoader(Loader):
             param_dict['diroutput'] = db.get('output_dir', 'DIROUTPUT')
         try:
             param_dict['diroutput2'] = db.get('output_dir', 'DIROUTPUT2')
-        except:
+        except Exception:
             param_dict['diroutput2'] = ""
         param_dict['dirclim'] = db.get('climato', 'DIRCLIM')
         try:
             param_dict['dirclim2'] = db.get('climato', 'DIRCLIM2')
-        except:
+        except Exception:
             param_dict['dirclim2'] = ""
         try:
             param_dict['coord_clim'] = glob(param_dict['dirclim'] + "*.nc")[0]
-        except:
+        except Exception:
             param_dict['coord_clim'] = ""
         try:
             param_dict['coordinates_hgr'] = db.get('static', 'coordinates_hgr')
-        except:
+        except Exception:
             param_dict['coordinates_hgr'] = ""
 
         param_dict['dirtmp'] = param_dict['dirwork'] + 'ext-'
@@ -717,23 +716,23 @@ class NmlLoader(Loader):
         param_dict['gridsal'] = db.get('GLOBAL', 'gridsal')
         try:
             param_dict['gridu'] = db.get('GLOBAL', 'gridu')
-        except:
+        except Exception:
             param_dict['gridu'] = ''
-        try:
+        try :
             param_dict['gridv'] = db.get('GLOBAL', 'gridv')
-        except:
+        except Exception:
             param_dict['gridv'] = ''
         try:
             param_dict['gridice'] = db.get('GLOBAL', 'gridice')
-        except:
+        except Exception:
             param_dict['gridice'] = "icemod"
         try:
             param_dict['grid2DT'] = db.get('GLOBAL', 'grid2DT')
-        except:
+        except Exception:
             param_dict['grid2DT'] = "grid2D"
         try:
             param_dict['naming'] = db.get('GLOBAL', 'name')
-        except:
+        except Exception:
             param_dict['naming'] = 'old'
         param_dict['type_run'] = db.get('GLOBAL', 'TYPE_RUN')
         param_dict['type_archi'] = db.get('GLOBAL', 'TYPE_ARCHI')
@@ -746,28 +745,28 @@ class NmlLoader(Loader):
         param_dict['desc'] = db.get('GLOBAL','DESCRIPTION')
         try:
             param_dict['varname_smoc'] = literal_eval(db.get('GLOBAL', 'variable_SMOC'))
-        except:
+        except Exception:
             param_dict['varname_smoc'] = ""
         try:
             param_dict['varname_stokes'] = literal_eval(db.get('GLOBAL', 'variable_stokes'))
-        except:
+        except Exception:
             param_dict['varname_stokes'] = ""
         try:
             param_dict['varname_tides'] = literal_eval(db.get('GLOBAL', 'variable_tides'))
-        except:
+        except Exception:
             param_dict['varname_tides'] = ""
         try:
             param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
             param_dict['lead_int2'] = param_dict['lead_int2']
-        except:
+        except Exception:
             param_dict['lead_int2'] = ""
         try:
             param_dict['varname_bathy'] = db.get('GLOBAL', 'variable_bathy').split()
-        except:
+        except Exception:
             param_dict['lead_int2'] = ""
         try:
             param_dict['corr'] = literal_eval(db.get('GLOBAL', 'corr'))
-        except:
+        except Exception:
             param_dict['corr'] = False
 
         if param_dict['zoom'] or param_dict['do_qc']:
@@ -777,11 +776,11 @@ class NmlLoader(Loader):
             param_dict['lat_max'] = int(param_dict.get('GLOBAL', 'LATMAX'))
         try:
             param_dict['coordinates_SMOC'] = db.get('static','fic_coordinates_SMOC')
-        except:
+        except Exception:
             param_dict['coordinates_SMOC'] = ""
         try:
             param_dict['bathy_file'] = db.get('static','fic_bathy')
-        except:
+        except Exception:
             param_dict['bathy_file'] = ""
         if param_dict['cl_data_id']:
             param_dict['dirwork'] = param_dict['dirwork']+str(cl_data_id)+'/'
@@ -790,7 +789,7 @@ class NmlLoader(Loader):
         elif param_dict['cl_conf'] == 'BIOMER4' or param_dict['cl_conf'] == 'BIOMER4V2':
             param_dict['dirwork'] = param_dict['dirwork']
             param_dict['diroutput'] = param_dict['diroutput']
-            date_ini = SyDate(str(param_dict['date1']))
+            SyDate(str(param_dict['date1']))
             #if param_dict['prefix_data'] == "L3mCHL": param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
         else:
             param_dict['dirwork'] = param_dict['dirwork']
@@ -867,7 +866,7 @@ class LoaderNCcorio(Loader):
 
         tab_dims = {}
         dimension_names = nc.dimensions.keys()
-        dimensions_dict = {dim_name: len(dim) for dim_name, dim in nc.dimensions.items()}
+        {dim_name: len(dim) for dim_name, dim in nc.dimensions.items()}
 
         for dim_name in dimension_names:
             dimension = nc.dimensions[dim_name]
@@ -930,7 +929,7 @@ class LoaderSyntheticValue(Loader):
         rla_lon = nc.variables[variable][:]
         variable = 'latitude'
         rla_lat = nc.variables[variable][:]
-        n_profiles = len(rla_lon[:])
+        len(rla_lon[:])
         # Optional Read juld
         # variable='juld'
         # rla_juld= nc.variables[variable][:]
@@ -945,7 +944,7 @@ class LoaderSSSVessel(Loader):
         rla_lon = nc.variables[variable][:]
         variable = 'LAT'
         rla_lat = nc.variables[variable][:]
-        n_profiles=len(rla_lon[:])
+        len(rla_lon[:])
         rla_value = nc.variables['SSS'][:]
         _FillValue = nc.variables['SSS']._FillValue
         nb_obs = len(rla_lon)
@@ -972,7 +971,7 @@ class L3_SEALEVEL_Loader(Loader):
         n_profiles=len(rla_lon[:])
         # Optional Read juld
         variable='time'
-        rla_juld= nc.variables[variable][:]
+        nc.variables[variable][:]
         position=np.ndarray(shape=(n_profiles,2),dtype=float, order='F')
         il_val=0
         for il_ind in range(n_profiles):
@@ -1040,7 +1039,6 @@ class LoaderNCgodae(Loader):
         #ncdata = xr.open_dataset(filename)
         #variables = ncdata.data_vars
         dimensions = nc.dimensions
-        nb_fcsts = None
         tab_dims = {}
         for dims in dimensions.keys():
             sizedim = dimensions[dims].size

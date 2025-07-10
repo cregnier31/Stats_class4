@@ -41,15 +41,15 @@ class QCArgo(QCcontroller):
         nc = netCDF4.Dataset(filename)
         # Read Position QC
         namevar='POSITION_QC'
-        cla_posqc=NetcdReader().read_1D(filename,namevar)
+        NetcdReader().read_1D(filename,namevar)
         namevar='JULD_QC'
-        cla_juldqc=NetcdReader().read_1D(filename,namevar)
+        NetcdReader().read_1D(filename,namevar)
         namevar='DEPH_QC'
-        cla_depthqc=NetcdReader().read_2D(filename,namevar)
+        NetcdReader().read_2D(filename,namevar)
         namevar='PRES_QC'
-        rla_presqc=NetcdReader().read_2D(filename,namevar)
+        NetcdReader().read_2D(filename,namevar)
         namevar='LONGITUDE'
-        rla_lon=NetcdReader().read_2D(file,namevar)
+        NetcdReader().read_2D(file,namevar)
         nc.close()
 
 class QC_GODAE(QCcontroller):
@@ -94,10 +94,8 @@ class QC_GODAE(QCcontroller):
             namevar='longitude'
             rla_lon=NetcdReader().read_1D(filename,namevar)
             flag_prof=[]
-            fillvalue_dep=99999.
-            fillvalue_err=9999.
             for n_prof in range(n_prof):
-                val_depth=rla_depth[n_prof,0]
+                rla_depth[n_prof,0]
                 val_lat=rla_lat[n_prof]
                 val_lon=rla_lon[n_prof]
                 if self.data_type  == 'profile' : 
@@ -140,14 +138,12 @@ class QCCorio_raw(QCcontroller):
         ds = xr.open_dataset(filename)
         # Get the list of variable names
         variable_names = list(ds.variables)
-        ll_pres=0
-        ll_depth=0
         ll_temp=0
         ll_psal=0
         if 'DEPTH' in variable_names:
-            ll_depth=1
+            pass
         if 'PRES' in variable_names:
-             ll_pres=1
+             pass
         if var == 'TEMP':
             ll_temp=1
         if var == 'PSAL':
@@ -235,7 +231,6 @@ class QCCorio(QCcontroller):
         fillvalue_dep=  99999.
         fillvalue_temp=  9999.
         fillvalue_sal=  9999.
-        fillvalue_err=  9999.
         for n_prof in range(n_prof): 
             val_posqc=cla_posqc[n_prof]
             val_juldqc=cla_juldqc[n_prof]
@@ -289,9 +284,8 @@ class QCCorio(QCcontroller):
             if np.any( val_depthqc >= 1) :
                 flag_depthqc='1'
             ## Validation DEPTH 
-            flag_depth='9'
             if val_depth != fillvalue_dep :
-                flag_depth='1'
+                pass
             ## Validation value
             flag_value='9'
             if ll_temp and ll_psal: 

@@ -83,7 +83,6 @@ class Writer():
         try:
             #print 'Write ASCII file'
             # Creation fichier
-            length = position.size
             # if length < 2 :
             #     print "Empty Position array"
             # elif length == 2 :
@@ -214,7 +213,6 @@ class Writer():
             nc_fcst.setncatts(
                 {'long_name': u"Model forecast counterpart of obs. value"})
             nc_fid.variables['forecast'][:, :] = fcst_tab[:, 0, :, 0]
-            ll_defined = True
         elif 'best' in param_dict.keys():
             hdct_tab = param_dict['best']
             nb_obs, nb_dephs, nb_vars = np.shape(hdct_tab)
@@ -226,7 +224,6 @@ class Writer():
             nc_best.setncatts(
                 {'long_name': u"Model best estimate counterpart of obs. value"})
             nc_fid.variables[varname][:] = hdct_tab[:, :, :]
-            ll_defined = True
 
         # Add global attributs
         nc_fid.institution = 'MERCATOR OCEAN INTERNATIONAL'
@@ -249,14 +246,12 @@ class Writer():
 
     def write_CMEMS_generic_files(self, filename, param_dict, dateval, model, variable):
         nc_fid = Dataset(filename, 'r+')
-        dims = nc_fid.dimensions
-        ll_defined = False
-        if 'numobs' not in dims.keys():
-            nc_fid.createDimension('numobs', nb_obs)
-        if 'numfcsts' not in dims.keys():
-            nc_fid.createDimension('numfcsts', nb_vars)
-        if 'numdeps' not in dims.keys():
-            nc_fid.createDimension('numdeps', nb_vars)
+        #if 'numobs' not in dims.keys():
+        #    nc_fid.createDimension('numobs', nb_obs)
+        #if 'numfcsts' not in dims.keys():
+        #    nc_fid.createDimension('numfcsts', nb_vars)
+        #if 'numdeps' not in dims.keys():
+        #   nc_fid.createDimension('numdeps', nb_vars)
         if 'forecast' in param_dict.keys() and param_dict['forecast'] is not None:
             fcst_tab = param_dict['forecast']
             #nb_obs, nb_vars, nb_fcst, nb_depths = np.shape(fcst_tab)
@@ -265,7 +260,6 @@ class Writer():
             nc_fcst.setncatts(
                 {'long_name': u"Model forecast counterpart of obs. value"})
             nc_fid.variables['forecast'][:, :, :, :] = fcst_tab[:, :, :, :]
-            ll_defined = True
         if 'persistence' in param_dict.keys() and param_dict['persistence'] is not None:
             pers_tab = param_dict['persistence']
             #nb_obs, nb_vars, nb_fcst, nb_depths = np.shape(pers_tab)
@@ -274,11 +268,9 @@ class Writer():
             nc_pers.setncatts(
                 {'long_name': u"Model persistence counterpart of obs. value"})
             nc_fid.variables['persistence'][:, :, :, :] = pers_tab[:, :, :, :]
-            ll_defined = True
         if 'smoc' in param_dict.keys() and param_dict['smoc'] is not None:
             smoc_tab = param_dict['smoc']
             #nb_obs, nb_vars, nb_fcst = np.shape(smoc_tab)
-            nb_depths = 1
             nc_smoc = nc_fid.createVariable(
                 'smoc_drift_best', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
             nc_smoc.setncatts({'long_name': u"Eastward and Northward total velocity (Eulerian + Waves + Tide) (smoc drift)",'units': u"m s-1"})
@@ -287,7 +279,6 @@ class Writer():
         if 'smoc_fcst' in param_dict.keys() and param_dict['smoc_fcst'] is not None:
             smoc_tab = param_dict['smoc_fcst']
             #nb_obs, nb_vars, nb_fcst, nb_depths = np.shape(smoc_tab)
-            nb_depths = 1
             nc_smoc = nc_fid.createVariable(
                 'smoc_drift_fcst', 'f4', ('numobs', 'numvars', 'numfcsts2', 'numdeps'), fill_value=self.fillvalue)
             nc_smoc.setncatts({'long_name': u"Forecasts Eastward and Northward total velocity (Eulerian + Waves + Tide) (smoc drift)",'units': u"m s-1"})
@@ -296,7 +287,6 @@ class Writer():
         if 'best' in param_dict.keys() and param_dict['best'] is not None:
             best_tab = param_dict['best']
             #nb_obs, nb_vars, nb_fcst = np.shape(best_tab)
-            nb_depths = 1
             nc_best = nc_fid.createVariable(
                 'best_estimate', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
             nc_best.setncatts(
@@ -306,7 +296,6 @@ class Writer():
         if 'tides' in param_dict.keys() and param_dict['tides'] is not None:
             tides_tab = param_dict['tides']
             #nb_obs, nb_vars, nb_fcst = np.shape(tides_tab)
-            nb_depths = 1
             nc_tides = nc_fid.createVariable(
                 'tides', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
             nc_tides.setncatts({'long_name': u"Eastward and tide-induced velocity (Tide current)",'units': u"m s-1"})
@@ -315,7 +304,6 @@ class Writer():
         if 'stokes' in param_dict.keys() and param_dict['stokes'] is not None:
             stokes_tab = param_dict['stokes']
             #nb_obs, nb_vars, nb_fcst = np.shape(stokes_tab)
-            nb_depths = 1
             nc_stokes = nc_fid.createVariable(
                 'stokes_best', 'f4', ('numobs', 'numvars', 'numdeps'), fill_value=self.fillvalue)
             nc_stokes.setncatts({'long_name': u"Eastward and Northward wave-induced velocity (Stokes drift)",'units': u"m s-1"})
@@ -324,7 +312,6 @@ class Writer():
         if 'stokes_fcst' in param_dict.keys() and param_dict['stokes_fcst'] is not None:
             stokes_tab = param_dict['stokes_fcst']
             #nb_obs, nb_vars, nb_fcst, nb_depths = np.shape(stokes_tab)
-            nb_depths = 1
             nc_stokes = nc_fid.createVariable(
                 'stokes_fcst', 'f4', ('numobs', 'numvars', 'numfcsts2', 'numdeps'), fill_value=self.fillvalue)
             nc_stokes.setncatts({'long_name': u"Eastward and Northward wave-induced velocity (Stokes drift)",'units': u"m s-1"})
@@ -332,7 +319,6 @@ class Writer():
             nc_fid.variables['stokes_fcst'][:, :, :, :] = stokes_tab[:, :, :, :]
         if 'clim' in param_dict.keys() and param_dict['clim'] is not None:
             clim_tab = param_dict['clim']
-            nb_depths = 1
             #nb_obs, nb_vars, nb_fcst = np.shape(stokes_tab)
             nc_clim = nc_fid.createVariable('climatology','f4',('numobs','numvars','numdeps'),fill_value=self.fillvalue)
             nc_clim.setncatts({'long_name': u"Climatology Lumpkin V3.05",'units': u"m s-1"})
@@ -590,7 +576,6 @@ class Writer():
         tab_out = {}
         for dateval in unique_dates:
             fcst_tab = None
-            pers_ab = None
             ll_fcst = False
             ll_pers = False
             variable = self.type_data.get(f"{param_dict['data_type']}_{param_dict['cl_src']}", {}).get('variable')
@@ -865,7 +850,7 @@ class Writer():
             self.log.debug(f"Write write_output_frompickle {filename}")
             ll_varname = self.type_data.get(variable, {}).get('varname')
             if 'best_estimate' in list_keys : #and np.any(tab_out['best_estimate']):
-                nb_dims = len(np.shape((tab_out['best_estimate'])))
+                len(np.shape((tab_out['best_estimate'])))
                 if ll_GODAE is True:
                     nprofs, nparams, nlevels = np.shape(tab_out['best_estimate'])
                     self.log.info(f"Create dimensions {list_dimensions} {nprofs} {nlevels} {nparams}")
@@ -1357,7 +1342,7 @@ class Writer():
         filename_clim = f"{param_dict['dirwork']}{filename_clim}"
         filename_bathy = re.sub(r'\.nc$',f'_{dateval}_bathy.p', filename)
         filename_bathy = f"{param_dict['dirwork']}{filename_bathy}"
-        dataorigin = param_dict['data_origin']
+        param_dict['data_origin']
         # Specify the file name
         # Writing of the dictionary into the pickle file
         self.log.debug(f"{tab_results.keys()=}")
