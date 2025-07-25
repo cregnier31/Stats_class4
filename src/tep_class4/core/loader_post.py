@@ -124,11 +124,11 @@ def load_param(db_file):
         'static', 'coordinates_clim')
     try:
         params_conf['coordinates_zgr'] = params_conf['db'].get('static', 'coordinates_zgr')
-    except:
+    except Exception:
         params_conf['coordinates_zgr'] = ""
     try:
         params_conf['coordinates_hgr'] = params_conf['db'].get('static', 'coordinates_hgr')
-    except:
+    except Exception:
         params_conf['coordinates_hgr'] = ""
 
     return params_conf

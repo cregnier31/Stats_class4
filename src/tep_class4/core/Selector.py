@@ -548,7 +548,7 @@ class Select(Selector):
         # Add position values in the serialized dictionnary
         try:
             ll_exist = shelf[type_f]
-        except:
+        except Exception:
             log.debug("Create %s" %(type_f))
             shelf[type_f] = tab_pos
             ll_exist = []
@@ -559,7 +559,7 @@ class Select(Selector):
                 log.debug("concatenation")
                 tab_fin = np.concatenate((tab_fin,tab_pos))
                 shelf[type_f] = tab_fin
-            except:
+            except Exception:
                 print("Pb with concatenation store_pos")
                 sys.exit(1)
         shelf.close()
@@ -708,7 +708,7 @@ class SelectCorio(Selector):
         # Add position values in the serialized dictionnary
         try :
             ll_exist = shelf[type_f]
-        except :
+        except Exception:
             log.debug("Create %s" %(type_f))
             shelf[type_f] = tab_pos
             ll_exist=[]
@@ -719,7 +719,7 @@ class SelectCorio(Selector):
                 log.debug("concatenation")
                 tab_fin=np.concatenate((tab_fin,tab_pos))
                 shelf[type_f] = tab_fin
-            except:
+            except Exception:
                 print("Pb with concatenation store_pos")
                 sys.exit(1)
         ## Create global position
@@ -736,7 +736,7 @@ class SelectCorio(Selector):
                 il_val=il_val+1
         try :
             ll_GLO = shelf[type_var]
-        except :
+        except Exception:
             shelf[type_var] = tab_pos_new
             ll_GLO=[]
         if len(ll_GLO) > 0 :
@@ -744,7 +744,7 @@ class SelectCorio(Selector):
                 tab_fin=shelf[type_var]
                 tab_fin=np.concatenate((tab_fin,tab_pos_new))
                 shelf[type_var] = tab_fin
-            except :
+            except Exception:
                 print("Pb with concatenation in GLO")
                 sys.exit(1)
         shelf.close()
@@ -765,7 +765,7 @@ class SelectCorio(Selector):
         # Add position values in the serialized dictionnary
         try:
             ll_exist = shelf[type_f]
-        except:
+        except Exception:
             shelf[type_f] = tab_pos
             ll_exist=[]
         if len(ll_exist) > 0 :
@@ -800,7 +800,7 @@ class SelectCorio(Selector):
                     shelf[type_f] = new_position
                 else :
                     log.debug('Bad profiles')
-            except:
+            except Exception:
                 print("Pb with concatenation single")
                 sys.exit(1)
         shelf.close()

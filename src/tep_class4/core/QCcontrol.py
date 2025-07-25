@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import netCDF4
 import xarray as xr
-from .NetcdReader import *
+from .NetcdReader import NetcdReader
 
 #######################################################################################
 ## C.REGNIER Juin 2014 
@@ -25,8 +25,8 @@ class QCcontroller(object):
             return QCCorio(self.data_type,self.data_src)
         elif self.data_src == "CORIOLIS_RAW":
             return QCCorio_raw(self.data_type,self.data_src)
-        elif self.data_src == "ENS":
-            return QCEns()
+        #elif self.data_src == "ENS":
+        #    return QCEns()
         elif self.data_src == "GODAE":
             return QC_GODAE(self.data_type,self.data_src)
         else :
@@ -49,7 +49,7 @@ class QCArgo(QCcontroller):
         namevar='PRES_QC'
         NetcdReader().read_2D(filename,namevar)
         namevar='LONGITUDE'
-        NetcdReader().read_2D(file,namevar)
+        NetcdReader().read_2D(filename,namevar)
         nc.close()
 
 class QC_GODAE(QCcontroller):
@@ -144,9 +144,9 @@ class QCCorio_raw(QCcontroller):
             pass
         if 'PRES' in variable_names:
              pass
-        if var == 'TEMP':
+        if 'TEMP' in variable_names:
             ll_temp=1
-        if var == 'PSAL':
+        if 'PSAL' in variable_names:
             ll_psal=1
         if not ll_temp and ll_psal :
             print ('PROF not valid with no TEMP and no PSAL')

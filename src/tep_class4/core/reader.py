@@ -290,8 +290,8 @@ def read_pos(filename, log):
         rla_lon = nc.variables[variable][:,:]
         variable = 'nav_lat'
         rla_lat = nc.variables[variable][:,:]
-    except:
-        log.info ('pb lecture coordinates')
+    except Exception as e:
+        log.info(f'pb lecture coordinates {e}')
 
     return rla_lon,rla_lat
 
@@ -426,8 +426,10 @@ def read_drifter_filt(file):
     else:
         print ('Missing observations')
         sys.exit(1)
-        u_filtr = None ; v_filtr = None
-        u_filtr_qc = None ; v_filtr_qc = None
+        u_filtr = None 
+        v_filtr = None
+        u_filtr_qc = None
+        v_filtr_qc = None
     return lon, lat, depth, depth_qc, time, u, v, u_filtr, v_filtr, ll_var,\
             u_qc, v_qc, u_filtr_qc, v_filtr_qc, wind_u, wind_v, current_test, current_test_qc,\
             position_qc, time_qc, dc_reference

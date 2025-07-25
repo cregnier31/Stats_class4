@@ -238,7 +238,7 @@ class Extract_SSSData(Extractor):
                 date_all = [SyDate.__str__(self.date.setfromjulian(
                     int(valeurtmp))) for valeurtmp in v]
                 unique_date = reduce(
-                    lambda l, x: l+[x] if x not in l else l, date_all, [])
+                    lambda l_val, x: l_val+[x] if x not in l_val else l_val, date_all, [])
                 ## Find the correspondance with 2 lists
                 list1 = set(timelinespace)
                 list2 = set(unique_date)
@@ -528,18 +528,6 @@ class Extract_cora5_2(Extractor):
                 print ("I/O error({0}): {1}".format(e.errno, e.strerror))
                 sys.exit(1)
         return liste_tot
-
-class Extract_Legos_SIT(Extractor):
-
-    """ Class to extract Legos SIT l3 files """
-    def __init_(self, log):
-        self.log = log
-
-    def run_list(self, param_dict, daterun):
-        liste_file=glob(param_dict['dirdata']+'/*'+daterun+'*.nc')
-        self.log.info("Liste file {} {} ".format(liste_file, daterun))
-        if not liste_file:
-            self.log.error("Missing Legos_SIT {} {}".format(param_dict['dirdata'], daterun))
 
 class Extract_corio_cmems(Extractor):
 

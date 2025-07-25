@@ -14,7 +14,7 @@ except ImportError:
     except ImportError:
         raise ImportError('Either pykdtree or scipy must be available')
 import xarray as xr
-from tep_class4.core.utils import *
+#from tep_class4.core.utils import *
 from . import utilities as utils
 import netCDF4
 import pickle

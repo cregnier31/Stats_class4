@@ -75,8 +75,8 @@ class Writer():
             #print MultiPoint(liste_position)
             with open(filename, 'w') as outfile:
                 json.dump(MultiPoint(liste_position), outfile)
-        except:
-            print ('Probleme d ecriture geojson')
+        except Exception as e:
+            print (f'Probleme d ecriture geojson {e}')
             sys.exit(1)
 
     def write_ASCII(self, filename, position):
@@ -93,8 +93,8 @@ class Writer():
             np.savetxt(filename, position, fmt='%12.5f', delimiter='    ')
         # print len(position)
         #print 'Write ASCII file OK'
-        except:
-            print ('Probleme d ecriture ASCII')
+        except Exception as e:
+            print (f'Probleme d ecriture ASCII {e}')
             sys.exit(1)
 
     def write_geojson_fromdb(self, type_f, file_out, file_db):
@@ -109,8 +109,8 @@ class Writer():
                 #tab_fin[0,:][tab_fin[0,:] <0] += 360.
                 #print "Type exist %s " %(type_f)
                 self.write_geojson(file_out, tab_fin)
-            except:
-                print ("Type doesn't exist %s " % (type_f))
+            except Exception as e:
+                print (f"Type doesn't exist {type_f} {e}")
             shelf.close()
 #
     def write_GODAE_files_best(self, filename, hdct_tab, dateval, model, variable):

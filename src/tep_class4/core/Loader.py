@@ -14,9 +14,11 @@ from .sydate import SyDate
 from tep_class4.core.utils import date_range
 from .Logger import Logger
 from calendar import monthrange
-from .reader import *
+from .reader import read_drifter, read_drifter_filt
 from ast import literal_eval
 from .QCcontrol import QCcontroller
+from .Selector import Selector
+from .Sorter import Sorter
 import ast
 
 ##############################################################
@@ -55,8 +57,6 @@ class Loader(object):
             return LoaderSSSVessel()
         if type == "ASCII":
             return AsciiLoader()
-        if type == "LIST":
-            return ListWriter()
         if type == "NML":
             return NmlLoader()
         if type == "DAT":
@@ -259,7 +259,7 @@ class LoaderInsituClim(Loader):
         self.varname = 'Temperature'
 
     def read_pos_and_value(self,filename):
-        rla_lon, rla_lat, nb_obs, _FillValue = \
+        rla_lon, rla_lat, nb_obs, _FillValue, nc = \
         self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][0, :, :]
         nb_obs = int(np.shape(rla_value.flatten())[0])
@@ -277,7 +277,7 @@ class LoaderNCClim(Loader):
 
     def read_pos_and_value(self,filename):
 
-        rla_lon, rla_lat, nb_obs, _FillValue = \
+        rla_lon, rla_lat, nb_obs, _FillValue, nc = \
          self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][0, :, :]
         nb_obs = int(np.shape(rla_value.flatten())[0])
@@ -638,6 +638,11 @@ class NmlLoader(Loader):
         param_dict['verif'] = literal_eval(db.get('GLOBAL','verif'))
         param_dict['json'] = literal_eval(db.get('GLOBAL','ll_json'))
         param_dict['maskname'] = db.get('static','maskname')
+        date1 = param_dict['date1']
+        date2 = param_dict['date2']
+        daterun = param_dict['daterun']
+
+        cl_schedule = db.get('GLOBAL', 'SCHEDULE')
         try:
             param_dict['direxec'] = db.get('GLOBAL', 'DIRBIN')
         except Exception:
@@ -737,7 +742,6 @@ class NmlLoader(Loader):
         param_dict['type_run'] = db.get('GLOBAL', 'TYPE_RUN')
         param_dict['type_archi'] = db.get('GLOBAL', 'TYPE_ARCHI')
         param_dict['nb_points'] = int(db.get('GLOBAL', 'nb_points_interp'))
-        param_dict['schedule'] = db.get('GLOBAL', 'SCHEDULE')
         param_dict['ll_zip'] = literal_eval(db.get('GLOBAL', 'll_zip'))
         param_dict['contact'] = db.get('GLOBAL','CONTACT')
         param_dict['inst'] = db.get('GLOBAL','INSTITUTION')
@@ -783,6 +787,7 @@ class NmlLoader(Loader):
         except Exception:
             param_dict['bathy_file'] = ""
         if param_dict['cl_data_id']:
+            cl_data_id = param_dict['cl_data_id']
             param_dict['dirwork'] = param_dict['dirwork']+str(cl_data_id)+'/'
             param_dict['diroutput'] = param_dict['diroutput']+str(cl_data_id)+'/'
             param_dict['dirdata'] = param_dict['dirdata']+str(cl_data_id)+'/'
@@ -1184,8 +1189,8 @@ class read_Legos_SIT(Loader):
             if len(set(nc.variables).intersection(self.varname_list)) == 1:
                 self.varname =  list(set.intersection(set(self.varname_list), set(nc.variables)))[0]
             nc.close()
-        except:
-            raise cl4err.Class4FatalError("Pb read_Legos_SIT varname missing {}".format(self.varname_list))
+        except Exception as e:
+            raise (f"Pb read_Legos_SIT varname missing {e}")
         rla_lon, rla_lat, _FillValue, nc = \
           self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][:]

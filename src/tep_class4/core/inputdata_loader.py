@@ -4,9 +4,11 @@ import fcntl
 import sys
 import numpy as np
 import netCDF4
-from .reader import *
+from .reader import read_drifter_filt, read_drifter
 from .QCcontrol import QCcontroller
 from . import seawater as sw
+from .Selector import Selector
+import xarray as xr
 
 ##############################################################
 # C.REGNIER Juin 2014
@@ -47,12 +49,8 @@ class inputdata_loader(object):
             return LoaderSSSVessel()
         if type == "ASCII":
             return AsciiLoader()
-        if type == "LIST":
-            return ListWriter()
         if type == "DAT":
             return ColocLoader()
-        if type == "INPUT":
-            return InputLoader()
         if type == "INPUT_DATA":
             return InputDataLoader(self.log)
         if type == "PGN_coords":
@@ -91,22 +89,30 @@ class inputdata_loader(object):
         nc = netCDF4.Dataset(filename, 'r')
         ll_ravel = False
         if 'longitude' in nc.variables:
-            var_lon = 'longitude' ; var_lat = 'latitude'
+            var_lon = 'longitude' 
+            var_lat = 'latitude'
         elif 'lon' in nc.variables and 'lon_20hz' not in nc.variables and 'lon_20_ku' not in nc.variables:
-            var_lon = 'lon' ; var_lat = 'lat'
+            var_lon = 'lon'
+            var_lat = 'lat'
         elif 'LON' in nc.variables:
-            var_lon = 'LON' ; var_lat = 'LAT'
+            var_lon = 'LON'
+            var_lat = 'LAT'
         elif 'Lon' in nc.variables:
-            var_lon = 'Lon' ; var_lat = 'Lat'
+            var_lon = 'Lon'
+            var_lat = 'Lat'
         elif 'LONGITUDE' in nc.variables:
-            var_lon = 'LONGITUDE' ; var_lat = 'LATITUDE'
+            var_lon = 'LONGITUDE'
+            var_lat = 'LATITUDE'
         elif 'Longitude' in nc.variables:
-            var_lon = 'Longitude' ; var_lat = 'Latitude'
+            var_lon = 'Longitude'
+            var_lat = 'Latitude'
         elif 'lon_20hz' in nc.variables:
-            var_lon = 'lon_20hz' ; var_lat = 'lat_20hz'
+            var_lon = 'lon_20hz'
+            var_lat = 'lat_20hz'
             ll_ravel = True
         elif 'lon_20_ku' in nc.variables:
-            var_lon = 'lon_20_ku' ; var_lat = 'lat_20_ku'
+            var_lon = 'lon_20_ku'
+            var_lat = 'lat_20_ku'
             ll_ravel = True
         if ll_ravel:
             rla_lon = np.ravel(nc.variables[var_lon][:,:])
@@ -253,7 +259,7 @@ class LoaderInsituClim(inputdata_loader):
         self.varname = 'Temperature'
 
     def read_pos_and_value(self,filename):
-        rla_lon, rla_lat, nb_obs, _FillValue = \
+        rla_lon, rla_lat, nb_obs, _FillValue, nc = \
         self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][0, :, :]
         nb_obs = int(np.shape(rla_value.flatten())[0])
@@ -271,7 +277,7 @@ class LoaderNCClim(inputdata_loader):
 
     def read_pos_and_value(self,filename, param_dict):
 
-        rla_lon, rla_lat, nb_obs, _FillValue = \
+        rla_lon, rla_lat, nb_obs, _FillValue, nc = \
          self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][0, :, :]
         nb_obs = int(np.shape(rla_value.flatten())[0])
@@ -1006,8 +1012,8 @@ class PGN_coords_Loader(inputdata_loader):
             lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
             depth_name = [ k for k in variables.keys() & set(list_depth)][0]
             mask_name = [ k for k in variables.keys() & set(list_mask)][0]
-        except Exception:
-            print('lon lat or depth not defined')
+        except Exception as e:
+            print(f'lon lat or depth not defined {e}')
             raise
         rla_lon = nc.variables[lon_name][:,:]
         rla_lat = nc.variables[lat_name][:,:]
@@ -1034,8 +1040,8 @@ class PGS_coords_Loader(inputdata_loader):
             lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
             depth_name = [ k for k in variables.keys() & set(list_depth)][0]
             mask_name = [ k for k in variables.keys() & set(list_mask)][0]
-        except Exception:
-            print('lon lat or depth not defined')
+        except Exception as e:
+            print(f'lon lat or depth not defined {e}')
             raise
         rla_lon = nc.variables[lon_name][:]
         rla_lat = nc.variables[lat_name][:]
@@ -1058,8 +1064,8 @@ class ease_coords_Loader(inputdata_loader):
         try:
             lon_name = [ k for k in variables.keys() & set(list_lon)][0]
             lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
-        except Exception:
-            print('lon lat or depth not defined')
+        except Exception as e:
+            print(f'lon lat or depth not defined {e}')
             raise
         rla_lon = nc.variables[lon_name][:,:]
         rla_lat = nc.variables[lat_name][:,:]
@@ -1133,8 +1139,8 @@ class read_Legos_SIT(inputdata_loader):
             if len(set(nc.variables).intersection(self.varname_list)) == 1:
                 self.varname = list(set.intersection(set(self.varname_list), set(nc.variables)))[0]
             nc.close()
-        except Exception:
-            raise cl4err.Class4FatalError("Pb read_Legos_SIT varname missing {}".format(self.varname_list))
+        except Exception as e:
+            raise (f"Pb read_Legos_SIT varname missing {self.varname_list} {e}")
         rla_lon, rla_lat, _FillValue, nc = \
           self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][:]
