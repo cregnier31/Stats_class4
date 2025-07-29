@@ -19,12 +19,10 @@
 Developer:
     C. REGNIER
 """
-import os
 import sys
 from os.path import dirname
 import resource
 from timeit import default_timer as timer
-import argparse
 
 # Import local modules
 from tep_class4.core.Selector import Selector
@@ -58,14 +56,12 @@ def main(level=2):
     log.info('========================================================')
     log.info('              Launch time loop                          ')
     log.info('========================================================')
-    valeurj = param_dict['date1']
     ## Create dictionnary
     list_keys = create_dict(param_dict['date1'],
                             param_dict['date2'],
                             param_dict['lead_time'],
                             param_dict['lead_int'])
     log.debug(f'Keys {list_keys}')
-    unique_dates = sorted({int(key.split('-')[0]) for key in list_keys['keyvalues']})
     unique_leadtime = sorted({key.split('-')[1] for key in list_keys['keyvalues']})
     unique_leadtime_unit = sorted({int(key.split('-')[2]) for key in list_keys['keyvalues']})
     log.debug(f'{unique_leadtime=}')
