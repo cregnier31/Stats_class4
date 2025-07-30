@@ -569,7 +569,9 @@ class InputLoader(Loader):
             sys.exit(1)
         if ll_date1 and ll_date2 :
             log.debug("Date1 %s Date2 %s " %(date1,date2))
-        confname='config_'+str(cl_config)+'_'+str(cl_src)+'_'+str(cl_data)+'.cfg'
+        #confname='config_'+str(cl_config)+'_'+str(cl_src)+'_'+str(cl_data)+'.cfg'
+        confname='config_model.cfg'
+        confname='config_obs.cfg'
 
         # Logger
         log.debug("Nombre de proc %i" %(nb_proc))
@@ -641,17 +643,17 @@ class NmlLoader(Loader):
         if param_dict['cl_typemod'].lower() == 'pgn':
             param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
             param_dict['dirmodel'] = param_dict['dirmodel_pgn']
-            param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION')
+            #param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION')
             param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable_ng'))
             param_dict['coordinates'] = db.get('static', 'fic_coordinates')
         elif param_dict['cl_typemod'].lower() == 'pgs' or param_dict['cl_typemod'].lower() == 'pgs_ai':
             param_dict['dirmodel_pgs'] = db.get('input_dir', 'DATA_IN_PGS')
-            param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION')
+            #param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION')
             param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable_sg'))
             param_dict['coordinates'] = db.get('static', 'fic_coordinates')
         elif param_dict['cl_typemod'].lower() == 'pgncg':
             param_dict['dirmodel_pgncg'] = db.get('input_dir', 'DATA_IN_PGN_CG')
-            param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION_CG')
+            #param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION_CG')
             param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable_cg'))
             param_dict['coordinates'] = db.get('static', 'fic_coordinates_cg')
         else:

@@ -25,12 +25,10 @@ def main():
         sys.exit(1)
 
     loglevel = 7
-    #python_bin = "/opt/conda/envs/myenv_class4/bin/python"
-    python_bin = "/homelocal-px/px-167/sauvegarde/cregnier/Program_files/mambaforge-pypy3/envs/env_py311/bin/python"
     script_path = "../src/tep_class4/cli/class4.py"
 
     command = [
-        python_bin,
+        'python',
         script_path,
         f"--config={config}",
         f"--date1={date1}",
