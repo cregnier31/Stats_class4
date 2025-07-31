@@ -83,7 +83,6 @@ class Writer():
         try:
             #print 'Write ASCII file'
             # Creation fichier
-            #length = position.size
             # if length < 2 :
             #     print "Empty Position array"
             # elif length == 2 :
@@ -247,13 +246,11 @@ class Writer():
 
     def write_CMEMS_generic_files(self, filename, param_dict, dateval, model, variable):
         nc_fid = Dataset(filename, 'r+')
-        #dims = nc_fid.dimensions
         #if 'numobs' not in dims.keys():
         #    nc_fid.createDimension('numobs', nb_obs)
         #if 'numfcsts' not in dims.keys():
         #    nc_fid.createDimension('numfcsts', nb_vars)
         #if 'numdeps' not in dims.keys():
-        #    nc_fid.createDimension('numdeps', nb_vars)
         if 'forecast' in param_dict.keys() and param_dict['forecast'] is not None:
             fcst_tab = param_dict['forecast']
             #nb_obs, nb_vars, nb_fcst, nb_depths = np.shape(fcst_tab)
@@ -591,8 +588,7 @@ class Writer():
                 frame = f"*{variable}*{dateval}*.nc"
                 list_file = glob(f"{param_dict['dirwork']}{frame}")
             if not list_file:
-                self.log.error(f"Files are missing {dateval} {variable}")
-                sys.exit(1)
+                self.log.error("Files are missing")
                 continue
             self.log.debug(f"{frame=}")
             self.log.debug(f"{param_dict['dirwork']}")
@@ -899,6 +895,7 @@ class Writer():
             self.log.debug(f"Write write_output_frompickle {filename}")
             ll_varname = self.type_data.get(variable, {}).get('varname')
             if 'best_estimate' in list_keys : #and np.any(tab_out['best_estimate']):
+                len(np.shape((tab_out['best_estimate'])))
                 if ll_GODAE is True:
                     nprofs, nparams, nlevels = np.shape(tab_out['best_estimate'])
                     self.log.info(f"Create dimensions {list_dimensions} {nprofs} {nlevels} {nparams}")
@@ -1396,7 +1393,6 @@ class Writer():
         filename_clim = f"{param_dict['dirwork']}{filename_clim}"
         filename_bathy = re.sub(r'\.nc$',f'_{dateval}_bathy.p', filename)
         filename_bathy = f"{param_dict['dirwork']}{filename_bathy}"
-        #dataorigin = param_dict['data_origin']
         # Specify the file name
         # Writing of the dictionary into the pickle file
         self.log.debug(f"{tab_results.keys()=}")

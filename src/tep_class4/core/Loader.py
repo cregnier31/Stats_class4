@@ -161,7 +161,6 @@ class InputDataLoader(Loader):
                     os.remove(fichier)
                     log.info('No position find in %s for the zoom ' %
                              (fichier))
-                    #ll_file_interp = False
         else:
             # Case Global without qc
             log.info("GLOBAL MODE => SELECT ALL ")
@@ -359,7 +358,6 @@ class InputLoader(Loader):
         ll_output = False
         ll_dirlog = False
         ll_forecast = False
-        ll_listdata = False
         list_var = []
         nb_proc = 0
         ll_zarr = False
@@ -611,7 +609,7 @@ class InputLoader(Loader):
         param_dict['is_netcdf'] = ll_netcdf
         if ll_input :
             param_dict['dirdata'] = dirinput
-        if ll_output : 
+        if ll_output :
             param_dict['diroutput'] =  diroutput
         if ll_dirlog :
             param_dict['dirlog'] =  dirlog
@@ -682,10 +680,6 @@ class NmlLoader(Loader):
             param_dict['insitu_corr'] = False
         try:
             param_dict['Design_GODAE_file'] = ast.literal_eval(db.get('GLOBAL', 'Design_GODAE_file'))
-        except Exception:
-            param_dict['Design_GODAE_file'] = False
-        try:
-            param_dict['EDITO'] = db.get('input_dir', 'EDITO')
         except Exception:
             param_dict['Design_GODAE_file'] = False
         try:
@@ -838,7 +832,7 @@ class NmlLoader(Loader):
             param_dict['gridu'] = db.get('GLOBAL', 'gridu')
         except Exception:
             param_dict['gridu'] = ''
-        try:
+        try :
             param_dict['gridv'] = db.get('GLOBAL', 'gridv')
         except Exception:
             param_dict['gridv'] = ''
@@ -857,7 +851,6 @@ class NmlLoader(Loader):
         param_dict['type_run'] = db.get('GLOBAL', 'TYPE_RUN')
         param_dict['type_archi'] = db.get('GLOBAL', 'TYPE_ARCHI')
         param_dict['nb_points'] = int(db.get('GLOBAL', 'nb_points_interp'))
-        param_dict['schedule'] = db.get('GLOBAL', 'SCHEDULE')
         param_dict['ll_zip'] = literal_eval(db.get('GLOBAL', 'll_zip'))
         param_dict['contact'] = db.get('GLOBAL','CONTACT')
         param_dict['inst'] = db.get('GLOBAL','INSTITUTION')
@@ -911,7 +904,6 @@ class NmlLoader(Loader):
         elif param_dict['cl_conf'] == 'BIOMER4' or param_dict['cl_conf'] == 'BIOMER4V2':
             param_dict['dirwork'] = param_dict['dirwork']
             param_dict['diroutput'] = param_dict['diroutput']
-            #date_ini = SyDate(str(param_dict['date1']))
             #if param_dict['prefix_data'] == "L3mCHL": param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
         
         param_dict['dirwork'] = param_dict['dirwork']
@@ -988,7 +980,6 @@ class LoaderNCcorio(Loader):
 
         tab_dims = {}
         dimension_names = nc.dimensions.keys()
-        #dimensions_dict = {dim_name: len(dim) for dim_name, dim in nc.dimensions.items()}
 
         for dim_name in dimension_names:
             dimension = nc.dimensions[dim_name]

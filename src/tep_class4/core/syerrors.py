@@ -54,7 +54,3 @@ class SytoolkitDateFormatError(SytoolkitException):
 
     def __str__(self):
         return "Date format error: %s" % self.date
-
-
-
-# vim: set ts=4 sw=4 tw=79:

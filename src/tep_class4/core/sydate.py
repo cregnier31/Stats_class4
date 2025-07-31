@@ -272,8 +272,3 @@ class SyDate(object):
                 tmpyear/400 + self.day - 712164) 
         return val
 #end SyDate 
-
-
-# vim: set ts=4 sw=4 tw=79:
-
-

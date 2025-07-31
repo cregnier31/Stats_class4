@@ -1,17 +1,12 @@
 import os
 import sys
-from getopt import getopt
 import configparser as ConfigParser
 import numpy as np
-import netCDF4
-import logging
-from tep_class4.core.supobs import toolkitStats 
-from tep_class4.core.param  import Def_param_bulletin as params
-from ast import literal_eval
-
+#import define_config
+#import param.Def_param_bulletin as params
+#import supobs
 # Serialization
 import pickle as cPickle
-from .sydate import SyDate
 
 __author__      = "C.REGNIER"
 __version__ = 0.1
@@ -76,147 +71,6 @@ def read_input_files(params_conf):
 
     return rla_surface, rla_layers, table_hull
 
-
-def input_params(arg, log):
-    """
-        Function to manage input parameters
-        inputs:
-        arg: stdout from inputs
-        log: input logger
-        outputs:
-    """
-    params_conf = {}
-    letters = 's:e:c:t:d:b:f:m:p:l'
-    keywords = ['day1=', 'day2=', 'cfg=', 'type=', 'fmt_mask=',
-                'bilan=', 'fmt_ascii=', 'daily_off=', 'percent=', 'nblevel=', 'debug=']
-    cla_opts = getopt(arg, letters, keywords)
-
-    cl_start_date = 'YYYYMMDD'
-    cl_end_date = 'YYYYMMDD'
-    ll_date1 = False
-    ll_date2 = False
-    params_conf['ll_debug'] = False
-    params_conf['daily_off'] = 'on'
-    params_conf['bilan'] = 'off'
-    params_conf['fmt_ascii'] = 'off'
-    params_conf['fmt_mask'] = 'basin'
-    params_conf['percent'] = 'off'
-    params_conf['nblevel'] = ''
-    _DBFILE_ = './environment.cfg'
-    params_conf['missing_value'] = netCDF4.default_fillvals['f4']
-
-    for o, p in cla_opts[0]:
-        if o in ['-s', '--day1']:
-            cl_start_date = p
-            ll_date1 = True
-        elif o in ['-e', '--day2']:
-            cl_end_date = p
-            ll_date2 = True
-        elif o in ['-t', '--type']:
-            params_conf['cexp'] = p
-        elif o in ['-c', '--cfg']:
-            _DBFILE_ = p.strip()
-        elif o in ['-d', '--daily_off']:
-            if p == 'None':
-                params_conf['daily_off'] = 'on'
-            else:
-                params_conf['daily_off'] = str(p)
-        elif o in ['-b', '--bilan']:
-            if p == 'None':
-                params_conf['bilan'] = 'off'
-            else:
-                params_conf['bilan'] = str(p)
-        elif o in ['-f', '--fmt_ascii']:
-            if p == 'None':
-                params_conf['fmt_ascii'] = 'off'
-            else:
-                params_conf['fmt_ascii'] = str(p)
-        elif o in ['-m', '--fmt_mask']:
-            if p == 'None':
-                params_conf['fmt_mask'] = 'basin'
-            else:
-                params_conf['fmt_mask'] = str(p)
-        elif o in ['-p', '--percent']:
-            if p == 'None':
-                params_conf['percent'] = 'off'
-            else:
-                params_conf['percent'] = str(p)
-        elif o in ['-p', '--nblevel']:
-            if p == 'None':
-                params_conf['nblevel'] = ''
-            else:
-                params_conf['nblevel'] = str(p)
-                print (f'Level :: {p}')
-        elif o in ['-l', '--debug']:
-            if p == "0":
-                log.setLevel(20)
-            elif p == "1":
-                log.setLevel(10)
-            elif p == 'True':
-                log.setLevel(logging.DEBUG)
-            elif p == 'False':
-                log.setLevel(logging.INFO)
-            else:
-                log.error("Not known : debug option should be 0 or 1")
-
-    log.debug(f'{params_conf}')
-
-    # *********************  Define input date / fmt date  *********************
-
-    if not ll_date1 and not ll_date2:
-        cl_start_date, cl_end_date = toolkitStats.datenow()
-    params_conf['ll_arc'] = False
-    params_conf['ll_ant'] = False
-    if "arc" in params_conf['fmt_mask']:
-        params_conf['ll_arc'] = True
-    if "ant" in params_conf['fmt_mask']:
-        params_conf['ll_ant'] = True
-    params_conf['cla_dates'] = toolkitStats.char_period(
-        cl_start_date, cl_end_date)
-    params_conf['cl_start_jdate'] = str(SyDate(cl_start_date).tojulian())
-    params_conf['cl_end_jdate'] = str(SyDate(cl_end_date).tojulian())
-    params_conf['cl_start_date'] = cl_start_date
-    params_conf['cl_end_date'] = cl_end_date
-
-
-    # *********************  Load config file  *********************
-
-    params_conf['db'] = load_db(_DBFILE_)
-    params_conf['config_model'] = params_conf['db'].get(
-        'PARAMS', 'CONFIGMDL').upper()
-    params_conf['config_obs'] = params_conf['db'].get(
-        'PARAMS', 'CONFIGOBS').upper()
-    try:
-        params_conf['list_TAC_profiles'] = literal_eval(params_conf['db'].get('PARAMS', 'list_TAC_profiles'))
-    except Exception as e:
-        print(f'Missing option list_TAC_profiles {e}')
-    params_conf['cgrid'] = params_conf['db'].get('NETCDF', 'grid')
-    params_conf['dirNCin'] = params_conf['db'].get('input_dir', 'DIR_IN')
-    params_conf['dirNCout'] = params_conf['db'].get('output_dir', 'DIR_OUT_NC')
-    params_conf['dirBOXout'] = params_conf['db'].get(
-        'output_dir', 'DIR_OUT_BOX')
-    params_conf['path_out'] = params_conf['db'].get('output_dir', 'DIR_OUT')
-    params_conf['dirASCIIout'] = params_conf['db'].get(
-        'output_dir', 'DIR_OUT_ASCII')
-    params_conf['cl_layerFile'] = params_conf['db'].get('LAYER', 'layerFile'+params_conf['nblevel'])
-    params_conf['prefix'] = params_conf['db'].get('INPUT', 'PREFIX1')
-    params_conf['cl_confres'] = params_conf['db'].get('NETCDF', 'MyOConfig')
-    if params_conf['percent'] == 'on':
-        params_conf['cl_conf_percent'] = params_conf['db'].get('NETCDF', 'MyConfigPercent')
-    params_conf['cl_contact'] = params_conf['db'].get('NETCDF', 'CONTACT')
-    params_conf['cl_institution'] = params_conf['db'].get(
-        'NETCDF', 'INSTITUTION')
-    params_conf['cl_ref'] = params_conf['db'].get('NETCDF', 'REF')
-    params_conf['cl_fmt'] = params_conf['db'].get('NETCDF', 'FMT')
-    params_conf['dir_static'] = params_conf['db'].get('NETCDF', 'DIR_MASK_IN')
-    params_conf['cla_metricname'] = params.cla_metricname2
-    params_conf['metric_percent'] = params.cla_metricname_Q
-    params_conf['cmems_basin'] = params.liste_zone
-
-    if not os.path.exists(params_conf['dirNCout']):
-        os.makedirs(params_conf['dirNCout'])
-
-    return params_conf, log
 
 def load_param(db_file):
 

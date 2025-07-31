@@ -1,6 +1,5 @@
 from glob import glob
 from .sydate import SyDate
-
 class FileHandler:
     def __init__(self, config,
                  dirmodel, modele,
@@ -77,7 +76,7 @@ class FileHandler:
             self.directory_path = "non_clim"
         # Get the specific directory configuration
         type_run_config = config_section.get(self.directory_path, config_section.get('type_run', {}))
-        #directory_config = config_section.get(self.directory_path, [])
+        config_section.get(self.directory_path, [])
         # Prepare the list of files based on the configuration
         list_file = []
         if self.directory == "clim":

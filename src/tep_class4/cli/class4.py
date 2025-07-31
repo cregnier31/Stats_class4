@@ -5,6 +5,7 @@
 Description:
     New CLASS4 launcher to compute CLASS4 with CLASS4 coming from GODAE,
     ARMOR, CORIOLIS, different ASCII files
+<<<<<<< HEAD:src/tep_class4/cli/class4.py
 
 History:
     July 2014       : Creation - C. REGNIER
@@ -16,17 +17,36 @@ History:
     September 2018  : Add interpolator for 2D variables, refactoring
     July 2020       : Add 3D in-situ profiles
     April 2025      : Edito version
+=======
+    History: Juillet 2014  : Creation C.REGNIER
+             Novembre 2014 :  Ajout différentes échéances pour l'interpolation+
+             clims + gestion enchaînement des runs
+             Decembre 2014 :  MAJ pour le cas particulier du zoom
+             November 2016 :  New version with KDtree method for coloc and interp
+             November/Dec 2017 :  Add modules in a generic lib for CLASS4
+             portability Generic KDtree for SLA,SST,SSS
+             September 2018 :  Add interpolator for 2D variables
+             September 2018 : Refactoring
+             Juillet 2020 : Add 3D insitu profiles 
+             June 2025    : Cleanup the code
+>>>>>>> 057afed4e7d5a8dc85679cccefdd7edf2ab0df8e:src/tep_class4/cli/TEP_CLASS4.py
 
 Developer:
     C. REGNIER
 """
+<<<<<<< HEAD:src/tep_class4/cli/class4.py
 
 import os
+=======
+>>>>>>> 057afed4e7d5a8dc85679cccefdd7edf2ab0df8e:src/tep_class4/cli/TEP_CLASS4.py
 import sys
 from os.path import dirname
 import resource
 from timeit import default_timer as timer
+<<<<<<< HEAD:src/tep_class4/cli/class4.py
 import argparse
+=======
+>>>>>>> 057afed4e7d5a8dc85679cccefdd7edf2ab0df8e:src/tep_class4/cli/TEP_CLASS4.py
 
 # Import local modules
 from tep_class4.core.Selector import Selector
@@ -72,12 +92,17 @@ def main(level=2):
     log.info('========================================================')
     log.info('              Launch time loop                          ')
     log.info('========================================================')
+<<<<<<< HEAD:src/tep_class4/cli/class4.py
     # Create dictionnary
+=======
+    ## Create dictionnary
+>>>>>>> 057afed4e7d5a8dc85679cccefdd7edf2ab0df8e:src/tep_class4/cli/TEP_CLASS4.py
     list_keys = create_dict(param_dict['date1'],
                             param_dict['date2'],
                             param_dict['lead_time'],
                             param_dict['lead_int'])
     log.debug(f'Keys {list_keys}')
+<<<<<<< HEAD:src/tep_class4/cli/class4.py
     unique_leadtime = sorted({
         key.split('-')[1]
         for key in list_keys['keyvalues']
@@ -86,6 +111,10 @@ def main(level=2):
         int(key.split('-')[2])
         for key in list_keys['keyvalues']
     })
+=======
+    unique_leadtime = sorted({key.split('-')[1] for key in list_keys['keyvalues']})
+    unique_leadtime_unit = sorted({int(key.split('-')[2]) for key in list_keys['keyvalues']})
+>>>>>>> 057afed4e7d5a8dc85679cccefdd7edf2ab0df8e:src/tep_class4/cli/TEP_CLASS4.py
     log.debug(f'{unique_leadtime=}')
     log.debug(f'{unique_leadtime_unit=}')
     for keyvalue in list_keys['keyvalues']:

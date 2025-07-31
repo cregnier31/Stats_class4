@@ -56,8 +56,6 @@ class Selector(object):
 
         """ Get the template for new model inputs  """
 
-
-
     def find_next_month_year(self, dateval):
         # Convert the input string to a datetime object
         date_object = datetime.strptime(dateval, '%Y%m%d')
@@ -410,22 +408,15 @@ class SelectListModelData(Selector):
         self.data_type = param_dict['data_type']
         self.type_run = param_dict['type_run']
         self.log.debug(f'Data type {self.data_type}')
-        #MONTH = str(dateval)[4:6]
-        #YEAR = dateval[:4]
-        #DAY = dateval[6:]
         # Format the date with dashes
-        #dateval_formatted = f'{YEAR}-{MONTH}-{DAY}'
         self.log.debug(f"Grid type {param_dict['gridtype']} {self.dirmodel=}")
         # loop on lead time
-        #new_naming = False
-        #if  param_dict['naming'] == 'new':
-        #    new_naming = True
+        if  param_dict['naming'] == 'new':
+            pass
         #for time in param_dict['lead_time']:
         self.log.debug(f'Lead Time {leadtime}')
         #lead_new = param_dict['lead_int']
         #lead_new2 = param_dict['lead_int2']
-        #cl_config_use = param_dict['cl_config']
-        #config = param_dict['cl_conf']
         param_dict = self.set_leadtime(leadtime, param_dict, lead_int)
         ## Find and Load the good file
         ll_miss = False

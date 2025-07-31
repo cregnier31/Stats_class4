@@ -2,16 +2,20 @@ import xarray as xr
 import numpy as np
 
 SYSTEM="GLONET14"
+SYSTEM="GLO12V4-PGS"
 # Open the existing NetCDF file
-input_file = f'/data/rd_exchange/cregnier/SORT/GLONET_14//fcst0/{SYSTEM}_2024-01-04_all.nc'
+#input_file = f'/data/rd_exchange/cregnier/SORT/GLONET_14//fcst0/{SYSTEM}_2024-01-04_all.nc'
+input_file = f'/data/rd_exchange/cregnier/SORT/GLO12V4_PGS//fcst1/glo12_rg_1d-m_20240104-20240104_fcst_R20240103.nc'
 output_file = f'/data/rd_exchange/cregnier/static/{SYSTEM}_mask.nc'
 
 # Open the dataset using xarray
 ds = xr.open_dataset(input_file)
 
 # Extract relevant variables: lat, lon, depth, and thetao
-lat = ds['lat']
-lon = ds['lon']
+#lat = ds['lat']
+#lon = ds['lon']
+lat = ds['latitude']
+lon = ds['longitude']
 depth = ds['depth']
 thetao = ds['thetao']
 
@@ -24,7 +28,8 @@ mask = mask[0, :, :, :]
 # Create a mask with the same shape as thetao, and set all values to 0
 mask = xr.DataArray(
     mask,
-    dims=['depth', 'lat', 'lon'],
+    #dims=['depth', 'lat', 'lon'],
+    dims=['depth', 'latitude', 'longitude'],
     coords={'depth': depth, 'latitude': lat, 'longitude': lon},
     name='mask'
 )

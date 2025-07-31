@@ -1,13 +1,10 @@
 import sys
 import numpy as np
 import netCDF4
-from netCDF4 import Dataset
 import xarray as xr
 import os
 from .Logger import Logger
-import datetime as dt
 from glob import glob
-from tep_class4.core.utils import echeance, pull_names
 
 __version__ = 0.1
 __date__ = "February 2019"
@@ -29,19 +26,19 @@ def read_qc_CLASS4(cvar, nc):
         if len(set(list_var).intersection(liste1)) == 4:
             cl_qcvar = 'current_test_qc'
             cl_qcvar2 = 'position_qc'
-            #cl_qcvar3 = 'obs_qc'
-            #cl_qcvar4 = 'current_test'
+            cl_qcvar3 = 'obs_qc'
+            cl_qcvar4 = 'current_test'
             rla_qc_init2 = nc[cl_qcvar2][:]
-            #rla_qc_init3 = nc[cl_qcvar3][:]
-            #rla_qc_init4 = nc[cl_qcvar4][:]
+            nc[cl_qcvar3][:]
+            nc[cl_qcvar4][:]
         elif len(set(list_var).intersection(liste2)) == 4:
             cl_qcvar = 'position_qc'
             cl_qcvar2 = 'observation_qc'
-            #cl_qcvar3 = 'time_qc'
-            #cl_qcvar4 = 'depth_qc'
+            cl_qcvar3 = 'time_qc'
+            cl_qcvar4 = 'depth_qc'
             rla_qc_init2 = nc[cl_qcvar2][:]
-            #rla_qc_init3 = nc[cl_qcvar3][:]
-            #rla_qc_init4 = nc[cl_qcvar4][:]
+            nc[cl_qcvar3][:]
+            nc[cl_qcvar4][:]
     else:
         cl_qcvar = 'qc'
     rla_qc_init = nc[cl_qcvar][:].values
@@ -196,148 +193,6 @@ def read_outputnp(file_out):
     else:
         return False
 
-def read_stats_class4_timeseries(filename, leadtime,  prod, varname,
-               level, list_prof, dict_tmp, dict, window):
-    dateCNESref = dt.datetime.strptime('19500101','%Y%m%d').toordinal()
-    try:
-        f1 = Dataset(filename, 'r', format='NETCDF4')
-    except Exception as e:
-        raise RuntimeError(f'Failed to open file {filename}') from e
-
-    if 'stats_'+varname in f1.variables:
-        stat_var = f1.variables['stats_'+varname][:]
-        stat_var = np.where(stat_var.mask, np.nan, stat_var)
-        ll_stat = True
-    else:
-        ll_stat = False
-
-    rla_name = f1.variables['area_names'][:]
-    area_name = pull_names(rla_name)
-    #if GLO_AREA:
-    #    area_name = ['Full Domain']
-    rla_metric = f1.variables['metric_names'][:]
-    metric_name = pull_names(rla_metric)
-    vtime = (f1.variables['time'][:])/24 + dateCNESref
-    fcst = f1.variables['forecasts'][:]
-
-    f1.close()
-    print(f'Search {leadtime=}')
-    num_ech, name_ech = echeance(fcst, leadtime)
-    print(num_ech, name_ech)
-
-    rmsd = np.where(np.array(metric_name) == 'mean squared error')[0][0]
-    mean_obs = np.where(np.array(metric_name) == 'mean of reference')[0][0]
-    mean_prod = np.where(np.array(metric_name) == 'mean of product')[0][0]
-    nb_obs = np.where(np.array(metric_name) == 'number of data values')[0][0]
-    cor = np.where(np.array(metric_name) == 'anomaly correlation')[0][0]
-    level_name = list_prof[level]
-    print('^^^^^^^^^^^^^^^^^^^^^^')
-    print(f'Create dictionnary {varname} {prod} {level_name}')
-    print('^^^^^^^^^^^^^^^^^^^^^^')
-    for a, area in enumerate(area_name):
-        dict[leadtime][varname][prod][level_name][area] = {}
-        dict_tmp[leadtime][varname][prod][level_name][area] = {}
-        if ll_stat:
-            dict_tmp[leadtime][varname][prod][level_name][area]['rmsd'] = \
-                stat_var[:, num_ech, level, rmsd, a]
-            dict_tmp[leadtime][varname][prod][level_name][area]['bias'] = \
-                stat_var[:, num_ech, level, mean_prod, a] - \
-                        stat_var[:, num_ech, level, mean_obs, a]
-                #stat_var[:, num_ech, level, mean_prod, a] - \
-                #        stat_var[:,0, level, mean_obs, a]
-            dict_tmp[leadtime][varname][prod][level_name][area]['nb_obs'] = \
-                stat_var[:, num_ech, level, nb_obs, a]
-            dict_tmp[leadtime][varname][prod][level_name][area]['cor_ano'] = \
-                stat_var[:, num_ech, level, cor, a]
-        TIME = []
-        for t in range(len(vtime)):
-            TIME.append(dt.date.fromordinal(int(vtime[t])))
-        if ll_stat:
-            dict[leadtime][varname][prod][level_name][area]['time'] = \
-                TIME[int(window/2):-int(window/2)]
-
-    return dict_tmp, dict, area_name, name_ech
-
-
-def read_area_class4(filename):
-    try:
-        f1 = Dataset(filename, 'r', format='NETCDF4')
-    except Exception as e:
-        raise RuntimeError(f'Failed to open file {filename}') from e
-    rla_name = f1.variables['area_names'][:]
-    rla_depths = f1.variables['depths'][:]
-    fcst = f1.variables['forecasts'][:]
-    area_name = pull_names(rla_name)
-    formatted_list = []
-    previous_depth = 0
-    for depth in rla_depths:
-        formatted_list.append(f"{int(previous_depth)}-{int(depth)}m")
-        previous_depth = depth
-
-    return area_name, rla_depths, formatted_list, fcst
-
-
-def read_stats_class4(filename, level, varname,
-                      dict_tmp, dict, filtered, list_ech,
-                      window=5):
-    try:
-        f1 = Dataset(filename, 'r', format='NETCDF4')
-    except Exception as e:
-        raise RuntimeError(f'Failed to open file {filename}') from e
-
-    if 'stats_'+varname in f1.variables:
-        stat_var = f1.variables['stats_'+varname][:]
-        stat_var = np.where(stat_var.mask, np.nan, stat_var)
-        ll_stat = True
-    else:
-        ll_stat = False
-    dateCNESref = dt.datetime.strptime('19500101','%Y%m%d').toordinal()
-    rla_name = f1.variables['area_names'][:]
-    area_name = pull_names(rla_name)
-    #if GLO_AREA:
-    #    area_name = ['Full Domain']
-    rla_metric = f1.variables['metric_names'][:]
-    metric_name = pull_names(rla_metric)
-    vtime = (f1.variables['time'][:])/24 + dateCNESref
-    fcst = f1.variables['forecasts'][:]
-    f1.close()
-    rmsd = np.where(np.array(metric_name) == 'mean squared error')[0][0]
-    mean_obs = np.where(np.array(metric_name) == 'mean of reference')[0][0]
-    mean_prod = np.where(np.array(metric_name) == 'mean of product')[0][0]
-    nb_obs = np.where(np.array(metric_name) == 'number of data values')[0][0]
-    cor = np.where(np.array(metric_name) == 'anomaly correlation')[0][0]
-    for nf in list_ech:
-        dict[varname][nf] = {}
-        dict_tmp[varname][nf] = {}
-        num_ech, name_ech = echeance(fcst, int(nf))
-        for a, area in enumerate(area_name):
-          #if area == "Full Domain":
-            dict[varname][nf][area] = {}
-            dict_tmp[varname][nf][area] = {}
-            for lvls, levels in enumerate(level):
-                dict[varname][nf][area][levels] = {}
-                dict_tmp[varname][nf][area][levels] = {}
-                if ll_stat:
-                    dict_tmp[varname][nf][area][levels]['rmsd'] = \
-                        stat_var[:, num_ech, lvls, rmsd, a]
-                    dict_tmp[varname][nf][area][levels]['bias'] = \
-                        stat_var[:, num_ech, lvls, mean_prod, a] - \
-                                stat_var[:, 0, lvls, mean_obs, a]
-                    dict_tmp[varname][nf][area][levels]['nb_obs'] = \
-                        stat_var[:, num_ech, lvls, nb_obs, a]
-                    dict_tmp[varname][nf][area][levels]['cor_ano'] = \
-                        stat_var[:, num_ech, lvls, cor, a]
-                TIME = []
-                for t in range(len(vtime)):
-                    TIME.append(dt.date.fromordinal(int(vtime[t])))
-                if filtered:
-                    dict[varname][nf][area][levels]['time'] = \
-                        TIME[int(window/2):-int(window/2)]
-                else:
-                    dict[varname][nf][area][levels]['time'] = TIME
-
-    return dict_tmp, dict, area_name
-
 def read_mask_polar(params_conf):
 
     basin_mask_arc = params_conf['db'].get('NETCDF', 'file_basin_arc')
@@ -368,6 +223,12 @@ def read_mask_polar(params_conf):
     maskvalues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
                   13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 26, 27]
     for area_mask in range(len(params_conf['area_name'])):
+        if area_mask < 16:
+            #print ("Arctic region")
+            pass
+        else:
+            #print ("Antarctic region")
+            pass
         rla_maskvalues.append(maskvalues[area_mask])
     cla_areaname = np.chararray(len(params_conf['area_name']), itemsize=25)
     cla_areaini = np.chararray(len(params_conf['area_name']), itemsize=25)
@@ -496,10 +357,7 @@ def read_drifter(file):
         sys.exit(1)
     if 'CURRENT_TEST' in variables.keys():
         current_test = ncdata['CURRENT_TEST'].values
-        if 'CURRENT_TEST_QC' in variables.keys():
-            current_test_qc = ncdata['CURRENT_TEST_QC'].values
-        else:
-            current_test_qc = ""
+        current_test_qc = ncdata['CURRENT_TEST_QC'].values
     else:
         current_test = None
         current_test_qc = None
@@ -529,10 +387,7 @@ def read_drifter(file):
         time = ncdata['time'].values
     elif 'obs_time' in variables.keys():
         time = ncdata['obs_time'].values
-    if 'observation' in variables.keys():
-        observation = ncdata['observation'].values
-        u = observation[:, 0, 0]
-        v = observation[:, 1, 0]
+
     #lon_value = np.nanmean(lon)
     #lat_value = np.nanmean(lat)
     ncdata.close()

@@ -95,7 +95,6 @@ class QC_GODAE(QCcontroller):
             rla_lon=NetcdReader().read_1D(filename,namevar)
             flag_prof=[]
             for n_prof in range(n_prof):
-                #val_depth=rla_depth[n_prof,0]
                 val_lat=rla_lat[n_prof]
                 val_lon=rla_lon[n_prof]
                 if self.data_type  == 'profile' : 
@@ -141,11 +140,9 @@ class QCCorio_raw(QCcontroller):
         ll_temp=0
         ll_psal=0
         if 'DEPTH' in variable_names:
-            #ll_depth=1
             pass
         if 'PRES' in variable_names:
-            #ll_pres=1
-            pass
+             pass
         if 'TEMP' in variable_names:
             ll_temp=1
         if 'PSAL' in variable_names:

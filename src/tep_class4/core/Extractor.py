@@ -235,7 +235,6 @@ class Extract_SSSData(Extractor):
                 variable = self.dimension
                 v = nc.variables[variable][:]
                 # Convert to date
-                #valeurtmp = valeurj
                 date_all = [SyDate.__str__(self.date.setfromjulian(
                     int(valeurtmp))) for valeurtmp in v]
                 unique_date = reduce(
@@ -480,6 +479,8 @@ class Extract_cora5_2(Extractor):
         while  valeurj_tmp >= valeurj and valeurj_tmp <= valeurj2 :
             dateval = str(valeurj_tmp)
             self.log.info('Day 5.2 %s ' % (dateval))
+            dateval[0:6]
+            dateval[0:4]
             frame=dirdata+'/*'+dateval.strip()+'*.nc'
             liste_file=glob(frame)
             self.log.info('Liste file CORA %s ' % (liste_file))
@@ -699,7 +700,6 @@ class Extract_UVDrifters_filtr(Extractor):
         u_obs_qc = u_obs_qc[mask]
         v_obs_qc = v_obs_qc[mask]
         if 'EWCT_WS_FILTR' and 'NSCT_WS_FILTR' in variables.keys():
-            #ll_var_ws = True
             u_filtr_ws = nc_file['EWCT_WS_FILTR'].values
             v_filtr_ws = nc_file['NSCT_WS_FILTR'].values
             u_filtr_ws_qc = nc_file['EWCT_WS_FILTR_QC'].values
@@ -914,9 +914,7 @@ class Extract_UVDrifters(Extractor):
         v_obs = v_obs[mask]
         u_obs_qc = u_obs_qc[mask]
         v_obs_qc = v_obs_qc[mask]
-        #ll_var_ws = False
         if 'EWCT_WS' and 'NSCT_WS' in variables.keys():
-            #ll_var_ws = True
             print('Windage ok')
             u_ws = nc_file['EWCT_WS'].values
             v_ws = nc_file['NSCT_WS'].values

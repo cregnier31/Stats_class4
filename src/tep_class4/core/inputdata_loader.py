@@ -397,7 +397,6 @@ class loaderNCcorio_tac(inputdata_loader):
         if 'LONGITUDE' in variable_names:
             rla_lon = ds['LONGITUDE'].values
             #rla_lon_2 = nc.variables['LONGITUDE'][:]
-            #sum_lon = np.nansum(ds['LONGITUDE'])
         if 'LATITUDE' in variable_names:
             rla_lat =  ds['LATITUDE'].values
             #rla_lat_2 = nc.variables['LATITUDE'][:]
@@ -783,7 +782,6 @@ class LoaderNCcorio(inputdata_loader):
 
         tab_dims = {}
         dimension_names = nc.dimensions.keys()
-        #dimensions_dict = {dim_name: len(dim) for dim_name, dim in nc.dimensions.items()}
 
         for dim_name in dimension_names:
             dimension = nc.dimensions[dim_name]
@@ -849,7 +847,6 @@ class LoaderSyntheticValue(inputdata_loader):
         rla_lon = nc.variables[variable][:]
         variable = 'latitude'
         rla_lat = nc.variables[variable][:]
-        #n_profiles = len(rla_lon[:])
         # Optional Read juld
         # variable='juld'
         # rla_juld= nc.variables[variable][:]
@@ -864,7 +861,6 @@ class LoaderSSSVessel(inputdata_loader):
         rla_lon = nc.variables[variable][:]
         variable = 'LAT'
         rla_lat = nc.variables[variable][:]
-        #n_profiles=len(rla_lon[:])
         rla_value = nc.variables['SSS'][:]
         _FillValue = nc.variables['SSS']._FillValue
         nb_obs = len(rla_lon)
