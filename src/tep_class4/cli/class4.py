@@ -52,7 +52,6 @@ def main(level=2):
     parser.add_argument("--loglevel", type=int, default=2)
     parser.add_argument("--fcst (only forecasts)", action="store_true")
     parser.add_argument("--hdct (only hindcast)", action="store_true")
-    parser.add_argument("--zarr", action="store_true")
     parser.add_argument("--all (hdct fcst and pers)", action="store_true")
     args = parser.parse_args()
 
