@@ -4,7 +4,6 @@ from getopt import getopt
 import configparser as ConfigParser
 import numpy as np
 import netCDF4
-from netCDF4 import Dataset
 import logging
 from tep_class4.core.supobs import toolkitStats 
 from tep_class4.core.param  import Def_param_bulletin as params
@@ -149,7 +148,6 @@ def input_params(arg, log):
                 params_conf['nblevel'] = str(p)
                 print (f'Level :: {p}')
         elif o in ['-l', '--debug']:
-            debug = str(p)
             if p == "0":
                 log.setLevel(20)
             elif p == "1":
@@ -272,11 +270,11 @@ def load_param(db_file):
         'static', 'coordinates_clim')
     try:
         params_conf['coordinates_zgr'] = params_conf['db'].get('static', 'coordinates_zgr')
-    except:
+    except Exception:
         params_conf['coordinates_zgr'] = ""
     try:
         params_conf['coordinates_hgr'] = params_conf['db'].get('static', 'coordinates_hgr')
-    except:
+    except Exception:
         params_conf['coordinates_hgr'] = ""
 
     return params_conf

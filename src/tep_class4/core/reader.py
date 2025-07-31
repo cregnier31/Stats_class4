@@ -2,11 +2,12 @@ import sys
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
-from . import utilities
 import xarray as xr
 import os
+from .Logger import Logger
 import datetime as dt
-from tep_class4.core.utils import echeance
+from glob import glob
+from tep_class4.core.utils import echeance, pull_names
 
 __version__ = 0.1
 __date__ = "February 2019"
@@ -17,7 +18,6 @@ def read_qc_CLASS4(cvar, nc):
     if cvar in ['SST', 'SLA', 'PSAL', 'TEMP']:
         cl_qcvar = 'qc'
     elif cvar ==  'aice':
-        ll_ice = True
         cl_qcvar = 'QC02'
         cl_qcvar2 = 'QC07'
         rla_qc_init2 = nc[cl_qcvar2][:, 0, :].values.ravel()
@@ -27,23 +27,21 @@ def read_qc_CLASS4(cvar, nc):
         liste1 = ['current_test_qc', 'position_qc', 'obs_qc', 'current_test']
         liste2 = ['position_qc', 'observation_qc', 'time_qc','depth_qc' ]
         if len(set(list_var).intersection(liste1)) == 4:
-            ll_currents = True
             cl_qcvar = 'current_test_qc'
             cl_qcvar2 = 'position_qc'
-            cl_qcvar3 = 'obs_qc'
-            cl_qcvar4 = 'current_test'
+            #cl_qcvar3 = 'obs_qc'
+            #cl_qcvar4 = 'current_test'
             rla_qc_init2 = nc[cl_qcvar2][:]
-            rla_qc_init3 = nc[cl_qcvar3][:]
-            rla_qc_init4 = nc[cl_qcvar4][:]
+            #rla_qc_init3 = nc[cl_qcvar3][:]
+            #rla_qc_init4 = nc[cl_qcvar4][:]
         elif len(set(list_var).intersection(liste2)) == 4:
-            ll_currents2 = True
             cl_qcvar = 'position_qc'
             cl_qcvar2 = 'observation_qc'
-            cl_qcvar3 = 'time_qc'
-            cl_qcvar4 = 'depth_qc'
+            #cl_qcvar3 = 'time_qc'
+            #cl_qcvar4 = 'depth_qc'
             rla_qc_init2 = nc[cl_qcvar2][:]
-            rla_qc_init3 = nc[cl_qcvar3][:]
-            rla_qc_init4 = nc[cl_qcvar4][:]
+            #rla_qc_init3 = nc[cl_qcvar3][:]
+            #rla_qc_init4 = nc[cl_qcvar4][:]
     else:
         cl_qcvar = 'qc'
     rla_qc_init = nc[cl_qcvar][:].values
@@ -53,6 +51,29 @@ class GenericReader(object):
 
     def __init__(self, loglevel=2):
         self.log = Logger("Reader").run(loglevel)
+
+class Statics(object):
+
+    """ Class to access static resources """
+
+    def __init__(self, log_level=2):
+        """
+            Constructor to build the shape
+        """
+        # # Logger
+        self.log = Logger("Statics").run(log_level)
+        self.loglevel = log_level
+        self.dir = os.path.dirname(os.path.abspath(__file__))
+        self.palettes_dir = os.path.join(self.dir, 'palettes')
+
+    def get_resource(self, resource_name):
+        return os.path.join(self.dir, resource_name)
+
+    def get_palette(self, palette_name):
+        return os.path.join(self.palettes_dir, palette_name)
+
+    def get_all_palettes(self):
+        return glob(os.path.join(self.palettes_dir, '*.pal'))
 
 class ReadModel(GenericReader):
 
@@ -66,8 +87,8 @@ class ReadModel(GenericReader):
         ALLEGE = read_lightout(lightout_file)
         C.REGNIER 06/2016
         Ajout des lon lat en fonction du type en entree
-        """ 
-        import os, sys, re
+        """
+        import os
         from math import tan, atan, pi
         import numpy as np
         import struct
@@ -80,7 +101,7 @@ class ReadModel(GenericReader):
 
         self.log.debug("Inside lightout file {}".format(lightout_file))
         if not os.path.isfile(str(lightout_file)):
-           liberr.LibPytReadError("No such file or directory {} Please Check the path/name of the file".format(lightout_file))
+           print("No such file or directory {} Please Check the path/name of the file".format(lightout_file))
         try:
             f = open(lightout_file, mode='rb')
             fileContent = f.read()
@@ -123,7 +144,7 @@ class ReadModel(GenericReader):
             self.log.debug("scale :{}".format(scale))
             self.log.debug("auxmid : {}".format(AUXMID))
             ATANMAX = atan((AUXMAX - AUXMID) * scale) / pi
-            ATANMIN = atan((AUXMIN - AUXMID) * scale) / pi
+            atan((AUXMIN - AUXMID) * scale) / pi
             RMAXINT = MAXINT - 1
             self.log.debug("Maxint :{}".format(MAXINT))
             var_ok = np.nan * np.zeros(dimensions)
@@ -209,7 +230,6 @@ def read_stats_class4_timeseries(filename, leadtime,  prod, varname,
     mean_prod = np.where(np.array(metric_name) == 'mean of product')[0][0]
     nb_obs = np.where(np.array(metric_name) == 'number of data values')[0][0]
     cor = np.where(np.array(metric_name) == 'anomaly correlation')[0][0]
-    ini = False
     level_name = list_prof[level]
     print('^^^^^^^^^^^^^^^^^^^^^^')
     print(f'Create dictionnary {varname} {prod} {level_name}')
@@ -286,7 +306,6 @@ def read_stats_class4(filename, level, varname,
     mean_prod = np.where(np.array(metric_name) == 'mean of product')[0][0]
     nb_obs = np.where(np.array(metric_name) == 'number of data values')[0][0]
     cor = np.where(np.array(metric_name) == 'anomaly correlation')[0][0]
-    ini = False
     for nf in list_ech:
         dict[varname][nf] = {}
         dict_tmp[varname][nf] = {}
@@ -349,12 +368,6 @@ def read_mask_polar(params_conf):
     maskvalues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
                   13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 26, 27]
     for area_mask in range(len(params_conf['area_name'])):
-        if area_mask < 16:
-            #print ("Arctic region")
-            rla_mask = rla_mask_arc
-        else:
-            #print ("Antarctic region")
-            rla_mask = rla_mask_ant
         rla_maskvalues.append(maskvalues[area_mask])
     cla_areaname = np.chararray(len(params_conf['area_name']), itemsize=25)
     cla_areaini = np.chararray(len(params_conf['area_name']), itemsize=25)
@@ -370,91 +383,6 @@ def read_mask_polar(params_conf):
 
     return params_conf, rla_mask_arc, rla_mask_ant, rla_maskvalues, rla_lonmask_nan_arc,\
         rla_latmask_arc, rla_lonmask_nan_ant,  rla_latmask_ant
-
-
-def read_mask(params_conf):
-
-    cla_areaname = params.cla_areasattr
-    cla_areaini = params.liste_zone
-    file_areamask = params_conf['db'].get(
-        'NETCDF', 'file_' + params_conf['fmt_mask'])
-    nc = netCDF4.Dataset(file_areamask, 'r')
-    rla_mask = nc.variables['mask'][:]
-    rla_lonmask = nc.variables['longitude'][:]
-    rla_latmask = nc.variables['latitude'][:]
-    rla_lonmask_nan = np.ma.filled(rla_lonmask, np.nan)
-    rla_lonmask_nan_shift = np.where(
-        rla_lonmask_nan < 0, rla_lonmask_nan+360, rla_lonmask_nan)
-    if 'area_names' in nc.variables:
-        rla_name = nc.variables['area_names'][:]
-        area_name = utilities.pull_names(rla_name)
-        cla_area = list(cla_areaini)
-        cla_area = [var.decode("utf-8") for var in cla_area]
-        CMEMS_area = True
-        rla_maskvalues = None
-    else:
-        area_name = [0]
-        fmt_ascii = 0
-        CMEMS_area = False
-        rla_maskvalues = np.unique(rla_mask)
-        rla_maskvalues = np.delete(
-            rla_maskvalues, np.where(rla_maskvalues == 0))
-        rla_maskvalues = np.delete(rla_maskvalues, np.where(
-            np.isnan(rla_maskvalues) == True))
-        cla_area = list(np.arange((len(np.array(rla_maskvalues)))))
-    nc.close()
-    params_conf['CMEMS_area'] = CMEMS_area
-    params_conf['cla_area'] = cla_area
-    params_conf['cla_area_names'] = cla_areaname
-    params_conf['cla_areaini'] = cla_areaini
-    params_conf['area_name'] = area_name
-
-    return params_conf, rla_mask, rla_maskvalues, rla_lonmask_nan, rla_latmask
-
-
-def mask2(params_conf):
-
-    try:
-        prefix = 'product_quality_stats_'
-        rla_lonmask_arc = None
-        rla_lonmask_ant = None
-        rla_latmask_arc = None
-        rla_latmask_ant = None
-        rla_latmask = None
-        rla_lonmask = None
-        rla_mask = None
-        rla_mask_arc = None
-        rla_mask_ant = None
-        if params_conf['fmt_mask'] == 'basin_pol':
-            dirout = params_conf['dirNCout']
-            prefix = 'product_quality_stats_polar_'
-            params_conf, rla_mask_arc, rla_mask_ant, rla_maskvalues, \
-                rla_lonmask_arc, rla_latmask_arc, rla_lonmask_ant,\
-                rla_latmask_ant = read_mask_polar(params_conf)
-        else:
-            params_conf, rla_mask, rla_maskvalues,\
-                rla_lonmask, rla_latmask = read_mask(params_conf)
-            if params_conf['fmt_mask'] == 'basin':
-                dirout = params_conf['dirNCout']
-            elif params_conf['fmt_mask'] == 'bins2d_arc':
-                prefix = 'bins2d_product_quality_stats_NH_polar_' + \
-                    params_conf['fmt_mask']
-                dirout = params_conf['dirBOXout']
-            elif params_conf['fmt_mask'] == 'bins2d_ant':
-                prefix = 'bins2d_product_quality_stats_SH_polar_' + \
-                    params_conf['fmt_mask']
-                dirout = params_conf['dirBOXout']
-            else:
-                dirout = params_conf['dirBOXout']
-    except:
-        print("Error input grid not find:", sys.exc_info()[0])
-        raise
-    params_conf['dirout'] = dirout
-    params_conf['prefix_fileout'] = prefix
-
-    return params_conf, rla_mask, rla_maskvalues, rla_mask_arc, rla_mask_ant, rla_lonmask,\
-        rla_latmask, rla_lonmask_arc, rla_latmask_arc, rla_lonmask_ant, rla_latmask_ant
-
 
 def mask(fmt_mask, basin_mask, box_mask, bins025d_mask, bins05d_mask, bins1d_mask,
          bins2d_mask, bins4d_mask, dirNCout, dirBOXout):
@@ -501,8 +429,8 @@ def read_pos(filename, log):
         rla_lon = nc.variables[variable][:,:]
         variable = 'nav_lat'
         rla_lat = nc.variables[variable][:,:]
-    except:
-        log.info ('pb lecture coordinates')
+    except Exception as e:
+        log.info(f'pb lecture coordinates {e}')
 
     return rla_lon,rla_lat
 
@@ -544,13 +472,16 @@ def read_drifter(file):
         u_qc = ncdata['EWCT_QC'].values
         v_qc = ncdata['NSCT_QC'].values
     else:
-        u = None ; v = None
-        u_qc = None ; v_qc = None
+        u = None
+        v = None
+        u_qc = None
+        v_qc = None
     if 'WSTN_MODEL' and 'WSTE_MODEL' in variables.keys():
         wind_v = ncdata['WSTN_MODEL'].values
         wind_u = ncdata['WSTE_MODEL'].values
     else:
-        wind_u = None ; wind_v = None
+        wind_u = None
+        wind_v = None
     if 'DEPH' in variables.keys():
         depth = ncdata['DEPH'].values
         depth_qc = ncdata['DEPH_QC'].values
@@ -570,7 +501,8 @@ def read_drifter(file):
         else:
             current_test_qc = ""
     else:
-        current_test = None ; current_test_qc = None
+        current_test = None
+        current_test_qc = None
     if 'POSITION_QC' in variables.keys():
         position_qc =  ncdata['POSITION_QC'].values
     else:
@@ -639,8 +571,10 @@ def read_drifter_filt(file):
     else:
         print ('Missing observations')
         sys.exit(1)
-        u_filtr = None ; v_filtr = None
-        u_filtr_qc = None ; v_filtr_qc = None
+        u_filtr = None 
+        v_filtr = None
+        u_filtr_qc = None
+        v_filtr_qc = None
     return lon, lat, depth, depth_qc, time, u, v, u_filtr, v_filtr, ll_var,\
             u_qc, v_qc, u_filtr_qc, v_filtr_qc, wind_u, wind_v, current_test, current_test_qc,\
             position_qc, time_qc, dc_reference
@@ -688,7 +622,8 @@ def read_moor(file, varname, log):
 def read_depth(filename):
     nc = netCDF4.Dataset(filename,'r')
     multidim = True
-    if 'deptht' in nc.variables.keys(): rla_depth = nc.variables['deptht'][:]
+    if 'deptht' in nc.variables.keys():
+        rla_depth = nc.variables['deptht'][:]
     else:
         rla_depth = [0]
         multidim = False
@@ -700,7 +635,6 @@ def read_GODAE_profile(varname, filename):
        Read GODAE profile
     '''
     ncdata = xr.open_dataset(filename)
-    variables = ncdata.data_vars
     depth = ncdata['depth'].values
     if varname == 'votemper':
         index = 0

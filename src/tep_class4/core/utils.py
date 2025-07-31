@@ -3,18 +3,19 @@ import numpy as np
 import sys
 import pandas as pd
 import datetime as dt
-import os, sys
+import os
 import getopt
-import shlex,subprocess
+import shlex
+import subprocess
 import xarray as xr
 from datetime import datetime
 import traceback
-import logging
 from .loader_post import load_db
-from datetime import datetime, timedelta
+from datetime import timedelta
 import yaml
+import netCDF4
 from dateutil.relativedelta import relativedelta
-from datetime import datetime, timedelta
+from typing import List
 
 __version__ = 0.2
 __date__ = "Octobre 2021"
@@ -73,9 +74,9 @@ def save_all_metrics(file_list, list_date, fileout):
     # Convert to datetime64
     time_counter = pd.to_datetime(list_date, format="%Y%m%d")
     # Convert to Julian days since 1950-01-01
-    dates_dt = pd.to_datetime(list_date, format="%Y%m%d")
-    ref_date = pd.Timestamp("1950-01-01")
-    julian_days = (dates_dt - ref_date).days
+    #dates_dt = pd.to_datetime(list_date, format="%Y%m%d")
+    #ref_date = pd.Timestamp("1950-01-01")
+    #julian_days = (dates_dt - ref_date).days
     # Open and concatenate
     ds = xr.open_mfdataset(file_list,
                            concat_dim="time",
@@ -210,7 +211,7 @@ def loader(options):
         #    usage7()
 
     except getopt.GetoptError as err:
-        raise (f'Error {err} Missing options {keywords}')
+        raise (f'Error {err} Missing options {list_options}')
 
     tab_conf['pbsworkdir'] = os.path.dirname(os.path.realpath(__file__))
     _DBFILE_ = f"{tab_conf['pbsworkdir']}/../cfg/global_params.cfg"
@@ -229,10 +230,12 @@ def generic_test(list_var,var,type_param):
        Generic test for values
     """
     if type_param == 'day1' or type_param == 'day2':
-        if not var: sys.exit(f'{type_param} is missing need {list_var}')
+        if not var:
+            sys.exit(f'{type_param} is missing need {list_var}')
         isValiDate(var, type_param)
     else:
-        if not var or var not in list_var: sys.exit(f'{type_param} is missing need {list_var}')
+        if not var or var not in list_var:
+            sys.exit(f'{type_param} is missing need {list_var}')
 
 
 def convdatetime(var):
@@ -244,7 +247,7 @@ def convdatetime(var):
         month = var[4:6]
         day = var[6:8]
         datetime_val = datetime(int(year), int(month), int(day))
-    except Exception as e:
+    except Exception:
         raise ValueError(f"Var {var} not a valid date for datetime , error {traceback.format_exc()}")
     return datetime_val
 
@@ -252,7 +255,8 @@ def test_days(day1, day2):
     """
         Test if a date2 > date 1
     """
-    if convdatetime(day2) < convdatetime(day1): sys.exit(f"{day2} must be > at {day1}")
+    if convdatetime(day2) < convdatetime(day1):
+        sys.exit(f"{day2} must be > at {day1}")
 
 def isValiDate(var, type_param):
     """
@@ -261,6 +265,8 @@ def isValiDate(var, type_param):
     isValiDate = True
     try:
         datevalue = convdatetime(var)
+        print(f'Date in valide {datevalue}')
+        isValiDate = True
     except ValueError:
         isValiDate = False
         sys.exit(f"Value {var} for {type_param} not a valid date")
@@ -292,15 +298,14 @@ def create_launcher_multi(tab_conf, nbtasks='30', timecounter='06:00:00', batch=
     ## Create qsub job
     if tab_conf['fmt_mask'] == 'basin':
         typejob = 'timeserie'
-    elif tab_conf['bilan'] != None:
+    elif tab_conf['bilan'] is not None:
         typejob = 'bilan'
-    elif tab_conf['percent'] != None:
+    elif tab_conf['percent'] is not None:
         typejob = 'percent'
     else:
         typejob = 'others'
     _DBFILE_ = f"{tab_conf['pbsworkdir']}/../cfg/environment_{tab_conf['config']}.cfg"
     EXE = os.path.join(tab_conf['pbsworkdir'],'../exe_compute_stats_CMEMS_areas_multiprocess.py')
-    dir_bin  = tab_conf['dir_bin']
     day1  = tab_conf['day1']
     day2  = tab_conf['day2']
     datatype = tab_conf['typemod']
@@ -347,9 +352,10 @@ def launch_sbatch(Jobfile):
     SUBEXE="/usr/bin/sbatch"
     code_launch=f'{SUBEXE} {Jobfile}'
     args   = shlex.split(code_launch)
-    try :   subprocess.run(args)
-    except :
-        print (f'Launch {Jobfile} failed')
+    try :
+        subprocess.run(args)
+    except Exception as e :
+        print (f'Launch {Jobfile} failed  {e}') 
         sys.exit(1)
 
 def usage1():
@@ -496,44 +502,6 @@ def echeance(fcst, nf):
         name_ech = 'Forecast '+str(nf)+' hours'
     return num_ech, name_ech
 
-
-def plot(iobs, rla_lonobs, rla_latobs, region, log):
-    """
-        Function to plot selected data
-    """
-    log.info("Plot region %s " %(region))
-    area_names_arc = ['North Pole', 'Queen Elis Is', 'Beaufort Sea', 'Chuckchi Sea',
-                      'Siberian Sea', 'Laptev Sea', 'Kara Sea', 'Barents Sea', 'Greenland Sea', 'Stheast Greenland', 'Bafin Bay',
-                                                          'Hudson Bay', 'Labrador Sea', 'Bering Sea', 'Okhotsk Sea', ' Baltic Sea']
-    area_names_ant = ['Weddel Sea', 'Southern Atlantic Ocean', 'Southern Indian Ocean', 'Southern West Pacific Ocean',
-                      'Southern East Pacific Ocean', 'Ross Sea', 'Admundsen Sea', 'Bellingshausen Sea']
-
-    rla_lonobs =  np.where(rla_lonobs>180,rla_lonobs-360,rla_lonobs)
-    value = rla_lonobs[:].copy()
-    value[:] = 1.0
-    lon_inter = 20
-    lat_inter = 20
-    zone = "GLO"
-    proj = "cyl_pac"
-    if region in area_names_arc:
-        proj = "npstere"
-        zone = "Arctic2"
-    if region in area_names_ant:
-        zone = "Antarctic"
-        proj = "spstere"
-    #colormap = plt.cm.coolwarm
-    #titre = 'Points in '+region+" with matplotlib meth"
-    #outputfile = "Selected_points_"+region+".png"
-    #colormap = plt.cm.coolwarm
-    #cmin = 0
-    #cmax = 1
-    #dpi = 75
-    #font = 16
-    #dot_size = 2.0
-    #log.info("Plot Map")
-    #Plot_map(rla_lonobs[iobs].tolist(), rla_latobs[iobs].tolist(), zone, lon_inter, lat_inter, proj,\
-    #        dpi, font).scatter_val(value[iobs].tolist(), colormap, cmin, cmax, dot_size, titre, outputfile)
-
 def compute_last_day_month(y,m):
     return (dt.date(y+int(m/12),m%12+1,1)-dt.date(y,m,1)).days
 
@@ -541,7 +509,6 @@ def find_index_month(date):
     dateval = pd.to_datetime(date)
     index = dateval.month
     return index
-from datetime import datetime, timedelta
 
 def generate_dateslist(daterun: str, start_date: str = "20250101") -> list:
     """
@@ -566,8 +533,6 @@ def generate_dateslist(daterun: str, start_date: str = "20250101") -> list:
     delta = date_end - date_start
     return [date_start + timedelta(days=i) for i in range(delta.days + 1)]
 
-from datetime import datetime, timedelta
-from typing import List
 
 def generate_nbdateslist(daterun: str, nb_dates: int, direction: str = "forward") -> List[str]:
     """
@@ -713,7 +678,7 @@ def process_netCDF_stats(system, fileName, config_file, resol):
     depths = nc_file2.variables['depths'][:]
     forecasts = nc_file2.variables['forecasts'][:]
     list_variables = filter(lambda x: x.startswith("stats"), nc_file2.variables.keys())
-    list_skill = filter(lambda x: x.startswith("skill"), nc_file2.variables.keys())
+    #list_skill = filter(lambda x: x.startswith("skill"), nc_file2.variables.keys())
     list_stats = nc_file2.variables['metric_names'][:]
     area_names = pull_names(list_stats)
     #key_value_pairs = [(key, list_forecasts[key]) for key in list_forecasts if list_forecasts[key] in forecasts]
@@ -740,7 +705,6 @@ def process_netCDF_stats(system, fileName, config_file, resol):
             nb_depths = 1
 
         for prof in range(nb_depths):
-            profvalue = str(depths[prof])
             if nb_depths > 1 :
                 if prof >  0:
                     bprofvalue = f'{int(depths[prof-1])}-{int(depths[prof])}m'
@@ -768,12 +732,12 @@ def process_netCDF_stats(system, fileName, config_file, resol):
                         anomaly_corr = stat_data
                     elif stat_name.startswith("mean squared reference"):
                         MS_obs = stat_data
-                    elif stat_name.startswith("variance of reference"):
-                        VAR_obs = stat_data
+                    #elif stat_name.startswith("variance of reference"):
+                    #    VAR_obs = stat_data
                     elif stat_name.startswith("mean absolute error"):
                         MAE = stat_data
-                    elif stat_name.startswith("scatter index"):
-                        Scatter_index = stat_data
+                    #elif stat_name.startswith("scatter index"):
+                    #    Scatter_index = stat_data
                     elif stat_name.startswith("explained variance"):
                         VE = stat_data
                 forecast_results = {

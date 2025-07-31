@@ -1,4 +1,3 @@
-import sys
 import os
 import re
 import glob
@@ -132,7 +131,6 @@ class Sorter():
                                 0].split('R')[1]
                             # log.info("Date du run pour le  forecast : %s " % RUNDATET0)
                             RUNDATET0 = sy(RUNDATET0)
-                            JRUNDATET1 = RUNDATET0.goforward(7)
                             JF3DATET0 = RUNDATET0.goforward(3)
                             nametypef3d = config+sy.__str__(JF3DATET0)
                             for fic2 in glob.glob(dirmodel+nametypef3d+"*"+gridtemp+"*.nc"):
@@ -156,7 +154,6 @@ class Sorter():
                                 0].split('R')[1]
                             # log.info("Date du run pour le  forecast : %s " % RUNDATET0)
                             RUNDATET0 = sy(RUNDATET0)
-                            JRUNDATET1 = RUNDATET0.goforward(7)
                             JF6DATET0 = RUNDATET0.goforward(6)
                             nametypef6d = config+sy.__str__(JF6DATET0)
                             for fic2 in glob.glob(dirmodel+nametypef6d+"*"+gridtemp+"*.nc"):
@@ -201,8 +198,6 @@ class Sorter():
         lead_time = param_dict['lead_time']
         lead_val = param_dict['lead_int'],
         config = param_dict['file_template']
-        gridtemp = param_dict['gridtemp']
-        gridsal = param_dict['gridsal']
         dirmodel = param_dict['dirmodel']
         dirsort = param_dict['sort_rep']
         print (lead_time, lead_val, date1, date2, config, dirmodel, dirsort)

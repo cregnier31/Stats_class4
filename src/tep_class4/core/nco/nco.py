@@ -113,10 +113,10 @@ class Nco(object):
                     cmd.extend(options)
 
             if debug:
-                if type(debug) == bool:
+                if isinstance(debug, bool):
                     # assume debug level is 3
                     cmd.append('--dbg_lvl=3')
-                elif type(debug) == int:
+                elif isinstance(debug, int):
                     cmd.append('--dbg_lvl={0}'.format(debug))
                 else:
                     raise TypeError('Unknown type for debug: \
@@ -134,7 +134,7 @@ class Nco(object):
             #2b. all other keyword args become options
             if kwargs:
                 for key, val in list(kwargs.items()):
-                    if val and type(val) == bool:
+                    if val and isinstance(val, bool):
                         cmd.append("--{0}".format(key))
                     elif isinstance(val, str) or \
                             isinstance(val, int) or \
@@ -147,7 +147,7 @@ class Nco(object):
             #2c. Global options come in
             if self.options:
                 for key, val in list(self.options.items()):
-                    if val and type(val) == bool:
+                    if val and isinstance(val, bool):
                         cmd.append("--"+key)
                     elif isinstance(val, str):
                         cmd.append("--{0}={1}".format(key, val))
@@ -238,7 +238,7 @@ class Nco(object):
             try:
                 import scipy.io.netcdf as cdf
                 self.cdf = cdf
-            except:
+            except Exception:
                 print("Could not load scipy.io.netcdf - try to load nercdf4")
                 self.cdfMod = "netcdf4"
 
@@ -246,7 +246,7 @@ class Nco(object):
             try:
                 import netCDF4 as cdf
                 self.cdf = cdf
-            except:
+            except Exception:
                 raise ImportError("scipy or python-netcdf4 module is required \
                                   to return numpy arrays.")
 
@@ -355,7 +355,7 @@ class Nco(object):
         # load numpy if available
         try:
             import numpy as np
-        except:
+        except Exception:
             raise ImportError("numpy is required to return masked arrays.")
 
         if hasattr(fileObj.variables[varname], '_FillValue'):

@@ -1,8 +1,5 @@
-import yaml
 from glob import glob
 from .sydate import SyDate
-import os
-import sys
 
 class FileHandler:
     def __init__(self, config,
@@ -38,11 +35,11 @@ class FileHandler:
         all_files = []
         # Iterate over gridtypes and apply the date format logic
         for i, gridname in enumerate(gridname_list):
-            self.log.debug(f'{gridname=}')
-            self.log.debug(f'{self.dirmodel=}')
-            self.log.debug(f'{self.modele=}')
-            self.log.debug(f'{self.daily_pref=}')
-            self.log.debug(f'{self.directory=}')
+            self.log.debug(gridname)
+            self.log.debug(self.dirmodel)
+            self.log.debug(self.modele)
+            self.log.debug(self.daily_pref)
+            self.log.debug(self.directory)
             # Iterate over different date formats and try to find matching files
             for dateval_formatted in date_formats:
                 formatted_pattern = pattern.format(
@@ -70,7 +67,6 @@ class FileHandler:
         # Set directory type for non-clim cases
         self.directory_path = "clim"
         datev = SyDate(str(self.dateval))
-        year = str(datev.year)
         month = str(datev.month)
         day = str(datev.day)
         if datev.month < 10:
@@ -81,7 +77,7 @@ class FileHandler:
             self.directory_path = "non_clim"
         # Get the specific directory configuration
         type_run_config = config_section.get(self.directory_path, config_section.get('type_run', {}))
-        directory_config = config_section.get(self.directory_path, [])
+        #directory_config = config_section.get(self.directory_path, [])
         # Prepare the list of files based on the configuration
         list_file = []
         if self.directory == "clim":

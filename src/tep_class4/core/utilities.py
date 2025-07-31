@@ -1,9 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import os, sys, re
+import os
+import sys
+import json
+from geojson import MultiPoint
 from glob import glob 
 import xarray as xr
-
+import pandas as pd
+import datetime as dt
 
 if sys.version_info[0] >= 3:
     import configparser as ConfigParser
@@ -124,6 +128,6 @@ def readDataSet(list_f, data_vars="all"):
         mfdataset = xr.concat(datasets, dim='time_counter', data_vars=data_vars)
         time = mfdataset.variables['time_counter'][:].values
     except Exception as exs:
-        log.error('Executation mfdataset failed: %s', exs)
+        print('Executation mfdataset failed: %s', exs)
         raise
     return mfdataset, time

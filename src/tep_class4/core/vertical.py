@@ -10,7 +10,6 @@ does not preserve or indeed handle masked arrays elegantly.
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
 from window import Window, EmptyWindow
-import sys
 
 class Vertical2DInterpolator(object):
     """Vertical section interpolator

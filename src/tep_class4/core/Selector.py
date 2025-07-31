@@ -1,15 +1,13 @@
 from __future__ import generators
-import os, sys, string, shutil, re
-from glob import glob
+import os
+import sys
+import re
 import numpy as np
-import json
 from .Loader import Loader
 from .nco.nco import Nco
 from .QCcontrol import QCcontroller
 import logging
 import shelve
-from .Writer import Writer
-import itertools
 from .Extractor import Extractor
 from .sydate import SyDate
 from collections import OrderedDict
@@ -58,8 +56,6 @@ class Selector(object):
 
         """ Get the template for new model inputs  """
 
-        jdatemin = SyDate(dateval)
-        type_run = param_dict['type_run']
 
 
     def find_next_month_year(self, dateval):
@@ -218,9 +214,8 @@ class SelectListModelData(Selector):
         #lead_new = param_dict['lead_int']
         lead_new2 = param_dict['lead_int2']
         cl_config_use = param_dict['cl_config']
-        ll_single = False
         self.log.debug(f"Time {time=}")
-        self.log.debug(f"-----------------------")
+        self.log.debug("-----------------------")
         if  time == 'forecast':
             lead_new = [time[0]+time[4]+time[6:8]+element for element in lead_new ]
             lead_fin = lead_new
@@ -253,7 +248,6 @@ class SelectListModelData(Selector):
             cl_config_use = re.sub('Q', '', param_dict['cl_config'])
             lead_fin = ['hdct_all']
             self.log.debug('Lead fin %s ' % (lead_fin))
-            ll_single = True
         elif time == 'best_weekly':
             lead_fin = ['hdct', 'nwct']
         elif time == 'rtr':
@@ -264,9 +258,6 @@ class SelectListModelData(Selector):
             lead_fin = ['bathy']
         elif time == 'clim_lev13_A5B2':
             lead_fin = ['clim']
-            type_clim = "WOA13_A5B2"
-            dirclim = param_dict.get('climato','DIRLEV')
-            type_clim = "WOA13_A5B2"
         elif time == 'smoc':
             lead_fin = ['smoc']
         elif time == 'smoc_fcst':
@@ -419,34 +410,28 @@ class SelectListModelData(Selector):
         self.data_type = param_dict['data_type']
         self.type_run = param_dict['type_run']
         self.log.debug(f'Data type {self.data_type}')
-        MONTH = str(dateval)[4:6]
-        YEAR = dateval[:4]
-        DAY = dateval[6:]
+        #MONTH = str(dateval)[4:6]
+        #YEAR = dateval[:4]
+        #DAY = dateval[6:]
         # Format the date with dashes
-        dateval_formatted = f'{YEAR}-{MONTH}-{DAY}'
+        #dateval_formatted = f'{YEAR}-{MONTH}-{DAY}'
         self.log.debug(f"Grid type {param_dict['gridtype']} {self.dirmodel=}")
         # loop on lead time
-        new_naming = False
-        if  param_dict['naming'] == 'new':
-            new_naming = True
+        #new_naming = False
+        #if  param_dict['naming'] == 'new':
+        #    new_naming = True
         #for time in param_dict['lead_time']:
-        list_tmp = []
         self.log.debug(f'Lead Time {leadtime}')
         #lead_new = param_dict['lead_int']
         #lead_new2 = param_dict['lead_int2']
-        cl_config_use = param_dict['cl_config']
-        config = param_dict['cl_conf']
-        ll_single = False
+        #cl_config_use = param_dict['cl_config']
+        #config = param_dict['cl_conf']
         param_dict = self.set_leadtime(leadtime, param_dict, lead_int)
         ## Find and Load the good file
-        ind = 0
         ll_miss = False
         for directory in self.leadtime:
             self.log.debug("directory {}".format(directory))
             ll_miss_rep = False
-            datev = SyDate(str(dateval))
-            year = str(datev.year)
-            month_up = datev.month + 1
             # Access mapping from YAML
             dirmodel_new, dirmodel_new_next = self.get_directory(directory, dateval, param_dict)
             self.log.debug(f"Get directory {dirmodel_new} {dirmodel_new_next}")
@@ -472,7 +457,8 @@ class SelectListModelData(Selector):
                 continue
                 #sys.exit(1)
             self.log.debug('dirmodel  %s ' % (self.dirmodel))
-            if not ll_miss_rep : self.log.debug('directory and file  %s %s ' % (directory, list_file[0]))
+            if not ll_miss_rep :
+                self.log.debug('directory and file  %s %s ' % (directory, list_file[0]))
             list[directory] = list_file
         if not list:
             self.log.error("No repertories")
@@ -558,7 +544,7 @@ class Select(Selector):
         # Add position values in the serialized dictionnary
         try:
             ll_exist = shelf[type_f]
-        except:
+        except Exception:
             log.debug("Create %s" %(type_f))
             shelf[type_f] = tab_pos
             ll_exist = []
@@ -569,7 +555,7 @@ class Select(Selector):
                 log.debug("concatenation")
                 tab_fin = np.concatenate((tab_fin,tab_pos))
                 shelf[type_f] = tab_fin
-            except:
+            except Exception:
                 print("Pb with concatenation store_pos")
                 sys.exit(1)
         shelf.close()
@@ -617,11 +603,9 @@ class SelectCorio(Selector):
         #  Index of valid profiles
         index= [i for i,x in enumerate(QCflag) if x == "1"]
         log.info('Profiles Totaux : %i / Valides : %i ' % (len(QCflag),len(index)))
-        nb_prof_clean=len(index)
         ## Loop on valid profil to find if it
         il_ind=0
         il_ind2=0
-        list_file=[]
         list_index=[]
         tab_new=np.ndarray(shape=(1,2),dtype=float, order='F')
         # init
@@ -719,7 +703,7 @@ class SelectCorio(Selector):
         # Add position values in the serialized dictionnary
         try :
             ll_exist = shelf[type_f]
-        except :
+        except Exception:
             log.debug("Create %s" %(type_f))
             shelf[type_f] = tab_pos
             ll_exist=[]
@@ -730,7 +714,7 @@ class SelectCorio(Selector):
                 log.debug("concatenation")
                 tab_fin=np.concatenate((tab_fin,tab_pos))
                 shelf[type_f] = tab_fin
-            except:
+            except Exception:
                 print("Pb with concatenation store_pos")
                 sys.exit(1)
         ## Create global position
@@ -747,7 +731,7 @@ class SelectCorio(Selector):
                 il_val=il_val+1
         try :
             ll_GLO = shelf[type_var]
-        except :
+        except Exception:
             shelf[type_var] = tab_pos_new
             ll_GLO=[]
         if len(ll_GLO) > 0 :
@@ -755,7 +739,7 @@ class SelectCorio(Selector):
                 tab_fin=shelf[type_var]
                 tab_fin=np.concatenate((tab_fin,tab_pos_new))
                 shelf[type_var] = tab_fin
-            except :
+            except Exception:
                 print("Pb with concatenation in GLO")
                 sys.exit(1)
         shelf.close()
@@ -776,7 +760,7 @@ class SelectCorio(Selector):
         # Add position values in the serialized dictionnary
         try:
             ll_exist = shelf[type_f]
-        except:
+        except Exception:
             shelf[type_f] = tab_pos
             ll_exist=[]
         if len(ll_exist) > 0 :
@@ -811,7 +795,7 @@ class SelectCorio(Selector):
                     shelf[type_f] = new_position
                 else :
                     log.debug('Bad profiles')
-            except:
+            except Exception:
                 print("Pb with concatenation single")
                 sys.exit(1)
         shelf.close()

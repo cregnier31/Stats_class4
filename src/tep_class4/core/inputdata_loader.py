@@ -2,32 +2,13 @@ from __future__ import generators
 import os
 import fcntl
 import sys
-import string
-import shutil
-from glob import glob
-import re
 import numpy as np
 import netCDF4
-import json
-if sys.version_info[0] >= 3:
-    import configparser as ConfigParser
-else:
-    import ConfigParser
-import operator
-import getopt
-import datetime as dt
-import errno
-import pandas as pd
-from datetime import date
-from .Logger import Logger
-from calendar import monthrange
-from tep_class4.core.utils import date_range
-from .sydate import SyDate
-from .reader import *
-from ast import literal_eval
-from os.path import dirname
+from .reader import read_drifter_filt, read_drifter
 from .QCcontrol import QCcontroller
-import seawater as sw
+from . import seawater as sw
+from .Selector import Selector
+import xarray as xr
 
 ##############################################################
 # C.REGNIER Juin 2014
@@ -48,32 +29,53 @@ class inputdata_loader(object):
             Factory for different type of loaders
         """
         # return eval(type + "()")
-        if type == "NC_CORIO": return LoaderNCcorio()
-        if type == "NC_CORIO_TAC": return loaderNCcorio_tac(self.log)
-        if type == "NC_CHLORO": return LoaderNCChloro(self.log)
-        if type == "NC_BIOARGO": return LoaderNCBioArgo()
-        if type == "NC_CLIM": return LoaderNCClim()
-        if type == "NC_INSCLIM": return LoaderInsituClim()
-        if type == "NC_GODAE": return LoaderNCgodae()
-        if type == "Microwat": return LoaderSyntheticValue()
-        if type == "SSS_ship": return LoaderSSSVessel()
-        if type == "ASCII": return AsciiLoader()
-        if type == "LIST": return ListWriter()
-        if type == "DAT": return ColocLoader()
-        if type == "INPUT": return InputLoader()
-        if type == "INPUT_DATA": return InputDataLoader(self.log)
-        if type == "PGN_coords": return PGN_coords_Loader(self.log)
-        if type == "PGS_coords": return PGS_coords_Loader(self.log)
-        if type == "PGN_coords_clim": return PGN_coords_clim_Loader(self.log)
-        if type == "SMOC_coords": return SMOC_coords_Loader(self.log)
-        if type == "DRIFTER_CMEMS": return LoaderCMEMSDrifter(self.log)
-        if type == "DRIFTER_CMEMS_filtr": return LoaderCMEMSDrifter_filtr(self.log)
-        if type == "alleges_coords": return alleges_coords()
-        if type == "bathymetrie": return bathy_coords(self.log)
-        if type == "Legos_SIT": return read_Legos_SIT()
-        if type == "2ease_coords": return ease_coords_Loader()
-        if type == "L3_SEALEVEL": return L3_SEALEVEL_Loader()
-        assert 0, f"Format not known {type}"
+        if type == "NC_CORIO":
+            return LoaderNCcorio()
+        if type == "NC_CORIO_TAC":
+            return loaderNCcorio_tac(self.log)
+        if type == "NC_CHLORO":
+            return LoaderNCChloro(self.log)
+        if type == "NC_BIOARGO":
+            return LoaderNCBioArgo()
+        if type == "NC_CLIM":
+            return LoaderNCClim()
+        if type == "NC_INSCLIM":
+            return LoaderInsituClim()
+        if type == "NC_GODAE":
+            return LoaderNCgodae()
+        if type == "Microwat":
+            return LoaderSyntheticValue()
+        if type == "SSS_ship":
+            return LoaderSSSVessel()
+        if type == "ASCII":
+            return AsciiLoader()
+        if type == "DAT":
+            return ColocLoader()
+        if type == "INPUT_DATA":
+            return InputDataLoader(self.log)
+        if type == "PGN_coords":
+            return PGN_coords_Loader(self.log)
+        if type == "PGS_coords":
+            return PGS_coords_Loader(self.log)
+        if type == "PGN_coords_clim":
+            return PGN_coords_clim_Loader(self.log)
+        if type == "SMOC_coords":
+            return SMOC_coords_Loader(self.log)
+        if type == "DRIFTER_CMEMS":
+            return LoaderCMEMSDrifter(self.log)
+        if type == "DRIFTER_CMEMS_filtr":
+            return LoaderCMEMSDrifter_filtr(self.log)
+        if type == "alleges_coords":
+            return alleges_coords()
+        if type == "bathymetrie":
+            return bathy_coords(self.log)
+        if type == "Legos_SIT":
+            return read_Legos_SIT()
+        if type == "2ease_coords":
+            return ease_coords_Loader()
+        if type == "L3_SEALEVEL":
+            return L3_SEALEVEL_Loader()
+        assert 0, "Format not known: " + type
 
     def generic_read_pos_and_value(self,filename, varname):
         rla_lon, rla_lat, nc = self.generic_read_pos(filename)
@@ -87,22 +89,30 @@ class inputdata_loader(object):
         nc = netCDF4.Dataset(filename, 'r')
         ll_ravel = False
         if 'longitude' in nc.variables:
-            var_lon = 'longitude' ; var_lat = 'latitude'
-        elif 'lon' in nc.variables and not 'lon_20hz' in nc.variables and not 'lon_20_ku' in nc.variables:
-            var_lon = 'lon' ; var_lat = 'lat'
+            var_lon = 'longitude' 
+            var_lat = 'latitude'
+        elif 'lon' in nc.variables and 'lon_20hz' not in nc.variables and 'lon_20_ku' not in nc.variables:
+            var_lon = 'lon'
+            var_lat = 'lat'
         elif 'LON' in nc.variables:
-            var_lon = 'LON' ; var_lat = 'LAT'
+            var_lon = 'LON'
+            var_lat = 'LAT'
         elif 'Lon' in nc.variables:
-            var_lon = 'Lon' ; var_lat = 'Lat'
+            var_lon = 'Lon'
+            var_lat = 'Lat'
         elif 'LONGITUDE' in nc.variables:
-            var_lon = 'LONGITUDE' ; var_lat = 'LATITUDE'
+            var_lon = 'LONGITUDE'
+            var_lat = 'LATITUDE'
         elif 'Longitude' in nc.variables:
-            var_lon = 'Longitude' ; var_lat = 'Latitude'
+            var_lon = 'Longitude'
+            var_lat = 'Latitude'
         elif 'lon_20hz' in nc.variables:
-            var_lon = 'lon_20hz' ; var_lat = 'lat_20hz'
+            var_lon = 'lon_20hz'
+            var_lat = 'lat_20hz'
             ll_ravel = True
         elif 'lon_20_ku' in nc.variables:
-            var_lon = 'lon_20_ku' ; var_lat = 'lat_20_ku'
+            var_lon = 'lon_20_ku'
+            var_lat = 'lat_20_ku'
             ll_ravel = True
         if ll_ravel:
             rla_lon = np.ravel(nc.variables[var_lon][:,:])
@@ -142,7 +152,7 @@ class InputDataLoader(inputdata_loader):
                     os.remove(fichier)
                     log.info('No position find in %s for the zoom ' %
                              (fichier))
-                    ll_file_interp = False
+                    ll_interp = False
         else:
             # Case Global without qc
             log.info("GLOBAL MODE => SELECT ALL ")
@@ -214,7 +224,7 @@ class LoaderNCChloro(inputdata_loader):
         nc.close()
         param_dict['Design_GODAE_file'] = False
         param_dict['varname_select'] = ['chl']
-        self.log.debug(f"Read CHL ok")
+        self.log.debug("Read CHL ok")
         return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, tab_dims, param_dict, _FillValue
 
 class LoaderNCBioArgo(inputdata_loader):
@@ -250,7 +260,7 @@ class LoaderInsituClim(inputdata_loader):
         self.varname = 'Temperature'
 
     def read_pos_and_value(self,filename):
-        rla_lon, rla_lat, nb_obs, _FillValue = \
+        rla_lon, rla_lat, nb_obs, _FillValue, nc = \
         self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][0, :, :]
         nb_obs = int(np.shape(rla_value.flatten())[0])
@@ -268,7 +278,7 @@ class LoaderNCClim(inputdata_loader):
 
     def read_pos_and_value(self,filename, param_dict):
 
-        rla_lon, rla_lat, nb_obs, _FillValue = \
+        rla_lon, rla_lat, nb_obs, _FillValue, nc = \
          self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][0, :, :]
         nb_obs = int(np.shape(rla_value.flatten())[0])
@@ -364,10 +374,10 @@ class loaderNCcorio_tac(inputdata_loader):
         if 'TMLEV_ADJUSTED' in variable_names:
             clim_temp_adj = ds['TMLEV_ADJUSTED'].values
             ll_clim_temp_adjust = True
-        if 'POSITION_QC' in variable_names:
-            position_qc = ds['POSITION_QC'].values
-        if 'JULD_QC' in variable_names:
-            juld_qc = ds['JULD_QC'].values
+        #if 'POSITION_QC' in variable_names:
+        #    position_qc = ds['POSITION_QC'].values
+        #if 'JULD_QC' in variable_names:
+        #    juld_qc = ds['JULD_QC'].values
         if 'TEMP_QC' in variable_names:
             temp_qc = ds['TEMP_QC'].values
         if 'TEMP_ADJUSTED_QC' in variable_names:
@@ -376,18 +386,18 @@ class loaderNCcorio_tac(inputdata_loader):
             psal_qc = ds['PSAL_QC'].values
         if 'PSAL_ADJUSTED_QC' in variable_names:
             psal_adjusted_qc = ds['PSAL_ADJUSTED_QC'].values
-        if 'PRES_ADJUSTED_QC' in variable_names:
-            pres_adjusted_qc =  ds['PRES_ADJUSTED_QC'].values
-        if 'PRES_QC' in variable_names:
-            pres_qc =  ds['PRES_QC'].values
-        if 'DEPH_ADJUSTED_QC' in variable_names:
-            depth_adjusted_qc =  ds['DEPH_ADJUSTED_QC'].values
-        if 'DEPH_QC' in variable_names:
-            depth_qc =  ds['DEPH_QC'].values
+        #if 'PRES_ADJUSTED_QC' in variable_names:
+        #    pres_adjusted_qc =  ds['PRES_ADJUSTED_QC'].values
+        #if 'PRES_QC' in variable_names:
+        #    pres_qc =  ds['PRES_QC'].values
+        #if 'DEPH_ADJUSTED_QC' in variable_names:
+        #    depth_adjusted_qc =  ds['DEPH_ADJUSTED_QC'].values
+        #if 'DEPH_QC' in variable_names:
+        #    depth_qc =  ds['DEPH_QC'].values
         if 'LONGITUDE' in variable_names:
             rla_lon = ds['LONGITUDE'].values
             #rla_lon_2 = nc.variables['LONGITUDE'][:]
-            sum_lon = np.nansum(ds['LONGITUDE'])
+            #sum_lon = np.nansum(ds['LONGITUDE'])
         if 'LATITUDE' in variable_names:
             rla_lat =  ds['LATITUDE'].values
             #rla_lat_2 = nc.variables['LATITUDE'][:]
@@ -454,28 +464,28 @@ class loaderNCcorio_tac(inputdata_loader):
             if nb_pres > nb_depth:
                 var_prof = 'PRES'
                 var_prof_adj = 'PRES_ADJUSTED'
-                var_qc = 'PRES_QC'
-                var_qc_adj = 'PRES_ADJUSTED_QC'
-                if ll_pres_adj:
-                    var_prof_adjusted_qc = pres_adjusted_qc
-                else:
-                    var_prof_adjusted_qc = pres_qc
+                #var_qc = 'PRES_QC'
+                #var_qc_adj = 'PRES_ADJUSTED_QC'
+                #if ll_pres_adj:
+                #    var_prof_adjusted_qc = pres_adjusted_qc
+                #else:
+                #    var_prof_adjusted_qc = pres_qc
             else:
                 var_prof = 'DEPH'
                 var_prof_adj = 'DEPH_ADJUSTED'
-                var_qc = 'DEPH_QC'
-                var_qc_adj = 'DEPH_ADJUSTED_QC'
-                if ll_depth_adj:
-                    var_prof_adjusted_qc = depth_adjusted_qc
-                else:
-                    var_prof_adjusted_qc = depth_qc
+                ##var_qc = 'DEPH_QC'
+                #var_qc_adj = 'DEPH_ADJUSTED_QC'
+                #if ll_depth_adj:
+                #    var_prof_adjusted_qc = depth_adjusted_qc
+                #else:
+                #    var_prof_adjusted_qc = depth_qc
             if DATA_MODE[ind] in [b'A', b'D']:
                 self.log.debug(f'Case 1 Ajusted or Delayed Mode {ind} {DATA_MODE[ind]}')
                 #val_posqc = position_qc[ind]
                 #val_juldqc = juld_qc[ind]
-                val_depthqc=((var_prof_adjusted_qc[ind, :] == b'1') |
-                             (var_prof_adjusted_qc[ind, :] == b'0') |
-                             (var_prof_adjusted_qc[ind, :] == b'7')).sum()
+                #val_depthqc=((var_prof_adjusted_qc[ind, :] == b'1') |
+                #             (var_prof_adjusted_qc[ind, :] == b'0') |
+                #             (var_prof_adjusted_qc[ind, :] == b'7')).sum()
                 if ll_depth_adj or ll_pres_adj:
                     rla_prof[ind, :] = ds[var_prof_adj][ind, :].values
                     rla_prof[rla_prof < 0] = self.fillvalue_dep
@@ -745,8 +755,10 @@ class LoaderNCcorio(inputdata_loader):
         ll_temp=0
         ll_psal=0
         nc = netCDF4.Dataset(filename)
-        if  'DEPH' in nc.variables.keys(): ll_depth = 1
-        if  'PRES' in nc.variables.keys(): ll_pres = 1
+        if  'DEPH' in nc.variables.keys():
+            ll_depth = 1
+        if  'PRES' in nc.variables.keys():
+            ll_pres = 1
         if  'TEMP' in nc.variables.keys():
             rla_temp =  nc.variables['TEMP'][:,:]
             ll_temp = 1
@@ -771,7 +783,7 @@ class LoaderNCcorio(inputdata_loader):
 
         tab_dims = {}
         dimension_names = nc.dimensions.keys()
-        dimensions_dict = {dim_name: len(dim) for dim_name, dim in nc.dimensions.items()}
+        #dimensions_dict = {dim_name: len(dim) for dim_name, dim in nc.dimensions.items()}
 
         for dim_name in dimension_names:
             dimension = nc.dimensions[dim_name]
@@ -794,8 +806,10 @@ class LoaderNCcorio(inputdata_loader):
         #"    rla_depth = nc.variables['pres'][:,0,:]
         #"elif 'PRES' in nc.variables.keys():
         #"    rla_depth = nc.variables['PRES'][:,0,:]
-        if 'LONGITUDE' in nc.variables.keys(): rla_lon =  nc.variables['LONGITUDE'][:]
-        if 'LATITUDE' in nc.variables.keys(): rla_lat =  nc.variables['LATITUDE'][:]
+        if 'LONGITUDE' in nc.variables.keys():
+            rla_lon =  nc.variables['LONGITUDE'][:]
+        if 'LATITUDE' in nc.variables.keys():
+            rla_lat =  nc.variables['LATITUDE'][:]
         nc.close()
         list_mod = param_dict['varname']
         if len(set(self.list_psal).intersection(param_dict['varname'])) == 1:
@@ -835,7 +849,7 @@ class LoaderSyntheticValue(inputdata_loader):
         rla_lon = nc.variables[variable][:]
         variable = 'latitude'
         rla_lat = nc.variables[variable][:]
-        n_profiles = len(rla_lon[:])
+        #n_profiles = len(rla_lon[:])
         # Optional Read juld
         # variable='juld'
         # rla_juld= nc.variables[variable][:]
@@ -850,7 +864,7 @@ class LoaderSSSVessel(inputdata_loader):
         rla_lon = nc.variables[variable][:]
         variable = 'LAT'
         rla_lat = nc.variables[variable][:]
-        n_profiles=len(rla_lon[:])
+        #n_profiles=len(rla_lon[:])
         rla_value = nc.variables['SSS'][:]
         _FillValue = nc.variables['SSS']._FillValue
         nb_obs = len(rla_lon)
@@ -874,7 +888,6 @@ class L3_SEALEVEL_Loader(inputdata_loader):
         
         rla_value = nc.variables[self.varname][:]
         dimensions = nc.dimensions
-        nb_fcsts = None
         tab_dims = {}
         for dims in dimensions.keys():
             sizedim = dimensions[dims].size
@@ -959,7 +972,6 @@ class LoaderNCgodae(inputdata_loader):
         #ncdata = xr.open_dataset(filename)
         #variables = ncdata.data_vars
         dimensions = nc.dimensions
-        nb_fcsts = None
         tab_dims = {}
         for dims in dimensions.keys():
             sizedim = dimensions[dims].size
@@ -1009,8 +1021,8 @@ class PGN_coords_Loader(inputdata_loader):
             lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
             depth_name = [ k for k in variables.keys() & set(list_depth)][0]
             mask_name = [ k for k in variables.keys() & set(list_mask)][0]
-        except:
-            print('lon lat or depth not defined')
+        except Exception as e:
+            print(f'lon lat or depth not defined {e}')
             raise
         rla_lon = nc.variables[lon_name][:,:]
         rla_lat = nc.variables[lat_name][:,:]
@@ -1037,8 +1049,8 @@ class PGS_coords_Loader(inputdata_loader):
             lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
             depth_name = [ k for k in variables.keys() & set(list_depth)][0]
             mask_name = [ k for k in variables.keys() & set(list_mask)][0]
-        except:
-            print('lon lat or depth not defined')
+        except Exception as e:
+            print(f'lon lat or depth not defined {e}')
             raise
         rla_lon = nc.variables[lon_name][:]
         rla_lat = nc.variables[lat_name][:]
@@ -1061,8 +1073,8 @@ class ease_coords_Loader(inputdata_loader):
         try:
             lon_name = [ k for k in variables.keys() & set(list_lon)][0]
             lat_name = [ k  for k in variables.keys() & set(list_lat)][0]
-        except:
-            print('lon lat or depth not defined')
+        except Exception as e:
+            print(f'lon lat or depth not defined {e}')
             raise
         rla_lon = nc.variables[lon_name][:,:]
         rla_lat = nc.variables[lat_name][:,:]
@@ -1133,10 +1145,11 @@ class read_Legos_SIT(inputdata_loader):
 
         try:
             nc = netCDF4.Dataset(filename, 'r')
-            if len(set(nc.variables).intersection(self.varname_list)) == 1: self.varname =  list(set.intersection(set(self.varname_list), set(nc.variables)))[0]
+            if len(set(nc.variables).intersection(self.varname_list)) == 1:
+                self.varname = list(set.intersection(set(self.varname_list), set(nc.variables)))[0]
             nc.close()
-        except:
-            raise cl4err.Class4FatalError("Pb read_Legos_SIT varname missing {}".format(self.varname_list))
+        except Exception as e:
+            raise (f"Pb read_Legos_SIT varname missing {self.varname_list} {e}")
         rla_lon, rla_lat, _FillValue, nc = \
           self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][:]
@@ -1189,6 +1202,7 @@ class LoaderCMEMSDrifter_filtr(inputdata_loader):
         lon, lat, depth, depth_qc, time, u, v, u_filtr, v_filtr, ll_var,\
             u_qc, v_qc, u_filtr_qc, v_filtr_qc, wind_u, wind_v, current_test, current_test_qc,\
             position_qc, time_qc, dc_reference = read_drifter_filt(filename)
+        nb_obs = len(lon)
         _FillValue = np.nan
         tab_dims = {}
         param_dict['Design_GODAE_file'] = True

@@ -11,6 +11,6 @@ system = "GLONET14"
 variable = "profile"
 while current <= end_date:
     date_str = current.strftime("%Y%m%d")
-    cmd = ["python", "launch_class4_zarr.py", f"{system}", date_str, f"{variable}", "pgs_ai"]
+    cmd = ["python", "launch_class4.py", f"{system}", date_str, f"{variable}", "pgn"]
     subprocess.run(cmd)
     current += timedelta(days=7)  # advance to next Wednesday

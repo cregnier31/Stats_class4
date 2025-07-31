@@ -2,34 +2,25 @@ import os
 import re
 import sys
 import numpy as np
-import numpy.ma as ma
 import json
 from scipy.spatial import cKDTree
 import xarray as xr
 import vertical
 from .reader import ReadModel
 from tep_class4.core.utils import find_index_month
+from . import utilities as utils
 from .inputdata_loader import inputdata_loader
-from collections import OrderedDict
-from collections import Counter
 from .Interp_kdtree import interp_KDtree
-from scipy.interpolate import InterpolatedUnivariateSpline, interp1d
 from .Writer import Writer
-from glob import glob
-from .reader import read_GODAE_profile
 from .Selector import Selector
 from netCDF4 import Dataset
 import netCDF4
 from timeit import default_timer as timer
 #import dask
-#from dask.distributed import Client, SSHCluster
+from dask.distributed import Client, SSHCluster
 from joblib import Parallel, delayed
 import warnings
-
-if sys.version_info[0] >= 3:
-    import pickle
-else:
-    import cPickle
+import pickle
 
 class BroadcastError(Exception):
         pass
@@ -126,8 +117,10 @@ class Interpolator(object):
         nlon = None
         nlat = None
         for dim in nc.dimensions.keys():
-            if dim.lower() in list_lon: nlon = nc.dimensions[dim].size
-            if dim.lower() in list_lat: nlat = nc.dimensions[dim].size
+            if dim.lower() in list_lon:
+                nlon = nc.dimensions[dim].size
+            if dim.lower() in list_lat:
+                nlat = nc.dimensions[dim].size
 
         return nlon, nlat
 
@@ -202,7 +195,7 @@ class Interpolator(object):
                 read_pos(param_dict['coordinates'])
         if 'depth' in list(model_data.data_vars):
             depth_mod = model_data['depth'].values
-        ll_singleobs = False
+        #ll_singleobs = False
         same_grid = False
         ll_light = False
         ll_clim = False
@@ -222,7 +215,7 @@ class Interpolator(object):
                 tab_results['depth'] = np.expand_dims(obs_data.depth, axis=1)
             
             tab_results['observation'] = reshaped_obs
-            ll_singleobs = True
+            #ll_singleobs = True
             ll_uniq = True
             #tab_results[leadtime] = {}
             self.log.debug("Uniq depth for all the observations")
@@ -297,8 +290,8 @@ class Interpolator(object):
             tab_indexes = np.ndarray(shape=(nb_obs, nb_ptsinterp,ind_max), dtype=int, order='F')
             start = timer()
             ## Parallelize Loop on levels
-            self.log.debug(f'Dimensions {len(obs_data.lon)}')
             nb_compute = len(obs_data.lon)
+            self.log.debug(f'Dimensions {nb_compute}')
             num_cores = -1
             # Compute weight
             # Implement lon/lat = 0 for all the values:
@@ -359,7 +352,6 @@ class Interpolator(object):
         # Initialisation
         ll_clim = False
         ll_json = False
-        ll_verif = False
         ## Todo write into a file
         nb_ptsinterp = param_dict['nb_points']
         # Read input obs value
@@ -406,7 +398,7 @@ class Interpolator(object):
                 self.gcosV = mod_hgr['gcosv']
                 self.gsinT = mod_hgr['gsint']
                 self.gcosT = mod_hgr['gcost']
-                self.log.debug(f"Read ok")
+                self.log.debug("Read ok")
             except IOError:
                 self.log.error("Open Error coordinates_hgr")
             self.log.debug("Open hgr ok")
@@ -415,7 +407,7 @@ class Interpolator(object):
             self.compute_corr = True
             self.log.info(f"Add Correction {param_dict['corr']}")
         else:
-            self.log.debug(f"No correction")
+            self.log.debug("No correction")
         self.log.debug(f"{lon_obs=}")
         ll_best = False
         nb_obs2, nb_profs = np.shape(depth)
@@ -553,7 +545,8 @@ class Interpolator(object):
                 bathy_tab = np.ndarray(shape=(nb_obs,nb_profs), dtype=float, order='F')
                 bathy_tab[:, :] = self.missing_value
             # Create weight file
-            if key.lower() == "clim": ll_clim = True
+            if key.lower() == "clim":
+                ll_clim = True
             if key.lower() == "clim" and param_dict['data_type'].lower() == 'chloro':
                 lon_mod, lat_mod = inputdata_loader(self.log).factory(
                     'NC_CLIM').read_pos(param_dict['coord_clim'])
@@ -602,7 +595,8 @@ class Interpolator(object):
                             read_pos(param_dict['coordinates'])
                         self.log.debug('Read coords Alleges OK ')
                         ll_light = True
-                        if key.lower() == "clim" : ll_light = False
+                        if key.lower() == "clim" :
+                           ll_light = False
                     elif param_dict['cl_typemod'].lower() == "2ease":
                         lon_mod, lat_mod, mask_tab, depth_mod = inputdata_loader(self.log).factory('2ease_coords').\
                             read_pos(param_dict['coordinates'])
@@ -641,7 +635,7 @@ class Interpolator(object):
                 if np.isnan(lon_obs).all() and np.isnan(lat_obs).all():
                     ll_nan = True
                     nb_obs, nb_profs = np.shape(depth)
-                    length = len(lon_obs)  # Assuming lon_obs and lat_obs are the same length
+                    #length = len(lon_obs)  # Assuming lon_obs and lat_obs are the same length
                     weights = np.full((nb_obs, nb_profs), np.nan)
                     indexes = np.full((nb_obs, nb_profs), np.nan)
                 else:
@@ -673,12 +667,9 @@ class Interpolator(object):
                 tab_indexes = np.ndarray(shape=(nb_obs, nb_ptsinterp,ind_max), dtype=int, order='F')
                 start = timer()
                 ## Parallelize Loop on levels
-                self.log.debug(f'Dimensions {len(lon_obs)}')
                 nb_compute = len(lon_obs)
-                #num_cores = int(ind_max/10)
-                #if num_cores < 1:
-                #    num_cores = 1
-                num_cores = 10
+                self.log.debug(f'Dimensions {nb_compute}')
+                num_cores = -1
                 ## Compute weight
                 ## Implement lon/lat = 0 for all the values:
                 with Parallel(n_jobs=num_cores, prefer="threads", verbose=0) as parallel:
@@ -694,9 +685,8 @@ class Interpolator(object):
             # Interp model file for different lead times
             self.log.debug(f'Variable to interpolate {variable}')
             tab_results = {}
-            list_file = []
             list_file = self.list_input_file[key]
-            self.log.debug(f"Work on {len(variable)} variables")
+            self.log.debug(f"Work on {len(variable)} variables and file {list_file}")
             ## loop on variable
             for var in range(len(variable)):
                ## Get the correct file
@@ -715,7 +705,8 @@ class Interpolator(object):
                   if len(np.unique(depth)) == 1:
                       index_time=0
                       #if key.lower() == "clim": index_time=find_index_month(date)-1
-                      if key.lower() == "clim" and param_dict['data_type'].lower() != 'chloro': index_time=find_index_month(date)-1
+                      if key.lower() == "clim" and param_dict['data_type'].lower() != 'chloro':
+                          index_time=find_index_month(date)-1
                       self.log.debug("Unique depth for all the observations")
                       if len(np.shape(depth)) == 1 :
                           depthval = depth[0]
@@ -826,7 +817,8 @@ class Interpolator(object):
 
                      ll_json = param_dict['json']
                      if ll_json:
-                         if len(np.shape(obs_value)) ==  3: obs_value2 = np.array(obs_value)[:,var,:]
+                         if len(np.shape(obs_value)) ==  3:
+                             obs_value2 = np.array(obs_value)[:,var,:]
                          for ind_prf in range(nb_obs2):
                             index_ok = np.where(np.array(obs_value2[ind_prf,:]) != _FillValue)
                             dir_out2 = './json/'
@@ -872,7 +864,7 @@ class Interpolator(object):
                              fcst_tab[:, 1, indice, 0] = fcst_tab[:, 0, indice, 0]* \
                                  self.tab_interp['gsint'] + fcst_tab[:, 1, indice, 0]* \
                                  self.tab_interp['gcost']
-                       except Exception as e:
+                       except Exception:
                            self.log.debug(f"Error for the forecast variable {var} {indice} {data_file}")
                    else:
                        fcst_tab[:, var, indice, :] = interp_values
@@ -968,12 +960,12 @@ class Interpolator(object):
                   if ll_unique :
                       stokes_fcst_tab[:, var, indice, 0] = interp_values
                   else:
-                      stockes_fcst_tab[:, var, indice, :] = interp_values
+                      stokes_fcst_tab[:, var, indice, :] = interp_values
                elif key == 'stokes':
                   if ll_unique :
                       stokes_tab[:, var, 0] = interp_values
                   else:
-                      stockes_tab[:, var, :] = interp_values
+                      stokes_tab[:, var, :] = interp_values
                elif key[0:4] == 'tide':
                   if ll_unique :
                       tides_tab[:, var, 0] = interp_values
@@ -1021,11 +1013,16 @@ class Interpolator(object):
             tab_results['climatology'] = clim_tab
         if ll_smoc: 
             tab_results['smoc'] = smoc_tab
-        if ll_smoc_fcst: tab_results['smoc_fcst'] = smoc_fcst_tab
-        if ll_stokes: tab_results['stokes'] = stokes_tab
-        if ll_stokes_fcst: tab_results['stokes_fcst'] = stokes_fcst_tab
-        if ll_tides: tab_results['tides'] = tides_tab
-        if ll_bathy: tab_results['bathymetrie'] = bathy_tab
+        if ll_smoc_fcst:
+            tab_results['smoc_fcst'] = smoc_fcst_tab
+        if ll_stokes:
+            tab_results['stokes'] = stokes_tab
+        if ll_stokes_fcst:
+            tab_results['stokes_fcst'] = stokes_fcst_tab
+        if ll_tides:
+            tab_results['tides'] = tides_tab
+        if ll_bathy:
+            tab_results['bathymetrie'] = bathy_tab
         if param_dict['Design_GODAE_file']:
             tab_results['observation'] = obs_value
             if 'varname_select' in param_dict.keys():
@@ -1065,14 +1062,9 @@ class Interpolator(object):
         # Compute or not weight file
         if os.path.exists(weight_file):
             log.debug("load existing tree :%s " % (weight_file))
-            if sys.version_info[0] >= 3:
-                with open(weight_file, 'rb') as f:
-                    zip_var = pickle.load(f)
-                    d, inds_idw = list(zip(*zip_var))
-            else:
-                f = file(str(weight_file), 'r')
-                zip_var = cPickle.load(f)
-                d, inds_idw = zip(*zip_var)
+            with open(weight_file, 'rb') as f:
+                zip_var = pickle.load(f)
+                d, inds_idw = list(zip(*zip_var))
             DIST = np.array(d)
             inds_idw1 = np.array(inds_idw)
             f.close
@@ -1086,7 +1078,7 @@ class Interpolator(object):
                 X1, Y1 = np.meshgrid(lon_in, lat_in)
 
             # Convert to cartesian
-            xs, ys, zs = lon_lat_to_cartesian(X1.flatten(), Y1.flatten())
+            xs, ys, zs = utils.lon_lat_to_cartesian(X1.flatten(), Y1.flatten())
             # Read output grid
             X2, Y2 = lon_out, lat_out
 
@@ -1115,7 +1107,7 @@ class Interpolator(object):
                     X2, Y2 = lon_out, lat_out
 
             # Convert to cartesian
-            xt, yt, zt = lon_lat_to_cartesian(X2.flatten(), Y2.flatten())
+            xt, yt, zt = utils.lon_lat_to_cartesian(X2.flatten(), Y2.flatten())
             if sys.version_info[0] >= 3:
                 tree = cKDTree(list(zip(xs, ys, zs)))
                 DIST, inds_idw1 = tree.query(
@@ -1127,8 +1119,8 @@ class Interpolator(object):
                 tree = cKDTree(zip(xs, ys, zs))
                 DIST, inds_idw1 = tree.query(zip(xt, yt, zt), k=nbpts_interp)
                 with open(weight_file, 'wb') as f:
-                    cPickle.dump(zip(DIST, inds_idw1), f,
-                                 protocol=cPickle.HIGHEST_PROTOCOL)
+                    pickle.dump(zip(DIST, inds_idw1), f,
+                                 protocol=pickle.HIGHEST_PROTOCOL)
             f.close
         WEIGHT = 1.0 / DIST**2
 
@@ -1174,6 +1166,10 @@ class Interpolator(object):
         self.log.debug('Interp2D Read input file : {}'.format(file))
         self.log.debug(f'Variable in interp_2D : {variable}')
         self.log.debug("-------------------------------------------------------")
+
+        def flat_func(x):
+            return np.array(x).flatten()[inds]
+
         # Load variable
         if isinstance(file, (xr.Dataset, xr.DataArray)) or self.is_netcdf_xarray(file):
             try:
@@ -1185,7 +1181,7 @@ class Interpolator(object):
         else:
             var_in, lon, lat = ReadModel().read_lightout(file)
         ll_single = False
-        ll_nan = False
+        #ll_nan = False
         if depth > 0.5 :
             ## Find the 2 points that enclose the depth value
             nlons, nlats, ndepths, depth_mod = self.read_dims(dataset_in)
@@ -1235,7 +1231,7 @@ class Interpolator(object):
             self.log.info("All missing values for indexes in interp_2D")
             return tab_interp, True
 
-        flat_func = lambda x: np.array(x).flatten()[inds]
+        #flat_func = lambda x: np.array(x).flatten()[inds]
         if nbpts_interp > 1:
             if ll_single:
                 if self.test_lonlat(var_data, nblon, nblat):
@@ -1284,9 +1280,12 @@ class Interpolator(object):
             self.log.error('lon lat or depth not defined')
             raise
 
-        if tab_lon: nlons = list(tab_lon.values())[0]
-        if tab_lat: nlats = list(tab_lat.values())[0]
-        if tab_depth: ndepths = list(tab_depth.values())[0]
+        if tab_lon:
+            nlons = list(tab_lon.values())[0]
+        if tab_lat:
+            nlats = list(tab_lat.values())[0]
+        if tab_depth:
+            ndepths = list(tab_depth.values())[0]
         intersection = variable_names_set.intersection(set(list_depth))
         if intersection:
             depth_var_name = list(intersection)[0]
@@ -1429,12 +1428,12 @@ class Interpolator(object):
                         if non_missing_count <= 2:
                             self.log.debug(f'missing_count {non_missing_count}')
                             self.log.debug(f'missing_count {data_file}')
-                            non_missing_values = profondeur[(profondeur != missing_value) & (profondeur < depth_mod[0])]
+                            #non_missing_values = profondeur[(profondeur != missing_value) & (profondeur < depth_mod[0])]
                             non_missing_indices = np.where((profondeur != missing_value) & (profondeur < depth_mod[0]))[0]
                             values_interp[ind_prof, non_missing_indices] = tab_mod_ma[0]
-                    self.log.debug(f'--------------------------------')
+                    self.log.debug('--------------------------------')
                     self.log.debug(f'Valeurs interp :{values_interp[ind_prof,:]}=')
-                    self.log.debug(f'--------------------------------')
+                    self.log.debug('--------------------------------')
             self.log.debug('Valeurs profile {}'.format(obs[:]))
             self.log.debug('--------------------------------------------')
             end = timer()

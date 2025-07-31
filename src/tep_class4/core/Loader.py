@@ -1,31 +1,24 @@
 from __future__ import generators
 import os
 import sys
-import string
-import shutil
 from glob import glob
 import re
 import numpy as np
 import netCDF4
-import json
-if sys.version_info[0] >= 3:
-    import configparser as ConfigParser
-else:
-    import ConfigParser
-import operator
+import configparser as ConfigParser
 import getopt
 import datetime as dt
 import errno
 import pandas as pd
-from datetime import date
-from .Logger import Logger
-from calendar import monthrange
-from .reader import *
-from ast import literal_eval
-from os.path import dirname
 from .sydate import SyDate
 from tep_class4.core.utils import date_range
+from .Logger import Logger
+from calendar import monthrange
+from .reader import read_drifter, read_drifter_filt
+from ast import literal_eval
 from .QCcontrol import QCcontroller
+from .Selector import Selector
+from .Sorter import Sorter
 import ast
 
 ##############################################################
@@ -44,32 +37,54 @@ class Loader(object):
             Factory for different type of loaders
         """
         # return eval(type + "()")
-        if type == "NC_CORIO": return LoaderNCcorio()
-        if type == "NC_CORIO_ORIGIN": return LoaderNCcorio()
-        if type == "NC_CHLORO": return LoaderNCChloro()
-        if type == "NC_BIOARGO": return LoaderNCBioArgo()
-        if type == "NC_CLIM": return LoaderNCClim()
-        if type == "NC_INSCLIM": return LoaderInsituClim()
-        if type == "NC_GODAE": return LoaderNCgodae()
-        if type == "Microwat": return LoaderSyntheticValue()
-        if type == "SSS_ship": return LoaderSSSVessel()
-        if type == "ASCII": return AsciiLoader()
-        if type == "LIST": return ListWriter()
-        if type == "NML": return NmlLoader()
-        if type == "DAT": return ColocLoader()
-        if type == "INPUT": return InputLoader()
-        if type == "INPUTSTATS": return InputLoader_stats()
-        if type == "INPUT_DATA": return InputDataLoader()
-        if type == "PGN_coords": return PGN_coords_Loader()
-        if type == "PGN_coords_clim": return PGN_coords_clim_Loader()
-        if type == "SMOC_coords": return SMOC_coords_Loader()
-        if type == "DRIFTER_CMEMS": return LoaderCMEMSDrifter()
-        if type == "DRIFTER_CMEMS_filtr": return LoaderCMEMSDrifter_filtr()
-        if type == "alleges_coords": return alleges_coords()
-        if type == "bathymetrie": return bathy_coords()
-        if type == "Legos_SIT": return read_Legos_SIT()
-        if type == "2ease_coords": return ease_coords_Loader()
-        if type == "L3_SEALEVEL": return L3_SEALEVEL_Loader()
+        if type == "NC_CORIO":
+            return LoaderNCcorio()
+        if type == "NC_CORIO_ORIGIN":
+            return LoaderNCcorio()
+        if type == "NC_CHLORO":
+            return LoaderNCChloro()
+        if type == "NC_BIOARGO":
+            return LoaderNCBioArgo()
+        if type == "NC_CLIM":
+            return LoaderNCClim()
+        if type == "NC_INSCLIM":
+            return LoaderInsituClim()
+        if type == "NC_GODAE":
+            return LoaderNCgodae()
+        if type == "Microwat":
+            return LoaderSyntheticValue()
+        if type == "SSS_ship":
+            return LoaderSSSVessel()
+        if type == "ASCII":
+            return AsciiLoader()
+        if type == "NML":
+            return NmlLoader()
+        if type == "DAT":
+            return ColocLoader()
+        if type == "INPUT":
+            return InputLoader()
+        if type == "INPUT_DATA":
+            return InputDataLoader()
+        if type == "PGN_coords":
+            return PGN_coords_Loader()
+        if type == "PGN_coords_clim":
+            return PGN_coords_clim_Loader()
+        if type == "SMOC_coords":
+            return SMOC_coords_Loader()
+        if type == "DRIFTER_CMEMS":
+            return LoaderCMEMSDrifter()
+        if type == "DRIFTER_CMEMS_filtr":
+            return LoaderCMEMSDrifter_filtr()
+        if type == "alleges_coords":
+            return alleges_coords()
+        if type == "bathymetrie":
+            return bathy_coords()
+        if type == "Legos_SIT":
+            return read_Legos_SIT()
+        if type == "2ease_coords":
+            return ease_coords_Loader()
+        if type == "L3_SEALEVEL":
+            return L3_SEALEVEL_Loader()
         assert 0, "Format not known: " + type
 
     def generic_read_pos_and_value(self,filename, varname):
@@ -83,22 +98,30 @@ class Loader(object):
         nc = netCDF4.Dataset(filename, 'r')
         ll_ravel = False
         if 'longitude' in nc.variables:
-            var_lon = 'longitude' ; var_lat = 'latitude'
-        elif 'lon' in nc.variables and not 'lon_20hz' in nc.variables and not 'lon_20_ku' in nc.variables:
-            var_lon = 'lon' ; var_lat = 'lat'
+            var_lon = 'longitude'
+            var_lat = 'latitude'
+        elif 'lon' in nc.variables and 'lon_20hz' not in nc.variables and 'lon_20_ku' not in nc.variables:
+            var_lon = 'lon'
+            var_lat = 'lat'
         elif 'LON' in nc.variables:
-            var_lon = 'LON' ; var_lat = 'LAT'
+            var_lon = 'LON'
+            var_lat = 'LAT'
         elif 'Lon' in nc.variables:
-            var_lon = 'Lon' ; var_lat = 'Lat'
+            var_lon = 'Lon'
+            var_lat = 'Lat'
         elif 'LONGITUDE' in nc.variables:
-            var_lon = 'LONGITUDE' ; var_lat = 'LATITUDE'
+            var_lon = 'LONGITUDE'
+            var_lat = 'LATITUDE'
         elif 'Longitude' in nc.variables:
-            var_lon = 'Longitude' ; var_lat = 'Latitude'
+            var_lon = 'Longitude'
+            var_lat = 'Latitude'
         elif 'lon_20hz' in nc.variables:
-            var_lon = 'lon_20hz' ; var_lat = 'lat_20hz'
+            var_lon = 'lon_20hz'
+            var_lat = 'lat_20hz'
             ll_ravel = True
         elif 'lon_20_ku' in nc.variables:
-            var_lon = 'lon_20_ku' ; var_lat = 'lat_20_ku'
+            var_lon = 'lon_20_ku'
+            var_lat = 'lat_20_ku'
             ll_ravel = True
         if ll_ravel:
             rla_lon = np.ravel(nc.variables[var_lon][:,:])
@@ -138,7 +161,7 @@ class InputDataLoader(Loader):
                     os.remove(fichier)
                     log.info('No position find in %s for the zoom ' %
                              (fichier))
-                    ll_file_interp = False
+                    #ll_file_interp = False
         else:
             # Case Global without qc
             log.info("GLOBAL MODE => SELECT ALL ")
@@ -219,7 +242,7 @@ class LoaderInsituClim(Loader):
         self.varname = 'Temperature'
 
     def read_pos_and_value(self,filename):
-        rla_lon, rla_lat, nb_obs, _FillValue = \
+        rla_lon, rla_lat, nb_obs, _FillValue, nc = \
         self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][0, :, :]
         nb_obs = int(np.shape(rla_value.flatten())[0])
@@ -237,7 +260,7 @@ class LoaderNCClim(Loader):
 
     def read_pos_and_value(self,filename):
 
-        rla_lon, rla_lat, nb_obs, _FillValue = \
+        rla_lon, rla_lat, nb_obs, _FillValue, nc = \
          self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][0, :, :]
         nb_obs = int(np.shape(rla_value.flatten())[0])
@@ -261,15 +284,12 @@ class InputLoader_stats(Loader):
         
         cla_opts = getopt.getopt(options, 'd', keywords)
         list_LEAD_TIME = [] 
-        ll_listdata = True
         ll_netcdf = False
         cl_data_id = ""
         for o, p in cla_opts[0]:
             if o in ['--date1']:
-                ll_date1 = True
                 cl_start_date = p
             elif o in ['--date2']:
-                ll_date2 = True
                 cl_end_date = p
             elif o in ['--typemod']:
                 cl_typemod = p
@@ -280,15 +300,11 @@ class InputLoader_stats(Loader):
             elif o in ['--fcst']:
                 list_LEAD_TIME.append('forecast')
                 ll_forecast = True
-            elif o in ['--daterun']:
-                ll_daterun = True
             elif o in ['--config']:
-                ll_config = True
                 cl_config = p
             elif o in ['--loglevel']:
                 level = int(p)
             elif o in ['--listdata']:
-                ll_listdata = True
                 list_data = p
             elif o in ['--all']:
                 list_LEAD_TIME=['best_estimate', 'forecast', 'persistence']
@@ -302,7 +318,7 @@ class InputLoader_stats(Loader):
         confname = 'config_' + str(cl_config) + '_allvars' + '.cfg'
         # Create dictionnary
         param_dict={}
-        #param_dict['listdata'] = list_data
+        param_dict['listdata'] = list_data
         param_dict['date1'] = cl_start_date
         param_dict['date2'] = cl_end_date
         param_dict['cl_config'] = cl_config
@@ -337,18 +353,12 @@ class InputLoader(Loader):
         ll_data = None
         ll_src = None
         cl_daterun = None
-        ll_data_id = None
-        ll_cycle = None
         daymax = None
         dask = False
         ll_input = False
         ll_output = False
         ll_dirlog = False
-        ll_best = False
-        ll_clim = False
-        ll_bathy = False
         ll_forecast = False
-        ll_persistence = False
         ll_listdata = False
         list_var = []
         nb_proc = 0
@@ -405,11 +415,9 @@ class InputLoader(Loader):
             elif o in ['--schedule']:
                 cl_schedule = p
             elif o in ['--nbproc']:
-                ll_optim = True
                 cl_nbproc = p
                 nb_proc = int(cl_nbproc)
             elif o in ['--data_id']:
-                ll_data_id = True
                 cl_data_id = p
             elif o in ['--loglevel']:
                 level = int(p)
@@ -601,9 +609,12 @@ class InputLoader(Loader):
         param_dict['fcst_mode'] = ll_forecast
         param_dict['is_zarr'] = ll_zarr
         param_dict['is_netcdf'] = ll_netcdf
-        if ll_input : param_dict['dirdata'] = dirinput
-        if ll_output : param_dict['diroutput'] =  diroutput
-        if ll_dirlog : param_dict['dirlog'] =  dirlog
+        if ll_input :
+            param_dict['dirdata'] = dirinput
+        if ll_output : 
+            param_dict['diroutput'] =  diroutput
+        if ll_dirlog :
+            param_dict['dirlog'] =  dirlog
         # Create time vector between date1 and date2
         #param_dict['date1'] = pd.to_datetime(param_dict['date1']).strftime('%Y%m%d')
         #param_dict['date2'] = pd.to_datetime(param_dict['date2']).strftime('%Y%m%d')
@@ -663,39 +674,51 @@ class NmlLoader(Loader):
             param_dict['dirdata'] = db.get('input_dir', 'INPUTDATA')
         try:
             param_dict['dirmodel_light'] = db.get('input_dir', 'DATA_IN_LIGHT')
-        except:
+        except Exception:
             param_dict['dirmodel_light'] = ''
         try:
             param_dict['insitu_corr'] = db.get('GLOBAL', 'corr_pot')
-        except:
+        except Exception:
             param_dict['insitu_corr'] = False
         try:
             param_dict['Design_GODAE_file'] = ast.literal_eval(db.get('GLOBAL', 'Design_GODAE_file'))
-        except:
+        except Exception:
             param_dict['Design_GODAE_file'] = False
         try:
             param_dict['EDITO'] = db.get('input_dir', 'EDITO')
-        except:
+        except Exception:
+            param_dict['Design_GODAE_file'] = False
+        try:
+            param_dict['EDITO'] = db.get('input_dir', 'EDITO')
+        except Exception:
             param_dict['EDITO'] = ''
         try:
             param_dict['typedata'] = literal_eval(db.get('GLOBAL', 'typedata'))
-        except:
+        except Exception:
             param_dict['typedata'] = ''
         try:
             param_dict['list_variables'] = literal_eval(db.get('GLOBAL', 'list_variables'))
-        except:
+        except Exception:
+            param_dict['list_variables'] = ''
+        try:
+            param_dict['typedata'] = literal_eval(db.get('GLOBAL', 'typedata'))
+        except Exception:
+            param_dict['typedata'] = ''
+        try:
+            param_dict['list_variables'] = literal_eval(db.get('GLOBAL', 'list_variables'))
+        except Exception:
             param_dict['list_variables'] = ''
         try:
             param_dict['good_qc'] = literal_eval(db.get('GLOBAL', 'good_qc'))
-        except:
+        except Exception:
             param_dict['good_qc'] = ''
         try:
             param_dict['DEPTHS'] = literal_eval(db.get('GLOBAL', 'DEPTHS'))
-        except:
+        except Exception:
             param_dict['DEPTHS'] = [0, 5, 100, 300, 600]
         try:
             param_dict['time_centered'] = literal_eval(db.get('GLOBAL', 'time_centered'))
-        except:
+        except Exception:
             param_dict['time_centered'] = False
         
         # param_dict['Design_GODAE_file'] = db.get('GLOBAL', 'Design_GODAE_file')
@@ -722,13 +745,18 @@ class NmlLoader(Loader):
         param_dict['verif'] = literal_eval(db.get('GLOBAL','verif'))
         param_dict['json'] = literal_eval(db.get('GLOBAL','ll_json'))
         param_dict['maskname'] = db.get('static','maskname')
+        date1 = param_dict['date1']
+        date2 = param_dict['date2']
+        daterun = param_dict['daterun']
+
+        cl_schedule = db.get('GLOBAL', 'SCHEDULE')
         try:
             param_dict['direxec'] = db.get('GLOBAL', 'DIRBIN')
-        except:
+        except Exception:
             param_dict['direxec'] = os.path.dirname(os.path.realpath(__file__))+'/../bin/'
         try:
             param_dict['over'] = literal_eval(db.get('GLOBAL', 'over'))
-        except:
+        except Exception:
             param_dict['over'] = False
         #==========================================================================
         # Sort model values if necessary
@@ -736,8 +764,6 @@ class NmlLoader(Loader):
         if param_dict['do_sort']:
             log.debug('              Sort Values for interp               ')
             param_dict['sort_rep'] = param_dict.get('input_dir', 'DATA_SORT')
-            file_template = param_dict['cl_config'] + \
-            '_'+param_dict['daily_pref']+'_'
             if cl_schedule == "WEEKLY":
                 Sorter().run_weekly(param_dict['lead_time'], param_dict['lead_int'],
                                     date1, date2, daterun, param_dict['file_template'], param_dict['gridtemp'],
@@ -757,7 +783,7 @@ class NmlLoader(Loader):
         param_dict['model_type'] = db.get('GLOBAL', 'MODELTYPE')
         try:
             param_dict['data_format'] = literal_eval(db.get('input_dir', 'DATA_FMT'))
-        except: 
+        except Exception: 
             param_dict['data_format'] = []
 
         param_dict['dirwork'] = db.get('output_dir', 'DIRTMP')
@@ -768,34 +794,35 @@ class NmlLoader(Loader):
                 if exc.errno == errno.EEXIST and os.path.isdir(param_dict['dirwork']):
                     pass
         #param_dict['dirwork'] = db.get('output_dir', 'DIRWORK')
-        if 'diroutput' not in param_dict.keys(): param_dict['diroutput'] = db.get('output_dir', 'DIROUTPUT')
+        if 'diroutput' not in param_dict.keys():
+            param_dict['diroutput'] = db.get('output_dir', 'DIROUTPUT')
         try:
             param_dict['diroutput2'] = db.get('output_dir', 'DIROUTPUT2')
-        except:
+        except Exception:
             param_dict['diroutput2'] = ""
         param_dict['dirclim'] = db.get('climato', 'DIRCLIM')
         try:
             param_dict['dirclim2'] = db.get('climato', 'DIRCLIM2')
-        except:
+        except Exception:
             param_dict['dirclim2'] = ""
         try:
             param_dict['coord_clim'] = glob(param_dict['dirclim'] + "*.nc")[0]
-        except:
+        except Exception:
             param_dict['coord_clim'] = ""
         try:
             param_dict['coordinates_hgr'] = db.get('static', 'coordinates_hgr')
-        except:
+        except Exception:
             param_dict['coordinates_hgr'] = ""
 
         param_dict['dirtmp'] = param_dict['dirwork'] + 'ext-'
         try:
             param_dict['prefix_data'] = literal_eval(db.get('input_dir', 'PREFIX'))
-        except:
+        except Exception:
             param_dict['prefix_data'] = []
         param_dict['daily_pref'] = db.get('GLOBAL', 'DAILY_PREF')
         try:
             param_dict['data_origin'] = db.get('input_dir', 'DATA_ORIGIN')
-        except:
+        except Exception:
             param_dict['data_origin'] = []
         param_dict['cl_conf'] = db.get('GLOBAL', 'CONF')
         #param_dict['template'] = param_dict['cl_config_h'] + \
@@ -809,23 +836,23 @@ class NmlLoader(Loader):
         param_dict['gridsal'] = db.get('GLOBAL', 'gridsal')
         try:
             param_dict['gridu'] = db.get('GLOBAL', 'gridu')
-        except:
+        except Exception:
             param_dict['gridu'] = ''
         try:
             param_dict['gridv'] = db.get('GLOBAL', 'gridv')
-        except:
+        except Exception:
             param_dict['gridv'] = ''
         try:
             param_dict['gridice'] = db.get('GLOBAL', 'gridice')
-        except:
+        except Exception:
             param_dict['gridice'] = "icemod"
         try:
             param_dict['grid2DT'] = db.get('GLOBAL', 'grid2DT')
-        except:
+        except Exception:
             param_dict['grid2DT'] = "grid2D"
         try:
             param_dict['naming'] = db.get('GLOBAL', 'name')
-        except:
+        except Exception:
             param_dict['naming'] = 'old'
         param_dict['type_run'] = db.get('GLOBAL', 'TYPE_RUN')
         param_dict['type_archi'] = db.get('GLOBAL', 'TYPE_ARCHI')
@@ -838,28 +865,28 @@ class NmlLoader(Loader):
         param_dict['desc'] = db.get('GLOBAL','DESCRIPTION')
         try:
             param_dict['varname_smoc'] = literal_eval(db.get('GLOBAL', 'variable_SMOC'))
-        except:
+        except Exception:
             param_dict['varname_smoc'] = ""
         try:
             param_dict['varname_stokes'] = literal_eval(db.get('GLOBAL', 'variable_stokes'))
-        except:
+        except Exception:
             param_dict['varname_stokes'] = ""
         try:
             param_dict['varname_tides'] = literal_eval(db.get('GLOBAL', 'variable_tides'))
-        except:
+        except Exception:
             param_dict['varname_tides'] = ""
         try:
             param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
             param_dict['lead_int2'] = param_dict['lead_int2']
-        except:
+        except Exception:
             param_dict['lead_int2'] = ""
         try:
             param_dict['varname_bathy'] = db.get('GLOBAL', 'variable_bathy').split()
-        except:
+        except Exception:
             param_dict['lead_int2'] = ""
         try:
             param_dict['corr'] = literal_eval(db.get('GLOBAL', 'corr'))
-        except:
+        except Exception:
             param_dict['corr'] = False
 
         if param_dict['zoom'] or param_dict['do_qc']:
@@ -869,21 +896,22 @@ class NmlLoader(Loader):
             param_dict['lat_max'] = int(param_dict.get('GLOBAL', 'LATMAX'))
         try:
             param_dict['coordinates_SMOC'] = db.get('static','fic_coordinates_SMOC')
-        except:
+        except Exception:
             param_dict['coordinates_SMOC'] = ""
         try:
             param_dict['bathy_file'] = db.get('static','fic_bathy')
-        except:
+        except Exception:
             param_dict['bathy_file'] = ""
         
         if param_dict['cl_data_id']:
+            cl_data_id = param_dict['cl_data_id']
             param_dict['dirwork'] = param_dict['dirwork']+str(cl_data_id)+'/'
             param_dict['diroutput'] = param_dict['diroutput']+str(cl_data_id)+'/'
             param_dict['dirdata'] = param_dict['dirdata']+str(cl_data_id)+'/'
         elif param_dict['cl_conf'] == 'BIOMER4' or param_dict['cl_conf'] == 'BIOMER4V2':
             param_dict['dirwork'] = param_dict['dirwork']
             param_dict['diroutput'] = param_dict['diroutput']
-            date_ini = SyDate(str(param_dict['date1']))
+            #date_ini = SyDate(str(param_dict['date1']))
             #if param_dict['prefix_data'] == "L3mCHL": param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
         
         param_dict['dirwork'] = param_dict['dirwork']
@@ -932,8 +960,10 @@ class LoaderNCcorio(Loader):
         ll_temp=0
         ll_psal=0
         nc = netCDF4.Dataset(filename)
-        if  'DEPH' in nc.variables.keys(): ll_depth = 1
-        if  'PRES' in nc.variables.keys(): ll_pres = 1
+        if  'DEPH' in nc.variables.keys():
+            ll_depth = 1
+        if  'PRES' in nc.variables.keys():
+            ll_pres = 1
         if  'TEMP' in nc.variables.keys():
             rla_temp =  nc.variables['TEMP'][:,:]
             ll_temp = 1
@@ -958,7 +988,7 @@ class LoaderNCcorio(Loader):
 
         tab_dims = {}
         dimension_names = nc.dimensions.keys()
-        dimensions_dict = {dim_name: len(dim) for dim_name, dim in nc.dimensions.items()}
+        #dimensions_dict = {dim_name: len(dim) for dim_name, dim in nc.dimensions.items()}
 
         for dim_name in dimension_names:
             dimension = nc.dimensions[dim_name]
@@ -980,8 +1010,10 @@ class LoaderNCcorio(Loader):
         #"    rla_depth = nc.variables['pres'][:,0,:]
         #"elif 'PRES' in nc.variables.keys():
         #"    rla_depth = nc.variables['PRES'][:,0,:]
-        if 'LONGITUDE' in nc.variables.keys(): rla_lon =  nc.variables['LONGITUDE'][:]
-        if 'LATITUDE' in nc.variables.keys(): rla_lat =  nc.variables['LATITUDE'][:]
+        if 'LONGITUDE' in nc.variables.keys():
+            rla_lon =  nc.variables['LONGITUDE'][:]
+        if 'LATITUDE' in nc.variables.keys():
+            rla_lat =  nc.variables['LATITUDE'][:]
         nc.close()
         list_mod = param_dict['varname']
         if len(set(self.list_psal).intersection(param_dict['varname'])) == 1:
@@ -1019,7 +1051,6 @@ class LoaderSyntheticValue(Loader):
         rla_lon = nc.variables[variable][:]
         variable = 'latitude'
         rla_lat = nc.variables[variable][:]
-        n_profiles = len(rla_lon[:])
         # Optional Read juld
         # variable='juld'
         # rla_juld= nc.variables[variable][:]
@@ -1034,7 +1065,6 @@ class LoaderSSSVessel(Loader):
         rla_lon = nc.variables[variable][:]
         variable = 'LAT'
         rla_lat = nc.variables[variable][:]
-        n_profiles=len(rla_lon[:])
         rla_value = nc.variables['SSS'][:]
         _FillValue = nc.variables['SSS']._FillValue
         nb_obs = len(rla_lon)
@@ -1061,7 +1091,6 @@ class L3_SEALEVEL_Loader(Loader):
         n_profiles=len(rla_lon[:])
         # Optional Read juld
         variable='time'
-        rla_juld= nc.variables[variable][:]
         position=np.ndarray(shape=(n_profiles,2),dtype=float, order='F')
         il_val=0
         for il_ind in range(n_profiles):
@@ -1129,7 +1158,6 @@ class LoaderNCgodae(Loader):
         #ncdata = xr.open_dataset(filename)
         #variables = ncdata.data_vars
         dimensions = nc.dimensions
-        nb_fcsts = None
         tab_dims = {}
         for dims in dimensions.keys():
             sizedim = dimensions[dims].size
@@ -1272,10 +1300,11 @@ class read_Legos_SIT(Loader):
 
         try:
             nc = netCDF4.Dataset(filename, 'r')
-            if len(set(nc.variables).intersection(self.varname_list)) == 1: self.varname =  list(set.intersection(set(self.varname_list), set(nc.variables)))[0]
+            if len(set(nc.variables).intersection(self.varname_list)) == 1:
+                self.varname =  list(set.intersection(set(self.varname_list), set(nc.variables)))[0]
             nc.close()
-        except:
-            raise cl4err.Class4FatalError("Pb read_Legos_SIT varname missing {}".format(self.varname_list))
+        except Exception as e:
+            raise (f"Pb read_Legos_SIT varname missing {e}")
         rla_lon, rla_lat, _FillValue, nc = \
           self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][:]
