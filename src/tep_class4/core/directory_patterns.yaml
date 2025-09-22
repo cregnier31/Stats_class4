@@ -27,8 +27,12 @@ directory_patterns:
       BIO4: "{dirmodel}"
 
   clim: "{dirclim}/"
+  clim_curr: "{dirclim}/"
   smoc: "{dirmodel}DAILY/SMOC/nwct/"
+  stokes: "{dirmodel}DAILY/SMOC/nwct/"
+  tides: "{dirmodel}DAILY/SMOC/nwct/"
   smoc_fcst: "{dirmodel}DAILY/SMOC/"
+  stokes_fcst: "{dirmodel}DAILY/SMOC/"
   bathy: "{bathy_file}"
   general: "{dirclim}/"
 
@@ -71,6 +75,12 @@ file_handling:
             glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
          default:
             glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
+         smoc:         
+            glob_pattern: "{dirmodel}/{directory}/{SMOC}_{dateval}*.nc"
+         tides:         
+            glob_pattern: "{dirmodel}/{directory}/{SMOC}_{dateval}*.nc"
+         stokes:         
+            glob_pattern: "{dirmodel}/{directory}/{SMOC}_{dateval}*.nc"
     default:
         glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}.nc"
 
@@ -138,6 +148,63 @@ file_handling:
              glob_pattern: "{dirmodel}/{directory}/{modele}_{dateval}_{gridtype}*nc"
     default:
       glob_pattern: "{dirmodel}/{directory}/{modele}_{dateval}_{gridtype}*nc"
+
+  smoc:
+    clim:
+      glob_pattern: "{dirmodel}/*M{month}*nc"
+    non_clim:
+      type_run:
+         OPER:
+             glob_pattern: "{dirmodel}/SMOC_{dateval}*nc"
+    default:
+      glob_pattern: "{dirmodel}/SMOC_{dateval}*nc"
+  
+  clim_curr:
+    clim:
+      type_run:
+         OPER:
+             glob_pattern: "{dirmodel}/*_monthlymeans.nc"
+ 
+  smoc_fcst:
+    clim:
+      glob_pattern: "{dirmodel}/*M{month}*nc"
+    non_clim:
+      type_run:
+         OPER:
+             glob_pattern: "{dirmodel}/{directory}/SMOC_{dateval}*nc"
+    default:
+      glob_pattern: "{dirmodel}/SMOC_{dateval}*nc"
+  
+  stokes:
+    clim:
+      glob_pattern: "{dirmodel}/*M{month}*nc"
+    non_clim:
+      type_run:
+         OPER:
+             glob_pattern: "{dirmodel}/SMOC_{dateval}*nc"
+    default:
+      glob_pattern: "{dirmodel}/SMOC_{dateval}*nc"
+  
+  stokes_fcst:
+    clim:
+      glob_pattern: "{dirmodel}/*M{month}*nc"
+    non_clim:
+      type_run:
+         OPER:
+             glob_pattern: "{dirmodel}/{directory}/SMOC_{dateval}*nc"
+    default:
+      glob_pattern: "{dirmodel}/SMOC_{dateval}*nc"
+  
+  
+  tides:
+    clim:
+      glob_pattern: "{dirmodel}/*M{month}*nc"
+    non_clim:
+      type_run:
+         OPER:
+             glob_pattern: "{dirmodel}/SMOC_{dateval}*nc"
+    default:
+      glob_pattern: "{dirmodel}/SMOC_{dateval}*nc"
 
   allege:
     clim:

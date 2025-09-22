@@ -4,7 +4,7 @@ import glob
 from .sydate import SyDate
 from .sydate import SyDate as sy
 from .Logger import Logger
-from ModuleTime import Time
+from .ModuleTime import Time
 ##############################################################
 # C.REGNIER Juin 2014
 # Class Sorter to sort data values

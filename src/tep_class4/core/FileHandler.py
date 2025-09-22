@@ -1,5 +1,6 @@
 from glob import glob
 from .sydate import SyDate
+import sys
 class FileHandler:
     def __init__(self, config,
                  dirmodel, modele,
@@ -20,6 +21,7 @@ class FileHandler:
         self.dateval = dateval
         self.param_dict = param_dict
         self.daily_pref = self.param_dict['daily_pref']
+        self.list_smoc_fcst = ['smoc_fcst', 'stokes_fcst']
         self.log = log
 
     def find_file(self, pattern, gridname_list):
@@ -51,18 +53,23 @@ class FileHandler:
                                 )
                 self.log.debug(dateval_formatted)
                 self.log.debug(formatted_pattern)
+                
                 file_tmp = glob(formatted_pattern)
                 # If files are found, store them in the list
                 if file_tmp:
-                    self.log.error(f'File OK {file_tmp}')
+                    self.log.debug(f'File OK {file_tmp}')
                     all_files.extend(file_tmp)  # Add found files to the results
                     self.log.debug(f"{gridname} Add file {file_tmp}")
         # Return all found files or an empty list if none are found
         return all_files if all_files else None
 
-    def load_files(self):
-        # Determine the configuration section based on typemod and directory
-        config_section = self.config.get('file_handling', {}).get(self.typemod, {})
+    def load_files(self, leadtime):
+        list_clim = ['clim', 'clim_curr']
+         # Determine the configuration section based on typemod and directory
+        if leadtime in self.list_smoc_fcst:
+            config_section = self.config.get('file_handling', {}).get(leadtime, {})
+        else:
+            config_section = self.config.get('file_handling', {}).get(self.typemod, {})
         # Set directory type for non-clim cases
         self.directory_path = "clim"
         datev = SyDate(str(self.dateval))
@@ -72,7 +79,7 @@ class FileHandler:
             month = '0' + str(datev.month)
         if datev.day < 10:
             day = f'0{datev.day}'
-        if self.directory != "clim":
+        if self.directory not in list_clim:
             self.directory_path = "non_clim"
         # Get the specific directory configuration
         type_run_config = config_section.get(self.directory_path, config_section.get('type_run', {}))
@@ -89,6 +96,10 @@ class FileHandler:
                 day=day
             )
             list_file.extend(glob(glob_pattern))
+        elif self.directory == "clim_curr":
+            filename = self.param_dict['coordinates']
+            list_file.append(filename)
+            list_file.append(filename)
         elif self.directory == "bathy":
             filename = self.param_dict['bathy_file']
             list_file.append(filename)
@@ -107,9 +118,15 @@ class FileHandler:
                 file_select = self.find_file(pattern,
                                  self.param_dict.get('gridtype', ''))
                 self.log.debug(f"Pattern = {pattern}")
+                self.log.debug(f"GridType = {self.param_dict.get('gridtype', '')}")
+                self.log.info(f"Pattern = {pattern}")
+                self.log.info(f"GridType = {self.param_dict.get('gridtype', '')}")
                 if file_select:
+                    self.log.debug(f"File ok {file_select}")
                     self.log.info(f"File ok {file_select}")
                     list_file.extend(file_select)
                 else:
-                    self.log.debug(f"File nok {pattern} {self.param_dict.get('gridtype', '')}")
+                    self.log.error(f"File nok {pattern} {self.param_dict.get('gridtype', '')}")
+                    sys.exit(1)
+                    
         return list_file

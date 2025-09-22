@@ -17,7 +17,7 @@ class FileRenamer:
 
     def create_name(self, filename, data_type, cl_src):
         typedata = "_".join([data_type, cl_src])
-        self.log.info(f"{typedata=}")
+        self.log.debug(f"{typedata=}")
 
         if typedata in self.patterns:
             pattern_info = self.patterns[typedata]
@@ -35,5 +35,5 @@ class FileRenamer:
 
         # Rename the file
         name_out = f"{self.dest}{new_name}"
-        self.log.info(f"Renamed to: {name_out}")
+        self.log.debug(f"Renamed to: {name_out}")
         return name_out

@@ -6,15 +6,17 @@ from glob import glob
 import re
 import numpy as np
 import logging
+import time
 import netCDF4
 from .sydate import SyDate
 import zipfile
-from nco.nco import Nco
+#from nco.nco import Nco
 import xarray as xr
-from netCDF4 import Dataset
+from netCDF4 import Dataset, stringtochar
 import subprocess
 from datetime import datetime
 from functools import reduce
+import tempfile
 
 ##############################################################
 # C.REGNIER Juin 2014
@@ -89,6 +91,33 @@ class Extractor(object):
             valeurj = valeurj.goforward(1)
         return liste_time
 
+    def run_list_data(self, param_dict, dirdata, dateval):
+        """
+         Create a list of data corresponding to a specific date
+         Arguments
+         -----------------------------
+         param_dict : dictionnary with all the parameters
+         dateval : date value
+         Returns
+         -----------------------------
+         liste_tot : list of input data corresponding to a date
+        """
+        liste_tot = []
+        YEAR = dateval[0:4]
+        liste_file = glob(dirdata+YEAR+'/*'+dateval+'*.nc')
+        self.log.debug(f"Search file {liste_file}")
+        for file in liste_file:
+            try:
+                filename = os.path.basename(file)
+                if not os.path.exists(param_dict['dirwork']+filename):
+                    shutil.copy(file, param_dict['dirwork']+filename)
+                liste_tot.append(param_dict['dirwork']+filename)
+            except IOError as e:  
+                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                sys.exit(1)
+        return liste_tot
+        
+        
     def run_list(self, param_dict, dateval):
         """
          Create a list of data corresponding to a specific date
@@ -102,8 +131,10 @@ class Extractor(object):
         """
         liste_tot = []
         YEAR = dateval[0:4]
-        liste_file = glob(param_dict['dirdata']+'/'+YEAR+'/*'+dateval+'*.nc')
-        self.log.debug(f"Search file {param_dict['dirdata']}/{YEAR}/{dateval}*nc")
+        frame = "*"
+        #frame = "TS_DB"
+        liste_file = glob(param_dict['dirdata']+'/'+YEAR+f'/*{frame}*'+dateval+f'*.nc')
+        self.log.debug(f"Search file {param_dict['dirdata']}/{YEAR}/*{frame}*{dateval}*nc")
         for file in liste_file:
             try:
                 filename = os.path.basename(file)
@@ -221,7 +252,7 @@ class Extract_SSSData(Extractor):
         options = []
         options.extend(['-h'])
         # Nco constructor
-        nco = Nco()
+        #nco = Nco()
         # Create a timeline
         timelinespace = self.timelinespace(date1,date2)
         liste_file = glob(dirdata+'/*nc')
@@ -249,18 +280,26 @@ class Extract_SSSData(Extractor):
                         ## find indexes in date_all
                         indexes = [i for i, x in enumerate(
                                    date_all) if x == date]
-                        file_out = prefix+'_'+data_type+'_'+str(date)+'.nc'
-                        self.log.info('Creation fileout : %s '%(file_out))
+                        file_out = f"{prefix}_{data_type}_{date}.nc"
+                        out_path = dirtmp + file_out
+                        self.log.info("Creation fileout : %s" % file_out) 
                         ## Create output extracted file
-                        nco.ncks(input=file, output=dirtmp+file_out, dimension=self.dimension+','+str(
-                            indexes[0])+','+str(indexes[-1]), options=options)
+                        # Open dataset
+                        ds = xr.open_dataset(file)
+                        # Slice the dimension between first and last index
+                        ds_sel = ds.isel({self.dimension: slice(indexes[0], indexes[-1] + 1)})
+                        # Save to new file
+                        ds_sel.to_netcdf(out_path)
+                        #nco.ncks(input=file, output=dirtmp+file_out, dimension=self.dimension+','+str(
+                        #    indexes[0])+','+str(indexes[-1]), options=options)
                         if dirtmp+file_out not in liste_tot:
-                            liste_tot.append(dirtmp+file_out)
+                            #liste_tot.append(dirtmp+file_out)
+                            liste_tot.append(out_path)
             except IOError as e:
                 self.log.error ("I/O error({0}): {1}".format(e.errno, e.strerror))
                 sys.exit(1)
             # Search index 
-            self.log.info("File ok : %s %i %i" %(file,indice,length))
+            self.log.debug("File ok : %s %i %i" %(file,indice,length))
         return liste_tot
 
 
@@ -383,8 +422,6 @@ class Extract_corio_raw(Extractor):
         dimprof='N_PROF'
         options = []
         options.extend(['-h'])
-        # Nco constructor
-        nco = Nco()
         for file in glob(dirdata+"*.nc"):
             frame=os.path.basename(file).split('.')[0]
             nc   = netCDF4.Dataset(file,'r')
@@ -398,9 +435,15 @@ class Extract_corio_raw(Extractor):
                     self.log.error("Probleme  : %s %i  "%(val,ind))
                 else :
                     file_out=str(val)+'_'+frame+'_profile_'+str(ind)+'.nc'
-                    nco.ncks(input=file,output=dirtmp+file_out, fortran=True ,dimension=str(dimprof)+','+str(ind+1),options=options)
-                    liste_tot.append(dirtmp+file_out)
-                    # self.log.info('Day %s ' % (dateval))
+                    file_out = f"{val}_{frame}_profile_{ind}.nc"
+                    out_path = dirtmp + file_out
+                    # Open dataset
+                    ds = xr.open_dataset(file)
+                    # Select slice along the dimension
+                    ds_sel = ds.isel({dimprof: ind})
+                    # Save to new file
+                    ds_sel.to_netcdf(out_path)
+                    liste_tot.append(out_path)
                 ind+=1
         return liste_tot
 
@@ -447,12 +490,10 @@ class Extract_cora5_2(Extractor):
         self.log.info(f'Extract CORA 5.2 {valeurj_tmp} {valeurj} {valeurj2}')
         while  valeurj_tmp >= valeurj and valeurj_tmp <= valeurj2 :
             dateval = str(valeurj_tmp)
-            #dateval=str(SyDate(str(self.date.setfromjulian(int(valeurj)))))
             self.log.info(f'Day 5.2 {dateval}')
             year=dateval[0:4]
             type_obs = "PR_PF"
             frame=dirdata+year+'/*'+dateval.strip()+f"*{type_obs}_*.nc"
-            #frame=dirdata+year+'/*'+dateval.strip()+'*.nc'
             self.log.info(f"{frame=}")
             liste_file=glob(frame)
             self.log.debug(f'{frame=}')
@@ -502,14 +543,13 @@ class Extract_cora5_2(Extractor):
         YEAR = dateval[0:4]
         #type_obs = "PR_PF"
         #type_obs = "TS_MO"
-       # type_obs = "TS_DB"
-      #  type_obs = "XX"
+        #type_obs = "XX"
         #type_obs = "PR_GL"
         #type_obs = "PR_CT"
         #type_obs = "TS_FB"
-        type_obs = "*"
         #type_obs = "PR_BO"
         #type_obs = "PR_XB"
+        type_obs = "*"
         liste_file = glob(f"{param_dict['dirdata']}/{YEAR}/*{dateval}*{type_obs}*.nc")
         #liste_file = glob(param_dict['dirdata']+'/'+YEAR+'/*'+dateval+'*.nc')
         self.log.debug(f"Search file  {liste_file}")
@@ -572,23 +612,50 @@ class Extract_UVDrifters_filtr(Extractor):
 
     def __init__(self, log):
         self.log = log
-        # Nco constructor
-        self.nco = Nco()
         self.nb_vars = 2
         self.nb_depths = 1
         self.fillvalue_b = -128
+        self.fillvalue_s = -32767
+        self.fillvalue_R4 = netCDF4.default_fillvals['f4']
+
+    def check_all_attributes(self, nc):
+        errors = []
+        for attr in nc.ncattrs():
+            try:
+                getattr(nc, attr)
+            except Exception as e:
+                errors.append(f"Global attr {attr}: {e}")
+        for var_name, var in nc.variables.items():
+            for attr in var.ncattrs():
+                try:
+                    getattr(var, attr)
+                except Exception as e:
+                    errors.append(f"Var {var_name} attr {attr}: {e}")
+        return errors
+ 
+ 
+    def check_netcdf_valid(self, filename, timeout=10, log=None):
+        start = time.time()
+        while True:
+            try:
+                with Dataset(filename, 'r') as nc:
+                    if log: log.info(f"{filename} is valid")
+                    return True
+            except OSError:
+                if time.time() - start > timeout:
+                    if log: log.error(f"{filename} not readable after {timeout}s")
+                    return False
+                time.sleep(0.5)
 
     def rewrite(self, file, nb_fcst, nb_fcst2, file_new):
         """
             Rewrite netcdf file to the right GODAE format
         """
         # Create File
-        self.log.info(f"Write new filtered file {file_new}")
+        self.log.debug(f"Write new filtered file {file_new}")
         self.nb_fcst = nb_fcst
         self.nb_fcst2 = nb_fcst2
-        #nc_fid = Dataset(file_new, 'w', format='NETCDF4', locking=True)
-        ## Filtered unrealistic values with longitude > 180°
-        nc_file = xr.open_dataset(file, decode_times=False)
+        nc_file = xr.open_dataset(file, decode_times=False, chunks=None)
         variables = nc_file.data_vars
         lon_obs  = nc_file['LONGITUDE_FILTR'].values
         lat_obs = nc_file['LATITUDE_FILTR'].values
@@ -602,12 +669,29 @@ class Extract_UVDrifters_filtr(Extractor):
         v_obs_filt = nc_file['NSCT_FILTR'].values
         u_obs_qc = nc_file['EWCT_FILTR_QC'].values
         v_obs_qc = nc_file['NSCT_FILTR_QC'].values
+        if 'EWCT_WS_FILTR' and 'NSCT_WS_FILTR' in variables.keys():
+            u_filtr_ws = nc_file['EWCT_WS_FILTR'].values
+            v_filtr_ws = nc_file['NSCT_WS_FILTR'].values
+            u_filtr_ws_qc = nc_file['EWCT_WS_FILTR_QC'].values
+            v_filtr_ws_qc = nc_file['NSCT_WS_FILTR_QC'].values
+        else:
+            u_filtr_ws = np.full(u_obs_filt.shape, np.nan)
+            v_filtr_ws = np.full(v_obs_filt.shape, np.nan)
+            u_filtr_ws_qc = np.copy(u_obs_qc)
+            v_filtr_ws_qc = np.copy(v_obs_qc)
+            u_filtr_ws_qc[:, :] = 9
+            v_filtr_ws_qc[:, :] = 9
+        if "CURRENT_TEST" in variables.keys():
+            current_test = nc_file['CURRENT_TEST'].values
+        else:
+            current_test = None
+        
         nc_file.close()
         nc = Dataset(file, 'r')
         missing_value =  nc.variables['EWCT_FILTR']._FillValue
         nc.close()
-        #with Dataset(file_new, 'w', format='NETCDF4', locking=True) as nc_fid_rewrite:
-        nc_fid_rewrite = Dataset(file_new, 'w', format='NETCDF4', locking=True)
+        #nc_fid_rewrite = Dataset(file_new, 'w', format='NETCDF4', locking=True)
+        nc_fid_rewrite = Dataset(file_new, 'w', format='NETCDF4')
         nc_fid_rewrite.createDimension('numobs', None)
         nc_fid_rewrite.createDimension('numvars', self.nb_vars)
         nc_fid_rewrite.createDimension('numdeps', self.nb_depths)
@@ -659,7 +743,13 @@ class Extract_UVDrifters_filtr(Extractor):
         nc_ws_qc.valid_max = 9
         nc_ws_qc.flag_values = "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
         nc_ws_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
-
+       
+        nc_current_test  = nc_fid_rewrite.createVariable('current_test', 'i2',('numobs'),fill_value=self.fillvalue_s)
+        nc_current_test.long_name = "Flag tests of drogue loss results"
+        nc_current_test.description ="3 flags for 3 tests : Submersion Acceleration_buoy Wind-current-corr"
+        nc_current_test.flag_values = "0, 1, 2, 3"
+        nc_current_test.flag_meanings = "Drogue_probably_missing Test_not_performed Weak_probability_of_drogue_presence Strong_probability_of_drogue_presence"
+         
         nc_time = nc_fid_rewrite.createVariable('obs_time', 'f8',('numobs'))
         nc_time.setncatts({'long_name': u"Time",\
                     'standard_name': u"time",\
@@ -699,23 +789,14 @@ class Extract_UVDrifters_filtr(Extractor):
         v_obs_filt = v_obs_filt[mask]
         u_obs_qc = u_obs_qc[mask]
         v_obs_qc = v_obs_qc[mask]
+        if "CURRENT_TEST" in variables.keys():
+            current_test = current_test[mask]
         if 'EWCT_WS_FILTR' and 'NSCT_WS_FILTR' in variables.keys():
-            u_filtr_ws = nc_file['EWCT_WS_FILTR'].values
-            v_filtr_ws = nc_file['NSCT_WS_FILTR'].values
-            u_filtr_ws_qc = nc_file['EWCT_WS_FILTR_QC'].values
-            v_filtr_ws_qc = nc_file['NSCT_WS_FILTR_QC'].values
             u_filtr_ws = u_filtr_ws[mask]
             v_filtr_ws = v_filtr_ws[mask]
             u_filtr_ws_qc = u_filtr_ws_qc[mask]
             v_filtr_ws_qc = v_filtr_ws_qc[mask]
-        else:
-            u_filtr_ws = np.full(u_obs_filt.shape, np.nan)
-            v_filtr_ws = np.full(v_obs_filt.shape, np.nan)
-            u_filtr_ws_qc = np.copy(u_obs_qc)
-            v_filtr_ws_qc = np.copy(v_obs_qc)
-            u_filtr_ws_qc[:, :] = 9
-            v_filtr_ws_qc[:, :] = 9
-
+        
         nc_fid_rewrite.variables['latitude'][:] = lat_obs
         nc_fid_rewrite.variables['longitude'][:] = lon_obs
         nc_fid_rewrite.variables['obs_time'][:] = time_obs
@@ -733,6 +814,8 @@ class Extract_UVDrifters_filtr(Extractor):
         nc_fid_rewrite.variables['windage'][:,1,:] = v_filtr_ws[:,:]
         nc_fid_rewrite.variables['windage_qc'][:,0] = u_filtr_ws_qc
         nc_fid_rewrite.variables['windage_qc'][:,1] = v_filtr_ws_qc
+        if current_test is not None:
+            nc_fid_rewrite.variables['current_test'][:] = current_test
 
         # Add global attributs
         nc_fid_rewrite.institution = 'MERCATOR OCEAN'
@@ -741,6 +824,7 @@ class Extract_UVDrifters_filtr(Extractor):
         nc_fid_rewrite.time_interp = "daily average fields"
         nc_fid_rewrite.Conventions = 'CF-1.6'
         nc_fid_rewrite.close()
+        nc_fid_rewrite = Dataset(file_new, 'r+')
 
     def list(self, daterun, dirdata, typedata):
         year = daterun[0:4]
@@ -750,19 +834,19 @@ class Extract_UVDrifters_filtr(Extractor):
             self.log.error(f"Missing Drifters files {dirdata}/{year}/{month}/*{daterun}*nc")
             return [], True
         else:
-            self.log.info('Liste file UV drifters {}'.format(liste_file))
+            self.log.debug('Liste file UV drifters {}'.format(liste_file))
             return liste_file, False
 
     def run_list(self, param_dict, daterun):
         liste_tot=[]
         year = daterun[0:4]
         month = daterun[4:6]
-        #liste_file=glob(param_dict['dirdata']+'/'+daterun[0:4]+'/*'+daterun+'*.nc')
-        liste_file=glob(param_dict['dirdata'] + '/' + year + '/' + month + '/*' + daterun+'*.nc')
+        #liste_file=glob(param_dict['dirdata'] + '/' + year + '/' + month + '/*' + daterun+'*.nc')
+        liste_file=glob(param_dict['dirdata'] + '/' + year + '/*' + daterun+'*.nc')
         if not liste_file:
-            self.log.error(f"Missing Drifters files {param_dict['dirdata']}/{year}/{month}/*{daterun}*nc")
+            self.log.error(f"Missing Drifters files {param_dict['dirdata']}/{year}/*{daterun}*nc")
             return []
-        self.log.info('Liste file UV drifters {}'.format(liste_file))
+        self.log.debug('Liste file UV drifters {}'.format(liste_file))
         nb_fcst = len(param_dict['lead_int'])
         nb_fcst2 = len(param_dict['lead_int2'])
         self.log.debug('Number of forecasts {}'.format(nb_fcst))
@@ -772,7 +856,7 @@ class Extract_UVDrifters_filtr(Extractor):
                            +  '_' + param_dict['model_type'].lower() + \
                            '_currents-filtr.nc'
                 ## If missing Read and Rewrite file
-                if not  os.path.exists( param_dict['dirwork']+file_new):
+                if not  os.path.exists(param_dict['dirwork']+file_new):
                     self.log.debug(f"Write Filename {param_dict['dirwork']}{file_new}")
                     self.rewrite(liste_file[0], nb_fcst, nb_fcst2, param_dict['dirwork']+file_new)
                 else:
@@ -790,11 +874,23 @@ class Extract_UVDrifters(Extractor):
 
     def __init__(self, log):
         self.log = log
-        # Nco constructor
-        self.nco = Nco()
         self.nb_vars = 2
         self.nb_depths = 1
         self.fillvalue_b = -128
+
+    def check_netcdf_valid(self, filename, timeout=10, log=None):
+        start = time.time()
+        while True:
+            try:
+                with Dataset(filename, 'r') as nc:
+                    if log: log.info(f"{filename} is valid")
+                    return True
+            except OSError:
+                if time.time() - start > timeout:
+                    if log: log.error(f"{filename} not readable after {timeout}s")
+                    return False
+                time.sleep(0.5)
+
 
     def rewrite(self, file, nb_fcst, nb_fcst2, file_new):
         """
@@ -859,6 +955,12 @@ class Extract_UVDrifters(Extractor):
         nc_ws_qc.valid_max = 9
         nc_ws_qc.flag_values = "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
         nc_ws_qc.flag_meanings = "no_qc_performed good_data probably_good_data bad_data_that_are_potentially_correctable bad_data value_changed not_used nominal_value interpolated_value missing_value"
+        
+        nc_current_test  = nc_fid.createVariable('current_test', 'i2',('numobs'),fill_value=self.fillvalue_s)
+        nc_current_test.long_name = "Flag tests of drogue loss results"
+        nc_current_test.description ="3 flags for 3 tests : Submersion Acceleration_buoy Wind-current-corr"
+        nc_current_test.flag_values = "0, 1, 2, 3"
+        nc_current_test.flag_meanings = "Drogue_probably_missing Test_not_performed Weak_probability_of_drogue_presence Strong_probability_of_drogue_presence"
 
         nc_time = nc_fid.createVariable('obs_time', 'f8',('numobs'))
         nc_time.setncatts({'long_name': u"Time",\
@@ -900,6 +1002,10 @@ class Extract_UVDrifters(Extractor):
         u_obs_qc = nc_file['EWCT_QC'].values
         v_obs_qc = nc_file['NSCT_QC'].values 
         code_values_obs = nc_file['PLATFORM_CODE'].values
+        if "CURRENT_TEST" in variables.keys():
+            current_test = nc_file['CURRENT_TEST'].values
+        else:
+            current_test = None
         #variables = ncdata.data_vars
         mask = lon_obs <= 180
         lon_obs = lon_obs[mask]
@@ -914,6 +1020,8 @@ class Extract_UVDrifters(Extractor):
         v_obs = v_obs[mask]
         u_obs_qc = u_obs_qc[mask]
         v_obs_qc = v_obs_qc[mask]
+        if current_test is not None:
+            current_test = current_test[mask]
         if 'EWCT_WS' and 'NSCT_WS' in variables.keys():
             print('Windage ok')
             u_ws = nc_file['EWCT_WS'].values
@@ -939,22 +1047,8 @@ class Extract_UVDrifters(Extractor):
         nc_fid.variables['position_qc'][:] = position_qc
         nc_fid.variables['depth'][:,:] = depth_obs
         nc_fid.variables['depth_qc'][:] = depth_obs_qc 
-        #nc_fid.variables['longitude'][:] = nc_file['LONGITUDE'].values
-        #nc_fid.variables['latitude'][:] = nc_file['LATITUDE'].values
-        #nc_fid.variables['obs_time'][:] = nc_file['TIME'].values
-        #nc_fid.variables['time_qc'][:] = nc_file['TIME_QC'].values
-        #nc_fid.variables['position_qc'][:] = nc_file['POSITION_QC'].values
-        #nc_fid.variables['depth'][:,:] = nc_file['DEPH'].values
-        #nc_fid.variables['depth_qc'][:] = nc_file['DEPH_QC'].values
-        #code_values = nc_file['PLATFORM_CODE'].values
         code_values2 = [var.decode("utf-8") for var in code_values_obs]
         nc_fid.variables['plateform_code'][:] = code_values2
-        #u_cur = nc_file['EWCT'].values
-        #v_cur = nc_file['NSCT'].values
-        #nc_fid.variables['observation'][:,0,:] = u_cur[:,:]
-        #nc_fid.variables['observation'][:,1,:] = v_cur[:,:]
-        #nc_fid.variables['observation_qc'][:,0] = nc_file['EWCT_QC'].values
-        #nc_fid.variables['observation_qc'][:,1] = nc_file['NSCT_QC'].values
         nc_fid.variables['observation'][:,0,:] = u_obs[:,:]
         nc_fid.variables['observation'][:,1,:] = v_obs[:,:]
         nc_fid.variables['observation_qc'][:,0] = u_obs_qc
@@ -963,21 +1057,22 @@ class Extract_UVDrifters(Extractor):
         nc_fid.variables['windage'][:,1,:] = v_ws[:,:]
         nc_fid.variables['windage_qc'][:,0] = u_ws_qc
         nc_fid.variables['windage_qc'][:,1] = v_ws_qc
-
+        if current_test is not None:
+            nc_fid.variables['current_test'][:] = current_test
         # Add global attributs
         nc_fid.institution = 'MERCATOR OCEAN'
         nc_fid.contact = 'cregnier@mercator-ocean.fr'
         #nc_fid.obs_type = self.type_data.get(variable, {}).get('defaults').get('name')
         nc_fid.time_interp = "daily average fields"
-        #today = date.today()
-        #yyyy = str(today)[0:4]
-        #yyyy2 = dateval[0:4]
-        #month = str(today)[5:7]
-        #month2 = dateval[4:6]
-        #day = str(today)[8:10]
-        #day2 = dateval[6:8]
-        #nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
-        #nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
+        today = date.today()
+        yyyy = str(today)[0:4]
+        yyyy2 = dateval[0:4]
+        month = str(today)[5:7]
+        month2 = dateval[4:6]
+        day = str(today)[8:10]
+        day2 = dateval[6:8]
+        nc_fid.validity_time = yyyy2+"-"+month2+"-"+day2+" 00:00:00"
+        nc_fid.creation_date = yyyy+"-"+month+"-"+day+" 00:00:00"
         #nc_fid.system = model
         nc_fid.Conventions = 'CF-1.6'
         nc_fid.close()
@@ -985,20 +1080,19 @@ class Extract_UVDrifters(Extractor):
 
     def run_list(self,param_dict, daterun):
         liste_tot=[]
-        #liste_file=glob(param_dict['dirdata']+'/'+daterun[0:4]+'/*'+daterun+'*.nc')
         year = daterun[0:4]
         month = daterun[4:6]
-        liste_file=glob(param_dict['dirdata'] + '/' + year + '/' + month + '/*' + daterun+'*.nc')
+        #liste_file=glob(param_dict['dirdata'] + '/' + year + '/' + month + '/*' + daterun+'*.nc')
+        liste_file=glob(param_dict['dirdata'] + '/' + year + '/*' + daterun+'*.nc')
         if not liste_file:
             self.log.error("Missing Drifters files {} {}".format(param_dict['dirdata'], daterun))
             return []
-        self.log.info('Liste file UV drifters {}'.format(liste_file))
+        self.log.debug('Liste file UV drifters {}'.format(liste_file))
         nb_fcst = len(param_dict['lead_int'])
         nb_fcst2 = len(param_dict['lead_int2'])
         self.log.debug('Number of forecasts {}'.format(nb_fcst))
         for new_file in liste_file :
             try :
-                #file_new = 'class4_'+daterun+'_'+param_dict['cl_config_h']+'_'+param_dict['model_type'].lower()+'_currents.nc'
                 file_new = 'class4_' + daterun + '_' + param_dict['cl_conf']\
                            +  '_' + param_dict['model_type'].lower() + \
                            '_currents.nc'
@@ -1038,7 +1132,7 @@ class Extract_MDS_L3_SLA(Extractor):
         year = dateval[0:4]
         dirdata = param_dict['dirdata']
         list_files = glob(f'{dirdata}{year}/nrt_global_*{dateval}*.nc')
-        self.log.debug(f'{list_files=} {dateval}')
+        #self.log.debug(f'{dirdata}{year}/nrt_global_*{dateval}*.nc')
         if len(list_files) == 0:
             list_files = glob(f'{dirdata}{year- 1}/nrt_global_*{dateval}*.nc')
             year = str(int(year) - 1)
@@ -1052,10 +1146,7 @@ class Extract_MDS_L3_SLA(Extractor):
                 continue
             nb_sat += 1
             choose_file = self.find_largest_date_difference(list_files)
-            #latest_file = max(list_files, key=os.path.getctime)
-            #self.log.info(f"Satellite {sat} and latest file {latest_file}")
             self.log.info(f"Satellite {sat} and choose file {choose_file}")
-            #date_sat = os.path.basename(latest_file).split("_")[6].split(".")[0]
             try:
                 filename = os.path.basename(choose_file)
                 if not os.path.exists(param_dict['dirwork']+filename):
@@ -1092,6 +1183,8 @@ class Extract_GODAE(Extractor):
             liste_file=glob(dirdata+'/*'+daterun+'*.nc')
         else :
             try:
+                print(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')
+                sys.exit(1)
                 liste_file = [glob(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')[0]]
             except IndexError:
                self.log.error(f'Missing CLASS4 {daterun} {typedata} file')
@@ -1102,134 +1195,147 @@ class Extract_GODAE(Extractor):
             self.log.error(f'file is missing for {daterun}')
             return liste_file, True
     
-    def run(self,daterun,dirdata,dirtmp,typedata,template,nb_fcst):
-
+    def run_list(self, param_dict, daterun, template=''):
+        
+        dirdata = param_dict['dirdata']
+        typedata = param_dict['data_type']
+        nb_fcst = len(param_dict['lead_int'])
+        dirtmp = param_dict['dirwork']
+        template = param_dict['template']
         if typedata != "SLA" and  typedata != "SST" and typedata != "profile" \
             and typedata !=  "aice" and typedata !=  "AMSR" and  typedata !=  "current" :
             self.log.error("Data %s not known !!! " %(typedata))
             sys.exit(1)
-        #valeurj=date1
+        
         liste_tot=[]
-        # Nco constructor
-        nco = Nco()
-        #while  valeurj.__ge__(date1) and valeurj.__le__(date2) :
-        #    dateval=SyDate.__str__(valeurj)
         self.log.info('Day  %s ' % (daterun))
+ 
+        # Select input file(s)
         if typedata ==  "AMSR" :
-            liste_file=glob(dirdata+'/*'+daterun+'*.nc')
+            liste_file = glob(f"{dirdata}/*{daterun}*.nc")
         else :
             try:
-                liste_file = [glob(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')[0]]
+                liste_file = [glob(f"{dirdata}/class4*{daterun}*{typedata}*.nc")[0]]
             except IndexError:
                self.log.error(f'Missing CLASS4 {daterun} {typedata} file')
                liste_file = []
-        if liste_file:
-            self.log.info(f'Liste file {liste_file}')
-            for new_file in liste_file :
-                try :
-                    filename=os.path.basename(new_file)
-                    if typedata ==  "AMSR" :
-                        filename=re.sub('GL_h5',template,filename)
-                    elif typedata ==  "current":
-                        filename=filename
+        
+        if not liste_file:
+            return liste_tot
+        
+        self.log.debug(f'Liste file {liste_file}')
+
+        for new_file in liste_file :
+            try :
+                filename=os.path.basename(new_file)
+
+                # Adjust filename
+                if typedata ==  "AMSR" :
+                    filename=re.sub('GL_h5',template,filename)
+                elif typedata !=  "current":
+                    template1 = filename.split("_")
+                    if len(template1) > 5:
+                        template_tmp = "_".join(template1[2:5])
                     else:
-                        template1 = filename.split('_')[0:]
-                        if len(template1) > 5:
-                            template_tmp = template1[2]+'_'+template1[3]+'_'+template1[4]
-                        else:
-                            template_tmp = template1[2]+'_'+template1[3]
-                        filename=re.sub(template_tmp, template, filename)
-                    # Copy extracted value of GODAE file with nco module
-                    if typedata != "aice" and typedata != 'current':
-                        # If it doesn't exist, create it
-                        if not os.path.exists(dirtmp):
-                            os.makedirs(dirtmp)
-                        uncompressed_filename = re.sub(r'(\.nc)$', '_uncompressed.nc', filename)
-                        uncompressed_file_path = os.path.join(dirtmp, uncompressed_filename)
-                        # Define nco options
-                        options = []
-                        options.extend(['-h', '-O', '-a', 'numfcsts'])
-                        # Change numfcts dim
-                        # Test input file
-                        if self.is_netcdf4_classic(new_file):
-                            self.log.info(f"Write output file netcdf4 classical {dirtmp}{filename}")
-                            try:
-                                subprocess.run([
-                                    'nccopy', '-d0',
-                                    new_file,
-                                    uncompressed_file_path
-                                ], check=True)
-                            except subprocess.CalledProcessError as e:
-                                self.log.error(f"An error occurred during decompression: {e}")
-                                raise
-                            try:
-                                nco.ncwa(input=uncompressed_file_path, output=os.path.join(dirtmp, filename), options=options)
-                            except Exception as e:
-                                self.log.error(f"An error occurred: {e}")
-                                raise
-                            finally:
-                                # Remove the uncompressed file
-                                if os.path.exists(uncompressed_file_path):
-                                    os.remove(uncompressed_file_path)
-                        else:
-                            self.log.info(f"Write output file netcdf4 {dirtmp}{filename}")
-                            nco.ncwa(input=new_file, output=dirtmp+filename, fortran=True ,options=options)
-                        nc = netCDF4.Dataset(dirtmp+filename, 'r')
-                        variables = nc.variables.keys()
-                        if 'modeljuld' in variables and nb_fcst>0:
-                           command ="ncap2 -h -O -s "
-                           command2 = "\'defdim(\"numfcsts\","+str(nb_fcst)+");leadtime_new[$numfcsts]=leadtime;modeljuld_new[$numfcsts]=modeljuld\' "
-                           os.system(command+command2+dirtmp+filename+" "+dirtmp+filename)
-                        else:
-                            self.log.info('no modeljuld !!')
-                        options = []
-                        if typedata == "SLA" :
-                            #options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference,leadtime,modeljuld'])
-                            options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,altimeter_bias,mdt_reference,leadtime,modeljuld,varname'])
-                        else :
-                            options.extend(['-h','-O','-xv','best_estimate,forecast,persistence,leadtime,modeljuld'])
-                        nco.ncks(input=dirtmp+filename,output=dirtmp+filename, fortran=True ,options=options)
-                        # Rename
-                        options = []
-                        if 'modeljuld' in variables and nb_fcst>0:
-                            options.extend(['-h','-O','-v','modeljuld_new,modeljuld'])
-                            nco.ncrename(input=dirtmp+filename,output=dirtmp+filename, options=options)
-                            options = []
-                            options.extend(['-h','-O','-v','leadtime_new,leadtime'])
-                            nco.ncrename(input=dirtmp+filename,output=dirtmp+filename,options=options)
-                        self.log.debug("add new dim ok {}".format(dirtmp+filename))
-                    elif typedata == "current":
-                        options = []
-                        shutil.copy(dirdata+filename,dirtmp)
+                        template_tmp = "_".join(template1[2:4])
+                    filename=re.sub(template_tmp, template, filename)
+
+                out_path = os.path.join(dirtmp, filename)
+
+                if typedata not in ["aice", "current"]:
+                    # If it doesn't exist, create it
+                    os.makedirs(dirtmp, exist_ok=True)
+
+                    # Open dataset
+                    ds = xr.open_dataset(new_file)
+                    
+                    # ---- 1) Handle numfcsts ----
+                    if "numfcsts" in ds.dims:
+                        ds = ds.isel(numfcsts=0, drop=True)
+
+                    # ---- 2) Handle modeljuld + leadtime ----
+                    if "modeljuld" in ds and nb_fcst > 0:
+                        # Expand to add numfcsts dimension
+                        ds = ds.expand_dims({"numfcsts": nb_fcst})
+
+                        # Rename like ncap2 + ncrename steps
+                        if "leadtime" in ds:
+                            ds = ds.rename({"leadtime": "leadtime_new"})
+                        if "modeljuld" in ds:
+                            ds = ds.rename({"modeljuld": "modeljuld_new"})
+
+                        ds = ds.rename({"modeljuld_new": "modeljuld",
+                                        "leadtime_new": "leadtime"})
                     else:
-                        #typedata == "aice" :
-                        options = []
-                        options.extend(['-h','-O','-xv','best_estimate,forecast,persistence'])
-                        nco.ncks(input=new_file,output=dirtmp+filename,options=options)
-                    if typedata == "AMSR" :
-                        # add missing varname
-                        # Solution2 : add dimensions and variable varname
-                        cl_fileIn=dirtmp+filename
-                        nc   = netCDF4.Dataset(cl_fileIn,'a')
-                        nc.createDimension('string_length8',8)
-                        # for AMSR
-                        nc.createDimension('numvars',1)
-                        nc.createVariable('varname','c',('numvars','string_length8'))
-                        nc.variables['varname'][:]='ileadfra'
-                        nc.close
-                    self.log.debug('Fichier extracted %s ' % (dirtmp+filename)) 
-                    liste_tot.append(dirtmp+filename)
-                    # Design output File
-                    # Design_file('GODAE').run(dirtmp+filename)
-                except IOError as e:
-                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-                    raise
-            #valeurj=valeurj.goforward(1)
-        else:
-            liste_tot = []
+                        self.log.info("no modeljuld !!")
+
+                    # ---- 3) Drop unwanted variables ----
+                    drop_vars = ["best_estimate", "forecast", "persistence", "leadtime", "modeljuld"]
+                    if typedata == "SLA":
+                        drop_vars.extend(["altimeter_bias", "mdt_reference", "varname"])
+                    ds = ds.drop_vars([v for v in drop_vars if v in ds.variables], errors="ignore")
+
+                    # ---- 4) Save output ----
+                    comp = dict(zlib=True, complevel=4)
+                    encoding = {var: comp for var in ds.data_vars}
+                    ds.to_netcdf(out_path, encoding=encoding)
+                    ds.close()
+                
+                elif typedata == "current":
+                    shutil.copy(os.path.join(dirdata, filename), out_path)
+
+                else:  # aice
+                    ds = xr.open_dataset(new_file)
+                    drop_vars = ["best_estimate", "forecast", "persistence"]
+                    ds = ds.drop_vars([v for v in drop_vars if v in ds.variables], errors="ignore")
+                    if "obs_time" in ds:
+                        if "units" in ds["obs_time"].attrs:
+                            ds["obs_time"].attrs["units"] = (
+                                ds["obs_time"].attrs["units"]
+                                .replace("Seconds", "seconds")
+                                .replace("utc", "UTC")
+                        )
+                        encoding = {
+                            "obs_time": {
+                            "units": "seconds since 1950-01-01 00:00:00 UTC",
+                            "calendar": "gregorian"
+                            }
+                        }
+                    if "time" in ds:
+                        if "units" in ds["time"].attrs:
+                            ds["time"].attrs["units"] = (
+                                ds["time"].attrs["units"]
+                                .replace("Seconds", "seconds")
+                                .replace("utc", "UTC")
+                            )
+                        encoding = {
+                            "time": {
+                                "units": "seconds since 1950-01-01 00:00:00 UTC",
+                                "calendar": "gregorian"
+                            }
+                        }
+                    ds.to_netcdf(out_path, encoding=encoding)
+                    ds.close()
+                
+                # ---- 5) AMSR special case ----
+                if typedata == "AMSR":
+                    with netCDF4.Dataset(out_path, "a") as nc:
+                        if "string_length8" not in nc.dimensions:
+                            nc.createDimension("string_length8", 8)
+                        if "numvars" not in nc.dimensions:
+                            nc.createDimension("numvars", 1)
+                        if "varname" not in nc.variables:
+                            var = nc.createVariable("varname", "S1", ("numvars", "string_length8"))
+                            var[:] = netCDF4.stringtochar(np.array([["ileadfra"]], dtype="S8"))
+
+                self.log.debug(f"Fichier extracted {out_path}")
+                liste_tot.append(out_path)
+
+            except IOError as e:
+                self.log.error(f"I/O error({e.errno}): {e.strerror}")
+                raise
+
         return liste_tot
-
-
 
 class Extract_ARMOR(Extractor):
 
@@ -1248,7 +1354,7 @@ class Extract_ARMOR(Extractor):
             liste_file=glob(frame)
             # liste_file=glob(dirdata+'/*[TS]*'+dateval+'*.nc')
             self.log.debug(f'Frame {dirdata}{prefix}*{dateval.strip()}*.nc*')
-            self.log.info(f'Liste file ARMOR {liste_file}') 
+            self.log.debug(f'Liste file ARMOR {liste_file}') 
             for new_file in liste_file :
                 try :
                     filename=os.path.basename(new_file)

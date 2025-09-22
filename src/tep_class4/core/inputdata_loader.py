@@ -1,12 +1,15 @@
 from __future__ import generators
+import warnings
+warnings.filterwarnings("ignore")
 import os
 import fcntl
 import sys
 import numpy as np
 import netCDF4
+from collections import namedtuple
 from .reader import read_drifter_filt, read_drifter
 from .QCcontrol import QCcontroller
-from . import seawater as sw
+import seawater as sw
 from .Selector import Selector
 import xarray as xr
 
@@ -14,6 +17,19 @@ import xarray as xr
 # C.REGNIER Juin 2014
 # Class Loader to load different type of file with a pattern factory
 ##############################################################
+
+def read_observations(file_obs, param_dict, log):
+    # Read obs file
+    ObsData = namedtuple("ObsData", ["lon", "lat", "obs_value", "nb_obs", "depth", "tab_dims", "FillValue", "qc"])
+    log.debug(f"Format of the data {param_dict['data_format']}")
+    lon_obs, lat_obs, obs_value, nb_obs, depth, rla_qc, tab_dims, param_dict, _FillValue = \
+                inputdata_loader(log).factory(param_dict['data_format']).\
+                read_pos_and_value(file_obs, param_dict)
+    #obs_data = ObsData(lon_obs, lat_obs, obs_value.squeeze(), nb_obs, depth, tab_dims, _FillValue)
+    obs_data = ObsData(lon_obs, lat_obs, obs_value, nb_obs, depth, tab_dims, _FillValue, rla_qc)
+    tuple_obs = (np.shape(lon_obs)[0], np.shape(lat_obs)[0])
+
+    return obs_data, tuple_obs
 
 
 class inputdata_loader(object):
@@ -287,7 +303,7 @@ class LoaderNCClim(inputdata_loader):
 
     def read_pos(self, filename):
         rla_lon, rla_lat, nc = self.generic_read_pos(filename)
-        return rla_lon, rla_lat
+        return rla_lon, rla_lat, None, None
 
 class loaderNCcorio_tac(inputdata_loader):
     """Loader for coriolis dataset from TAC"""
@@ -710,7 +726,7 @@ class loaderNCcorio_tac(inputdata_loader):
         del ds
 
         return np.float32(rla_lon), np.float32(rla_lat), np.float32(rla_obs),\
-               n_profiles, np.float32(rla_prof), tab_dims, param_dict,  _FillValue
+               n_profiles, np.float32(rla_prof), rla_qc, tab_dims, param_dict,  _FillValue
 
 class LoaderNCcorio(inputdata_loader):
 
@@ -894,6 +910,8 @@ class L3_SEALEVEL_Loader(inputdata_loader):
             elif dims == 'numdeps':
                 tab_dims['nb_depths'] = sizedim
 
+        if 'flag' in nc.variables.keys():
+            rla_qc = nc.variables['flag'][:]
         if 'depth' in nc.variables.keys():
             rla_depth = nc.variables['depth'][:]
         elif 'DEPH' in nc.variables.keys():
@@ -909,7 +927,7 @@ class L3_SEALEVEL_Loader(inputdata_loader):
             rla_depth = np.ndarray(shape=(nb_obs,nb_deps),dtype=float, order='F')
             rla_depth[:, 0] = 0
         param_dict['varname_select'] = param_dict['varname']
-        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, tab_dims, param_dict, _FillValue
+        return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, rla_qc, tab_dims, param_dict, _FillValue
 
 
 class LoaderNCgodae(inputdata_loader):
@@ -1118,18 +1136,20 @@ class alleges_coords(inputdata_loader):
         mask_tab = np.full((ndepth,nlat,nlon), True)
         mask_tab = np.where(rla_mask == 1, False, mask_tab)
         nc.close()
-        return rla_lon,rla_lat,mask_tab,rla_depth
+        return rla_lon, rla_lat, mask_tab, rla_depth
 
 class bathy_coords(inputdata_loader):
-    """Loader for Alleges Mask"""
+    """Loader for bathy coordinates"""
     def read_pos(self,filename):
         nc = netCDF4.Dataset(filename,'r')
         variable = 'nav_lon'
         rla_lon = nc.variables[variable][:,:]
         variable = 'nav_lat'
         rla_lat = nc.variables[variable][:,:]
+        mask_tab = None
+        rla_depth = 0
         nc.close()
-        return rla_lon,rla_lat
+        return rla_lon,rla_lat, mask_tab, rla_depth
 
 class read_Legos_SIT(inputdata_loader):
     
@@ -1223,6 +1243,7 @@ class LoaderCMEMSDrifter_filtr(inputdata_loader):
 
         combined_UV = np.stack((np.squeeze(u_filtr), np.squeeze(v_filtr)), axis=1)
         combined_qc =  np.stack((np.squeeze(u_filtr_qc), np.squeeze(v_filtr_qc)), axis=1)
+        param_dict['varname_select'] = param_dict['varname']
 
         return lon, lat, combined_UV, nb_obs, depth, combined_qc,  tab_dims, param_dict, _FillValue
 
@@ -1235,7 +1256,6 @@ class LoaderCMEMSDrifter(inputdata_loader):
         lon, lat, depth, depth_qc, time, u, v, ll_var,\
             u_qc, v_qc, wind_u, wind_v, current_test, current_test_qc,\
             position_qc, time_qc, dc_reference = read_drifter(filename)
-
         nb_obs = len(lon)
         _FillValue = np.nan
         tab_dims = {}
@@ -1248,9 +1268,11 @@ class LoaderCMEMSDrifter(inputdata_loader):
         #        tab_dims['nb_obs'] = sizedim
         #    elif dims == 'numdeps':
         #        tab_dims['nb_depths'] = sizedim
-        combined_UV = np.stack((u, v), axis=1)
-        #return lon, lat, [u, v], nb_obs, depth, tab_dims, param_dict, _FillValue
-        return lon, lat, combined_UV, nb_obs, depth, tab_dims, param_dict, _FillValue
+        #combined_qc =  np.stack((u_qc, v_qc), axis=1)
+        #combined_UV = np.stack((u, v), axis=1)
+        param_dict['varname_select'] = param_dict['varname']
+        return lon, lat, [u, v], nb_obs, depth, [u_qc, v_qc], tab_dims, param_dict, _FillValue
+        #return lon, lat, combined_UV, nb_obs, depth, combined_qc, tab_dims, param_dict, _FillValue
 
 class SMOC_coords_Loader(inputdata_loader):
     """

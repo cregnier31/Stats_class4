@@ -12,9 +12,9 @@ import errno
 import pandas as pd
 from .sydate import SyDate
 from tep_class4.core.utils import date_range
-from .Logger import Logger
 from calendar import monthrange
 from .reader import read_drifter, read_drifter_filt
+from .Logger import Logger
 from ast import literal_eval
 from .QCcontrol import QCcontroller
 from .Selector import Selector
@@ -278,9 +278,11 @@ class InputLoader_stats(Loader):
         """Loader for input options"""
         keywords = ['date1=', 'date2=', 'config=', 'typemod=', 
                     'loglevel=', 'best','fcst','pers','all',
-                    'clim', 'bathy', 'listdata=', 'typedata=', 'zarr']
+                    'clim', 'bathy', 'listdata=', 'typedata=', 'zarr', 'np_max']
         list_inputtype = ['pgs', 'pgs_ai', 'pgn', 'pgncg']
         
+        # Create dictionnary
+        param_dict={}
         cla_opts = getopt.getopt(options, 'd', keywords)
         list_LEAD_TIME = [] 
         ll_netcdf = False
@@ -288,8 +290,10 @@ class InputLoader_stats(Loader):
         for o, p in cla_opts[0]:
             if o in ['--date1']:
                 cl_start_date = p
+                param_dict['date1'] = cl_start_date
             elif o in ['--date2']:
                 cl_end_date = p
+                param_dict['date2'] = cl_end_date
             elif o in ['--typemod']:
                 cl_typemod = p
                 if cl_typemod not in list_inputtype:
@@ -301,26 +305,25 @@ class InputLoader_stats(Loader):
                 ll_forecast = True
             elif o in ['--config']:
                 cl_config = p
+                param_dict['cl_config'] = cl_config
             elif o in ['--loglevel']:
                 level = int(p)
             elif o in ['--listdata']:
                 list_data = p
+                param_dict['listdata'] = list_data
             elif o in ['--all']:
                 list_LEAD_TIME=['best_estimate', 'forecast', 'persistence']
             elif o in ['--zarr']:
                 ll_zarr = True
             elif o in ['--netcdf']:
                 ll_netcdf = True
+            elif o in ['--np_max']:
+                param_dict['np_max'] = int(np_max)
         # LOGGER
         log = Logger(f"TEP_CLASS4_{cl_config}_{cl_start_date}_{cl_end_date}").run(level)
         log.debug("Loglevel {}".format(log))
+
         confname = 'config_' + str(cl_config) + '_allvars' + '.cfg'
-        # Create dictionnary
-        param_dict={}
-        param_dict['listdata'] = list_data
-        param_dict['date1'] = cl_start_date
-        param_dict['date2'] = cl_end_date
-        param_dict['cl_config'] = cl_config
         param_dict['lead_time'] = list_LEAD_TIME
         param_dict['lead_int'] = self.lead_int
         param_dict['fcst_mode'] = ll_forecast
@@ -341,8 +344,11 @@ class InputLoader(Loader):
         keywords = ['date1=', 'date2=', 'delta=', 'nbdate=', 'daterun=',
         'config=', 'data=', 'src=', 'nbproc=', 'typemod=', 'schedule=',
         'data_id=','loglevel=','daymax=','dirinput=','diroutput=', 'dirlog=',
-        'best','fcst','pers','all','clim','bathy','SMOC','stokes',
-        'listdata=', 'typedata=', 'tides','zarr']
+        'best','fcst','pers','all', 'curr', 'clim_curr','bathy', 'smoc','stokes',
+        'listdata=', 'typedata=', 'tides', 'zarr', 'np_max=', 'np_threads=', "no-recombine"]
+        # Create dictionnary
+        param_dict={}
+        # Initialisation
         ll_delta = None
         ll_date1 = None
         ll_date2 = None
@@ -365,18 +371,10 @@ class InputLoader(Loader):
         cl_schedule = 'd'
         cl_data_id = ""
         list_LEAD_TIME = []
-        list_inputtype = ['pgs', 'pgs_ai', 'pgn', 'pgncg', 'allege','2ease', 'allege_new', 'allege_now']
-        #try:
-        #    opts, args = getopt.getopt(options, "h", [keywords])
-        #except getopt.GetoptError:
-        #    print("Invalid option. Use --help for usage information.")
-        #    sys.exit(2)
-        #for opt, arg in opts:
-        #    if opt in ("-h", "--help"):
-        #        print("Usage: script.py [--best]")
-        #        sys.exit()
-        #    elif opt == "--best":
-        #        print("Performing the best operation.")
+        list_LEAD_TIME_CURR=['smoc','tides', 'stokes'] #, 'climatology','bathymetrie']
+        list_inputtype = ['smoc', 'pgs', 'pgs_ai', 'pgn', 'pgncg', 'allege',
+                          '2ease', 'allege_new', 'allege_now', 'bathy', 'clim_curr']
+        ll_listdata = False
         cla_opts = getopt.getopt(options, 'd', keywords)
         
         for o, p in cla_opts[0]:
@@ -391,10 +389,14 @@ class InputLoader(Loader):
                 cl_end_date = p
             elif o in ['--typemod']:
                 cl_typemod = p
+                param_dict['cl_typemod'] = cl_typemod.upper()
+                print(param_dict['cl_typemod'])
                 if cl_typemod not in list_inputtype:
                     print('input data type not known : ')
                     print(f'must be {list_inputtype} not {cl_typemod}')
                     sys.exit(1)
+            elif o in ['--smoc']:
+                param_dict['cl_typemod'].append('SMOC')
             elif o in ['--daterun']:
                 ll_daterun = True
                 cl_daterun = p
@@ -419,6 +421,7 @@ class InputLoader(Loader):
                 cl_data_id = p
             elif o in ['--loglevel']:
                 level = int(p)
+                param_dict['loglevel'] = level
             elif o in ['--daymax']:
                 daymax = p
             elif o in ['-d']:
@@ -436,19 +439,12 @@ class InputLoader(Loader):
                 list_LEAD_TIME.append('best_estimate')
             elif o in ['--fcst']:
                 list_LEAD_TIME.append('forecast')
+                list_LEAD_TIME_CURR = ['stokes_fcst', 'smoc_fcst']
                 ll_forecast = True
             elif o in ['--pers']:
                 list_LEAD_TIME.append('persistence')
             elif o in ['--bathy']:
-                list_LEAD_TIME.append('bathymetrie')
-            elif o in ['--tides']:
-                list_LEAD_TIME.append('tides')
-            elif o in ['--stokes']:
-                list_LEAD_TIME.append('stokes')
-            elif o in ['--SMOC']:
-                list_LEAD_TIME.append('smoc')
-            elif o in ['--clim']:
-                list_LEAD_TIME.append('climatology')
+                list_LEAD_TIME.append('bathy')
             elif o in ['--listdata']:
                 ll_listdata = True
                 ll_data = True
@@ -458,9 +454,16 @@ class InputLoader(Loader):
                 list_data = p
             elif o in ['--all']:
                 list_LEAD_TIME=['best_estimate', 'forecast', 'persistence']
+                #list_LEAD_TIME_CURR.extend(list_LEAD_TIME)
+                list_LEAD_TIME_CURR.extend(['stokes_fcst', 'smoc_fcst'])
+            elif o in ['--curr']:
+                list_LEAD_TIME_CURR=['smoc','tides', 'stokes']
+                #, 'climatology','bathymetrie']
             elif o in ['--zarr']:
                 ll_zarr = True
                 ll_netcdf = False
+            elif o in ['--np_max']:
+                param_dict['np_max'] = int(p)
         # LOGGER
         if ll_dirlog:
             log = Logger(f"TEP_CLASS4_{cl_data}_{cl_config}",dirlog=dirlog).run(level)
@@ -479,14 +482,10 @@ class InputLoader(Loader):
                 "Type TEP_CLASS4.py --data=XXX --src=XXX --config=XXX --delta=XXXX (delayed time before today)")
             log.error("Type TEP_CLASS4.py --data=XXX --src=XXX --config=XXX --daterun=XXXX --nbdate=X --delta=X  (for example 1 week before today -14 and today -7)")
             sys.exit(1)
-        if not ll_data or not ll_src:
+        #if not ll_data or not ll_src:
+        if not ll_data:
             log.error(
-                "Type is missing : add --data=SLA/SST/profile/profile_ARMOR and --src=GODAE/CORIO. in the launcher")
-            log.error(
-                "Type TEP_CLASS4.py --data=XXX --src=XXX --config=XXX --date1=XXXX --date2=XXXX or ")
-            log.error(
-                "Type TEP_CLASS4.py --data=XXX --src=XXX --config=XXX --delta=XXXX (delayed time before today)")
-            log.error("Type TEP_CLASS4.py --data=XXX --src=XXX --config=XXX --daterun=XXXX --nbdate=X --delta=X  (for example 1 week before today -14 and today -7)")
+                "Type is missing : add --data=SLA/SST/profile/profile_ARMORi/all in the launcher")
             sys.exit(1)
         if ll_delta and list_var.count(True) == 0:
             log.info("Case 1 Delta only")
@@ -576,8 +575,14 @@ class InputLoader(Loader):
         if ll_date1 and ll_date2 :
             log.debug("Date1 %s Date2 %s " %(date1,date2))
         #confname='config_'+str(cl_config)+'_'+str(cl_src)+'_'+str(cl_data)+'.cfg'
-        confname='config_model.cfg'
-        confname='config_obs.cfg'
+        confname=f"config_mod_{cl_config}.cfg"
+        #confname='config_obs.cfg'
+        if  param_dict['cl_typemod'].lower() == "bathy":
+            list_LEAD_TIME.append('bathy')
+            self.lead_int = [0]
+        if  param_dict['cl_typemod'].lower() == "clim_curr":
+            list_LEAD_TIME.append('clim_curr')
+            self.lead_int = [0]
 
         # Logger
         log.debug("Nombre de proc %i" %(nb_proc))
@@ -586,23 +591,22 @@ class InputLoader(Loader):
         log.debug("Dates %s %s " %(date1,date2))
         log.debug("Datatype %s " %(cl_data))
         log.debug("Daterun %s " %(cl_daterun))
-        # Create dictionnary
-        param_dict={}
         if ll_listdata:
             param_dict['listdata'] = list_data
         param_dict['date1'] = date1
         param_dict['date2'] = date2
         param_dict['confname'] = confname
-        param_dict['data_type'] = cl_data
+        param_dict['data_type_all'] = cl_data
         param_dict['cl_daterun'] = cl_daterun
         param_dict['cl_schedule'] = cl_schedule
-        param_dict['cl_src'] = cl_src
+        param_dict['cl_config'] = cl_config
+        #param_dict['cl_src'] = cl_src
         param_dict['nb_proc'] = nb_proc
-        param_dict['cl_typemod'] = cl_typemod.upper()
         param_dict['cl_data_id'] = cl_data_id
         param_dict['daymax'] = daymax
         param_dict['dask'] = dask
         param_dict['lead_time'] = list_LEAD_TIME
+        param_dict['lead_time_curr'] = list_LEAD_TIME_CURR
         param_dict['lead_int'] = self.lead_int
         param_dict['fcst_mode'] = ll_forecast
         param_dict['is_zarr'] = ll_zarr
@@ -644,6 +648,7 @@ class NmlLoader(Loader):
         param_dict['dirhome'] = os.path.dirname(os.path.realpath(__file__))+'/../'
         param_dict['nml_dir'] = param_dict['dirhome']+'NAMELIST/'
         param_dict['dir_log'] = param_dict['dirhome']+'log/'
+        
         # Add new parameters in the dictionnary
         #if 'sla' in param_dict['data_type'].lower(): 
        # if param_dict['data_type'] == "SLA" :
@@ -652,24 +657,36 @@ class NmlLoader(Loader):
         if param_dict['cl_typemod'].lower() == 'pgn':
             param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
             param_dict['dirmodel'] = param_dict['dirmodel_pgn']
-            #param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION')
-            param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable_ng'))
+            param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_ng'))
             param_dict['coordinates'] = db.get('static', 'fic_coordinates')
         elif param_dict['cl_typemod'].lower() == 'pgs' or param_dict['cl_typemod'].lower() == 'pgs_ai':
             param_dict['dirmodel_pgs'] = db.get('input_dir', 'DATA_IN_PGS')
-            #param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION')
-            param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable_sg'))
+            param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_sg'))
             param_dict['coordinates'] = db.get('static', 'fic_coordinates')
         elif param_dict['cl_typemod'].lower() == 'pgncg':
             param_dict['dirmodel_pgncg'] = db.get('input_dir', 'DATA_IN_PGN_CG')
-            #param_dict['cl_config'] = db.get('GLOBAL', 'CONFIGURATION_CG')
-            param_dict['varname'] = literal_eval(db.get('GLOBAL', 'variable_cg'))
+            param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_cg'))
             param_dict['coordinates'] = db.get('static', 'fic_coordinates_cg')
+        elif param_dict['cl_typemod'].lower() == 'smoc':
+            param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
+            param_dict['dirmodel'] = param_dict['dirmodel_pgn']
+            param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_smoc_all'))
+            param_dict['coordinates'] = db.get('static', 'fic_coordinates_SMOC')
+        elif param_dict['cl_typemod'].lower() == 'bathy':
+            param_dict['dirmodel_pgn'] = db.get('GLOBAL', 'variable_bathy')
+            param_dict['dirmodel'] = param_dict['dirmodel_pgn']
+            param_dict['coordinates'] = db.get('static', 'fic_coordinates')
+            param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_bathy_all'))
+        elif param_dict['cl_typemod'].lower() == 'clim_curr':
+            param_dict['dirmodel_pgn'] = db.get('climato', 'DIRCLIM_CUR')
+            param_dict['dirmodel'] = param_dict['dirmodel_pgn']
+            param_dict['coordinates'] = db.get('static', 'fic_coordinates_clim_curr')
+            param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_clim_curr_all'))
         else:
-            self.log.error('Input not known /= pgn pgs pgs_ai pgn_cg')
+            log.error('Input not known /= pgn pgs pgs_ai pgn_cg')
             sys.exit(1)
         if 'dirdata' not in param_dict.keys():
-            param_dict['dirdata'] = db.get('input_dir', 'INPUTDATA')
+            param_dict['dirdata'] = literal_eval(db.get('input_dir', 'INPUTDATA'))
         try:
             param_dict['dirmodel_light'] = db.get('input_dir', 'DATA_IN_LIGHT')
         except Exception:
@@ -679,7 +696,7 @@ class NmlLoader(Loader):
         except Exception:
             param_dict['insitu_corr'] = False
         try:
-            param_dict['Design_GODAE_file'] = ast.literal_eval(db.get('GLOBAL', 'Design_GODAE_file'))
+            param_dict['Design_GODAE_file'] = literal_eval(db.get('GLOBAL', 'Design_GODAE_file'))
         except Exception:
             param_dict['Design_GODAE_file'] = False
         try:
@@ -687,21 +704,9 @@ class NmlLoader(Loader):
         except Exception:
             param_dict['EDITO'] = ''
         try:
-            param_dict['typedata'] = literal_eval(db.get('GLOBAL', 'typedata'))
+            param_dict['typedata_all'] = literal_eval(db.get('GLOBAL', 'typedata'))
         except Exception:
-            param_dict['typedata'] = ''
-        try:
-            param_dict['list_variables'] = literal_eval(db.get('GLOBAL', 'list_variables'))
-        except Exception:
-            param_dict['list_variables'] = ''
-        try:
-            param_dict['typedata'] = literal_eval(db.get('GLOBAL', 'typedata'))
-        except Exception:
-            param_dict['typedata'] = ''
-        try:
-            param_dict['list_variables'] = literal_eval(db.get('GLOBAL', 'list_variables'))
-        except Exception:
-            param_dict['list_variables'] = ''
+            param_dict['typedata_all'] = ''
         try:
             param_dict['good_qc'] = literal_eval(db.get('GLOBAL', 'good_qc'))
         except Exception:
@@ -714,6 +719,16 @@ class NmlLoader(Loader):
             param_dict['time_centered'] = literal_eval(db.get('GLOBAL', 'time_centered'))
         except Exception:
             param_dict['time_centered'] = False
+        
+        if param_dict['data_type_all'] == 'all':
+            try:
+                param_dict['list_variables'] = literal_eval(db.get('GLOBAL', 'list_variables'))
+            except Exception:
+                param_dict['list_variables'] = ''
+        #elif param_dict['cl_typemod'].lower() == 'smoc':
+        #    param_dict['list_variables'] = ['smoc', 'tides', 'stokes']
+        else:
+            param_dict['list_variables'] = [param_dict['data_type_all']]
         
         # param_dict['Design_GODAE_file'] = db.get('GLOBAL', 'Design_GODAE_file')
         param_dict['dirmodel'] = db.get('input_dir', 'DATA_IN')
@@ -741,7 +756,7 @@ class NmlLoader(Loader):
         param_dict['maskname'] = db.get('static','maskname')
         date1 = param_dict['date1']
         date2 = param_dict['date2']
-        daterun = param_dict['daterun']
+        #daterun = param_dict['daterun']
 
         cl_schedule = db.get('GLOBAL', 'SCHEDULE')
         try:
@@ -776,9 +791,9 @@ class NmlLoader(Loader):
         param_dict['do_decomp'] = int(db.get('GLOBAL', 'do_decomp'))
         param_dict['model_type'] = db.get('GLOBAL', 'MODELTYPE')
         try:
-            param_dict['data_format'] = literal_eval(db.get('input_dir', 'DATA_FMT'))
+            param_dict['data_format_all'] = literal_eval(db.get('input_dir', 'DATA_FMT'))
         except Exception: 
-            param_dict['data_format'] = []
+            param_dict['data_format_all'] = []
 
         param_dict['dirwork'] = db.get('output_dir', 'DIRTMP')
         if not os.path.exists(param_dict['dirwork']):
@@ -794,15 +809,15 @@ class NmlLoader(Loader):
             param_dict['diroutput2'] = db.get('output_dir', 'DIROUTPUT2')
         except Exception:
             param_dict['diroutput2'] = ""
-        param_dict['dirclim'] = db.get('climato', 'DIRCLIM')
+        param_dict['dirclim_cur'] = db.get('climato', 'DIRCLIM_CUR')
         try:
             param_dict['dirclim2'] = db.get('climato', 'DIRCLIM2')
         except Exception:
             param_dict['dirclim2'] = ""
         try:
-            param_dict['coord_clim'] = glob(param_dict['dirclim'] + "*.nc")[0]
+            param_dict['coord_clim_curr'] = glob(param_dict['dirclim_curr'] + "*.nc")[0]
         except Exception:
-            param_dict['coord_clim'] = ""
+            param_dict['coord_clim_curr'] = ""
         try:
             param_dict['coordinates_hgr'] = db.get('static', 'coordinates_hgr')
         except Exception:
@@ -810,15 +825,16 @@ class NmlLoader(Loader):
 
         param_dict['dirtmp'] = param_dict['dirwork'] + 'ext-'
         try:
-            param_dict['prefix_data'] = literal_eval(db.get('input_dir', 'PREFIX'))
+            param_dict['prefix_data_all'] = literal_eval(db.get('input_dir', 'PREFIX'))
         except Exception:
-            param_dict['prefix_data'] = []
+            param_dict['prefix_data_all'] = []
         param_dict['daily_pref'] = db.get('GLOBAL', 'DAILY_PREF')
         try:
             param_dict['data_origin'] = db.get('input_dir', 'DATA_ORIGIN')
         except Exception:
             param_dict['data_origin'] = []
         param_dict['cl_conf'] = db.get('GLOBAL', 'CONF')
+        param_dict['cl_confname'] = db.get('GLOBAL', 'CONFIGNAME')
         #param_dict['template'] = param_dict['cl_config_h'] + \
         #    '_'+param_dict['model_type'].lower()
         param_dict['template'] = param_dict['cl_conf'] + \
@@ -857,7 +873,7 @@ class NmlLoader(Loader):
         param_dict['version'] = db.get('GLOBAL','VERSION')
         param_dict['desc'] = db.get('GLOBAL','DESCRIPTION')
         try:
-            param_dict['varname_smoc'] = literal_eval(db.get('GLOBAL', 'variable_SMOC'))
+            param_dict['varname_smoc'] = literal_eval(db.get('GLOBAL', 'variable_smoc'))
         except Exception:
             param_dict['varname_smoc'] = ""
         try:
@@ -870,13 +886,20 @@ class NmlLoader(Loader):
             param_dict['varname_tides'] = ""
         try:
             param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
-            param_dict['lead_int2'] = param_dict['lead_int2']
         except Exception:
+            param_dict['lead_int'] = ""
+        try:
+            param_dict['lead_int2'] = db.get('input_dir', 'LEAD_INT2').split()
+        except:
             param_dict['lead_int2'] = ""
         try:
             param_dict['varname_bathy'] = db.get('GLOBAL', 'variable_bathy').split()
         except Exception:
-            param_dict['lead_int2'] = ""
+            param_dict['varname_bathy'] = ""
+        try:
+            param_dict['varname_clim_curr'] = literal_eval(db.get('GLOBAL', 'variable_clim_curr'))
+        except Exception:
+            param_dict['varname_clim_curr'] = ""
         try:
             param_dict['corr'] = literal_eval(db.get('GLOBAL', 'corr'))
         except Exception:
@@ -908,7 +931,9 @@ class NmlLoader(Loader):
         
         param_dict['dirwork'] = param_dict['dirwork']
         param_dict['diroutput'] = param_dict['diroutput']
-        param_dict['dirdata'] = param_dict['dirdata']
+        param_dict['dirdata_all'] = param_dict['dirdata']
+        param_dict['ll_PSAL'] = True
+        param_dict['ll_TEMP'] = True
 
         return param_dict
 

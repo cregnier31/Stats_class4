@@ -10,6 +10,19 @@ __version__ = 0.1
 __date__ = "February 2019"
 __authors__ = "C.REGNIER & C.SZCZYPTA"
 
+
+#def read_observations(param_dict, log):
+#    # Read obs file
+#    ObsData = namedtuple("ObsData", ["lon", "lat", "obs_value", "nb_obs", "depth", "tab_dims", "FillValue"])
+#    log.debug(f"Format of the data {param_dict['data_format']}")
+#    lon_obs, lat_obs, obs_value, nb_obs, depth, tab_dims, param_dict, _FillValue = \
+#                inputdata_loader(log).factory(param_dict['data_format']).\
+#                read_pos_and_value(file_obs, param_dict)
+#    obs_data = ObsData(lon_obs, lat_obs, obs_value.squeeze(), nb_obs, depth, tab_dims, _FillValue)
+#    tuple_obs = (np.shape(lon_obs)[0], np.shape(lat_obs)[0])
+#
+#    return obs_data, tuple_obs
+
 def read_qc_CLASS4(cvar, nc):
     rla_qc_init2 = None
     if cvar in ['SST', 'SLA', 'PSAL', 'TEMP']:

@@ -3,8 +3,8 @@ import os
 import sys
 import re
 import numpy as np
-from .Loader import Loader
-from .nco.nco import Nco
+#from .nco.nco import Nco
+import xarray as xr
 from .QCcontrol import QCcontroller
 import logging
 import shelve
@@ -142,6 +142,7 @@ class SelectListModelData(Selector):
 
     def set_gridtype(self, param_dict):
         self.data_type = param_dict['data_type']
+        self.allegetype = ['allege', "allege_now", "allege_new"]
         if self.data_type.lower() == "sst" or self.data_type.lower() == "ssthf":
             param_dict['gridtype'] =  [param_dict['gridtemp']]
             param_dict['gridtype_clim'] = ["TEMP"]
@@ -170,7 +171,7 @@ class SelectListModelData(Selector):
             list_grid = []
             list_grid_clim = []
             list_grid_light = []
-            self.log.debug(f"Inside Profile {param_dict['ll_TEMP']}")
+            self.log.debug(f"Inside Profile {param_dict['ll_TEMP']}{param_dict['ll_PSAL']}")
             if param_dict['ll_TEMP']:
                 list_grid.append(param_dict['gridtemp'])
                 list_grid_clim.append("TEMP")
@@ -188,6 +189,7 @@ class SelectListModelData(Selector):
         elif self.data_type.lower() in self.list_ice:
             param_dict['gridtype'] = param_dict['gridice']
         self.typemod = param_dict['cl_typemod'].lower()
+        # Get dirmodel
         if self.typemod == "pgn":
             self.dirmodel = param_dict['dirmodel_pgn']
         elif self.typemod == "pgs":
@@ -197,10 +199,15 @@ class SelectListModelData(Selector):
             self.dirmodel = param_dict['dirmodel_pgs']
         elif self.typemod == "pgncg":
             self.dirmodel = param_dict['dirmodel_pgncg']
-        elif self.typemod == "allege" or "allege_new" \
-             or self.typemod == "allege_now":
+        elif self.typemod in self.allegetype:
             self.dirmodel = param_dict['dirmodel_light']
         elif self.typemod == "2ease":
+            self.dirmodel = param_dict['dirmodel_pgn']
+        elif self.typemod == "smoc":
+            self.dirmodel = param_dict['dirmodel_pgn']
+        elif self.typemod == "bathy":
+            self.dirmodel = param_dict['dirmodel_pgn']
+        elif self.typemod == "clim_curr":
             self.dirmodel = param_dict['dirmodel_pgn']
         else:
             raise ('typemod not known')
@@ -217,6 +224,7 @@ class SelectListModelData(Selector):
         if  time == 'forecast':
             lead_new = [time[0]+time[4]+time[6:8]+element for element in lead_new ]
             lead_fin = lead_new
+            #print(f'{lead_fin=}')
         elif time == 'persistence':
             self.log.info(param_dict['lead_time'])
             #if filter(lambda x: 'best_weekly' in x, param_dict['lead_time']):
@@ -250,24 +258,25 @@ class SelectListModelData(Selector):
             lead_fin = ['hdct', 'nwct']
         elif time == 'rtr':
             lead_fin = ['rtr']
-        elif time == 'climatology':
-            lead_fin = ['clim']
-        elif time == 'bathymetrie':
+        elif time == 'climatology' or time == "clim_curr":
+            lead_fin = ['clim_curr']
+        elif time == 'bathymetrie' or time == "bathy":
             lead_fin = ['bathy']
         elif time == 'clim_lev13_A5B2':
             lead_fin = ['clim']
         elif time == 'smoc':
             lead_fin = ['smoc']
         elif time == 'smoc_fcst':
-            lead_fin = ['fcst'+element for element in lead_new2 ]
-            self.dirmodel_new = self.dirmodel+'DAILY/SMOC/'
+            lead_fin = ['fcst'+element for element in lead_new ]
+            #self.dirmodel_new = self.dirmodel+'DAILY/SMOC/'
         elif time == 'tides':
             lead_fin = ['tides']
         elif time == 'stokes':
             lead_fin = ['stokes']
         elif time == 'stokes_fcst':
-            lead_fin = ['fcst'+element for element in lead_new2 ]
-            self.dirmodel_new = self.dirmodel+'DAILY/SMOC/'
+            lead_fin = ['fcst'+element for element in lead_new ]
+            #lead_fin = [time[0]+time[4]+time[6:8]+element for element in lead_new2 ]
+            #self.dirmodel_new = self.dirmodel+'DAILY/SMOC/'
         else:
             self.log.error('In sorter Lead time %s not expected ' %(time))
             sys.exit(1)
@@ -302,7 +311,7 @@ class SelectListModelData(Selector):
   #      return all_files if all_files else None
 
 
-    def get_directory(self, directory, dateval, param_dict):
+    def get_directory(self, directory, dateval, param_dict, leadtime):
         datev = SyDate(str(dateval))
         year = str(datev.year)
         month = datev.month
@@ -314,6 +323,7 @@ class SelectListModelData(Selector):
 
         # Determine the directory structure using YAML
         config = param_dict['cl_conf']
+        self.configname = param_dict['cl_confname']
         self.config_d = re.sub("V", "QV", config)
         if directory == 'hdct':
             daily_pref = param_dict.get('daily_pref', None)
@@ -324,11 +334,8 @@ class SelectListModelData(Selector):
                     dirmodel_new = self.config['directory_patterns']['hdct']['default'][self.data_type.lower()].format(dirmodel=self.dirmodel)
                 else:
                     run_type = param_dict['type_run']
-                    print(run_type)
-                    print(self.config['directory_patterns']['hdct']['default'])
                     if run_type in self.config['directory_patterns']['hdct']['default']:
                         if run_type == 'REA':
-                            print(self.config['directory_patterns']['hdct']['default'][run_type])
                             dirmodel_new = self.config['directory_patterns']['hdct']['default'][run_type].format(dirmodel=self.dirmodel, modele=config)
                         else:
                             dirmodel_new = self.config['directory_patterns']['hdct']['default'][run_type].format(dirmodel=self.dirmodel, year=year, month=month)
@@ -368,15 +375,15 @@ class SelectListModelData(Selector):
                     config_slice = self.modele[0:4]
                     dirmodel_new = self.config['directory_patterns']['fcst']['default']['BIO4'].format(
                                     dirmodel=self.dirmodel)
+        elif directory == 'clim_curr':
+            dirmodel_new = self.config['directory_patterns']['clim_curr'].format(dirclim=param_dict['dirclim_cur'])
         elif directory == 'clim':
             dirmodel_new = self.config['directory_patterns']['clim'].format(dirclim=param_dict['dirclim'])
-
         elif directory in ["smoc", "tides", "stokes"]:
             dirmodel_new = self.config['directory_patterns']['smoc'].format(dirmodel=self.dirmodel)
-
-        elif directory in ['smoc_fcst', 'stokes_fcst']:
+            
+        elif leadtime in ['smoc_fcst', 'stokes_fcst']:
             dirmodel_new = self.config['directory_patterns']['smoc_fcst'].format(dirmodel=self.dirmodel)
-
         elif directory == 'bathy':
             dirmodel_new = self.config['directory_patterns']['bathy'].format(bathy_file=param_dict['bathy_file'])
 
@@ -418,19 +425,23 @@ class SelectListModelData(Selector):
         #lead_new = param_dict['lead_int']
         #lead_new2 = param_dict['lead_int2']
         param_dict = self.set_leadtime(leadtime, param_dict, lead_int)
+
         ## Find and Load the good file
         ll_miss = False
+        self.log.debug("===================")
+        self.log.debug(self.leadtime)
+        self.log.debug('====================')
         for directory in self.leadtime:
             self.log.debug("directory {}".format(directory))
             ll_miss_rep = False
             # Access mapping from YAML
-            dirmodel_new, dirmodel_new_next = self.get_directory(directory, dateval, param_dict)
+            dirmodel_new, dirmodel_new_next = self.get_directory(directory, dateval, param_dict, leadtime)
             self.log.debug(f"Get directory {dirmodel_new} {dirmodel_new_next}")
             self.log.debug(f"{self.config} {dirmodel_new} {self.modele} {self.type_run}")
             # Handle different type of file
             file_handler = FileHandler(self.config,
                                        dirmodel_new,
-                                       self.modele,
+                                       self.configname,
                                        self.typemod,
                                        self.data_type,
                                        directory,
@@ -438,13 +449,12 @@ class SelectListModelData(Selector):
                                        dateval,
                                        param_dict,
                                        self.log)
-            list_file = file_handler.load_files()
-            self.log.debug('directory %s' % (dirmodel_new))
-
+            list_file = file_handler.load_files(leadtime)
             if not list_file:
                 self.log.error("Repertory %s" % (dirmodel_new))
                 self.log.error(f"File missing for {directory} {dateval}")
                 ll_miss_rep = True
+                sys.exit(1)
                 continue
                 #sys.exit(1)
             self.log.debug('dirmodel  %s ' % (self.dirmodel))
@@ -486,21 +496,25 @@ class SelectListData(Selector):
             self.log.debug('              DATE Selection and extraction zoom or GODAE ')
             self.log.debug('========================================================')
             self.log.debug(f"Prefix {param_dict['prefix_data']}")
+            self.log.debug("Case 1")
             #list_files = Extractor().factory(param_dict['prefix_data']).run(param_dict['date1'],\
             #param_dict['date2'],param_dict['dirdata'],param_dict['dirwork'],param_dict['data_type'],param_dict['template'])
             list_files = Extractor(self.log).factory(param_dict['prefix_data']).run(daterun,param_dict['dirdata'],\
                          param_dict['dirwork'],param_dict['data_type'],param_dict['template'], len(param_dict['lead_int']))
         elif param_dict['do_decomp']:
+            self.log.debug("Case 2")
             self.log.debug('do decomp {} '.format(param_dict['prefix_data']))
             list_files = Extractor(self.log).factory(param_dict['prefix_data']).run(
                 param_dict['date1'], param_dict['date2'], param_dict['dirdata'],\
                 param_dict['dirwork'], param_dict['data_type'], param_dict['template'], param_dict['prefix_data'])
         elif param_dict['over']:
+            self.log.debug("Case 3")
             self.log.debug('inside over {} '.format(param_dict['prefix_data']))
             list_files = Extractor(self.log).factory(param_dict['prefix_data']).run_over(
                 param_dict['date1'], param_dict['date2'], param_dict['diroutput'],\
                 param_dict['dirwork'], param_dict['data_type'], param_dict['template'], param_dict['prefix_data'])
         else:
+            self.log.debug("Case 4")
             self.log.debug('========================================================')
             self.log.debug('              DATE Selection and extraction  %s         ' %(param_dict['prefix_data']))
             self.log.debug(f" Prefix Data {param_dict['prefix_data']}")
@@ -569,6 +583,7 @@ class SelectCorio(Selector):
             self.dimprof = 'numobs'
 
     def run(self, fichier, zoom, do_qc, TYPEDATA, qc_level):
+        from .Loader import Loader
         logging.basicConfig(format='%(asctime)s %(message)s')
         log = logging.getLogger(" Run Selector")
         ## Level of logging output
@@ -641,43 +656,72 @@ class SelectCorio(Selector):
         ## Level of logging output
         #log.setLevel(logging.INFO)
         log.setLevel(logging.ERROR)
-        ## Nco constructor
-        nco = Nco()
-        il_ind=0
-        file_out=os.path.basename(fichier)
+        file_out = os.path.basename(fichier)
+        out_path = os.path.join(output_dir, file_out)
+        
+        il_ind = 0
         for il_it in list_index:
-            file_out2=os.path.basename(fichier).split('.')[0]+'_pf_'+str(il_it)+'.nc'
-            if il_ind == 0 :
-                ## Create file with unlimited dimension
-                options = []
-                options.extend(['-h'])
-                nco.ncks(input=fichier,output=output_dir+file_out, fortran=True ,dimension=str(self.dimprof)+','+str(il_it+1),options=options)
-                nco.ncecat(input=output_dir+file_out,output=output_dir+file_out,fortran=True,options=options)
-                options = []
-                options.extend(['-h','-O','-a',self.dimprof+',record'])
-                nco.ncpdq(input=output_dir+file_out,output=output_dir+file_out,fortran=True,options=options)
-                ## Remove record dimension
-                options = []
-                options.extend(['-h','-O','-a','record'])
-                nco.ncwa(input=output_dir+file_out,output=output_dir+file_out,fortran=True,options=options)
-            else :
-                options = []
-                options.extend(['-h'])
-                log.info("Do ncks")
-                nco.ncks(input=fichier,output=output_dir+file_out2, fortran=True ,append=True,dimension=self.dimprof+','+str(il_it+1),options=options)
-                log.info("Do ncks ok")
-                infiles = [output_dir+file_out,output_dir+file_out2]
-                log.info("Inputfiles :  %s " %(infiles) )
-                ## Concatenation of valid profiles
-                log.info("Do ncrcat")
-                nco.ncrcat(input=infiles, output=output_dir+'test.nc',fortran=True,options=options) 
-                log.info("Do ncrcat OK")
-                ## remove profile
-                os.remove(output_dir+file_out2) 
-                log.info("Do remove OK")
-                os.rename(output_dir+'test.nc',output_dir+file_out)
-                log.info("Do rename OK")
-            il_ind=il_ind+1
+            # Open dataset
+            ds = xr.open_dataset(fichier)
+        
+            # Extract one profile along self.dimprof
+            ds_sel = ds.isel({self.dimprof: il_it})
+        
+            if il_ind == 0:
+                # First profile → initialize output dataset
+                ds_concat = ds_sel.expand_dims("record")  # create a record dimension
+            else:
+                # Subsequent profiles → append
+                ds_new = ds_sel.expand_dims("record")
+                ds_concat = xr.concat([ds_concat, ds_new], dim="record")
+        
+            il_ind += 1
+        
+        # Optional: if you want to drop the 'record' dimension (like ncwa)
+        if "record" in ds_concat.dims:
+            ds_concat = ds_concat.squeeze("record", drop=True)
+        
+        # Save final file
+        ds_concat.to_netcdf(out_path, encoding={
+            var: {"zlib": True, "complevel": 4} for var in ds_concat.data_vars
+        }) 
+        ## Nco constructor
+        #nco = Nco()
+        #il_ind=0
+        #file_out=os.path.basename(fichier)
+        #for il_it in list_index:
+        #    file_out2=os.path.basename(fichier).split('.')[0]+'_pf_'+str(il_it)+'.nc'
+        #    if il_ind == 0 :
+        #        ## Create file with unlimited dimension
+        #        options = []
+        #        options.extend(['-h'])
+        #        nco.ncks(input=fichier,output=output_dir+file_out, fortran=True ,dimension=str(self.dimprof)+','+str(il_it+1),options=options)
+        #        nco.ncecat(input=output_dir+file_out,output=output_dir+file_out,fortran=True,options=options)
+        #        options = []
+        #        options.extend(['-h','-O','-a',self.dimprof+',record'])
+        #        nco.ncpdq(input=output_dir+file_out,output=output_dir+file_out,fortran=True,options=options)
+        #        ## Remove record dimension
+        #        options = []
+        #        options.extend(['-h','-O','-a','record'])
+        #        nco.ncwa(input=output_dir+file_out,output=output_dir+file_out,fortran=True,options=options)
+        #    else :
+        #        options = []
+        #        options.extend(['-h'])
+        #        log.info("Do ncks")
+        #        nco.ncks(input=fichier,output=output_dir+file_out2, fortran=True ,append=True,dimension=self.dimprof+','+str(il_it+1),options=options)
+        #        log.info("Do ncks ok")
+        #        infiles = [output_dir+file_out,output_dir+file_out2]
+        #        log.info("Inputfiles :  %s " %(infiles) )
+        #        ## Concatenation of valid profiles
+        #        log.info("Do ncrcat")
+        #        nco.ncrcat(input=infiles, output=output_dir+'test.nc',fortran=True,options=options) 
+        #        log.info("Do ncrcat OK")
+        #        ## remove profile
+        #        os.remove(output_dir+file_out2) 
+        #        log.info("Do remove OK")
+        #        os.rename(output_dir+'test.nc',output_dir+file_out)
+        #        log.info("Do rename OK")
+        #    il_ind=il_ind+1
 
     def store_pos(self,tab_pos,type_f,file_db):
         logging.basicConfig(format='%(asctime)s %(message)s')

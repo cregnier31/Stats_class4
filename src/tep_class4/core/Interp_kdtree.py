@@ -137,10 +137,12 @@ class interp_KDtree(object):
         else :
             if self.kdname == 'pykdtree':
                 # --- pykdtree method ---
+                #print('pykdtree method')
                 tree = KDTree(coords)
                 d1, inds_idw1 = tree.query(coords2, k = nbpts_interp, mask = mask)
             else:
                 # --- cKDTree method ---
+                #print('cKDTree method')
                 tree = cKDTree(list(zip(xs, ys, zs)))
                 d1, inds_idw1 = tree.query(list(zip(xt, yt, zt)), k = nbpts_interp)
             if save :

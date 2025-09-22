@@ -9,7 +9,7 @@ does not preserve or indeed handle masked arrays elegantly.
 """
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
-from window import Window, EmptyWindow
+from .window import Window, EmptyWindow
 
 class Vertical2DInterpolator(object):
     """Vertical section interpolator

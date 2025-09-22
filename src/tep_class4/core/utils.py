@@ -12,6 +12,7 @@ import traceback
 from .loader_post import load_db
 from dateutil.relativedelta import relativedelta
 from datetime import timedelta
+from joblib import cpu_count
 import yaml
 
 __version__ = 0.2
@@ -462,6 +463,39 @@ def find_index_month(date):
     index = dateval.month
     return index
 
+def create_listdate(date1, date2):
+    list_date = []
+    valeurj = date1
+    while valeurj >= date1  and valeurj <= date2:
+        dateval = str(valeurj)
+        list_date.append(dateval)
+        valeurj = valeurj.goforward(1)
+    return list_date
+
+def create_leadtime(param_dict, variable):
+    list_keys = {}
+    list_keys_values = []
+    list_uniq = ['best_estimate', 'climatology', 'bathy', 'clim_curr', 'bathymetrie', 'smoc','tides', 'stokes']
+    list_uniq2 = ['stokes_fcst', 'smoc_fcst']
+    list_var_curr = ['DRIFTER_filtr','DRIFTER']
+    lead_int = param_dict['lead_int']
+    if param_dict['cl_typemod'].lower() == 'smoc':
+        lead_time = param_dict['lead_time_curr']
+    else:   
+        lead_time = param_dict['lead_time']
+    for lead in lead_time:
+        if lead in list_uniq:
+            list_int = [0]
+        elif lead in list_uniq2:
+            list_int = param_dict['lead_int2']
+        else:
+            list_int = lead_int
+        for int_val in list_int:
+            keyvalue = f'{lead}-{int_val}'
+            list_keys_values.append(keyvalue)
+    list_keys['keyvalues'] = list_keys_values
+    return list_keys
+
 def create_dict(date1, date2, lead_time, lead_int):
     list_keys = {}
     valeurj = date1
@@ -502,3 +536,17 @@ def split_year_into_months(year):
             last_day = datetime(year, month + 1, 1) - timedelta(days=1)
         months.append((first_day.strftime('%Y%m%d'), last_day.strftime('%Y%m%d')))
     return months
+
+def get_nodes(list_files, log, np_max=8):
+    max_cores = cpu_count()
+    log.debug(f"Number of cores {max_cores}")
+    #outer_procs = min(len(list_files), max_cores // 6 or 1)  # ~6 processes max
+    #inner_threads = max(1, max_cores // outer_procs)
+    np_max = np_max
+    #outer_procs = min(len(input_list_files), max(1, max_cores // 8))  # low outer processes
+    outer_procs = min(len(list_files), max(1, max_cores // np_max))  # low outer processes
+    inner_threads = max(1, max_cores // outer_procs)  # threads per obs
+    log.debug(f"CPU allocation: {outer_procs} processes × {inner_threads} threads")
+    #num_cores = min(len(input_list_files), max(1, cpu_count() // 6))
+    return outer_procs, inner_threads
+
