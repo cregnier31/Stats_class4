@@ -41,6 +41,11 @@ class Writer():
         self.type_data = {
                 'profile_GODAE': {'code': 'INSITU_profile', 'varname':True, 'variable':'profile', 'defaults': {'name': 'In Situ profiles from CMEMS'}},
                 'profile_NC_CORIO': {'code': 'INSITU_profile', 'varname':True, 'variable':'MERC', 'defaults': {'name': 'In Situ profiles from CMEMS product 013_047'}},
+                'profile_PR_PF_NC_CORIO': {'code': 'INSITU_profile_PF', 'varname':True, 'variable':'MERC', 'defaults': {'name': 'In Situ PR_PF profiles from CMEMS product 013_047'}},
+                'profile_TS_DB_NC_CORIO': {'code': 'INSITU_profile_DB', 'varname':True, 'variable':'MERC', 'defaults': {'name': 'In Situ TS_DB profiles from CMEMS product 013_047'}},
+                'profile_other_NC_CORIO': {'code': 'Other_INSITU_profile', 'varname':True, 'variable':'MERC', 'defaults': {'name': 'In Situ other profiles from CMEMS product 013_047'}},
+                'profile_type1_NC_CORIO': {'code': 'Other_INSITU_profile', 'varname':True, 'variable':'MERC', 'defaults': {'name': 'In Situ other profiles from CMEMS product 013_047'}},
+                'profile_type2_NC_CORIO': {'code': 'Other_INSITU_profile', 'varname':True, 'variable':'MERC', 'defaults': {'name': 'In Situ other profiles from CMEMS product 013_047'}},
                 'CORA5.2_NC_CORIO': {'code': 'INSITU_profile', 'varname':True, 'variable':'', 'defaults': {'name': 'In Situ profiles from CORA product INSITU_GLO_PHY_TS_DISCRETE_MY_013_001'}},
                 'SST_GODAE': {'code': 'SST_DB', 'varname':True, 'variable':'SST', 'defaults': {'name': 'SST Drifting buoy'}},
                 'SLA_GODAE': {'code': 'SLA_L3S', 'varname':True, 'variable':'SLA', 'defaults': {'name': 'SLA CMEMS L3S'}},
@@ -613,12 +618,15 @@ class Writer():
             self.log.debug(f"{param_dict['data_type']}")
             self.log.debug(f"{param_dict['cl_src']}")
             self.log.debug(f"{variable=}")
+            self.log.info(f"{param_dict['data_type']}")
+            self.log.info(f"{param_dict['cl_src']}")
+            self.log.info(f"{variable=}")
             list_file = glob(f"{param_dict['dirwork']}{frame}")
             if not list_file:
                 frame = f"*{variable}*{dateval}*.nc"
                 list_file = glob(f"{param_dict['dirwork']}{frame}")
             if not list_file:
-                self.log.error("Files are missing")
+                self.log.error("In Writer files are missing for day {dateval}")
                 self.log.error(f"{param_dict['dirwork']}{frame}")
                 continue
             self.log.debug(f"{frame=}")
@@ -1045,6 +1053,72 @@ class Writer():
                 # Save to a new NetCDF file
                 merged_ds.to_netcdf(output_file)
                 self.log.debug(f"Concatenated file saved as {output_file}")
+            
+            elif type_obs == "profile_TS_DB_NC_CORIO":
+                frame = "class4"
+                input_files = glob(f"{dest}{frame}_{dateval}_*TS-DB*.nc")
+                filename = os.path.basename(input_files[0])
+                parts = filename.split("_")
+                model = parts[2]
+                grid  = parts[3]
+                output_sys = f"{model}_{grid}"
+                output_file = f"{dest}class4_{dateval}_{output_sys}_SST.nc"
+                with xr.open_dataset(input_files[0]) as ds:
+                    qc = ds["qc"].values  # (numobs, numvars, numdeps)
+                    good_mask = qc == 0
+                
+                    # Create new dataset and modify numdeps to 1
+                    ds_filtered = xr.Dataset()
+                    new_dims = dict(ds.dims)
+                    new_dims['numdeps'] = 1
+                
+                    for var_name, da in ds.data_vars.items():
+                        if not da.dims:
+                            ds_filtered[var_name] = da
+                            continue
+                
+                        fill = da.attrs.get("_FillValue", np.nan)
+                        dims = da.dims
+                        shape_out = tuple(new_dims.get(dim, da.sizes[dim]) for dim in dims)
+                
+                        # Handle variables with numdeps
+                        if "numdeps" in dims:
+                            data_out = np.full(shape_out, fill, dtype=da.dtype)
+                            data_in = da.values
+                
+                            if da.ndim == 2:  # (numobs, numdeps), e.g., depth
+                                for i in range(data_in.shape[0]):
+                                    for k in range(data_in.shape[1]):
+                                        # Assuming depth aligns with qc along numvars = 0
+                                        if good_mask[i, 0, k]:
+                                            data_out[i, 0] = data_in[i, k]
+                                            break
+                
+                            elif da.ndim == 3:  # (numobs, numvars, numdeps)
+                                for i in range(data_in.shape[0]):
+                                    for j in range(data_in.shape[1]):
+                                        for k in range(data_in.shape[2]):
+                                            if good_mask[i, j, k]:
+                                                data_out[i, j, 0] = data_in[i, j, k]
+                                                break
+                
+                            elif da.ndim == 4 and "numfcsts" in dims:  # (numobs, numvars, numfcsts, numdeps)
+                                for i in range(data_in.shape[0]):
+                                    for j in range(data_in.shape[1]):
+                                        for t in range(data_in.shape[2]):
+                                            for k in range(data_in.shape[3]):
+                                                if good_mask[i, j, k]:
+                                                    data_out[i, j, t, 0] = data_in[i, j, t, k]
+                                                    break
+                
+                            ds_filtered[var_name] = xr.DataArray(data_out, dims=dims, attrs=da.attrs)
+                        else:
+                            # Keep variables that don’t depend on numdeps, like lat/lon
+                            ds_filtered[var_name] = da
+                
+                    ds_filtered.attrs = ds.attrs
+                    ds_filtered.to_netcdf(output_file)
+                    self.log.info(f"Filtered NetCDF saved as '{output_file}' with numdeps=1 (only good qc)")
 
     def create_dims(self, list_dimensions, nc_fid,
                     nprofs=None, nlevels=None, nparams=None, nfcsts=None):

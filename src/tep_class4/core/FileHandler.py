@@ -126,7 +126,7 @@ class FileHandler:
                     self.log.info(f"File ok {file_select}")
                     list_file.extend(file_select)
                 else:
-                    self.log.error(f"File nok {pattern} {self.param_dict.get('gridtype', '')}")
+                    self.log.error(f"File nok {self.directory=} {pattern=} {self.param_dict.get('gridtype', '')}")
                     sys.exit(1)
                     
         return list_file

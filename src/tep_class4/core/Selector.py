@@ -134,6 +134,7 @@ class SelectListModelData(Selector):
                        'kaku_unc','kakuyear','kakuyear_unc','kakuyearsh','kakuyearsh_unc',
                        'kakush','kakush_unc']
         self.list_daily = ['1dAV', '1d-m']
+        self.listprofile = ['profile', 'cora5.2', 'profile_pr_pf', 'profile_ts_db', 'profile_other', 'profile_type1', 'profile_type2']
         module_dir = os.path.dirname(__file__)
         self.config_path = "directory_patterns.yaml" 
         path = os.path.join(module_dir, self.config_path)
@@ -167,7 +168,7 @@ class SelectListModelData(Selector):
         elif self.data_type.lower() == "drifter_filtr" or self.data_type.lower() == "drifter":
             param_dict['gridtype'] = [param_dict['gridu'], param_dict['gridv']]
             param_dict['gridtype_clim'] = ["current"]
-        elif self.data_type.lower() == "profile" or self.data_type.lower() == "cora5.2":
+        elif self.data_type.lower() in self.listprofile:
             list_grid = []
             list_grid_clim = []
             list_grid_light = []

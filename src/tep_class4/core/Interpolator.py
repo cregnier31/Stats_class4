@@ -50,7 +50,7 @@ class Interpolator(object):
         self.compute_corr = False
         self.model_var = ['uo', 'vo', 'vozocrtx', 'vomecrty']
         self.listUV = ['drifter', 'drifter_filtr']
-        self.list_insitu = ['BGC_ARGO', 'NC_CORIO_ORIGIN', 'NC_CORIO']
+        self.list_insitu = ['BGC_ARGO', 'NC_CORIO_ORIGIN', 'NC_CORIO', 'NC_CORIO_TAC']
         self.tab_interp = {}
         self.list_2D = ["smoc", "tides", "clim_curr", "bathy", "stokes"]
         self.list_2D_smoc = ["smoc", "tides", "stokes"]
@@ -88,7 +88,7 @@ class Interpolator(object):
                     depthval =  obs_data.depth[0,0]
                 end = timer()
                 self.depth = depthval
-                self.log.info(f"~~~~~~ Time elapsed for 2D query : {end - start:.2f} seconds")
+                self.log.debug(f"~~~~~~ Time elapsed for 2D query : {end - start:.2f} seconds")
             else:
                 self.log.error("Missing lon/lat")
                 sys.exit(1)
@@ -348,7 +348,8 @@ class Interpolator(object):
                     log.debug(f"Read file {file_input} {var}")
                 except IndexError as error:
                     log.error(f"Error {error} Missing file for key {key} var {var}")
-                    log.error("Varname {}".format(varname))
+                    log.error("Varname {}".format(var))
+                    sys.exit(1)
         return tab_results
         
         
@@ -630,8 +631,7 @@ class Interpolator(object):
             self.log.debug("Open hgr ok")
         else:
             self.log.info("Coordinates is missing")
-        #if param_dict['corr']:
-        if param_dict['data_type'] in self.list_curr:
+        if param_dict['data_type'] in self.list_curr and param_dict['cl_typemod'].lower() == "pgn":
             self.compute_corr = True
             self.log.info(f"Add Correction")
         else:
@@ -828,7 +828,6 @@ class Interpolator(object):
                       self.log.debug("Depth of interpolation {}".format(tab_depth[key.lower()]))
                       self.log.debug("Index time {}".format(index_time))
                       self.log.debug(f"Interp 2D {varname=}")
-                      self.log.debug(f"Interp2D: {file_input}")
                       interp_start = timer() 
                       interp_values = self.interp_2D(weight, indexes,
                                                      var_in,
@@ -1294,7 +1293,6 @@ class Interpolator(object):
             
         # Apply MSSH correction if needed
         if variable in self.list_ssh : #or param_dict['data_type'] == "SLA":
-            #print("inside corrections")
             cl_msshFile = param_dict['cl_msshFile']
             rp_mssh_shift = param_dict['rp_mssh_shift']
             self.log.info(f'Correction mssh {cl_msshFile=}')
@@ -1302,7 +1300,6 @@ class Interpolator(object):
             dataset_mssh = xr.open_dataset(cl_msshFile)
             tab_mssh = dataset_mssh['mssh'].values
             self.log.info(f"Compute sla equiv with shift {rp_mssh_shift} {cl_msshFile}")
-
         var_data = var_in
         if var_data.ndim == 3:
             var_data = var_data[time] if ll_single else (var_data[ind_depth1], var_data[ind_depth2])

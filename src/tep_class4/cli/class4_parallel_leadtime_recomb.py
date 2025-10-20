@@ -65,6 +65,7 @@ def process_leadtime(interpolator, file_obs, tuple_obs, weight, indexes,
     # Rebuild a logger for this worker
     leadtime, lead_int = keyvalue.split('-')
     log_proc.debug(f'get_modelvalue {leadtime} {lead_int}')
+    log_proc.info(f'Process leadtime {leadtime} {lead_int}')
     dict_var_in = interpolator.get_modelvalue(param_dict, dateval, leadtime,
                                               lead_int,log=log_proc)
     start = timer()
@@ -198,10 +199,6 @@ def main(level=2):
                     # -----------------------------
                     # Parallel leadtime processing
                     # -----------------------------
-                    # Get number of nodes and threads
-                    #outer_procs, inner_threads = get_nodes(input_list_files,
-                    #                                       log,
-                    #                                        np_max=param_dict['np_max']) 
                     outer_procs = int(args.np_max) #int(len(list_leadtime['keyvalues'])/2)
                     log.debug(f"Starting parallel execution {outer_procs=}{inner_threads=}")
  
