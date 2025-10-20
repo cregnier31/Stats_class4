@@ -9,14 +9,81 @@ description = "Package to create class4 files"
 authors = [
     { name = "Charly Regnier", email = "cregnier@mercator-ocean.fr" }
 ]
-dependencies = []
 
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Programming Language :: Python",
+]
+
+dependencies = [
+  "python==3.12',
+  "matplotlib",
+  "pip",
+  "xarray",
+  "geopy",
+  "cartopy",
+  "matplotlib",
+  "scipy",
+  "colorlog",
+  "pykdtree",
+  "pandas",
+  "numpy",
+  "netCDF4",
+  "seawater",
+  "joblib",
+  "pyyaml",
+  "filelock"
+]
+
+[project.urls]
+Homepage = "https://gitlab.mercator-ocean.fr/mercator/qualif/TEP_CLASS4_creation"
+Repository = "https://gitlab.mercator-ocean.fr/mercator/qualif/TEP_CLASS4_creation"        
+
+[tool.hatch.envs.lint]                                                                                                                                                                                             
+dependencies = ["ruff"]
+
+[tool.hatch.envs.lint.scripts]
+lint = "ruff src"
+
+[tool.hatch.version]
+source = "regex_commit"
+path = "src/tep_class4/version.py"
+check_dirty = false
+commit = true
+commit_message = "[ci skip] Version bump committed by Jenkins"
+tag = true
+tag_message = "Tagged for deployment by Jenkins"
+tag_sign = false
+
+[tool.hatch.build.targets.wheel]
+packages = ['src/tep_class4']
 
 [project.scripts]
-class4 = "tep_class4.cli.class4:main"
+class4-run = "tep_class4.cli.class4_parallel_leadtime_recomb:main"
 class4-zarr  = "tep_class4.cli.class4_zarr:main"
-class4-multiproc = "tep_class4.cli.class4_multiproc:main"
 stats-class4 = "tep_class4.cli.class4_stats_all:main"
+
+
+[tool.hatch.envs.default]
+type="conda"
+command="conda"
+prefix=".venv"
+environment-file = "conda-env-dev.yml"
+python = "3.12"
+
+[tool.hatch.envs.test]
+dependencies = [
+  "coverage[toml]",
+  "pytest",
+  "pytest-cov",
+  "pytest-watcher",
+  "pre-commit",
+]
+
+[tool.hatch.envs.test.scripts]
+run-coverage = "pytest -v -s --log-cli-level=INFO --cov-config=pyproject.toml --cov=py_eddy_tracker --cov-append --cov-report=xml:reports/cobertura.xml --junit-xml=reports/junit.xml --cov=tests"
+run = "run-coverage --no-cov"
 
 
 [tool.hatch.metadata]
@@ -24,19 +91,6 @@ name = "tep_class4"
 version = "0.1.0"
 description = "Package to create class4 files"
 authors = ["Charly Regnier <cregnier@mercator-ocean.fr>"]
-
-# Specify the package's main entry points
-# These are the scripts users can call from the command line after installing the package
-
-[tool.hatch.scripts]
-class4 = "tep_class4.cli.class4:main"
-class4-zarr = "tep_class4.cli.class4_zarr:main"
-class4-multiproc = "tep_class4.cli.class4_multiproc:main"
-stats-class4 = "tep_class4.cli.stats_class4_mono:main"
-stats-class4-multi = "tep_class4.cli.stats_class4_multiproc:main"
-
-[tool.poetry.package]
-include = ["tep_class4/cli/cfg/*"]
 
 # Include additional files (like config files)
 [tool.hatch.build]
@@ -53,10 +107,27 @@ include = [
 # This section is useful for managing environments during development
 # But you can leave it empty if you're using default behavior
 
-[tool.hatch.version]
 # Define versioning scheme
 version = "0.1.0"
 
 [tool.hatch.vcs]
 # VCS settings for versioning, e.g., Git integration
 enabled = true
+
+[tool.coverage.run]
+source_pkgs = ["tep_class4", "test"]
+branch = true
+parallel = true
+omit = [
+  "test/*"
+]
+
+[tool.coverage.paths]
+tests = ["test"]
+
+[tool.coverage.report]                                                                                                                                                                                             
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]

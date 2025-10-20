@@ -17,15 +17,10 @@ from netCDF4 import Dataset
 import netCDF4
 from timeit import default_timer as timer
 #import dask
-from dask.distributed import Client, SSHCluster
+#from dask.distributed import Client, SSHCluster
 from joblib import Parallel, delayed
 import warnings
 import pickle
-import dask
-from dask import delayed as dask_delayed
-import dask.array as da
-import numba as nb
-from numba import njit, prange
 import numpy as np
 
 class BroadcastError(Exception):

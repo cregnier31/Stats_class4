@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import os
 import sys
 import json
-from geojson import MultiPoint
 from glob import glob 
 import xarray as xr
 import pandas as pd
@@ -21,24 +20,6 @@ def load_db(_DBFILE_):
         print ("Configuration file not found !")
         sys.exit(1)
     return db
-
-def conv_geojson(file):
-    """
-       Convert a text position file to a geojson file with the same name but different extension
-    """
-    filename=os.path.basename(file).split('.')[0]+".geojson"
-    data = open(file,'r')
-    liste_position=[]
-    pos=np.ndarray(shape=(2),dtype=float, order='F')
-    for line in data:
-       lon=float(line.split()[0])
-       lat=float(line.split()[1])
-       pos[0]=lon
-       pos[1]=lat
-       liste_position.append(tuple(pos))
-    with open(filename, 'w') as outfile:
-           json.dump(MultiPoint(liste_position), outfile)
-
 
 def pull_names(name_data):
     """

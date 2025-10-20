@@ -5,7 +5,6 @@ import shutil
 from glob import glob
 import re
 import numpy as np
-from geojson import MultiPoint
 import shelve
 import json
 from datetime import date
@@ -74,20 +73,6 @@ class Writer():
     def write_json_profile(self, filename, tab):
         with open(filename, 'w') as outfile:
                 json.dump(tab, outfile,indent=4)
-
-    def write_geojson(self, filename, position):
-        try:
-            #print 'Write Geojson file'
-            liste_position = []
-            for il_ind in range(len(position)):
-                pos = position[il_ind]
-                liste_position.append(tuple(pos))
-            #print MultiPoint(liste_position)
-            with open(filename, 'w') as outfile:
-                json.dump(MultiPoint(liste_position), outfile)
-        except Exception as e:
-            print (f'Probleme d ecriture geojson {e}')
-            sys.exit(1)
 
     def write_ASCII(self, filename, position):
         try:

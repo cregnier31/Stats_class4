@@ -1,0 +1,21 @@
+channels:
+  - conda-forge
+
+dependencies:
+  - python[version==3.12']
+  - matplotlib
+  - pip
+  - xarray
+  - geopy
+  - cartopy
+  - matplotlib
+  - scipy
+  - colorlog
+  - pykdtree
+  - pandas
+  - numpy
+  - netCDF4
+  - seawater
+  - joblib
+  - pyyaml
+  - filelock
