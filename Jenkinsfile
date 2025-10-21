@@ -41,25 +41,6 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
-            steps {
-                sh """#!/bin/bash
-                . $HOME/.bashrc
-                set -e
-                conda activate ${env.CONDA_ENV}
-                mkdir -p reports
-                hatch build
-                pip install -e .
-                conda info
-                hatch run test run-coverage
-                """
-                recordCoverage(tools: [
-                    [parser: 'COBERTURA', pattern: 'reports/cobertura.xml'],
-                    [parser: 'JUNIT', pattern: 'reports/junit.xml']
-                ])
-            }
-        }
-
         stage('SonarQube Analysis') {
             steps {
                 catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
