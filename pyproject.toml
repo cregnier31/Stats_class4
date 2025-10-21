@@ -4,7 +4,6 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tep_class4"
-version = "0.1.0"
 description = "Package to create class4 files"
 authors = [
     { name = "Charly Regnier", email = "cregnier@mercator-ocean.fr" }
@@ -17,8 +16,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "python==3.12',
-  "matplotlib",
+  "python==3.12",
   "pip",
   "xarray",
   "geopy",
@@ -86,11 +84,6 @@ run-coverage = "pytest -v -s --log-cli-level=INFO --cov-config=pyproject.toml --
 run = "run-coverage --no-cov"
 
 
-[tool.hatch.metadata]
-name = "tep_class4"
-version = "0.1.0"
-description = "Package to create class4 files"
-authors = ["Charly Regnier <cregnier@mercator-ocean.fr>"]
 
 # Include additional files (like config files)
 [tool.hatch.build]
@@ -115,7 +108,7 @@ version = "0.1.0"
 enabled = true
 
 [tool.coverage.run]
-source_pkgs = ["tep_class4", "test"]
+source = ["tep_class4", "test"]
 branch = true
 parallel = true
 omit = [
