@@ -4,7 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tep_class4"
+dynamic = ["version"]
 description = "Package to create class4 files"
+requires-python = ">=3.11,<3.13"
+readme = "README.md"
 authors = [
     { name = "Charly Regnier", email = "cregnier@mercator-ocean.fr" }
 ]
@@ -16,7 +19,6 @@ classifiers = [
 ]
 
 dependencies = [
-  "python==3.12",
   "pip",
   "xarray",
   "geopy",
@@ -38,11 +40,10 @@ dependencies = [
 Homepage = "https://gitlab.mercator-ocean.fr/mercator/qualif/TEP_CLASS4_creation"
 Repository = "https://gitlab.mercator-ocean.fr/mercator/qualif/TEP_CLASS4_creation"        
 
-[tool.hatch.envs.lint]                                                                                                                                                                                             
-dependencies = ["ruff"]
-
-[tool.hatch.envs.lint.scripts]
-lint = "ruff src"
+[project.scripts]
+class4-run = "tep_class4.cli.class4_parallel_leadtime_recomb:main"
+class4-zarr  = "tep_class4.cli.class4_zarr:main"
+stats-class4 = "tep_class4.cli.class4_stats_all:main"
 
 [tool.hatch.version]
 source = "regex_commit"
@@ -54,14 +55,11 @@ tag = true
 tag_message = "Tagged for deployment by Jenkins"
 tag_sign = false
 
+[tool.hatch.build.targets.sdist]
+include = ["src/tep_class4"]
+
 [tool.hatch.build.targets.wheel]
-packages = ['src/tep_class4']
-
-[project.scripts]
-class4-run = "tep_class4.cli.class4_parallel_leadtime_recomb:main"
-class4-zarr  = "tep_class4.cli.class4_zarr:main"
-stats-class4 = "tep_class4.cli.class4_stats_all:main"
-
+include = ['src/tep_class4']
 
 [tool.hatch.envs.default]
 type="conda"
@@ -69,6 +67,23 @@ command="conda"
 prefix=".venv"
 environment-file = "conda-env-dev.yml"
 python = "3.12"
+
+
+[tool.hatch.envs.lint]
+skip-install = true
+prefix=".venv"
+dependencies = [
+  "flake8 == 7.0",
+  "pyproject-flake8 == 7.0",
+]
+
+[tool.hatch.envs.lint.scripts]
+check = "pflake8 --exit-zero --format=pylint --output-file reports/flake8.txt TEP_class4_creation"
+
+[tool.flake8]
+exclude = ".venv, .hatch, test, .git, __init__.py"
+exclude-ignore = "F403, F401, F405, E305, E302, E203, E722, W503"
+max-line-length = 120
 
 [tool.hatch.envs.test]
 dependencies = [
@@ -80,10 +95,8 @@ dependencies = [
 ]
 
 [tool.hatch.envs.test.scripts]
-run-coverage = "pytest -v -s --log-cli-level=INFO --cov-config=pyproject.toml --cov=py_eddy_tracker --cov-append --cov-report=xml:reports/cobertura.xml --junit-xml=reports/junit.xml --cov=tests"
+run-coverage = "pytest -v -s --log-cli-level=INFO --cov-config=pyproject.toml --cov=TEP_class4_creation --cov-append --cov-report=xml:reports/cobertura.xml --junit-xml=reports/junit.xml --cov=tests"
 run = "run-coverage --no-cov"
-
-
 
 # Include additional files (like config files)
 [tool.hatch.build]
@@ -95,20 +108,8 @@ include = [
     # Add any other necessary directories or files
 ]
 
-[tool.hatch.envs]
-# Define environments for various workflows if you need them
-# This section is useful for managing environments during development
-# But you can leave it empty if you're using default behavior
-
-# Define versioning scheme
-version = "0.1.0"
-
-[tool.hatch.vcs]
-# VCS settings for versioning, e.g., Git integration
-enabled = true
-
 [tool.coverage.run]
-source = ["tep_class4", "test"]
+source_pkgs = ["src", "test"]
 branch = true
 parallel = true
 omit = [
@@ -116,11 +117,18 @@ omit = [
 ]
 
 [tool.coverage.paths]
-tests = ["test"]
+py4cylc = ["src"]
+tests = ["test", "functional_test"]
 
-[tool.coverage.report]                                                                                                                                                                                             
+[tool.coverage.report]
 exclude_lines = [
-  "no cov",
   "if __name__ == .__main__.:",
+  "__version__",
   "if TYPE_CHECKING:",
+]
+omit = [
+  "/test/*",
+  "/functional_test/*",
+  "/examples/*",
+  "/NOTEBOOKS/*",
 ]
