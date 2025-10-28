@@ -341,7 +341,7 @@ class InputLoader(Loader):
 
     def load(self, options, level):
         """Loader for input options"""
-        keywords = ['date1=', 'date2=', 'delta=', 'nbdate=', 'daterun=',
+        keywords = ['date1=', 'date2=', 'delta=', 'nbdate=', 'daterun=', 'cfg=',
         'config=', 'data=', 'src=', 'nbproc=', 'typemod=', 'schedule=',
         'data_id=','loglevel=','daymax=','dirinput=','diroutput=', 'dirlog=',
         'best','fcst','pers','all', 'curr', 'clim_curr','bathy', 'smoc','stokes',
@@ -464,6 +464,8 @@ class InputLoader(Loader):
                 ll_netcdf = False
             elif o in ['--np_max']:
                 param_dict['np_max'] = int(p)
+            elif o in ['--cfg']:
+                param_dict['confname_local'] = p
         # LOGGER
         if ll_dirlog:
             log = Logger(f"TEP_CLASS4_{cl_data}_{cl_config}",dirlog=dirlog).run(level)
@@ -574,9 +576,7 @@ class InputLoader(Loader):
             sys.exit(1)
         if ll_date1 and ll_date2 :
             log.debug("Date1 %s Date2 %s " %(date1,date2))
-        #confname='config_'+str(cl_config)+'_'+str(cl_src)+'_'+str(cl_data)+'.cfg'
         confname=f"config_mod_{cl_config}.cfg"
-        #confname='config_obs.cfg'
         if  param_dict['cl_typemod'].lower() == "bathy":
             list_LEAD_TIME.append('bathy')
             self.lead_int = [0]
@@ -642,292 +642,319 @@ class NmlLoader(Loader):
         for file in filename:
             db.read(os.path.expanduser(filename))
         if not db.sections():
-            log.error("Configuration file not found {} ! ".format(filename))
+            log.error(f"Configuration file not found {filename}!")
             sys.exit(1)
+
         param_dict['db'] = db
         param_dict['dirhome'] = os.path.dirname(os.path.realpath(__file__))+'/../'
         param_dict['nml_dir'] = param_dict['dirhome']+'NAMELIST/'
         param_dict['dir_log'] = param_dict['dirhome']+'log/'
-        
+        param_dict['cl_config_h'] = re.sub("QV", "V", param_dict['cl_config'])
+        date1 = param_dict['date1']
+        date2 = param_dict['date2']
         # Add new parameters in the dictionnary
         #if 'sla' in param_dict['data_type'].lower(): 
        # if param_dict['data_type'] == "SLA" :
-        param_dict['cl_msshFile'] = db.get('static','cl_msshFile')
-        param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
-        if param_dict['cl_typemod'].lower() == 'pgn':
-            param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
-            param_dict['dirmodel'] = param_dict['dirmodel_pgn']
-            param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_ng'))
-            param_dict['coordinates'] = db.get('static', 'fic_coordinates')
-        elif param_dict['cl_typemod'].lower() == 'pgs' or param_dict['cl_typemod'].lower() == 'pgs_ai':
-            param_dict['dirmodel_pgs'] = db.get('input_dir', 'DATA_IN_PGS')
-            param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_sg'))
-            param_dict['coordinates'] = db.get('static', 'fic_coordinates')
-        elif param_dict['cl_typemod'].lower() == 'pgncg':
-            param_dict['dirmodel_pgncg'] = db.get('input_dir', 'DATA_IN_PGN_CG')
-            param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_cg'))
-            param_dict['coordinates'] = db.get('static', 'fic_coordinates_cg')
-        elif param_dict['cl_typemod'].lower() == 'smoc':
-            param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
-            param_dict['dirmodel'] = param_dict['dirmodel_pgn']
-            param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_smoc_all'))
-            param_dict['coordinates'] = db.get('static', 'fic_coordinates_SMOC')
-        elif param_dict['cl_typemod'].lower() == 'bathy':
-            param_dict['dirmodel_pgn'] = db.get('GLOBAL', 'variable_bathy')
-            param_dict['dirmodel'] = param_dict['dirmodel_pgn']
-            param_dict['coordinates'] = db.get('static', 'fic_coordinates')
-            param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_bathy_all'))
-        elif param_dict['cl_typemod'].lower() == 'clim_curr':
-            param_dict['dirmodel_pgn'] = db.get('climato', 'DIRCLIM_CUR')
-            param_dict['dirmodel'] = param_dict['dirmodel_pgn']
-            param_dict['coordinates'] = db.get('static', 'fic_coordinates_clim_curr')
-            param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_clim_curr_all'))
-        else:
-            log.error('Input not known /= pgn pgs pgs_ai pgn_cg')
-            sys.exit(1)
-        if 'dirdata' not in param_dict.keys():
-            param_dict['dirdata'] = literal_eval(db.get('input_dir', 'INPUTDATA'))
-        try:
-            param_dict['dirmodel_light'] = db.get('input_dir', 'DATA_IN_LIGHT')
-        except Exception:
-            param_dict['dirmodel_light'] = ''
-        try:
-            param_dict['insitu_corr'] = db.get('GLOBAL', 'corr_pot')
-        except Exception:
-            param_dict['insitu_corr'] = False
-        try:
-            param_dict['Design_GODAE_file'] = literal_eval(db.get('GLOBAL', 'Design_GODAE_file'))
-        except Exception:
-            param_dict['Design_GODAE_file'] = False
-        try:
-            param_dict['EDITO'] = db.get('input_dir', 'EDITO')
-        except Exception:
-            param_dict['EDITO'] = ''
-        try:
-            param_dict['typedata_all'] = literal_eval(db.get('GLOBAL', 'typedata'))
-        except Exception:
-            param_dict['typedata_all'] = ''
-        try:
-            param_dict['good_qc'] = literal_eval(db.get('GLOBAL', 'good_qc'))
-        except Exception:
-            param_dict['good_qc'] = ''
-        try:
-            param_dict['DEPTHS'] = literal_eval(db.get('GLOBAL', 'DEPTHS'))
-        except Exception:
-            param_dict['DEPTHS'] = [0, 5, 100, 300, 600]
-        try:
-            param_dict['time_centered'] = literal_eval(db.get('GLOBAL', 'time_centered'))
-        except Exception:
-            param_dict['time_centered'] = False
-        
-        if param_dict['data_type_all'] == 'all':
+        if 'input_dir' in db.sections():
+            # Input data
+            if 'dirdata' not in param_dict.keys():
+                param_dict['dirdata'] = literal_eval(db.get('input_dir', 'INPUTDATA'))
+            # Input Model
+            param_dict['dirmodel'] = db.get('input_dir', 'DATA_IN')
             try:
-                param_dict['list_variables'] = literal_eval(db.get('GLOBAL', 'list_variables'))
+                param_dict['dirmodel_light'] = db.get('input_dir', 'DATA_IN_LIGHT')
             except Exception:
-                param_dict['list_variables'] = ''
-        #elif param_dict['cl_typemod'].lower() == 'smoc':
-        #    param_dict['list_variables'] = ['smoc', 'tides', 'stokes']
-        else:
-            param_dict['list_variables'] = [param_dict['data_type_all']]
-        
-        # param_dict['Design_GODAE_file'] = db.get('GLOBAL', 'Design_GODAE_file')
-        param_dict['dirmodel'] = db.get('input_dir', 'DATA_IN')
-        param_dict['nb_level'] = int(db.get('GLOBAL', 'LEVELS'))
-        param_dict['zoom'] = int(db.get('GLOBAL', 'zoom'))
-        param_dict['write_geojson'] = int(db.get('GLOBAL', 'write_geojson'))
-        param_dict['cl_config_h'] = re.sub("QV", "V", param_dict['cl_config'])
-        if param_dict['write_geojson']:
-            # Write Geojson file
-            log.debug("Write Geojson file")
-            # Db file for extracted positions
-            file_db = 'CLASS4_shelf.db'
-            file_db2 = 'Coloc_CLASS4_shelf.db'
-            # Clean old db
-            if os.path.isfile(file_db):
-                os.remove(file_db)
-            # Clean old db
-            if os.path.isfile(file_db2):
-                os.remove(file_db2)
-        param_dict['qc_level'] = int(db.get('GLOBAL','qc_level'))
-        param_dict['do_qc'] = int(db.get('GLOBAL','do_qc'))
-        param_dict['do_sort'] = int(db.get('GLOBAL','do_sort'))
-        param_dict['verif'] = literal_eval(db.get('GLOBAL','verif'))
-        param_dict['json'] = literal_eval(db.get('GLOBAL','ll_json'))
-        param_dict['maskname'] = db.get('static','maskname')
-        date1 = param_dict['date1']
-        date2 = param_dict['date2']
-        #daterun = param_dict['daterun']
-
-        cl_schedule = db.get('GLOBAL', 'SCHEDULE')
-        try:
-            param_dict['direxec'] = db.get('GLOBAL', 'DIRBIN')
-        except Exception:
-            param_dict['direxec'] = os.path.dirname(os.path.realpath(__file__))+'/../bin/'
-        try:
-            param_dict['over'] = literal_eval(db.get('GLOBAL', 'over'))
-        except Exception:
-            param_dict['over'] = False
-        #==========================================================================
-        # Sort model values if necessary
-        #==========================================================================
-        if param_dict['do_sort']:
-            log.debug('              Sort Values for interp               ')
-            param_dict['sort_rep'] = param_dict.get('input_dir', 'DATA_SORT')
-            if cl_schedule == "WEEKLY":
-                Sorter().run_weekly(param_dict['lead_time'], param_dict['lead_int'],
-                                    date1, date2, daterun, param_dict['file_template'], param_dict['gridtemp'],
-                                    param_dict['gridsal'], param_dict['dirmodel'], param_dict['sort_rep'])
-            elif cl_schedule == "DAILY":
-                Sorter().run_daily(param_dict['lead_time'], param_dict['lead_int'],
-                                   date1, date2, param_dict['file_template'], param_dict['dirmodel'], param_dict['sort_rep'])
-            else:
-                log.error("Schedule not valid")
-                sys.exit(1)
-        else:
-            log.debug('              Input data already sorted               ')
-            param_dict['sort_rep'] = param_dict['dirmodel']
-
-        log.debug('Sort rep : %s' % (param_dict['sort_rep']))
-        param_dict['do_decomp'] = int(db.get('GLOBAL', 'do_decomp'))
-        param_dict['model_type'] = db.get('GLOBAL', 'MODELTYPE')
-        try:
-            param_dict['data_format_all'] = literal_eval(db.get('input_dir', 'DATA_FMT'))
-        except Exception: 
-            param_dict['data_format_all'] = []
-
-        param_dict['dirwork'] = db.get('output_dir', 'DIRTMP')
-        if not os.path.exists(param_dict['dirwork']):
+                param_dict['dirmodel_light'] = ''
             try:
-                os.makedirs(param_dict['dirwork'])
-            except OSError as exc:
-                if exc.errno == errno.EEXIST and os.path.isdir(param_dict['dirwork']):
-                    pass
-        #param_dict['dirwork'] = db.get('output_dir', 'DIRWORK')
-        if 'diroutput' not in param_dict.keys():
-            param_dict['diroutput'] = db.get('output_dir', 'DIROUTPUT')
-        try:
-            param_dict['diroutput2'] = db.get('output_dir', 'DIROUTPUT2')
-        except Exception:
-            param_dict['diroutput2'] = ""
-        param_dict['dirclim_cur'] = db.get('climato', 'DIRCLIM_CUR')
-        try:
-            param_dict['dirclim2'] = db.get('climato', 'DIRCLIM2')
-        except Exception:
-            param_dict['dirclim2'] = ""
-        try:
-            param_dict['coord_clim_curr'] = glob(param_dict['dirclim_curr'] + "*.nc")[0]
-        except Exception:
-            param_dict['coord_clim_curr'] = ""
-        try:
-            param_dict['coordinates_hgr'] = db.get('static', 'coordinates_hgr')
-        except Exception:
-            param_dict['coordinates_hgr'] = ""
-
-        param_dict['dirtmp'] = param_dict['dirwork'] + 'ext-'
-        try:
-            param_dict['prefix_data_all'] = literal_eval(db.get('input_dir', 'PREFIX'))
-        except Exception:
-            param_dict['prefix_data_all'] = []
-        param_dict['daily_pref'] = db.get('GLOBAL', 'DAILY_PREF')
-        try:
-            param_dict['data_origin'] = db.get('input_dir', 'DATA_ORIGIN')
-        except Exception:
-            param_dict['data_origin'] = []
-        param_dict['cl_conf'] = db.get('GLOBAL', 'CONF')
-        param_dict['cl_confname'] = db.get('GLOBAL', 'CONFIGNAME')
-        #param_dict['template'] = param_dict['cl_config_h'] + \
-        #    '_'+param_dict['model_type'].lower()
-        param_dict['template'] = param_dict['cl_conf'] + \
-            '_'+param_dict['model_type'].lower()
-        #param_dict['lead_time'] = db.get('input_dir', 'LEAD_TIME').split()
-        #param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
-        param_dict['coloc_rep'] = db.get('output_dir', 'DIRCOLOC')
-        param_dict['gridtemp'] = db.get('GLOBAL', 'gridtemp')
-        param_dict['gridsal'] = db.get('GLOBAL', 'gridsal')
-        try:
-            param_dict['gridu'] = db.get('GLOBAL', 'gridu')
-        except Exception:
-            param_dict['gridu'] = ''
-        try :
-            param_dict['gridv'] = db.get('GLOBAL', 'gridv')
-        except Exception:
-            param_dict['gridv'] = ''
-        try:
-            param_dict['gridice'] = db.get('GLOBAL', 'gridice')
-        except Exception:
-            param_dict['gridice'] = "icemod"
-        try:
-            param_dict['grid2DT'] = db.get('GLOBAL', 'grid2DT')
-        except Exception:
-            param_dict['grid2DT'] = "grid2D"
-        try:
-            param_dict['naming'] = db.get('GLOBAL', 'name')
-        except Exception:
-            param_dict['naming'] = 'old'
-        param_dict['type_run'] = db.get('GLOBAL', 'TYPE_RUN')
-        param_dict['type_archi'] = db.get('GLOBAL', 'TYPE_ARCHI')
-        param_dict['nb_points'] = int(db.get('GLOBAL', 'nb_points_interp'))
-        param_dict['ll_zip'] = literal_eval(db.get('GLOBAL', 'll_zip'))
-        param_dict['contact'] = db.get('GLOBAL','CONTACT')
-        param_dict['inst'] = db.get('GLOBAL','INSTITUTION')
-        param_dict['version'] = db.get('GLOBAL','VERSION')
-        param_dict['desc'] = db.get('GLOBAL','DESCRIPTION')
-        try:
-            param_dict['varname_smoc'] = literal_eval(db.get('GLOBAL', 'variable_smoc'))
-        except Exception:
-            param_dict['varname_smoc'] = ""
-        try:
-            param_dict['varname_stokes'] = literal_eval(db.get('GLOBAL', 'variable_stokes'))
-        except Exception:
-            param_dict['varname_stokes'] = ""
-        try:
-            param_dict['varname_tides'] = literal_eval(db.get('GLOBAL', 'variable_tides'))
-        except Exception:
-            param_dict['varname_tides'] = ""
-        try:
-            param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
-        except Exception:
-            param_dict['lead_int'] = ""
-        try:
-            param_dict['lead_int2'] = db.get('input_dir', 'LEAD_INT2').split()
-        except:
-            param_dict['lead_int2'] = ""
-        try:
-            param_dict['varname_bathy'] = db.get('GLOBAL', 'variable_bathy').split()
-        except Exception:
-            param_dict['varname_bathy'] = ""
-        try:
-            param_dict['varname_clim_curr'] = literal_eval(db.get('GLOBAL', 'variable_clim_curr'))
-        except Exception:
-            param_dict['varname_clim_curr'] = ""
-        try:
-            param_dict['corr'] = literal_eval(db.get('GLOBAL', 'corr'))
-        except Exception:
-            param_dict['corr'] = False
-
-        if param_dict['zoom'] or param_dict['do_qc']:
-            param_dict['lon_min'] = int(param_dict.get('GLOBAL', 'LONMIN'))
-            param_dict['lon_max'] = int(param_dict.get('GLOBAL', 'LONMAX'))
-            param_dict['lat_min'] = int(param_dict.get('GLOBAL', 'LATMIN'))
-            param_dict['lat_max'] = int(param_dict.get('GLOBAL', 'LATMAX'))
-        try:
-            param_dict['coordinates_SMOC'] = db.get('static','fic_coordinates_SMOC')
-        except Exception:
-            param_dict['coordinates_SMOC'] = ""
-        try:
-            param_dict['bathy_file'] = db.get('static','fic_bathy')
-        except Exception:
-            param_dict['bathy_file'] = ""
+                param_dict['EDITO'] = db.get('input_dir', 'EDITO')
+            except Exception:
+                param_dict['EDITO'] = ''
+            if param_dict['cl_typemod'].lower() == 'pgn':
+                param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
+                param_dict['dirmodel'] = param_dict['dirmodel_pgn']
+           #     param_dict['coordinates'] = db.get('static', 'fic_coordinates')
+            elif param_dict['cl_typemod'].lower() == 'pgs' or param_dict['cl_typemod'].lower() == 'pgs_ai':
+                param_dict['dirmodel_pgs'] = db.get('input_dir', 'DATA_IN_PGS')
+          #      param_dict['coordinates'] = db.get('static', 'fic_coordinates')
+            elif param_dict['cl_typemod'].lower() == 'pgncg':
+                param_dict['dirmodel_pgncg'] = db.get('input_dir', 'DATA_IN_PGN_CG')
+           #     param_dict['coordinates'] = db.get('static', 'fic_coordinates_cg')
+            elif param_dict['cl_typemod'].lower() == 'smoc':
+                param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
+                param_dict['dirmodel'] = param_dict['dirmodel_pgn']
+          #      param_dict['coordinates'] = db.get('static', 'fic_coordinates_SMOC')
+            elif param_dict['cl_typemod'].lower() == 'bathy':
+                param_dict['dirmodel_pgn'] = db.get('GLOBAL', 'variable_bathy')
+                param_dict['dirmodel'] = param_dict['dirmodel_pgn']
+         #       param_dict['coordinates'] = db.get('static', 'fic_coordinates')
+            elif param_dict['cl_typemod'].lower() == 'clim_curr':
+                param_dict['dirmodel_pgn'] = db.get('climato', 'DIRCLIM_CUR')
+                param_dict['dirmodel'] = param_dict['dirmodel_pgn']
+        #        param_dict['coordinates'] = db.get('static', 'fic_coordinates_clim_curr')
+            else:
+                log.error('Input not known /= pgn pgs pgs_ai pgn_cg')
+                sys.exit(1)
+            #try:
+            #    param_dict['data_origin'] = db.get('input_dir', 'DATA_ORIGIN')
+            #except Exception:
+            #    param_dict['data_origin'] = []
+        if 'static' in db.sections():
+            param_dict['dir_static'] = db.get('static', 'dir_static')
+            if param_dict['cl_typemod'].lower() == 'pgn':
+                param_dict['coordinates'] = db.get('static', 'fic_coordinates')
+            elif param_dict['cl_typemod'].lower() == 'pgs' or param_dict['cl_typemod'].lower() == 'pgs_ai':
+                param_dict['coordinates'] = db.get('static', 'fic_coordinates_pgs')
+            elif param_dict['cl_typemod'].lower() == 'pgncg':
+                param_dict['coordinates'] = db.get('static', 'fic_coordinates_cg')
+            elif param_dict['cl_typemod'].lower() == 'smoc':
+                param_dict['coordinates'] = db.get('static', 'fic_coordinates_SMOC')
+            elif param_dict['cl_typemod'].lower() == 'bathy':
+                param_dict['coordinates'] = db.get('static', 'fic_coordinates')
+            elif param_dict['cl_typemod'].lower() == 'clim_curr':
+                param_dict['coordinates'] = db.get('static', 'fic_coordinates_clim_curr')
+            else:
+                log.error('Input not known /= pgn pgs pgs_ai pgn_cg')
+                sys.exit(1)
+            try:
+                param_dict['coordinates_hgr'] = db.get('static', 'coordinates_hgr')
+            except Exception:
+                param_dict['coordinates_hgr'] = ""
+            try:
+                param_dict['coordinates_SMOC'] = db.get('static','fic_coordinates_SMOC')
+            except Exception:
+                param_dict['coordinates_SMOC'] = ""
+            try:
+                param_dict['bathy_file'] = db.get('static','fic_bathy')
+            except Exception:
+                param_dict['bathy_file'] = ""
+            param_dict['cl_msshFile'] = db.get('static','cl_msshFile')
         
-        if param_dict['cl_data_id']:
-            cl_data_id = param_dict['cl_data_id']
-            param_dict['dirwork'] = param_dict['dirwork']+str(cl_data_id)+'/'
-            param_dict['diroutput'] = param_dict['diroutput']+str(cl_data_id)+'/'
-            param_dict['dirdata'] = param_dict['dirdata']+str(cl_data_id)+'/'
-        elif param_dict['cl_conf'] == 'BIOMER4' or param_dict['cl_conf'] == 'BIOMER4V2':
-            param_dict['dirwork'] = param_dict['dirwork']
-            param_dict['diroutput'] = param_dict['diroutput']
-            #if param_dict['prefix_data'] == "L3mCHL": param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
+        if 'static-inputs' in db.sections():
+            param_dict['rp_mssh_shift'] = float(db.get('static-inputs','rp_mssh_shift'))
+            param_dict['maskname'] = db.get('static-inputs','maskname')
+
+        if 'params' in db.sections():
+            try:
+                param_dict['data_format_all'] = literal_eval(db.get('params', 'DATA_FMT'))
+            except Exception: 
+                param_dict['data_format_all'] = []
+            try:
+                param_dict['prefix_data_all'] = literal_eval(db.get('params', 'PREFIX'))
+            except Exception:
+                param_dict['prefix_data_all'] = []
+        
+        if 'output_dir' in db.sections():
+            param_dict['dirwork'] = db.get('output_dir', 'DIRTMP')
+            if not os.path.exists(param_dict['dirwork']):
+                try:
+                    os.makedirs(param_dict['dirwork'])
+                except OSError as exc:
+                    if exc.errno == errno.EEXIST and os.path.isdir(param_dict['dirwork']):
+                        pass
+            param_dict['dirtmp'] = param_dict['dirwork'] + 'ext-'
+            #param_dict['dirwork'] = db.get('output_dir', 'DIRWORK')
+            if 'diroutput' not in param_dict.keys():
+                param_dict['diroutput'] = db.get('output_dir', 'DIROUTPUT')
+            try:
+                param_dict['diroutput2'] = db.get('output_dir', 'DIROUTPUT2')
+            except Exception:
+                param_dict['diroutput2'] = ""
+            param_dict['coloc_rep'] = db.get('output_dir', 'DIRCOLOC')
+       
+        if 'climato' in db.sections():
+            param_dict['dirclim_cur'] = db.get('climato', 'DIRCLIM_CUR')
+            try:
+                param_dict['dirclim2'] = db.get('climato', 'DIRCLIM2')
+            except Exception:
+                param_dict['dirclim2'] = ""
+            try:
+                param_dict['coord_clim_curr'] = glob(param_dict['dirclim_curr'] + "*.nc")[0]
+            except Exception:
+                param_dict['coord_clim_curr'] = ""
+    
+        if 'GLOBAL' in db.sections(): 
+            if param_dict['cl_typemod'].lower() == 'pgn':
+                param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_ng'))
+            elif param_dict['cl_typemod'].lower() == 'pgs' or param_dict['cl_typemod'].lower() == 'pgs_ai':
+                param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_sg'))
+            elif param_dict['cl_typemod'].lower() == 'pgncg':
+                param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_cg'))
+            elif param_dict['cl_typemod'].lower() == 'smoc':
+                param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_smoc_all'))
+            elif param_dict['cl_typemod'].lower() == 'bathy':
+                param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_bathy_all'))
+            elif param_dict['cl_typemod'].lower() == 'clim_curr':
+                param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_clim_curr_all'))
+            try:
+                param_dict['insitu_corr'] = db.get('GLOBAL', 'corr_pot')
+            except Exception:
+                param_dict['insitu_corr'] = False
+            try:
+                param_dict['Design_GODAE_file'] = literal_eval(db.get('GLOBAL', 'Design_GODAE_file'))
+            except Exception:
+                param_dict['Design_GODAE_file'] = False
+            try:
+                param_dict['typedata_all'] = literal_eval(db.get('GLOBAL', 'typedata'))
+            except Exception:
+                param_dict['typedata_all'] = ''
+            try:
+                param_dict['good_qc'] = literal_eval(db.get('GLOBAL', 'good_qc'))
+            except Exception:
+                param_dict['good_qc'] = ''
+            try:
+                param_dict['DEPTHS'] = literal_eval(db.get('GLOBAL', 'DEPTHS'))
+            except Exception:
+                param_dict['DEPTHS'] = [0, 5, 100, 300, 600]
+            try:
+                param_dict['time_centered'] = literal_eval(db.get('GLOBAL', 'time_centered'))
+            except Exception:
+                param_dict['time_centered'] = False
+            
+            if param_dict['data_type_all'] == 'all':
+                try:
+                    param_dict['list_variables'] = literal_eval(db.get('GLOBAL', 'list_variables'))
+                except Exception:
+                    param_dict['list_variables'] = ''
+            #elif param_dict['cl_typemod'].lower() == 'smoc':
+            #    param_dict['list_variables'] = ['smoc', 'tides', 'stokes']
+            else:
+                param_dict['list_variables'] = [param_dict['data_type_all']]
+            
+            # param_dict['Design_GODAE_file'] = db.get('GLOBAL', 'Design_GODAE_file')
+            param_dict['nb_level'] = int(db.get('GLOBAL', 'LEVELS'))
+            param_dict['zoom'] = int(db.get('GLOBAL', 'zoom'))
+            param_dict['write_geojson'] = int(db.get('GLOBAL', 'write_geojson'))
+            if param_dict['write_geojson']:
+                # Write Geojson file
+                log.debug("Write Geojson file")
+                # Db file for extracted positions
+                file_db = 'CLASS4_shelf.db'
+                file_db2 = 'Coloc_CLASS4_shelf.db'
+                # Clean old db
+                if os.path.isfile(file_db):
+                    os.remove(file_db)
+                # Clean old db
+                if os.path.isfile(file_db2):
+                    os.remove(file_db2)
+            param_dict['qc_level'] = int(db.get('GLOBAL','qc_level'))
+            param_dict['do_qc'] = int(db.get('GLOBAL','do_qc'))
+            param_dict['do_sort'] = int(db.get('GLOBAL','do_sort'))
+            param_dict['verif'] = literal_eval(db.get('GLOBAL','verif'))
+            param_dict['json'] = literal_eval(db.get('GLOBAL','ll_json'))
+            cl_schedule = db.get('GLOBAL', 'SCHEDULE')
+            try:
+                param_dict['direxec'] = db.get('GLOBAL', 'DIRBIN')
+            except Exception:
+                param_dict['direxec'] = os.path.dirname(os.path.realpath(__file__))+'/../bin/'
+            try:
+                param_dict['over'] = literal_eval(db.get('GLOBAL', 'over'))
+            except Exception:
+                param_dict['over'] = False
+            param_dict['model_type'] = db.get('GLOBAL', 'MODELTYPE')
+            param_dict['daily_pref'] = db.get('GLOBAL', 'DAILY_PREF')
+            param_dict['cl_conf'] = db.get('GLOBAL', 'CONF')
+            param_dict['cl_confname'] = db.get('GLOBAL', 'CONFIGNAME')
+            param_dict['template'] = param_dict['cl_conf'] + \
+                '_'+param_dict['model_type'].lower()
+            param_dict['gridtemp'] = db.get('GLOBAL', 'gridtemp')
+            param_dict['gridsal'] = db.get('GLOBAL', 'gridsal')
+            try:
+                param_dict['gridu'] = db.get('GLOBAL', 'gridu')
+            except Exception:
+                param_dict['gridu'] = ''
+            try :
+                param_dict['gridv'] = db.get('GLOBAL', 'gridv')
+            except Exception:
+                param_dict['gridv'] = ''
+            try:
+                param_dict['gridice'] = db.get('GLOBAL', 'gridice')
+            except Exception:
+                param_dict['gridice'] = "icemod"
+            try:
+                param_dict['grid2DT'] = db.get('GLOBAL', 'grid2DT')
+            except Exception:
+                param_dict['grid2DT'] = "grid2D"
+            try:
+                param_dict['naming'] = db.get('GLOBAL', 'name')
+            except Exception:
+                param_dict['naming'] = 'old'
+            param_dict['type_run'] = db.get('GLOBAL', 'TYPE_RUN')
+            param_dict['type_archi'] = db.get('GLOBAL', 'TYPE_ARCHI')
+            param_dict['nb_points'] = int(db.get('GLOBAL', 'nb_points_interp'))
+            param_dict['ll_zip'] = literal_eval(db.get('GLOBAL', 'll_zip'))
+            param_dict['contact'] = db.get('GLOBAL','CONTACT')
+            param_dict['inst'] = db.get('GLOBAL','INSTITUTION')
+            param_dict['version'] = db.get('GLOBAL','VERSION')
+            param_dict['desc'] = db.get('GLOBAL','DESCRIPTION')
+            try:
+                param_dict['varname_smoc'] = literal_eval(db.get('GLOBAL', 'variable_smoc'))
+            except Exception:
+                param_dict['varname_smoc'] = ""
+            try:
+                param_dict['varname_stokes'] = literal_eval(db.get('GLOBAL', 'variable_stokes'))
+            except Exception:
+                param_dict['varname_stokes'] = ""
+            try:
+                param_dict['varname_tides'] = literal_eval(db.get('GLOBAL', 'variable_tides'))
+            except Exception:
+                param_dict['varname_tides'] = ""
+            try:
+                param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
+            except Exception:
+                param_dict['lead_int'] = ""
+            try:
+                param_dict['lead_int2'] = db.get('input_dir', 'LEAD_INT2').split()
+            except:
+                param_dict['lead_int2'] = ""
+            try:
+                param_dict['varname_bathy'] = db.get('GLOBAL', 'variable_bathy').split()
+            except Exception:
+                param_dict['varname_bathy'] = ""
+            try:
+                param_dict['varname_clim_curr'] = literal_eval(db.get('GLOBAL', 'variable_clim_curr'))
+            except Exception:
+                param_dict['varname_clim_curr'] = ""
+            try:
+                param_dict['corr'] = literal_eval(db.get('GLOBAL', 'corr'))
+            except Exception:
+                param_dict['corr'] = False
+
+            if param_dict['zoom'] or param_dict['do_qc']:
+                param_dict['lon_min'] = int(param_dict.get('GLOBAL', 'LONMIN'))
+                param_dict['lon_max'] = int(param_dict.get('GLOBAL', 'LONMAX'))
+                param_dict['lat_min'] = int(param_dict.get('GLOBAL', 'LATMIN'))
+                param_dict['lat_max'] = int(param_dict.get('GLOBAL', 'LATMAX'))
+            #==========================================================================
+            # Sort model values if necessary
+            #==========================================================================
+            if param_dict['do_sort']:
+                log.debug('              Sort Values for interp               ')
+                param_dict['sort_rep'] = param_dict.get('input_dir', 'DATA_SORT')
+                if cl_schedule == "WEEKLY":
+                    Sorter().run_weekly(param_dict['lead_time'], param_dict['lead_int'],
+                                        date1, date2, daterun, param_dict['file_template'], param_dict['gridtemp'],
+                                        param_dict['gridsal'], param_dict['dirmodel'], param_dict['sort_rep'])
+                elif cl_schedule == "DAILY":
+                    Sorter().run_daily(param_dict['lead_time'], param_dict['lead_int'],
+                                       date1, date2, param_dict['file_template'], param_dict['dirmodel'], param_dict['sort_rep'])
+                else:
+                    log.error("Schedule not valid")
+                    sys.exit(1)
+            else:
+                log.debug('              Input data already sorted               ')
+                param_dict['sort_rep'] = param_dict['dirmodel']
+
+            log.debug('Sort rep : %s' % (param_dict['sort_rep']))
+            param_dict['do_decomp'] = int(db.get('GLOBAL', 'do_decomp'))
+            if param_dict['cl_data_id']:
+                cl_data_id = param_dict['cl_data_id']
+                param_dict['dirwork'] = param_dict['dirwork']+str(cl_data_id)+'/'
+                param_dict['diroutput'] = param_dict['diroutput']+str(cl_data_id)+'/'
+                param_dict['dirdata'] = param_dict['dirdata']+str(cl_data_id)+'/'
+            elif param_dict['cl_conf'] == 'BIOMER4' or param_dict['cl_conf'] == 'BIOMER4V2':
+                param_dict['dirwork'] = param_dict['dirwork']
+                param_dict['diroutput'] = param_dict['diroutput']
+                #if param_dict['prefix_data'] == "L3mCHL": param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
         
         param_dict['dirwork'] = param_dict['dirwork']
         param_dict['diroutput'] = param_dict['diroutput']

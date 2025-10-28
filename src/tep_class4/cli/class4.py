@@ -51,6 +51,7 @@ def main(level=2):
     #parser.add_argument("--src", required=True)
     parser.add_argument("--data", required=True,  help="Type of data to process")
     parser.add_argument("--typemod", required=True)
+    parser.add_argument("--cfg", required=True, help="local config file for inputs and outputs")
     parser.add_argument("--no-recombine", action="store_true",
         help="If set, skip file recombination (default: recombination is performed)")
     parser.add_argument("--loglevel", type=int, default=2)
@@ -66,7 +67,9 @@ def main(level=2):
     log.debug('========================================================')
     log.debug('          Load input options and parameter file         ')
     log.debug('========================================================')
-    # Load db configuration file
+    # Load local config
+    param_dict = Loader.factory('NML').load(param_dict['confname_local'], level, param_dict, log)
+    # Load db configuration model file
     conf_path = dirname(__file__)
     filename = conf_path + '/cfg/' + param_dict['confname']
     param_dict = Loader.factory('NML').load(filename, level, param_dict, log)
@@ -81,29 +84,24 @@ def main(level=2):
     log.info('========================================================')
     # Create liste date
     list_date = create_listdate(param_dict['date1'],param_dict['date2'])
-    # Create dictionnary
-    #list_leadtime = create_leadtime(
-    #                            param_dict['lead_time'],
-    #                            param_dict['lead_int'])
     for selected_var in param_dict['list_variables']:
+        # Create dictionnary
+        print(selected_var)
+        
         list_leadtime = create_leadtime(
                                         param_dict,
                                         selected_var,
                                         )
         log.info(f'{list_leadtime}')
+        sys.exit(1)
         param_dict['prefix_data'] = param_dict['prefix_data_all'][selected_var]
         param_dict['data_format'] = param_dict['data_format_all'][selected_var]
         param_dict['data_type'] = selected_var
         param_dict['dirdata'] = param_dict['dirdata_all'][selected_var]
         param_dict['varname'] = param_dict['varname_all'][selected_var]
         param_dict['cl_src'] = param_dict['typedata_all'][selected_var]
-        #print('prefix_data cl_src data_format data_type')
-        #print(param_dict['prefix_data'])
-        #print(param_dict['cl_src'])
-        #print(param_dict['data_format'])
-        #print(param_dict['data_type'])
         log.info(
-            f"Work on selected variable {param_dict['data_type']}"
+            f"Work on selected variable {selected_var} {param_dict['data_type']}"
             )
         for dateval in list_date:
             log.info(f'Work on day {dateval}')
@@ -118,14 +116,10 @@ def main(level=2):
             for file_obs in input_list_files:
                 # Read obs file
                 obs_data, tuple_obs = read_observations(file_obs, param_dict, log)
-                #print(f"{param_dict['varname']=}")
                 # Query_weight for each observations
                 log.debug(f"Search the weights values in the grid for the observations {file_obs}")
                 log.info(f'Work on observations {file_obs}')
                 weight, indexes = interpolator.query_weight(obs_data, param_dict, log)
-                #print("Varname  {param_dict['varname']}")
-                #print("-------------------------------")
-                #print(list_leadtime['keyvalues'])
                 for keyvalue in list_leadtime['keyvalues']:
                     leadtime, lead_int = keyvalue.split('-')
                     start = timer()
