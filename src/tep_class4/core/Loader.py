@@ -741,6 +741,14 @@ class NmlLoader(Loader):
                 param_dict['prefix_data_all'] = literal_eval(db.get('params', 'PREFIX'))
             except Exception:
                 param_dict['prefix_data_all'] = []
+            try:
+                param_dict['lead_int'] = db.get('params', 'LEAD_INT').split()
+            except Exception:
+                param_dict['lead_int'] = ""
+            try:
+                param_dict['lead_int2'] = db.get('params', 'LEAD_INT2').split()
+            except:
+                param_dict['lead_int2'] = ""
         
         if 'output_dir' in db.sections():
             param_dict['dirwork'] = db.get('output_dir', 'DIRTMP')
@@ -897,14 +905,6 @@ class NmlLoader(Loader):
                 param_dict['varname_tides'] = literal_eval(db.get('GLOBAL', 'variable_tides'))
             except Exception:
                 param_dict['varname_tides'] = ""
-            try:
-                param_dict['lead_int'] = db.get('input_dir', 'LEAD_INT').split()
-            except Exception:
-                param_dict['lead_int'] = ""
-            try:
-                param_dict['lead_int2'] = db.get('input_dir', 'LEAD_INT2').split()
-            except:
-                param_dict['lead_int2'] = ""
             try:
                 param_dict['varname_bathy'] = db.get('GLOBAL', 'variable_bathy').split()
             except Exception:
