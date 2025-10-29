@@ -390,7 +390,6 @@ class InputLoader(Loader):
             elif o in ['--typemod']:
                 cl_typemod = p
                 param_dict['cl_typemod'] = cl_typemod.upper()
-                print(param_dict['cl_typemod'])
                 if cl_typemod not in list_inputtype:
                     print('input data type not known : ')
                     print(f'must be {list_inputtype} not {cl_typemod}')
@@ -694,10 +693,10 @@ class NmlLoader(Loader):
             else:
                 log.error('Input not known /= pgn pgs pgs_ai pgn_cg')
                 sys.exit(1)
-            #try:
-            #    param_dict['data_origin'] = db.get('input_dir', 'DATA_ORIGIN')
-            #except Exception:
-            #    param_dict['data_origin'] = []
+            try:
+                param_dict['data_origin'] = db.get('input_dir', 'DATA_ORIGIN')
+            except Exception:
+                param_dict['data_origin'] = []
         if 'static' in db.sections():
             param_dict['dir_static'] = db.get('static', 'dir_static')
             if param_dict['cl_typemod'].lower() == 'pgn':
