@@ -671,25 +671,19 @@ class NmlLoader(Loader):
             if param_dict['cl_typemod'].lower() == 'pgn':
                 param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
                 param_dict['dirmodel'] = param_dict['dirmodel_pgn']
-           #     param_dict['coordinates'] = db.get('static', 'fic_coordinates')
             elif param_dict['cl_typemod'].lower() == 'pgs' or param_dict['cl_typemod'].lower() == 'pgs_ai':
                 param_dict['dirmodel_pgs'] = db.get('input_dir', 'DATA_IN_PGS')
-          #      param_dict['coordinates'] = db.get('static', 'fic_coordinates')
             elif param_dict['cl_typemod'].lower() == 'pgncg':
                 param_dict['dirmodel_pgncg'] = db.get('input_dir', 'DATA_IN_PGN_CG')
-           #     param_dict['coordinates'] = db.get('static', 'fic_coordinates_cg')
             elif param_dict['cl_typemod'].lower() == 'smoc':
                 param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
                 param_dict['dirmodel'] = param_dict['dirmodel_pgn']
-          #      param_dict['coordinates'] = db.get('static', 'fic_coordinates_SMOC')
             elif param_dict['cl_typemod'].lower() == 'bathy':
-                param_dict['dirmodel_pgn'] = db.get('GLOBAL', 'variable_bathy')
+                param_dict['dirmodel_pgn'] = db.get('static', 'dir_static')
                 param_dict['dirmodel'] = param_dict['dirmodel_pgn']
-         #       param_dict['coordinates'] = db.get('static', 'fic_coordinates')
             elif param_dict['cl_typemod'].lower() == 'clim_curr':
                 param_dict['dirmodel_pgn'] = db.get('climato', 'DIRCLIM_CUR')
                 param_dict['dirmodel'] = param_dict['dirmodel_pgn']
-        #        param_dict['coordinates'] = db.get('static', 'fic_coordinates_clim_curr')
             else:
                 log.error('Input not known /= pgn pgs pgs_ai pgn_cg')
                 sys.exit(1)

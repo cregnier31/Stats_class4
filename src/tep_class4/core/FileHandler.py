@@ -119,11 +119,8 @@ class FileHandler:
                                  self.param_dict.get('gridtype', ''))
                 self.log.debug(f"Pattern = {pattern}")
                 self.log.debug(f"GridType = {self.param_dict.get('gridtype', '')}")
-                self.log.info(f"Pattern = {pattern}")
-                self.log.info(f"GridType = {self.param_dict.get('gridtype', '')}")
                 if file_select:
                     self.log.debug(f"File ok {file_select}")
-                    self.log.info(f"File ok {file_select}")
                     list_file.extend(file_select)
                 else:
                     self.log.error(f"File nok {self.directory=} {pattern=} {self.param_dict.get('gridtype', '')}")
