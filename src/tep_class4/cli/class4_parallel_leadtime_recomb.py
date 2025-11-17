@@ -103,20 +103,21 @@ def main(level=2):
     Main TEP CLASS4 function
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", required=True)
-    parser.add_argument("--date1", required=True)
-    parser.add_argument("--date2", required=True)
-    parser.add_argument("--np_max", required=True)
-    parser.add_argument("--np_threads", required=True)
+    parser.add_argument("--config", required=True, help="Name of the configuration for ex GLO12V4")
+    parser.add_argument("--date1", required=True, help="Start date")
+    parser.add_argument("--date2", required=True, help="End date")
+    parser.add_argument("--np_max", required=True, help="Max number of process")
+    parser.add_argument("--np_threads", required=True, help="Max number of threads")
     parser.add_argument("--data", required=True,  help="Type of data to process")
+    parser.add_argument("--typemod", required=True, help="Type of input model grid pgn :native grids, pgs: catalog interp grid, pgc:coarsed grid.." )
+    parser.add_argument("--cfg", required=True, help="Local config file for setting inputs and outputs")
     parser.add_argument("--no-recombine", action="store_true",
         help="If set, skip file recombination (default: recombination is performed)"
     )
-    parser.add_argument("--typemod", required=True)
-    parser.add_argument("--loglevel", type=int, default=2)
-    parser.add_argument("--fcst (only forecasts)", action="store_true")
-    parser.add_argument("--best (only hindcast)", action="store_true")
-    parser.add_argument("--all (hdct fcst and pers)", action="store_true")
+    parser.add_argument("--loglevel", type=int, default=2, help="Level of debug, default 2 for info 1 for debug")
+    parser.add_argument("--fcst (only forecasts)", action="store_true", help="Work only on forecasts files")
+    parser.add_argument("--best (only hindcast)", action="store_true", help="Work only on hindcasts files")
+    parser.add_argument("--all (hdct fcst and pers)", action="store_true", help="Work on Hindcasts, Forecasts and persistences files")
     args = parser.parse_args()
     do_recombine = not args.no_recombine
     # ==================================================================
@@ -126,7 +127,9 @@ def main(level=2):
     log.debug('========================================================')
     log.debug('          Load input options and parameter file         ')
     log.debug('========================================================')
-    # Load db configuration file
+    # Load local config
+    param_dict = Loader.factory('NML').load(param_dict['confname_local'], level, param_dict, log)
+    # Load db configuration model file
     conf_path = dirname(__file__)
     filename = conf_path + '/cfg/' + param_dict['confname']
     param_dict = Loader.factory('NML').load(filename, level, param_dict, log)
@@ -136,9 +139,9 @@ def main(level=2):
     # ==========================================================================
     # PART-2 - Loop for a given time range
     # ==========================================================================
-    log.info('========================================================')
-    #log.info('              Launch variable/time loop                          ')
-    #log.info('========================================================')
+    log.debug('========================================================')
+    log.debug('              Launch variable/time loop                          ')
+    log.debug('========================================================')
     # Create liste date
     list_date = create_listdate(param_dict['date1'],param_dict['date2'])
     for selected_var in param_dict['list_variables']:

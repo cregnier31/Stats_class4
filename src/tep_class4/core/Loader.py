@@ -1,5 +1,6 @@
 from __future__ import generators
 import os
+import random
 import sys
 from glob import glob
 import re
@@ -745,7 +746,11 @@ class NmlLoader(Loader):
                 param_dict['lead_int2'] = ""
         
         if 'output_dir' in db.sections():
-            param_dict['dirwork'] = db.get('output_dir', 'DIRTMP')
+            base_dir = db.get('output_dir', 'DIRTMP')
+            type_data = param_dict['data_type_all']
+            param_dict['dirwork'] = os.path.join(base_dir, f"TMP_{type_data}_{random.randint(10000, 99999)}/")
+            #param_dict['dirwork'] = db.get('output_dir', 'DIRTMP')
+        
             if not os.path.exists(param_dict['dirwork']):
                 try:
                     os.makedirs(param_dict['dirwork'])

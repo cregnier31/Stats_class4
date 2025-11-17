@@ -55,7 +55,7 @@ def main(level=2):
         help="If set, skip file recombination (default: recombination is performed)")
     parser.add_argument("--loglevel", type=int, default=2, help="Level of debug, default 2 for info 1 for debug")
     parser.add_argument("--fcst (only forecasts)", action="store_true", help="Work only on forecasts files")
-    parser.add_argument("--hdct (only hindcast)", action="store_true", help="Work only on hindcasts files")
+    parser.add_argument("--best (only hindcast)", action="store_true", help="Work only on hindcasts files")
     parser.add_argument("--all (hdct fcst and pers)", action="store_true", help="Work on Hindcasts, Forecasts and persistences files")
     args = parser.parse_args()
     do_recombine = not args.no_recombine
