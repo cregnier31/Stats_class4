@@ -47,9 +47,9 @@ class Extractor(object):
             return Extract_corio_cmems(self.log)
         if type == "CORIOLIS":
             return Extract_corio(self.log)
-        if type == "CORIOLIS_RAW" or type == "CORIOLIS_RAW_PR_PF" or type == "CORIOLIS_RAW_TS_DB" or type == "CORIOLIS_RAW_type1" or  type == "CORIOLIS_RAW_type2":
+        if "CORIOLIS_RAW" in type :
             return Extract_corio_raw(self.log, type)
-        if type == "ARMOR_CO" or type == "ARMOR_AR" or type == "AR_":
+        if "ARMOR_" in type  or type == "AR_":
             return Extract_ARMOR(self.log)
         if type == "GODAE_UV":
             return Extract_UVDrifters(self.log)
@@ -63,11 +63,11 @@ class Extractor(object):
             return Extract_BGC_ARGO(self.log)
         if type == "L3mCHL":
             return Extract_CHLORO(self.log)
-        if type == "Microwat_Lband_Orbite_1day_Lband" or type == "Microwat_6.9GHz_Orbite_1day":
+        if "Microwat_" in type :
             return Extract_genericData(self.log)
         if type == "001_048" :
             return Extract_CMEMS_drifters(self.log)
-        if type == "sssdata_netcdf_good_FNAV" or type == "sssdata_netcdf_all":
+        if "sssdata_netcdf_" in type :
             return Extract_SSSData(self.log)
         if type == "Legos_SIT" :
             return Extract_Legos_SIT(self.log)
