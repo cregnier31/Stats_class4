@@ -297,8 +297,7 @@ class Interpolator(object):
                 # Open with dask chunks for lazy loading
                 dataset_in = xr.open_dataset(file, decode_times=False, chunks=None)
             if variable not in dataset_in:
-                log.error(f"Missing variable {variable} in {file}")
-                raise KeyError(variable)
+                raise ValueError(f"Missing variable {variable} in {file}")
             # keep as xarray.DataArray (lazy, no .values yet)
             if dataset_in[variable].ndim == 3:
                 var_in = dataset_in[variable].values  # (depth, lat, lon)
@@ -313,15 +312,14 @@ class Interpolator(object):
                 var_in = dataset_in[variable].values  # (depth, lat, lon)
                 self.depth_dim = 1
             else:
-                log.error(f"Dimension not known {dataset_in[variable].ndim}")
                 raise ValueError(f"Unsupported dimension {dataset_in[variable].ndim}")
             end = timer()
             log.debug(f"Time for reading variable {variable}: {end - start:.2f} seconds")
             
             return var_in
         except Exception:
-            log.error(f"Problem with variable {variable} in {file}")
-            raise
+            raise ValueError(f"Problem with variable {variable} in {file}")
+            
 
     def get_modelvalue(self, param_dict, date, leadtime, lead_int, log=''):
         param_dict['ll_TEMP'] = True
