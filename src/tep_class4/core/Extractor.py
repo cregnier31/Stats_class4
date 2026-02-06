@@ -73,6 +73,8 @@ class Extractor(object):
             return Extract_Legos_SIT(self.log)
         if type == "MDS_L3_SLA" :
             return Extract_MDS_L3_SLA(self.log)
+        else :
+            raise NameError(f'type {type} not found ')
 
     def timelinespace(self, date1, date2):
         
@@ -116,8 +118,7 @@ class Extractor(object):
                     shutil.copy(file, param_dict['dirwork']+filename)
                 liste_tot.append(param_dict['dirwork']+filename)
             except IOError as e:  
-                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                sys.exit(1)
+                raise IOError(f"File={file} does not exist.")
         return liste_tot
         
         
@@ -137,16 +138,13 @@ class Extractor(object):
         frame = "*"
         #frame = "TS_DB"
         liste_file = glob(param_dict['dirdata']+'/'+YEAR+f'/*{frame}*'+dateval+f'*.nc')
-        self.log.debug(f"Search file {param_dict['dirdata']}/{YEAR}/*{frame}*{dateval}*nc")
+        if len(liste_file) == 0 :
+            raise IOError(f"There are no files in: {param_dict['dirdata']}/{YEAR}/*{frame}*{dateval}*.nc")
         for file in liste_file:
-            try:
-                filename = os.path.basename(file)
-                if not os.path.exists(param_dict['dirwork']+filename):
-                    shutil.copy(file, param_dict['dirwork']+filename)
-                liste_tot.append(param_dict['dirwork']+filename)
-            except IOError as e:
-                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                sys.exit(1)
+            filename = os.path.basename(file)
+            if not os.path.exists(param_dict['dirwork']+filename):
+                shutil.copy(file, param_dict['dirwork']+filename)
+            liste_tot.append(param_dict['dirwork']+filename)
         return liste_tot
 
 class Extract_Legos_SIT(Extractor):
@@ -160,16 +158,12 @@ class Extract_Legos_SIT(Extractor):
         liste_file=glob(param_dict['dirdata']+'/*'+daterun+'*.nc')
         self.log.info("Liste file {} {} ".format(liste_file, daterun))
         if not liste_file:
-            self.log.error("Missing Legos_SIT {} {}".format(param_dict['dirdata'], daterun))
-            raise
+            raise IOError(f"Missing Legos_SIT {param_dict['dirdata']} {daterun}")
         self.log.debug('Liste file Legos_SIT {}'.format(liste_file))
         for file in liste_file:
-            try:
-                filename = os.path.basename(file)
-                shutil.copy(file, param_dict['dirwork']+filename)
-                liste_tot.append(param_dict['dirwork']+filename)
-            except IOError as e:
-                raise ("I/O error({0}): {1}".format(e.errno, e.strerror))
+            filename = os.path.basename(file)
+            shutil.copy(file, param_dict['dirwork']+filename)
+            liste_tot.append(param_dict['dirwork']+filename)
 
         return liste_file
 
@@ -185,17 +179,15 @@ class Extract_Legos_SIT(Extractor):
             #year=dateval[0:4]
             frame=dirdata+'/*'+dateval.strip()+'*.nc'
             liste_file=glob(frame)
+            if len(liste_file) == 0:
+                raise IOError(f"There are no files in {frame}")
             self.log.debug(f'{frame=}')
             self.log.info(f'Liste file CORA {liste_file}')
             for new_file in liste_file :
-                try :
-                    filename=os.path.basename(new_file)
-                    shutil.copy(new_file,dirtmp)
-                    self.log.info('copy file {}'.format(dirtmp+filename))
-                    liste_tot.append(dirtmp+filename)
-                except IOError as e:
-                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-                    sys.exit(1)
+                filename=os.path.basename(new_file)
+                shutil.copy(new_file,dirtmp)
+                self.log.info('copy file {}'.format(dirtmp+filename))
+                liste_tot.append(dirtmp+filename)
             valeurj_tmp=valeurj_tmp.goforward(1)
         ## TODO Finish the run_over for SIT files
 
@@ -217,19 +209,14 @@ class Extract_CMEMS_drifters(Extractor):
         liste_tot = []
         year = SyDate(dateval).year
         month = SyDate(dateval).month
-        if month < 10:
-            month = '0'+str(month)
-        else:
-            month = str(month)
-        liste_file = glob(param_dict['dirdata']+str(year)+'/'+str(month)+'/*'+dateval+'*.nc')
+        liste_file = glob(param_dict['dirdata']+f'*{dateval}*.nc')
+        if len(liste_file) == 0:
+            raise IOError(f"There are no files {param_dict['dirdata']}*{dateval}*.nc")
+
         for file in liste_file:
-            try:
-                filename = os.path.basename(file)
-                shutil.copy(file, param_dict['dirwork']+filename)
-                liste_tot.append(param_dict['dirwork']+filename)
-            except IOError as e:
-                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                sys.exit(1)
+            filename = os.path.basename(file)
+            shutil.copy(file, param_dict['dirwork']+filename)
+            liste_tot.append(param_dict['dirwork']+filename)
         return liste_tot
 
 class Extract_SSSData(Extractor):
@@ -260,8 +247,9 @@ class Extract_SSSData(Extractor):
         timelinespace = self.timelinespace(date1,date2)
         liste_file = glob(dirdata+'/*nc')
         length = len(liste_file)
+        if length == 0 :
+            self.log.debug(f'There are no files in {dirdata}/*nc')
         for indice, file in enumerate(liste_file):
-            try:
                 filename = os.path.basename(file)
                 data_type = filename.split(prefix)[1].split('_')[1]
                 nc = netCDF4.Dataset(file, 'r')
@@ -285,7 +273,7 @@ class Extract_SSSData(Extractor):
                                    date_all) if x == date]
                         file_out = f"{prefix}_{data_type}_{date}.nc"
                         out_path = dirtmp + file_out
-                        self.log.info("Creation fileout : %s" % file_out) 
+                        self.log.info("Creation fileout: %s" % file_out) 
                         ## Create output extracted file
                         # Open dataset
                         ds = xr.open_dataset(file)
@@ -298,9 +286,6 @@ class Extract_SSSData(Extractor):
                         if dirtmp+file_out not in liste_tot:
                             #liste_tot.append(dirtmp+file_out)
                             liste_tot.append(out_path)
-            except IOError as e:
-                self.log.error ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                sys.exit(1)
             # Search index 
             self.log.debug("File ok : %s %i %i" %(file,indice,length))
         return liste_tot
@@ -316,14 +301,13 @@ class Extract_genericData(Extractor):
         self.log.setLevel(logging.INFO)
         liste_tot = []
         liste_file = glob(param_dict['dirdata']+'/*'+dateval+'*.nc')
+        if len(liste_file) == 0:
+            self.log.debug(f"There are no files at {param_dict['dirdata']}/*{dateval}*.nc")
+
         for file in liste_file:
-            try:
-                filename = os.path.basename(file)
-                shutil.copy(file, param_dict['dirwork']+filename)
-                liste_tot.append(param_dict['dirwork']+filename)
-            except IOError as e:
-                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                sys.exit(1)
+            filename = os.path.basename(file)
+            shutil.copy(file, param_dict['dirwork']+filename)
+            liste_tot.append(param_dict['dirwork']+filename)
 
         return liste_tot
 
@@ -338,14 +322,12 @@ class Extract_BGC_ARGO(Extractor):
         liste_tot = []
         self.log.info(f"Inside Extract_BGC_ARGO {dateval}")
         liste_file = glob(f"{param_dict['dirdata']}/*{dateval[0:6]}*.nc")
+        if len(liste_file) == 0:
+            self.log.debug(f"There are no files {param_dict['dirdata']}/*{dateval[0:6]}*.nc")
         for file in liste_file:
-            try:
-                filename = os.path.basename(file)
-                shutil.copy(file, param_dict['dirwork']+filename)
-                liste_tot.append(param_dict['dirwork']+filename)
-            except IOError as e:
-                self.log ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                sys.exit(1)
+            filename = os.path.basename(file)
+            shutil.copy(file, param_dict['dirwork']+filename)
+            liste_tot.append(param_dict['dirwork']+filename)
         self.log.info(f"liste {liste_tot}")
         return liste_tot
 
@@ -377,14 +359,10 @@ class Extract_CHLORO(Extractor):
             else:
                 liste_file = glob(param_dict['dirdata']+'/'+dateval+'*NRT'+'*.nc')
         for file in liste_file:
-            try:
-                filename = 'Class4_'+dateval+'_'+param_dict['data_origin']+'_'+param_dict['cl_conf']+'_'+param_dict['varname'][0]+'.nc'
-                self.mkdir(param_dict['dirwork'])
-                shutil.copy(file,param_dict['dirwork']+filename)
-                liste_tot.append(param_dict['dirwork']+filename)
-            except IOError as e:
-                self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-                sys.exit(1)
+            filename = 'Class4_'+dateval+'_'+param_dict['data_origin']+'_'+param_dict['cl_conf']+'_'+param_dict['varname'][0]+'.nc'
+            self.mkdir(param_dict['dirwork'])
+            shutil.copy(file,param_dict['dirwork']+filename)
+            liste_tot.append(param_dict['dirwork']+filename)
 
         return liste_tot
 
@@ -468,46 +446,35 @@ class Extract_corio_raw(Extractor):
         liste_prof_TS_DB = ['TS_DB']
         liste_prof_type1 = ['PR_CT', 'PR_XB', 'PR_SM', 'PR_GL']
 
-        base_pattern = f"{param_dict['dirdata']}/{YEAR}/*{dateval}*.nc"
+        base_pattern = f"{param_dict['dirdata']}/*{dateval}*.nc"
         liste_all = glob(base_pattern)
 
         if self.datatype == "CORIOLIS_RAW_PR_PF":
             frame = "PR_PF"
             liste_file = [f for f in liste_all if any(tag in f for tag in liste_prof_PR_PF)]
-            #liste_file = glob(param_dict['dirdata']+'/'+YEAR+f'/*{frame}*'+dateval+f'*.nc')
-            self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/{YEAR}/*{frame}*{dateval}*nc")
+            self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/*{frame}*{dateval}*nc")
         elif self.datatype == "CORIOLIS_RAW_TS_DB":
             frame = "TS_DB"
             liste_file = [f for f in liste_all if any(tag in f for tag in liste_prof_TS_DB)]
-            #liste_file = glob(param_dict['dirdata']+'/'+YEAR+f'/*{frame}*'+dateval+f'*.nc')
-            self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/{YEAR}/*{frame}*{dateval}*nc")
+            self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/*{frame}*{dateval}*nc")
         elif self.datatype == "CORIOLIS_RAW_type1":
-            #liste_file = glob(param_dict['dirdata']+'/'+YEAR+f'/*'+dateval+f'*.nc')
-            #liste_file = [f for f in liste_file if 'PR_PF' not in f and 'TS_DB' not in f]
-            #liste_file = [f for f in liste_file if liste_prof_type1 is in f ]
             liste_file = [f for f in liste_all if any(tag in f for tag in liste_prof_type1)]
-            self.log.debug(f"Search file {liste_file}")
+            self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/*{frame}*{dateval}*nc")
         elif self.datatype == "CORIOLIS_RAW_type2":
-            #liste_file = glob(param_dict['dirdata']+'/'+YEAR+f'/*'+dateval+f'*.nc')
-            #liste_file = [f for f in liste_file if 'PR_PF' not in f and 'TS_DB' not in f and liste_prof_type1 not in f]
             liste_file = [
                         f for f in liste_all
                         if not any(tag in f for tag in liste_prof_PR_PF + liste_prof_TS_DB + liste_prof_type1)
             ] 
-            self.log.debug(f"Search file {liste_file}")
+            self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/*{frame}*{dateval}*nc")
         elif self.datatype == "CORIOLIS_RAW":
             liste_file = liste_all
-            self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/{YEAR}/*{frame}*{dateval}*nc")
+            self.log.debug(f"Search file {liste_file}")
 
         for file in liste_file:
-            try:
                 filename = os.path.basename(file)
                 if not os.path.exists(param_dict['dirwork']+filename):
                     shutil.copy(file, param_dict['dirwork']+filename)
                 liste_tot.append(param_dict['dirwork']+filename)
-            except IOError as e:
-                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                sys.exit(1)
         return liste_tot
 
 
@@ -525,15 +492,12 @@ class Extract_corio(Extractor):
         self.log.info('Day %s ' % (dateval))
         frame=param_dict['dir_data']+'/*'+dateval.strip()+'*.nc'
         liste_file=glob(frame)
-        self.log.info('Liste file %s ' % (liste_file))
+        if len(liste_file) == 0 :
+            raise IOError(f'There are no files in {frame}')
         for new_file in liste_file :
-            try :
                 filename=os.path.basename(new_file)
                 shutil.copy(new_file,param_dict['dirtmp'])
                 liste_tot.append(param_dict['dirtmp']+filename)
-            except IOError as e:
-                self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-                sys.exit(1)
 
         return liste_tot
 
@@ -564,14 +528,10 @@ class Extract_cora5_2(Extractor):
             self.log.info(f'Liste file CORA {liste_file}')
 
             for new_file in liste_file :
-                try :
                     filename=os.path.basename(new_file)
                     shutil.copy(new_file,dirtmp)
                     self.log.debug('copy file ok {}'.format(dirtmp+filename))
                     liste_tot.append(dirtmp+filename)
-                except IOError as e:
-                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-                    sys.exit(1)
             valeurj_tmp=valeurj_tmp.goforward(1)
 
         return liste_tot
@@ -590,14 +550,10 @@ class Extract_cora5_2(Extractor):
             liste_file=glob(frame)
             self.log.info('Liste file CORA %s ' % (liste_file))
             for new_file in liste_file :
-                try :
                     filename=os.path.basename(new_file)
                     shutil.copy(new_file,dirtmp)
                     self.log.info('copy file {}'.format(dirtmp+filename))
                     liste_tot.append(dirtmp+filename)
-                except IOError as e:
-                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-                    sys.exit(1)
             valeurj_tmp=valeurj_tmp.goforward(1)
 
         return liste_tot
@@ -615,10 +571,8 @@ class Extract_cora5_2(Extractor):
         #type_obs = "PR_XB"
         type_obs = "*"
         liste_file = glob(f"{param_dict['dirdata']}/{YEAR}/*{dateval}*{type_obs}*.nc")
-        #liste_file = glob(param_dict['dirdata']+'/'+YEAR+'/*'+dateval+'*.nc')
         self.log.debug(f"Search file  {liste_file}")
         for file in liste_file:
-            try:
                 filename = os.path.basename(file)
                 if not os.path.exists(param_dict['dirwork']+filename):
                     self.log.debug(f"Copy file {file}")
@@ -628,9 +582,6 @@ class Extract_cora5_2(Extractor):
                         print(f"Source file {file} is not accessible.")
                         sys.exit(1)
                 liste_tot.append(param_dict['dirwork']+filename)
-            except IOError as e:
-                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                sys.exit(1)
         return liste_tot
 
 class Extract_corio_cmems(Extractor):
@@ -658,14 +609,10 @@ class Extract_corio_cmems(Extractor):
             liste_file=glob(frame)
             self.log.info('Liste file CMEMS profiles %s ' % (liste_file))
             for new_file in liste_file :
-                try :
                     filename=os.path.basename(new_file)
                     shutil.copy(new_file,dirtmp)
                     self.log.info('copy file {}'.format(dirtmp+filename))
                     liste_tot.append(dirtmp+filename)
-                except IOError as e:
-                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-                    sys.exit(1)
             valeurj_tmp=valeurj_tmp.goforward(1)
 
         return liste_tot
@@ -685,16 +632,10 @@ class Extract_UVDrifters_filtr(Extractor):
     def check_all_attributes(self, nc):
         errors = []
         for attr in nc.ncattrs():
-            try:
                 getattr(nc, attr)
-            except Exception as e:
-                errors.append(f"Global attr {attr}: {e}")
         for var_name, var in nc.variables.items():
             for attr in var.ncattrs():
-                try:
                     getattr(var, attr)
-                except Exception as e:
-                    errors.append(f"Var {var_name} attr {attr}: {e}")
         return errors
  
  
@@ -906,9 +847,9 @@ class Extract_UVDrifters_filtr(Extractor):
     def list(self, daterun, dirdata, typedata):
         year = daterun[0:4]
         month = daterun[4:6]
-        liste_file = glob(dirdata+ '/' + year + '/' + month + '/*' + daterun+'*.nc')
+        liste_file = glob(f"{dirdata}/{year}/{month}/*{daterun}*.nc")
         if not liste_file:
-            self.log.error(f"Missing Drifters files {dirdata}/{year}/{month}/*{daterun}*nc")
+            self.log.error(f"Missing Drifters files {dirdata}/{year}/{month}/*{daterun}*.nc")
             return [], True
         else:
             self.log.debug('Liste file UV drifters {}'.format(liste_file))
@@ -918,11 +859,9 @@ class Extract_UVDrifters_filtr(Extractor):
         liste_tot=[]
         year = daterun[0:4]
         month = daterun[4:6]
-        #liste_file=glob(param_dict['dirdata'] + '/' + year + '/' + month + '/*' + daterun+'*.nc')
-        liste_file=glob(param_dict['dirdata'] + '/' + year + '/*' + daterun+'*.nc')
+        liste_file=glob(f"{param_dict['dirdata']}/*{daterun}*.nc}")
         if not liste_file:
-            self.log.error(f"Missing Drifters files {param_dict['dirdata']}/{year}/*{daterun}*nc")
-            return []
+            raise IOError(f"Missing Drifters files {param_dict['dirdata']}/*{daterun}*.nc")
         self.log.debug('Liste file UV drifters {}'.format(liste_file))
         nb_fcst = len(param_dict['lead_int'])
         nb_fcst2 = len(param_dict['lead_int2'])
@@ -941,8 +880,8 @@ class Extract_UVDrifters_filtr(Extractor):
                     self.log.info(f"Filename exist {param_dict['dirwork']}{file_new}")
                     time.sleep(10)
             except IOError as e:
-                self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-                raise
+                raise IOError("I/O error({0}): {1}".format(e.errno, e.strerror))
+                
         liste_tot.append(param_dict['dirwork']+file_new)
         return liste_tot
 
@@ -1167,11 +1106,9 @@ class Extract_UVDrifters(Extractor):
         liste_tot=[]
         year = daterun[0:4]
         month = daterun[4:6]
-        #liste_file=glob(param_dict['dirdata'] + '/' + year + '/' + month + '/*' + daterun+'*.nc')
-        liste_file=glob(param_dict['dirdata'] + '/' + year + '/*' + daterun+'*.nc')
+        liste_file=glob(param_dict['dirdata'] + '/*' + daterun+'*.nc')
         if not liste_file:
-            self.log.error("Missing Drifters files {} {}".format(param_dict['dirdata'], daterun))
-            return []
+            raise IOError(f"- - CRUZ - - - - - Extractor: 1163 Missing Drifters files {param_dict['dirdata']}/*{daterun}*.nc")
         self.log.debug('Liste file UV drifters {}'.format(liste_file))
         nb_fcst = len(param_dict['lead_int'])
         nb_fcst2 = len(param_dict['lead_int2'])
@@ -1185,8 +1122,7 @@ class Extract_UVDrifters(Extractor):
                 self.rewrite(liste_file[0], nb_fcst, nb_fcst2, param_dict['dirwork']+file_new)
                 self.log.debug('Filename {}'.format(param_dict['dirwork']+file_new))
             except IOError as e:
-                self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-                raise
+                raise IOError("I/O error({0}): {1}".format(e.errno, e.strerror))
         liste_tot.append(param_dict['dirwork']+file_new)
         return liste_tot
 
@@ -1216,19 +1152,20 @@ class Extract_MDS_L3_SLA(Extractor):
         liste_tot=[]
         year = dateval[0:4]
         dirdata = param_dict['dirdata']
-        list_files = glob(f'{dirdata}{year}/nrt_global_*{dateval}*.nc')
-        self.log.debug(f'{dirdata}{year}/nrt_global_*{dateval}*.nc')
-        if len(list_files) == 0:
-            list_files = glob(f'{dirdata}{year- 1}/nrt_global_*{dateval}*.nc')
-            year = str(int(year) - 1)
+        list_files = glob(f'{dirdata}/nrt_global_*{dateval}*.nc')
+        #if len(list_files) == 0: CHARLY
+        #    list_files = glob(f'{dirdata}{str(int(year)-1)}/nrt_global_*{dateval}*.nc')
+        #    year = str(int(year) - 1)
+        if  len(list_files) == 0:
+            raise IOError(f'{dirdata}/nrt_global_*{dateval}*.nc')
         list_sat = {os.path.basename(filename).split("_")[2] for filename in list_files}
         self.log.debug(f'{list_sat=}')
         nb_sat = 0
         for sat in list_sat:
             frame = "nrt_global_" + sat + "_phy_l3_1hz_"
-            list_files = glob(f'{dirdata}{year}/{frame}{dateval}*.nc')
+            list_files = glob(f'{dirdata}/{frame}{dateval}*.nc')
             if len(list_files) == 0:
-                continue
+                raise(f" - - CRUZ - - - - - Extractor: 1192 list_files lenght 0 {dirdata}/{frame}{dateval}*.nc")
             nb_sat += 1
             choose_file = self.find_largest_date_difference(list_files)
             self.log.info(f"Satellite {sat} and choose file {choose_file}")
@@ -1259,26 +1196,25 @@ class Extract_GODAE(Extractor):
             print(f"An error occurred while checking the file type: {e}")
             return False
     def list(self, daterun, dirdata, typedata):
-        if typedata != "SLA" and  typedata != "SST" and typedata != "profile" \
-            and typedata !=  "aice" and typedata !=  "AMSR" and  typedata !=  "current" :
-            self.log.error("Data %s not known !!! " %(typedata))
-            sys.exit(1)
+        if typedata not in ["SLA","SST","profile","aice","AMSR","current"] :
+            raise NameError(f"Data {typedata} unknown! Choose from: SLA,SST,profile,aice,AMSR,current")
         #valeurj=date1
         if typedata ==  "AMSR" :
             liste_file=glob(dirdata+'/*'+daterun+'*.nc')
+            if len(list_files) == 0:
+                raise(f"lenght of list_files = 0; there is no {dirdata}/*{daterun}*.nc")
+
         else :
             try:
                 print(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')
                 sys.exit(1)
                 liste_file = [glob(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')[0]]
             except IndexError:
-               self.log.error(f'Missing CLASS4 {daterun} {typedata} file')
-               liste_file = []
+                raise IOError(f'Missing CLASS4 {daterun} {typedata} file')
         if liste_file:
             return liste_file, False
         else:
-            self.log.error(f'file is missing for {daterun}')
-            return liste_file, True
+            raise IOError(f'file is missing for {daterun}')
     
     def run_list(self, param_dict, daterun, template=''):
         
@@ -1287,10 +1223,8 @@ class Extract_GODAE(Extractor):
         nb_fcst = len(param_dict['lead_int'])
         dirtmp = param_dict['dirwork']
         template = param_dict['template']
-        if typedata != "SLA" and  typedata != "SST" and typedata != "profile" \
-            and typedata !=  "aice" and typedata !=  "AMSR" and  typedata !=  "current" :
-            self.log.error("Data %s not known !!! " %(typedata))
-            sys.exit(1)
+        if typedata not in ["SLA","SST","profile","aice","AMSR","current"] :
+            raise NameError(f"Data {typedata} unknown! Choose from: SLA,SST,profile,aice,AMSR,current")
         
         liste_tot=[]
         self.log.info('Day  %s ' % (daterun))
@@ -1298,12 +1232,10 @@ class Extract_GODAE(Extractor):
         # Select input file(s)
         if typedata ==  "AMSR" :
             liste_file = glob(f"{dirdata}/*{daterun}*.nc")
+            if len(liste_file) == 0 :
+                raise IOError(f"No files in {dirdata}/*{daterun}*.nc")
         else :
-            try:
-                liste_file = [glob(f"{dirdata}/class4*{daterun}*{typedata}*.nc")[0]]
-            except IndexError:
-               self.log.error(f'Missing CLASS4 {daterun} {typedata} file')
-               liste_file = []
+            liste_file = [glob(f"{dirdata}/class4*{daterun}*{typedata}*.nc")[0]]
         
         if not liste_file:
             return liste_tot
@@ -1311,7 +1243,6 @@ class Extract_GODAE(Extractor):
         self.log.debug(f'Liste file {liste_file}')
 
         for new_file in liste_file :
-            try :
                 filename=os.path.basename(new_file)
 
                 # Adjust filename
@@ -1416,9 +1347,6 @@ class Extract_GODAE(Extractor):
                 self.log.debug(f"Fichier extracted {out_path}")
                 liste_tot.append(out_path)
 
-            except IOError as e:
-                self.log.error(f"I/O error({e.errno}): {e.strerror}")
-                raise
 
         return liste_tot
 
@@ -1441,7 +1369,6 @@ class Extract_ARMOR(Extractor):
             self.log.debug(f'Frame {dirdata}{prefix}*{dateval.strip()}*.nc*')
             self.log.debug(f'Liste file ARMOR {liste_file}') 
             for new_file in liste_file :
-                try :
                     filename=os.path.basename(new_file)
                     shutil.copy(new_file,dirtmp)
                     if filename[-2:] == 'gz' :
@@ -1455,9 +1382,6 @@ class Extract_ARMOR(Extractor):
                     else :
                         liste_tot.append(dirtmp+filename)
                     self.log.info("append : %s " %(filename))
-                except IOError as e:
-                    print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                    sys.exit(1)
             valeurj=valeurj.goforward(1)
 
         return liste_tot
@@ -1469,11 +1393,9 @@ class Extract_ARMOR(Extractor):
             dateval=SyDate.__str__(valeurj)
             #print dirdata+'/*'+dateval+'*.nc'
             liste_file=glob(dirdata+'/*'+dateval+'*.nc')
+            if len(liste_file) == 0 :
+                raise IOError(f"File does not exist {dirdata}/*{dateval}*.nc")
             for file in liste_file :
-                try :
                     liste_tot.append(file)
-                except IOError as e:
-                    print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                    sys.exit(1)
             valeurj=valeurj.goforward(1)
         return liste_tot
