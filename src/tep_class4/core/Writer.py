@@ -611,12 +611,10 @@ class Writer():
                 frame = f"*{variable}*{dateval}*.nc"
                 list_file = glob(f"{param_dict['dirwork']}{frame}")
             if not list_file:
-                self.log.error("In Writer files are missing for day {dateval}")
+                self.log.error(f"In Writer files are missing for day {dateval}")
                 self.log.error(f"{param_dict['dirwork']}{frame}")
                 continue
-            self.log.debug(f"{frame=}")
-            self.log.debug(f"{param_dict['dirwork']}")
-            self.log.debug(f"{list_file=}")
+            self.log.debug(f"list_file = {list_file}")
             for file_out in list_file:
                 type_file = os.path.basename(file_out).split('.')[0]
                 substrings_to_remove = [f"{type_file}_", f"{dateval}_"]
