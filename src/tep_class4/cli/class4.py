@@ -27,7 +27,6 @@ import resource
 from timeit import default_timer as timer
 import argparse
 import numpy as np
-
 # Import local modules
 #from tep_class4.core.Selector import Selector
 from tep_class4.core.Extractor import Extractor
@@ -104,10 +103,7 @@ def main(level=2):
             input_list_files = Extractor(log).factory(param_dict['prefix_data']).\
                                                       run_list(param_dict, dateval)
             if not input_list_files:
-                log.error(f'Files are missing for the observation {dateval}')
-                continue
-            else:
-                log.debug(f'List of observations {dateval} {input_list_files}')
+                raise IOError(f"Files are missing for the observation {param_dict['prefix_data']} on {dateval}")
             for file_obs in input_list_files:
                 # Read obs file
                 obs_data, tuple_obs = read_observations(file_obs, param_dict, log)
