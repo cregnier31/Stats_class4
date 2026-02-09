@@ -607,13 +607,9 @@ class Writer():
             self.log.info(f"{param_dict['cl_src']}")
             self.log.info(f"{variable=}")
             list_file = glob(f"{param_dict['dirwork']}{frame}")
-            if not list_file:
+            if len(list_file)==0:
                 frame = f"*{variable}*{dateval}*.nc"
                 list_file = glob(f"{param_dict['dirwork']}{frame}")
-            if not list_file:
-                self.log.error(f"In Writer files are missing for day {dateval}")
-                self.log.error(f"{param_dict['dirwork']}{frame}")
-                continue
             self.log.debug(f"list_file = {list_file}")
             for file_out in list_file:
                 type_file = os.path.basename(file_out).split('.')[0]
