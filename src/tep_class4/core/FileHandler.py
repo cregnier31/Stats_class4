@@ -59,7 +59,6 @@ class FileHandler:
                 if file_tmp:
                     self.log.debug(f'File OK {file_tmp}')
                     all_files.extend(file_tmp)  # Add found files to the results
-                    self.log.debug(f"{gridname} Add file {file_tmp}")
         # Return all found files or an empty list if none are found
         if len(all_files)==0:
             self.log.error(f"Warning no files in {formatted_pattern}")
@@ -75,12 +74,8 @@ class FileHandler:
         # Set directory type for non-clim cases
         self.directory_path = "clim"
         datev = SyDate(str(self.dateval))
-        month = str(datev.month)
-        day = str(datev.day)
-        if datev.month < 10:
-            month = '0' + str(datev.month)
-        if datev.day < 10:
-            day = f'0{datev.day}'
+        month = f'{datev.month:02}'
+        day = f'{datev.day:02}'
         if self.directory not in list_clim:
             self.directory_path = "non_clim"
         # Get the specific directory configuration
@@ -119,13 +114,10 @@ class FileHandler:
                 pattern = list_actions[action]
                 file_select = self.find_file(pattern,
                                  self.param_dict.get('gridtype', ''))
-                self.log.debug(f"Pattern = {pattern}")
-                self.log.debug(f"GridType = {self.param_dict.get('gridtype', '')}")
                 if file_select:
                     self.log.debug(f"File ok {file_select}")
                     list_file.extend(file_select)
                 else:
-                    self.log.error(f"File nok {self.directory=} {pattern=} {self.param_dict.get('gridtype', '')}")
-                    sys.exit(1)
+                    raise IOError(f"File nok {self.directory=} {pattern=} {self.param_dict.get('gridtype', '')}")
                     
         return list_file
