@@ -241,7 +241,7 @@ class Extract_SSSData(Extractor):
         #nco = Nco()
         # Create a timeline
         timelinespace = self.timelinespace(date1,date2)
-        liste_file = glob(f"{dirdata+}/*nc")
+        liste_file = glob(f"{dirdata}/*nc")
         length = len(liste_file)
         if length == 0 :
             self.log.debug(f'There are no files in {dirdata}/*nc')
@@ -282,8 +282,8 @@ class Extract_SSSData(Extractor):
                         if dirtmp+file_out not in liste_tot:
                             #liste_tot.append(dirtmp+file_out)
                             liste_tot.append(out_path)
-            # Search index 
-            self.log.debug("File ok : %s %i %i" %(file,indice,length))
+                # Search index 
+                self.log.debug("File ok : %s %i %i" %(file,indice,length))
         return liste_tot
 
 
@@ -440,7 +440,8 @@ class Extract_corio_raw(Extractor):
 
         base_pattern = f"{param_dict['dirdata']}/*{dateval}*.nc"
         liste_all = glob(base_pattern)
-
+        if len(liste_all) == 0:
+            raise NameError(f"Empty list of files: {param_dict['dirdata']}/*{dateval}*.nc")
         if self.datatype == "CORIOLIS_RAW_PR_PF":
             frame = "PR_PF"
             liste_file = [f for f in liste_all if any(tag in f for tag in liste_prof_PR_PF)]
@@ -451,16 +452,18 @@ class Extract_corio_raw(Extractor):
             self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/*{frame}*{dateval}*nc")
         elif self.datatype == "CORIOLIS_RAW_type1":
             liste_file = [f for f in liste_all if any(tag in f for tag in liste_prof_type1)]
-            self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/*{frame}*{dateval}*nc")
+            self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/*{dateval}*nc")
         elif self.datatype == "CORIOLIS_RAW_type2":
             liste_file = [
                         f for f in liste_all
                         if not any(tag in f for tag in liste_prof_PR_PF + liste_prof_TS_DB + liste_prof_type1)
             ] 
-            self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/*{frame}*{dateval}*nc")
+            self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/*{dateval}*nc")
         elif self.datatype == "CORIOLIS_RAW":
             liste_file = liste_all
             self.log.debug(f"Search file {liste_file}")
+        else :
+            self.log.debug(f"There is no datatype={datatype}")
 
         for file in liste_file:
                 filename = os.path.basename(file)
@@ -851,7 +854,7 @@ class Extract_UVDrifters_filtr(Extractor):
         liste_tot=[]
         year = daterun[0:4]
         month = daterun[4:6]
-        liste_file=glob(f"{param_dict['dirdata']}/*{daterun}*.nc}")
+        liste_file=glob(f"{param_dict['dirdata']}/*{daterun}*.nc")
         if not liste_file:
             raise IOError(f"Missing Drifters files {param_dict['dirdata']}/*{daterun}*.nc")
         self.log.debug('Liste file UV drifters {}'.format(liste_file))
