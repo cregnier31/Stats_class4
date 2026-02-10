@@ -109,8 +109,9 @@ class Extractor(object):
         """
         liste_tot = []
         YEAR = dateval[0:4]
-        liste_file = glob(dirdata+YEAR+'/*'+dateval+'*.nc')
-        self.log.debug(f"Search file {liste_file}")
+        liste_file = glob(f"{dirdata}{YEAR}/*{dateval}*.nc")
+        if len(liste_file) == 0:
+            raise NameError(f"Empty list: {dirdata}{YEAR}/*{dateval}*.nc")
         for file in liste_file:
             try:
                 filename = os.path.basename(file)
@@ -118,7 +119,7 @@ class Extractor(object):
                     shutil.copy(file, param_dict['dirwork']+filename)
                 liste_tot.append(param_dict['dirwork']+filename)
             except IOError as e:  
-                raise IOError(f"File={file} does not exist.")
+                raise IOError(f"Couldn't copy file={file} to {param_dict['dirwork']}.")
         return liste_tot
         
         
@@ -135,11 +136,9 @@ class Extractor(object):
         """
         liste_tot = []
         YEAR = dateval[0:4]
-        frame = "*"
-        #frame = "TS_DB"
-        liste_file = glob(param_dict['dirdata']+'/'+YEAR+f'/*{frame}*'+dateval+f'*.nc')
+        liste_file = glob(f"{param_dict['dirdata']}/{YEAR}/*{dateval}*.nc")
         if len(liste_file) == 0 :
-            raise IOError(f"There are no files in: {param_dict['dirdata']}/{YEAR}/*{frame}*{dateval}*.nc")
+            raise IOError(f"There are no files in: {param_dict['dirdata']}/{YEAR}/*{dateval}*.nc")
         for file in liste_file:
             filename = os.path.basename(file)
             if not os.path.exists(param_dict['dirwork']+filename):
@@ -155,11 +154,9 @@ class Extract_Legos_SIT(Extractor):
 
     def run_list(self, param_dict, daterun):
         liste_tot=[]
-        liste_file=glob(param_dict['dirdata']+'/*'+daterun+'*.nc')
-        self.log.info("Liste file {} {} ".format(liste_file, daterun))
-        if not liste_file:
-            raise IOError(f"Missing Legos_SIT {param_dict['dirdata']} {daterun}")
-        self.log.debug('Liste file Legos_SIT {}'.format(liste_file))
+        liste_file=glob(f"{param_dict['dirdata']}/*{daterun}*.nc")
+        if len(liste_file)==0:
+            raise IOError(f"Missing Legos_SIT {param_dict['dirdata']}/*{daterun}*.nc")
         for file in liste_file:
             filename = os.path.basename(file)
             shutil.copy(file, param_dict['dirwork']+filename)
@@ -181,7 +178,6 @@ class Extract_Legos_SIT(Extractor):
             liste_file=glob(frame)
             if len(liste_file) == 0:
                 raise IOError(f"There are no files in {frame}")
-            self.log.debug(f'{frame=}')
             self.log.info(f'Liste file CORA {liste_file}')
             for new_file in liste_file :
                 filename=os.path.basename(new_file)
@@ -209,7 +205,7 @@ class Extract_CMEMS_drifters(Extractor):
         liste_tot = []
         year = SyDate(dateval).year
         month = SyDate(dateval).month
-        liste_file = glob(param_dict['dirdata']+f'*{dateval}*.nc')
+        liste_file = glob(f"{param_dict['dirdata']}*{dateval}*.nc")
         if len(liste_file) == 0:
             raise IOError(f"There are no files {param_dict['dirdata']}*{dateval}*.nc")
 
@@ -245,7 +241,7 @@ class Extract_SSSData(Extractor):
         #nco = Nco()
         # Create a timeline
         timelinespace = self.timelinespace(date1,date2)
-        liste_file = glob(dirdata+'/*nc')
+        liste_file = glob(f"{dirdata+}/*nc")
         length = len(liste_file)
         if length == 0 :
             self.log.debug(f'There are no files in {dirdata}/*nc')
@@ -300,7 +296,7 @@ class Extract_genericData(Extractor):
         self.log =logging.getLogger("Extract Generic files")
         self.log.setLevel(logging.INFO)
         liste_tot = []
-        liste_file = glob(param_dict['dirdata']+'/*'+dateval+'*.nc')
+        liste_file = glob(f"{param_dict['dirdata']}/*{dateval}*.nc")
         if len(liste_file) == 0:
             self.log.debug(f"There are no files at {param_dict['dirdata']}/*{dateval}*.nc")
 
@@ -346,18 +342,14 @@ class Extract_CHLORO(Extractor):
 
     def run_list(self, param_dict, dateval):
         liste_tot = []
-        #liste_file = glob(param_dict['dirdata']+'/'+dateval+'*REP'+'*.nc')
         self.log.info('Extract_CHLORO')
-        liste_file = glob(param_dict['dirdata']+'/'+dateval+'*.nc')
-        self.log.info(f"{param_dict['dirdata']}/{dateval}'*.nc")
-        if np.size(liste_file) > 0:
-            liste_file = liste_file
-        else:
+        liste_file = glob(f"{param_dict['dirdata']}/{dateval}*.nc")
+        if len(liste_file) == 0:
             liste_file = glob(param_dict['dirdata']+'/'+dateval+'*DT'+'*.nc')
-            if np.size(liste_file) > 0:
-                liste_file = liste_file
-            else:
+            if len(liste_file) == 0:
                 liste_file = glob(param_dict['dirdata']+'/'+dateval+'*NRT'+'*.nc')
+                if len(liste_file) == 0:
+                    raise NameError(f"There are no files in list for CHLORO {param_dict['dirdata']}/{dataeval}*.nc")
         for file in liste_file:
             filename = 'Class4_'+dateval+'_'+param_dict['data_origin']+'_'+param_dict['cl_conf']+'_'+param_dict['varname'][0]+'.nc'
             self.mkdir(param_dict['dirwork'])
