@@ -61,6 +61,8 @@ class FileHandler:
                     all_files.extend(file_tmp)  # Add found files to the results
                     self.log.debug(f"{gridname} Add file {file_tmp}")
         # Return all found files or an empty list if none are found
+        if len(all_files)==0:
+            self.log.error(f"Warning no files in {formatted_pattern}")
         return all_files if all_files else None
 
     def load_files(self, leadtime):
