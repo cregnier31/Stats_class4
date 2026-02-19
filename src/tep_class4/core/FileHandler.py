@@ -56,8 +56,7 @@ class FileHandler:
                 
                 file_tmp = glob(formatted_pattern)
                 # If files are found, store them in the list
-                if file_tmp:
-                    self.log.debug(f'File OK {file_tmp}')
+                if len(file_tmp)>0:
                     all_files.extend(file_tmp)  # Add found files to the results
         # Return all found files or an empty list if none are found
         if len(all_files)==0:
