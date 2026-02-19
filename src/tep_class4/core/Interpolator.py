@@ -1384,8 +1384,7 @@ class Interpolator(object):
             tab_depth = { k:dimensions[k] for k in dimensions.keys() & set(list_depth)}
 
         except:
-            self.log.error('lon lat or depth not defined')
-            raise
+            raise NameError('lon lat or depth not defined')
 
         if tab_lon:
             nlons = list(tab_lon.values())[0]
@@ -1398,9 +1397,7 @@ class Interpolator(object):
             depth_var_name = list(intersection)[0]
             depth_mod = dataset[depth_var_name][:].values
         else:
-            self.log.error('No matching variable for depth')
-            raise
-        #depth_mod = dataset[list(tab_depth.keys())[0]][:].values
+            raise IOError('No matching variable for depth')
 
         return nlons, nlats, ndepths, depth_mod
 
@@ -1448,7 +1445,7 @@ class Interpolator(object):
                 )
                 
             except Exception as e:
-                self.log.error(f"Error {e} in compute_3D_weight for modele {file} and data {data_file}")
+                self.log.error(f"Error {e} in compute_3D_weight for modele and data {data_file}")
                 raise SystemExit(e)
             end = timer()
             self.log.debug(f'~ Time elapsed compute_3D_weight {end - start} s ~')
