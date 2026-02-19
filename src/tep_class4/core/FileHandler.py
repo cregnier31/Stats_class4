@@ -29,7 +29,7 @@ class FileHandler:
         # List of possible date formats
         date_formats = [
             dateval,  # Assuming it's already formatted correctly
-            f"{dateval[:4]}-{dateval[4:6]}-{dateval[6:]}"  # Convert %Y%m%d to %Y-%m-%d
+            #f"{dateval[:4]}-{dateval[4:6]}-{dateval[6:]}"  # Convert %Y%m%d to %Y-%m-%d
             #f"{dateval[:4]}_{dateval[4:6]}_{dateval[6:]}"  # Convert to another variant if needed
         ]
         # Results to store all matching files
@@ -49,7 +49,7 @@ class FileHandler:
                                     daily_pref=self.daily_pref,
                                     dateval=dateval_formatted,
                                     gridtype=gridname,
-                                    directory=self.directory
+                                    directory=''#self.directory
                                 )
                 self.log.debug(dateval_formatted)
                 self.log.debug(formatted_pattern)
