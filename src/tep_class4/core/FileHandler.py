@@ -49,18 +49,20 @@ class FileHandler:
                                     daily_pref=self.daily_pref,
                                     dateval=dateval_formatted,
                                     gridtype=gridname,
-                                    directory=''#self.directory
+                                    directory=self.directory
                                 )
                 self.log.debug(dateval_formatted)
                 self.log.debug(formatted_pattern)
                 
                 file_tmp = glob(formatted_pattern)
-                # If files are found, store them in the list
-                if len(file_tmp)>0:
+                if len(file_tmp) != 0 :
+                    # If files are found, store them in the list
+                    self.log.debug(f'File OK {file_tmp}')
                     all_files.extend(file_tmp)  # Add found files to the results
+                    self.log.debug(f"{gridname} Add file {file_tmp}")
+                else :
+                    raise NameError(f'There is no {formatted_pattern} files')
         # Return all found files or an empty list if none are found
-        if len(all_files)==0:
-            self.log.error(f"Warning no files in {formatted_pattern}")
         return all_files if all_files else None
 
     def load_files(self, leadtime):
@@ -92,6 +94,8 @@ class FileHandler:
                 day=day
             )
             list_file.extend(glob(glob_pattern))
+            if len(list_file) ==0 :
+                raise IOError(f'{glob_pattern}')
         elif self.directory == "clim_curr":
             filename = self.param_dict['coordinates']
             list_file.append(filename)
