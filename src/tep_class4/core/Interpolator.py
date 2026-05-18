@@ -297,7 +297,8 @@ class Interpolator(object):
                 # Open with dask chunks for lazy loading
                 dataset_in = xr.open_dataset(file, decode_times=False, chunks=None)
             if variable not in dataset_in:
-                raise ValueError(f"Missing variable {variable} in {file}")
+                log.error(f"Missing variable {variable} in {file}")
+                #raise KeyError(variable)
             # keep as xarray.DataArray (lazy, no .values yet)
             if dataset_in[variable].ndim == 3:
                 var_in = dataset_in[variable].values  # (depth, lat, lon)
@@ -312,14 +313,15 @@ class Interpolator(object):
                 var_in = dataset_in[variable].values  # (depth, lat, lon)
                 self.depth_dim = 1
             else:
+                log.error(f"Dimension not known {dataset_in[variable].ndim}")
                 raise ValueError(f"Unsupported dimension {dataset_in[variable].ndim}")
             end = timer()
             log.debug(f"Time for reading variable {variable}: {end - start:.2f} seconds")
             
             return var_in
         except Exception:
-            raise ValueError(f"Problem with variable {variable} in {file}")
-            
+            log.error(f"Problem with variable {variable} in {file}")
+            raise
 
     def get_modelvalue(self, param_dict, date, leadtime, lead_int, log=''):
         param_dict['ll_TEMP'] = True
@@ -342,7 +344,7 @@ class Interpolator(object):
                 except IndexError as error:
                     log.error(f"Error {error} Missing file for key {key} var {var}")
                     log.error("Varname {}".format(var))
-                    sys.exit(1)
+                    #sys.exit(1)
         return tab_results
         
         
@@ -1384,7 +1386,8 @@ class Interpolator(object):
             tab_depth = { k:dimensions[k] for k in dimensions.keys() & set(list_depth)}
 
         except:
-            raise NameError('lon lat or depth not defined')
+            self.log.error('lon lat or depth not defined')
+            raise
 
         if tab_lon:
             nlons = list(tab_lon.values())[0]
@@ -1397,7 +1400,9 @@ class Interpolator(object):
             depth_var_name = list(intersection)[0]
             depth_mod = dataset[depth_var_name][:].values
         else:
-            raise IOError('No matching variable for depth')
+            self.log.error('No matching variable for depth')
+            raise
+        #depth_mod = dataset[list(tab_depth.keys())[0]][:].values
 
         return nlons, nlats, ndepths, depth_mod
 
@@ -1445,7 +1450,7 @@ class Interpolator(object):
                 )
                 
             except Exception as e:
-                self.log.error(f"Error {e} in compute_3D_weight for modele and data {data_file}")
+                self.log.error(f"Error {e} in compute_3D_weight for modele {file} and data {data_file}")
                 raise SystemExit(e)
             end = timer()
             self.log.debug(f'~ Time elapsed compute_3D_weight {end - start} s ~')

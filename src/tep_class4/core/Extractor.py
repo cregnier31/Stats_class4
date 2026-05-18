@@ -1174,10 +1174,9 @@ class Extract_UVDrifters(Extractor):
         liste_tot=[]
         year = daterun[0:4]
         month = daterun[4:6]
-        #liste_file=glob(param_dict['dirdata'] + '/' + year + '/' + month + '/*' + daterun+'*.nc')
-        liste_file=glob(param_dict['dirdata'] + '/' + year + '/*' + daterun+'*.nc')
+        liste_file=glob(f"{param_dict['dirdata']}/*{daterun}*.nc")
         if len(liste_file)==0:
-            self.log.error("Missing Drifters files {} {}".format(param_dict['dirdata'], daterun))
+            self.log.error(f"Missing Drifters files {param_dict['dirdata']}/*{daterun}*.nc")
             return []
         self.log.debug('Liste file UV drifters {}'.format(liste_file))
         nb_fcst = len(param_dict['lead_int'])
