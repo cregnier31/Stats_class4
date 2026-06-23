@@ -28,14 +28,13 @@ directory_patterns:
 
   clim: "{dirclim}/"
   clim_curr: "{dirclim}/"
-  smoc: "{dirmodel}DAILY/SMOC/nwct/"
-  stokes: "{dirmodel}DAILY/SMOC/nwct/"
-  tides: "{dirmodel}DAILY/SMOC/nwct/"
-  smoc_fcst: "{dirmodel}DAILY/SMOC/"
-  stokes_fcst: "{dirmodel}DAILY/SMOC/"
+  smoc: "{dirmodel}/output_weekly/"
+  stokes: "{dirmodel}/output_weekly/"
+  tides: "{dirmodel}/output_weekly/"
+  smoc_fcst: "{dirmodel}/output_daily/"
+  stokes_fcst: "{dirmodel}/output_daily/"
   bathy: "{bathy_file}"
   general: "{dirclim}/"
-
 
 file_handling:
   pgn:
