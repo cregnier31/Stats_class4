@@ -109,8 +109,7 @@ def main(level=2):
                 # Read obs file
                 obs_data, tuple_obs = read_observations(file_obs, param_dict, log)
                 # Query_weight for each observations
-                log.debug(f"Search the weights values in the grid for the observations {file_obs}")
-                log.info(f'Work on observations {file_obs}')
+                log.info(f"Search the weights values in the grid for the observations {file_obs}")
                 weight, indexes = interpolator.query_weight(obs_data, param_dict, log)
                 for keyvalue in list_leadtime['keyvalues']:
                     leadtime, lead_int = keyvalue.split('-')
