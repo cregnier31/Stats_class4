@@ -670,7 +670,7 @@ class NmlLoader(Loader):
             except Exception:
                 param_dict['EDITO'] = ''
             if param_dict['cl_typemod'].lower() == 'pgn':
-                param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN') + 'GLO12V4'
+                param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
                 param_dict['dirmodel'] = param_dict['dirmodel_pgn']
             elif param_dict['cl_typemod'].lower() == 'pgs' or param_dict['cl_typemod'].lower() == 'pgs_ai':
                 param_dict['dirmodel_pgs'] = db.get('input_dir', 'DATA_IN_PGS')
