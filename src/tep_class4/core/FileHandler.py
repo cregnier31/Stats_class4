@@ -49,7 +49,7 @@ class FileHandler:
                                     daily_pref=self.daily_pref,
                                     dateval=dateval_formatted,
                                     gridtype=gridname,
-                                    directory=self.directory
+                                    directory='',
                                 )
                 self.log.debug(dateval_formatted)
                 self.log.debug(formatted_pattern)

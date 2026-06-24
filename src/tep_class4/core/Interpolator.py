@@ -344,7 +344,10 @@ class Interpolator(object):
                 except IndexError as error:
                     log.error(f"Error {error} Missing file for key {key} var {var}")
                     log.error("Varname {}".format(var))
-                    #sys.exit(1)
+                except KeyError as error:
+                    log.error(f"Error {error} Missing file for key {key} var {var}")
+                    log.error("Varname {}".format(var))
+                   #sys.exit(1)
         return tab_results
         
         
@@ -797,7 +800,12 @@ class Interpolator(object):
                ll_miss = False
                self.log.debug(f'{varname=}')
                #self.log.debug(f'{dict_var=}')
-               var_in = dict_var[varname]
+               try:
+                   var_in = dict_var[varname]
+               except KeyError:
+                   self.log.error(f'{varname} not found')
+
+
                ll_unique = False
                if not ll_miss:
                   if len(np.unique(self.depth)) == 1:
