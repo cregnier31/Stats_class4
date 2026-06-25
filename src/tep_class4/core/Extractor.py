@@ -481,12 +481,10 @@ class Extract_corio_raw(Extractor):
         if self.datatype == "CORIOLIS_RAW_PR_PF":
             frame = "PR_PF"
             liste_file = [f for f in liste_all if any(tag in f for tag in liste_prof_PR_PF)]
-            #liste_file = glob(param_dict['dirdata']+'/'+YEAR+f'/*{frame}*'+dateval+f'*.nc')
             self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/*{frame}*{dateval}*nc")
         elif self.datatype == "CORIOLIS_RAW_TS_DB":
             frame = "TS_DB"
             liste_file = [f for f in liste_all if any(tag in f for tag in liste_prof_TS_DB)]
-            #liste_file = glob(param_dict['dirdata']+'/'+YEAR+f'/*{frame}*'+dateval+f'*.nc')
             self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/*{frame}*{dateval}*nc")
         elif self.datatype == "CORIOLIS_RAW_type1":
             liste_file = [f for f in liste_all if any(tag in f for tag in liste_prof_type1)]
@@ -926,7 +924,6 @@ class Extract_UVDrifters_filtr(Extractor):
         liste_tot=[]
         year = daterun[0:4]
         month = daterun[4:6]
-        #liste_file=glob(param_dict['dirdata'] + '/' + year + '/' + month + '/*' + daterun+'*.nc')
         liste_file=glob(param_dict['dirdata'] + '/*' + daterun+'*.nc')
         if len(liste_file)==0:
             raise NameError(f"Missing Drifters files {param_dict['dirdata']}/*{daterun}*nc")
