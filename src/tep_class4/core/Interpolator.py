@@ -343,11 +343,10 @@ class Interpolator(object):
                     log.debug(f"Read file {file_input} {var}")
                 except IndexError as error:
                     log.error(f"Error {error} Missing file for key {key} var {var}")
-                    log.error("Varname {}".format(var))
+                    continue
                 except KeyError as error:
                     log.error(f"Error {error} Missing file for key {key} var {var}")
-                    log.error("Varname {}".format(var))
-                   #sys.exit(1)
+                    continue
         return tab_results
         
         
