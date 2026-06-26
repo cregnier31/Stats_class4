@@ -2,7 +2,7 @@ pipeline {
     agent { label params.AGENT }
 
     parameters {
-        choice(name: 'AGENT', choices: ['gaby-fidji', 'fidji-cregnier', 'prod-fidji', 'fidji'], description: 'Which node to run the job on')
+        choice(name: 'AGENT', choices: ['garcia-fidji', 'gaby-fidji', 'fidji-cregnier', 'prod-fidji', 'fidji'], description: 'Which node to run the job on')
     }
 
     options {
@@ -13,7 +13,7 @@ pipeline {
     }
 
     environment {
-        CONDA_ENV = "eddy_${env.BRANCH_NAME}"
+        CONDA_ENV = "class4_${env.BRANCH_NAME}"
     }
 
     stages {
@@ -36,7 +36,7 @@ pipeline {
             steps {
                 sh """#!/bin/bash
                 . ~/.bashrc
-                conda list --name ${env.CONDA_ENV} || conda env create -n ${env.CONDA_ENV} --file conda-hatch.yml
+                conda list --name ${env.CONDA_ENV} || conda env create -n ${env.CONDA_ENV} --file conda-env-dev.yml
                 """
             }
         }
