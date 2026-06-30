@@ -103,17 +103,13 @@ def main(level=2):
             # Find observations for a given day
             input_list_files = Extractor(log).factory(param_dict['prefix_data']).\
                                                       run_list(param_dict, dateval)
-            if not input_list_files:
-                log.error(f'Files are missing for the observation {dateval}')
-                continue
-            else:
-                log.debug(f'List of observations {dateval} {input_list_files}')
+            if len(input_list_files)==0:
+                raise IOError(f"List of observations {dateval} for {param_dict['prefix_data']}, at Extractor:{input_list_files}")
             for file_obs in input_list_files:
                 # Read obs file
                 obs_data, tuple_obs = read_observations(file_obs, param_dict, log)
                 # Query_weight for each observations
-                log.debug(f"Search the weights values in the grid for the observations {file_obs}")
-                log.info(f'Work on observations {file_obs}')
+                log.info(f"Search the weights values in the grid for the observations {file_obs}")
                 weight, indexes = interpolator.query_weight(obs_data, param_dict, log)
                 for keyvalue in list_leadtime['keyvalues']:
                     leadtime, lead_int = keyvalue.split('-')

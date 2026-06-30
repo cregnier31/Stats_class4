@@ -677,7 +677,7 @@ class NmlLoader(Loader):
             elif param_dict['cl_typemod'].lower() == 'pgncg':
                 param_dict['dirmodel_pgncg'] = db.get('input_dir', 'DATA_IN_PGN_CG')
             elif param_dict['cl_typemod'].lower() == 'smoc':
-                param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
+                param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_SMOC')
                 param_dict['dirmodel'] = param_dict['dirmodel_pgn']
             elif param_dict['cl_typemod'].lower() == 'bathy':
                 param_dict['dirmodel_pgn'] = db.get('static', 'dir_static')

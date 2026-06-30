@@ -457,12 +457,8 @@ class SelectListModelData(Selector):
                                        self.log)
             list_file = file_handler.load_files(leadtime)
             if not list_file:
-                self.log.error("Repertory %s" % (dirmodel_new))
-                self.log.error(f"File missing for {directory} {dateval}")
                 ll_miss_rep = True
-                #sys.exit(1)
-                continue
-                #sys.exit(1)
+                raise IOError(f"Directory {dirmodel_new} \n File missing for {directory} {dateval}")
             self.log.debug('dirmodel  %s ' % (self.dirmodel))
             if not ll_miss_rep :
                 self.log.debug('directory and file  %s %s ' % (directory, list_file[0]))

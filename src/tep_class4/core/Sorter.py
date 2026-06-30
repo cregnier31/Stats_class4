@@ -87,7 +87,11 @@ class Sorter():
                     nametype = config+dateval
                     nametype0 = config+dateval
                     # Find Hindcast and nowcast
-                    for fic in glob.glob(dirmodel+nametype+"*"+gridtemp+"*.nc"):
+                    nombreloco=dirmodel+nametype+"*"+gridtemp+"*.nc"
+                    l=glob.glob(f"{nombreloco}")
+                    if len(l)==0:
+                        raise NameError(f'the list {nombreloco} is empty')
+                    for fic in l:
                         log.info("Fichier :: %s " % (fic))
                         fic_bis = os.path.basename(fic)
                         if rep == 'hdct' and Time().isHindcast(fic_bis):

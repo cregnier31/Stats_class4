@@ -7,8 +7,8 @@ directory_patterns:
       chl: "{dirmodel}"
       chloro: "{dirmodel}"
       RTR: "{dirmodel}"
-      REA: "{dirmodel}HEBDO/{modele}/"
-      config_d: "{dirmodel}HEBDO/{config}/{config_lower}/"
+      REA: "{dirmodel}"
+      config_d: "{dirmodel}"
       PSY4: "{dirmodel}HEBDO/{modele}/{modele_lower}/"
 
   hdct_all:
@@ -22,20 +22,19 @@ directory_patterns:
   fcst:
     7dAV: "{dirmodel}FORECAST/"
     default:
-      GLO12: "{dirmodel}DAILY/{config}/{config_lower}/"
+      GLO12: "{dirmodel}/"
       PSY4: "{dirmodel}DAILY/{modele}/{modele_lower}/"
       BIO4: "{dirmodel}"
 
   clim: "{dirclim}/"
   clim_curr: "{dirclim}/"
-  smoc: "{dirmodel}DAILY/SMOC/nwct/"
-  stokes: "{dirmodel}DAILY/SMOC/nwct/"
-  tides: "{dirmodel}DAILY/SMOC/nwct/"
-  smoc_fcst: "{dirmodel}DAILY/SMOC/"
-  stokes_fcst: "{dirmodel}DAILY/SMOC/"
+  smoc: "{dirmodel}/output_weekly/"
+  stokes: "{dirmodel}/output_weekly/"
+  tides: "{dirmodel}/output_weekly/"
+  smoc_fcst: "{dirmodel}/output_daily/"
+  stokes_fcst: "{dirmodel}/output_daily/"
   bathy: "{bathy_file}"
   general: "{dirclim}/"
-
 
 file_handling:
   pgn:
@@ -74,15 +73,15 @@ file_handling:
          RTR:
             glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
          default:
-            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
+            glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
          smoc:         
-            glob_pattern: "{dirmodel}/{directory}/{SMOC}_{dateval}*.nc"
+            glob_pattern: "{dirmodel}/{SMOC}_{dateval}*.nc"
          tides:         
-            glob_pattern: "{dirmodel}/{directory}/{SMOC}_{dateval}*.nc"
+            glob_pattern: "{dirmodel}/{SMOC}_{dateval}*.nc"
          stokes:         
-            glob_pattern: "{dirmodel}/{directory}/{SMOC}_{dateval}*.nc"
+            glob_pattern: "{dirmodel}/{SMOC}_{dateval}*.nc"
     default:
-        glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}.nc"
+        glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}.nc"
 
   pgncg:
     clim:
@@ -120,9 +119,9 @@ file_handling:
          RTR:
             glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
          default:
-            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
+            glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
     default:
-        glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}.nc"
+        glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}.nc"
 
 
   pgs:
@@ -131,11 +130,11 @@ file_handling:
     non_clim:
       type_run:
          RTR:
-            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*{gridtype}*nc"
+            glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*{gridtype}*nc"
          OPER:
-            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*{gridtype}*nc"
+            glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*{gridtype}*nc"
          OPER-FCST:
-            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*nc"
+            glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*nc"
 
   pgs_ai:
     clim:
@@ -143,11 +142,11 @@ file_handling:
     non_clim:
       type_run:
          RTR:
-             glob_pattern: "{dirmodel}/{directory}/{modele}_{dateval}_{gridtype}*nc"
+             glob_pattern: "{dirmodel}/{modele}_{dateval}_{gridtype}*nc"
          OPER:
-             glob_pattern: "{dirmodel}/{directory}/{modele}_{dateval}_{gridtype}*nc"
+             glob_pattern: "{dirmodel}/{modele}_{dateval}_{gridtype}*nc"
     default:
-      glob_pattern: "{dirmodel}/{directory}/{modele}_{dateval}_{gridtype}*nc"
+      glob_pattern: "{dirmodel}/{modele}_{dateval}_{gridtype}*nc"
 
   smoc:
     clim:
@@ -221,148 +220,3 @@ file_handling:
         actions:
           - error: "type not known for 2ease files"
 
-
-##file_handling:
-##
-##  pgn:
-##    clim:
-##      - condition: "data_type in ['drifter_filtr', 'drifter', 'current']"
-##        actions:
-##		glob_patterns:
-##		  - "{dir}/*_monthlymeans.nc"
-##              	  - "{dir}/*monthlymeans.nc"
-##
-##          - glob_pattern: "{dirclim}/{type_clim}_M{month}_*{gridtype_clim}.nc"
-##      - condition: "data_type not in ['drifter_filtr', 'drifter', 'current']"
-##        actions:
-##          - glob_pattern: "{dirclim}/{type_clim}_M{month}_*{gridtype_clim}.nc"
-##
-##      default:
-##        - condition: "data_type in ['drifter_filtr', 'drifter', 'current']"
-##          actions:
-##            dir: "param_dict['dirclim']"
-##            glob_patterns:
-##              - "{dir}/*_monthlymeans.nc"
-##              - "{dir}/*monthlymeans.nc"
-##        - condition: "type_run == 'REA'"
-##          actions:
-##            glob_patterns:
-##              - "{dir}/{type_clim}_M{MONTH}_*{gridtype_clim}.nc"
-##        - default:
-##            glob_patterns:
-##              - "{dir}/{type_clim}_M{MONTH}_*{gridtype_clim}.nc"
-##    non_clim:
-##      nitrate:
-##        actions:
-##          glob_patterns:
-##            - "{dir}/{year}/{month}/{modele}_{daily_pref}_{dateval}*_*{gridtype}.nc"
-##            - "{dir}/{year}/{month_up}/{modele}_{daily_pref}_{dateval}*_*{gridtype}.nc"
-##      default:
-##        - condition: "type_run == 'REA'"
-##          actions:
-##            glob_patterns:
-##              - "{dir}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
-##        - condition: "type_run == 'free'"
-##          actions:
-##            glob_patterns:
-##              - "{dir}/{modele}_{daily_pref}_*_{gridtype}_{dateval}*.nc"
-##        - condition: "type_run == 'RTR' and directory in ['bathy', 'clim']"
-##          actions:
-##            glob_patterns:
-##              - "{dir}"
-##        - condition: "type_run == 'RTR' and directory in ['smoc', 'stokes', 'tides']"
-##          actions:
-##            glob_patterns:
-##              - "{dir}/SMOC_{dateval}*.nc"
-##        - condition: "leadtime == 'smoc_fcst'"
-##          actions:
-##            glob_patterns:
-##              - "{dir}/{directory}/SMOC_{dateval}*.nc"
-##        - condition: "leadtime == 'stokes_fcst'"
-##          actions:
-##            glob_patterns:
-##              - "{dir}/{directory}/SMOC_{dateval}*.nc"
-##        - condition: "leadtime == 'bathymetrie'"
-##          actions:
-##            glob_patterns:
-##              - "{dir}"
-##        - default:
-##            glob_patterns:
-##              - "{dir}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
-##
-##  allege:
-##    clim:
-##      actions:
-##        glob_patterns:
-##          - "{dir}/{type_clim}_M{MONTH}_*{gridtype_clim}.nc"
-##    non_clim:
-##      actions:
-##        template: "template_path"  # Placeholder for 'template' variable if used
-##
-##  2ease:
-##    non_clim:
-##      - condition: "type_run == 'kaku'"
-##        actions:
-##          glob_patterns:
-##            - "{dir}/*{dateval[:6]}*.nc"
-##      - default:
-##          error: "type not known for 2ease files"
-##
-##  pgs:
-##    clim:
-##      actions:
-##        glob_patterns:
-##          - "{dir}/*M{month}*nc"
-##    non_clim:
-##      default:
-##        actions:
-##          glob_patterns:
-##            - "{dir}/{directory}/{modele}_{daily_pref}_{dateval}*{gridtype}*nc"
-##
-##  pgs_ai:
-##    non_clim:
-##      actions:
-##        call_method: "find_file"
-##        method_args:
-##          - "{dirmodel}/{directory}"
-##          - "{modele}"
-##          - "{dateval}"
-##          - "{param_dict['gridtype']}"
-##
-##  default:
-##    actions:
-##      glob_patterns:
-##        - "{dir}/{year}/{month}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
-##      fallback:
-##        - "{dir}/{year2}/{month2}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
-##
-##
-##
-###file_handling:
-###  pgn:
-###    clim:
-###      drifter_types: 
-###        - drifter_filtr
-###        - drifter
-###        - current
-###      patterns:
-###        - "/*_monthlymeans.nc"
-###        - "/*monthlymeans.nc"
-###    non_clim:
-###      default_patterns:
-###        - "{dirmodel_new}/{type_clim}_M{MONTH}_*{gridtype_clim}.nc"
-###      data_types:
-###        - nitrate
-###        - ph
-###        - chl
-###    types_run:
-###      REA:
-###        pattern: "{dirmodel_new}/{self.modele}_{param_dict['daily_pref']}_{dateval}*_*{gridtype}.nc"
-###      free:
-###        pattern: "{dirmodel_new}/{self.modele}_{param_dict['daily_pref']}_*_{param_dict['gridtype']}_{dateval}*.nc"
-###  pgs:
-#    clim:
-#      drifter_types: 
-#
-#file_pattern:
-#  filename: "^(?P<system_name>.+)_(?P<date>\\d{4}-\\d{2}-\\d{2})_(?P<other_info>.+)$"

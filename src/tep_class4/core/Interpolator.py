@@ -298,7 +298,7 @@ class Interpolator(object):
                 dataset_in = xr.open_dataset(file, decode_times=False, chunks=None)
             if variable not in dataset_in:
                 log.error(f"Missing variable {variable} in {file}")
-                raise KeyError(variable)
+                #raise KeyError(variable)
             # keep as xarray.DataArray (lazy, no .values yet)
             if dataset_in[variable].ndim == 3:
                 var_in = dataset_in[variable].values  # (depth, lat, lon)
@@ -343,8 +343,10 @@ class Interpolator(object):
                     log.debug(f"Read file {file_input} {var}")
                 except IndexError as error:
                     log.error(f"Error {error} Missing file for key {key} var {var}")
-                    log.error("Varname {}".format(var))
-                    sys.exit(1)
+                    continue
+                except KeyError as error:
+                    log.error(f"Error {error} Missing file for key {key} var {var}")
+                    continue
         return tab_results
         
         
@@ -797,7 +799,12 @@ class Interpolator(object):
                ll_miss = False
                self.log.debug(f'{varname=}')
                #self.log.debug(f'{dict_var=}')
-               var_in = dict_var[varname]
+               try:
+                   var_in = dict_var[varname]
+               except KeyError:
+                   self.log.error(f'{varname} not found')
+
+
                ll_unique = False
                if not ll_miss:
                   if len(np.unique(self.depth)) == 1:

@@ -29,7 +29,7 @@ class FileHandler:
         # List of possible date formats
         date_formats = [
             dateval,  # Assuming it's already formatted correctly
-            f"{dateval[:4]}-{dateval[4:6]}-{dateval[6:]}"  # Convert %Y%m%d to %Y-%m-%d
+            #f"{dateval[:4]}-{dateval[4:6]}-{dateval[6:]}"  # Convert %Y%m%d to %Y-%m-%d
             #f"{dateval[:4]}_{dateval[4:6]}_{dateval[6:]}"  # Convert to another variant if needed
         ]
         # Results to store all matching files
@@ -49,17 +49,19 @@ class FileHandler:
                                     daily_pref=self.daily_pref,
                                     dateval=dateval_formatted,
                                     gridtype=gridname,
-                                    directory=self.directory
+                                    directory='',
                                 )
                 self.log.debug(dateval_formatted)
                 self.log.debug(formatted_pattern)
                 
                 file_tmp = glob(formatted_pattern)
-                # If files are found, store them in the list
-                if file_tmp:
+                if len(file_tmp) != 0 :
+                    # If files are found, store them in the list
                     self.log.debug(f'File OK {file_tmp}')
                     all_files.extend(file_tmp)  # Add found files to the results
                     self.log.debug(f"{gridname} Add file {file_tmp}")
+                else :
+                    raise NameError(f'There is no {formatted_pattern} files')
         # Return all found files or an empty list if none are found
         return all_files if all_files else None
 
@@ -73,12 +75,8 @@ class FileHandler:
         # Set directory type for non-clim cases
         self.directory_path = "clim"
         datev = SyDate(str(self.dateval))
-        month = str(datev.month)
-        day = str(datev.day)
-        if datev.month < 10:
-            month = '0' + str(datev.month)
-        if datev.day < 10:
-            day = f'0{datev.day}'
+        month = f'{datev.month:02}'
+        day = f'{datev.day:02}'
         if self.directory not in list_clim:
             self.directory_path = "non_clim"
         # Get the specific directory configuration
@@ -96,6 +94,8 @@ class FileHandler:
                 day=day
             )
             list_file.extend(glob(glob_pattern))
+            if len(list_file) ==0 :
+                raise IOError(f'{glob_pattern}')
         elif self.directory == "clim_curr":
             filename = self.param_dict['coordinates']
             list_file.append(filename)
@@ -117,13 +117,10 @@ class FileHandler:
                 pattern = list_actions[action]
                 file_select = self.find_file(pattern,
                                  self.param_dict.get('gridtype', ''))
-                self.log.debug(f"Pattern = {pattern}")
-                self.log.debug(f"GridType = {self.param_dict.get('gridtype', '')}")
                 if file_select:
                     self.log.debug(f"File ok {file_select}")
                     list_file.extend(file_select)
                 else:
-                    self.log.error(f"File nok {self.directory=} {pattern=} {self.param_dict.get('gridtype', '')}")
-                    sys.exit(1)
+                    raise IOError(f"File nok {self.directory=} {pattern=} {self.param_dict.get('gridtype', '')}")
                     
         return list_file
