@@ -140,7 +140,7 @@ def main(level=2):
         # Find exact index
         if target_date in time_index:
             time_idx = time_index.get_loc(target_date)
-            print(f'Index found {time_idx}')
+            log.debug(f'Index found {time_idx}')
             #leadtime = f'fcst{time_idx}'
             data_at_date = selected_data.isel(time=time_idx)
         else:
@@ -172,25 +172,20 @@ def main(level=2):
         #print(nanrmse(np.squeeze(tab_results['forecast']),
         #                     np.squeeze(tab_results['observation'])))
         if is_2D:
-            print(np.shape(tab_results['forecast']))
-            sys.exit(1)
+            log.debug(np.shape(tab_results['forecast']))
             tab_rmsd[ind_time], tab_cumul_sq_diff[ind_time], tab_n_obs[ind_time] = \
                     compute_rmsd(np.squeeze(tab_results['observation']),
                             np.squeeze(tab_results['forecast']))
-            print(tab_rmsd[ind_time], tab_cumul_sq_diff[ind_time], tab_n_obs[ind_time])
         else:
-            print('Case 3D')
-            sys.exit(1)
             tab_rmsd[ind_time, :], tab_cumul_sq_diff[ind_time, :], tab_n_obs[ind_time, :] = \
                     compute_rmsd(np.squeeze(tab_results['observation']),
                             np.squeeze(tab_results['forecast']))
-            print(tab_rmsd[ind_time], tab_cumul_sq_diff[ind_time], tab_n_obs[ind_time])
 
     outputname = f"{param_dict['diroutput']}results_class4_{param_dict['data_type']}_{param_dict['cl_conf']}_forecast_R{daterun}.nc"
     lead_times = param_dict['lead_int']
     save_metrics_to_netcdf(tab_rmsd, tab_cumul_sq_diff, tab_n_obs, lead_times, outputname)
 
-    
+
 # Set the level of logger (log_level = 2)
 # Run the main code
 if __name__ == "__main__":

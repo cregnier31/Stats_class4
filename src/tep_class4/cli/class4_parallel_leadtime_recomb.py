@@ -179,7 +179,6 @@ def main(level=2):
                 log.info(f'Work on observations {file_obs}')
                 weight, indexes = interpolator.query_weight(obs_data, param_dict, log)
                 inner_threads = int(args.np_threads)
-            
                 if len(list_leadtime['keyvalues']) == 1:
                     # Run directly (no parallel overhead)
                     log.debug(f"No outside parallelization only 1 leadtime")
@@ -222,7 +221,6 @@ def main(level=2):
                         )
                         for keyvalue in list_leadtime['keyvalues']
                     )
-                    
                     # Filter out skipped leadtimes
                     results = [r for r in results if r is not None]
 

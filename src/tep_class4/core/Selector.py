@@ -232,16 +232,21 @@ class SelectListModelData(Selector):
             if 'best_weekly' in param_dict['lead_time']:
                 lead_fin = ['pers']
             else:
-                if len(lead_new) > 1 :
-                    lead_tmp = ['nwct']
-                    lead_new = [time[:4]+element for element in lead_new[1:]]
-                    lead_tmp.extend(lead_new)
-                    lead_fin = lead_tmp
+                if param_dict['cl_conf'] == "GLO12V4_NEW":
+                    lead_new = [time[:4]+element for element in lead_new[0:]]
+                    lead_fin = lead_new
                 else:
-                    if lead_new == '0':
-                        lead_fin = ['nwct']
+                    if len(lead_new) > 1 :
+                        lead_tmp = ['nwct']
+                        lead_new = [time[:4]+element for element in lead_new[1:]]
+                        lead_tmp.extend(lead_new)
+                        lead_fin = lead_tmp
                     else:
-                        lead_fin = [time[:4]+lead_new]
+                        if lead_new == '0':
+                            lead_fin = ['nwct']
+                        else:
+                            lead_fin = [time[:4]+lead_new]
+
         elif time == 'best_estimate':
             if param_dict['cl_config'][0:6] == 'BIOMER':
                 #lead_fin = [time[0]+time[4]+time[6:8]]
