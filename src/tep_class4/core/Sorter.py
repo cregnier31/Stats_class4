@@ -87,10 +87,10 @@ class Sorter():
                     nametype = config+dateval
                     nametype0 = config+dateval
                     # Find Hindcast and nowcast
-                    nombreloco=dirmodel+nametype+"*"+gridtemp+"*.nc"
-                    l=glob.glob(f"{nombreloco}")
+                    hind_forecast=dirmodel+nametype+"*"+gridtemp+"*.nc"
+                    l=glob.glob(f"{hind_forecast}")
                     if len(l)==0:
-                        raise NameError(f'the list {nombreloco} is empty')
+                        raise NameError(f'List {hind_forecast} is empty')
                     for fic in l:
                         log.info("Fichier :: %s " % (fic))
                         fic_bis = os.path.basename(fic)

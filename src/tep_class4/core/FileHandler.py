@@ -49,7 +49,6 @@ class FileHandler:
                                     daily_pref=self.daily_pref,
                                     dateval=dateval_formatted,
                                     gridtype=gridname,
-                                    directory='',
                                 )
                 self.log.debug(dateval_formatted)
                 self.log.debug(formatted_pattern)
@@ -117,10 +116,10 @@ class FileHandler:
                 pattern = list_actions[action]
                 file_select = self.find_file(pattern,
                                  self.param_dict.get('gridtype', ''))
-                if file_select:
-                    self.log.debug(f"File ok {file_select}")
+                if len(file_select)>0:
+                    self.log.debug(f"File loading ok {file_select}")
                     list_file.extend(file_select)
                 else:
-                    raise IOError(f"File nok {self.directory=} {pattern=} {self.param_dict.get('gridtype', '')}")
+                    raise IOError(f"File loading nok {self.directory=} {pattern=} {self.param_dict.get('gridtype', '')}")
                     
         return list_file
