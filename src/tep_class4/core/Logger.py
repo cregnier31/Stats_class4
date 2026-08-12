@@ -1,5 +1,4 @@
 import logging
-from colorlog import ColoredFormatter
 import datetime
 import hashlib
 import sys
@@ -88,19 +87,11 @@ class Logger_multi(object):
         hashval = hashlib.md5(log_name.encode()).hexdigest()
         self.logname = f'{self.dirlog}{log_name}_{hashval}.txt'
 
-        # Define colored formatter
-        LOGFORMAT = " %(log_color)s %(asctime)s  %(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
-        self.formatter = ColoredFormatter(
+        # Define formatter
+        LOGFORMAT = "  %(asctime)s  %(levelname)-8s | %(message)s"
+        self.formatter = logging.Formatter(
             LOGFORMAT,
             datefmt=None,
-            reset=True,
-            log_colors={
-                'DEBUG':    'cyan',
-                'INFO':     'green',
-                'WARNING':  'yellow',
-                'ERROR':    'red',
-                'CRITICAL': 'red,bg_white',
-            },
         )
 
         # Select stream type
@@ -162,17 +153,9 @@ class Logger(object):
         # Calculate the MD5 hash of the log name
         hash = hashlib.md5(log_name.encode()).hexdigest()
         self.logname = f'{self.dirlog}{log_name}_{hash}.txt'
-        LOGFORMAT = " %(log_color)s %(asctime)s  %(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
-        self.formatter = ColoredFormatter(LOGFORMAT,
+        LOGFORMAT = " %(asctime)s  %(levelname)-8s | %(message)s"
+        self.formatter = logging.Formatter(LOGFORMAT,
                          datefmt=None,
-                         reset=True,
-                         log_colors={
-                                     'DEBUG':    'cyan',
-                                     'INFO':     'green',
-                                     'WARNING':  'yellow',
-                                     'ERROR':    'red',
-                                     'CRITICAL': 'red,bg_white',
-                                      },
                 )
         self.stream = stream
         if stream == 'logfile':
