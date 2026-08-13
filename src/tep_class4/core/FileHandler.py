@@ -60,7 +60,7 @@ class FileHandler:
                     all_files.extend(file_tmp)  # Add found files to the results
                     self.log.debug(f"{gridname} Add file {file_tmp}")
                 else :
-                    raise NameError(f'There is no {formatted_pattern} files')
+                    raise NameError(f'There are no {formatted_pattern} files')
         # Return all found files or an empty list if none are found
         return all_files if all_files else None
 
