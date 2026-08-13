@@ -559,8 +559,8 @@ class Interpolator(object):
             end = timer()
             self.log.debug('~~~~~~~~ Time elapsed compute weight on levels: %s %s' %
                             (str(end - start), " seconds ~~~~~~~~~~~~"))
-            self.log.debug(f"{obs_data.depth=} {ind_max=} ")
-            self.log.debug(f"{tab_indexes=}")
+            #self.log.debug(f"{obs_data.depth=} {ind_max=} ")
+            #self.log.debug(f"{tab_indexes=}")
             array_results = np.full(
                                   shape=(nb_obs, len(variable), nb_profs),
                                          #fill_value=netCDF4.default_fillvals['f4'],
@@ -904,8 +904,8 @@ class Interpolator(object):
                   #    ##
                   else :
                      self.log.debug("Profile case variable : {}".format(variable[var]))
-                     self.log.debug(f"{self.depth=} {self.ind_max=} ")
-                     self.log.debug(f"{indexes=}")
+                     #self.log.debug(f"{self.depth=} {self.ind_max=} ")
+                     #self.log.debug(f"{indexes=}")
                      if param_dict['data_format'] in self.list_insitu:
                          obs_tab = None
                      else:
@@ -1471,10 +1471,10 @@ class Interpolator(object):
                 profondeur = depth[ind_prof, :]
                 self.log.debug(f'Depth {profondeur}')
                 tab_mod_ma = tab_interp_tmp[:,ind_prof]
-                self.log.debug(f'Model Value {tab_mod_ma=}')
-                self.log.debug(f"{len(depth_mod[0:ind_max])}")
-                self.log.debug(f"{depth_mod[0:ind_max]}")
-                self.log.debug(f"Ind min O Ind max {ind_max}")
+                #self.log.debug(f'Model Value {tab_mod_ma=}')
+                #self.log.debug(f"{len(depth_mod[0:ind_max])}")
+                #self.log.debug(f"{depth_mod[0:ind_max]}")
+                #self.log.debug(f"Ind min O Ind max {ind_max}")
                 # Identify non-missing values
                 non_missing = profondeur != missing_value_obs
                 # Count non-missing values
@@ -1483,8 +1483,8 @@ class Interpolator(object):
                     values_interp[ind_prof,:] =  tab_mod_ma[0]
                 else:
                     fixture = Column(tab_mod_ma, depth_mod[0:ind_max])
-                    self.log.debug('Profondeurs profiles {}'.format(profondeur[0:100]))
-                    self.log.debug('Profondeurs modele {}'.format(depth_mod[0:ind_max]))
+                    #self.log.debug('Profondeurs profiles {}'.format(profondeur[0:100]))
+                    #self.log.debug('Profondeurs modele {}'.format(depth_mod[0:ind_max]))
                     self.log.debug(f'non_missing_count: {non_missing_count}')
 
                     if np.any(~np.isnan(tab_mod_ma[:])):
@@ -1500,10 +1500,10 @@ class Interpolator(object):
                         self.log.debug(f'missing_count {data_file}')
                         non_missing_indices = np.where((profondeur != missing_value_obs) & (profondeur < depth_mod[0]))[0]
                         values_interp[ind_prof, non_missing_indices] = tab_mod_ma[0]
-                self.log.debug(f'Valeurs interp :{values_interp[ind_prof,:]}=')
+                #self.log.debug(f'Valeurs interp :{values_interp[ind_prof,:]}=')
                 self.log.debug('--------------------------------')
             end = timer()
-            self.log.debug(f"~~ Time elapsed loops on depth {end - start} s ~~")
+            #self.log.debug(f"~~ Time elapsed loops on depth {end - start} s ~~")
             #self.log.debug(f'Valeurs profile {obs[:]}')
         end_3D= timer()
         self.log.debug(f"~~ Time elapsed interp 3D {end_3D - start_3D} s ~~")
