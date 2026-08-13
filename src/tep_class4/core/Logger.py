@@ -155,7 +155,7 @@ class Logger(object):
         self.logname = f'{self.dirlog}{log_name}_{hash}.txt'
         LOGFORMAT = " %(asctime)s  %(levelname)-8s | %(funcName)s:%(lineno)d | %(message)s"
         self.formatter = logging.Formatter(LOGFORMAT,
-                         datefmt=None,
+                         datefmt='%Y-%m-%d %H:%M:%S',
                 )
         self.stream = stream
         if stream == 'logfile':
