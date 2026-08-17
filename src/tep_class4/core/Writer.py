@@ -600,9 +600,6 @@ class Writer():
             ll_stokes_fcst = False
             variable = self.type_data.get(f"{param_dict['data_type']}_{param_dict['cl_src']}", {}).get('variable')
             frame = f"*{dateval}*{variable}.nc"
-            self.log.debug(f"{param_dict['data_type']}")
-            self.log.debug(f"{param_dict['cl_src']}")
-            self.log.debug(f"{variable=}")
             self.log.info(f"{param_dict['data_type']}")
             self.log.info(f"{param_dict['cl_src']}")
             self.log.info(f"{variable=}")
@@ -610,10 +607,10 @@ class Writer():
             if len(list_file)==0:
                 frame = f"*{variable}*{dateval}*.nc"
                 list_file = glob(f"{param_dict['dirwork']}{frame}")
-            if len(list_file)==0:
-                self.log.error(f"In Writer files are missing for day {dateval}")
-                self.log.error(f"{param_dict['dirwork']}{frame}")
-                continue
+                if len(list_file)==0:
+                    self.log.error(f"In Writer files are missing for day {dateval}")
+                    self.log.error(f"There is no {param_dict['dirwork']}{frame}")
+                    continue
             self.log.debug(f"{list_file=}")
             for file_out in list_file:
                 type_file = os.path.basename(file_out).split('.')[0]
