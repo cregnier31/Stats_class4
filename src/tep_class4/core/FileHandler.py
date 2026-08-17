@@ -1,6 +1,8 @@
 from glob import glob
+import os
 from .sydate import SyDate
 import sys
+import datetime as dt
 class FileHandler:
     def __init__(self, config,
                  dirmodel, modele,
@@ -43,24 +45,48 @@ class FileHandler:
             self.log.debug(self.directory)
             # Iterate over different date formats and try to find matching files
             for dateval_formatted in date_formats:
-                formatted_pattern = pattern.format(
-                                    dirmodel=self.dirmodel,
-                                    modele=self.modele,
-                                    daily_pref=self.daily_pref,
-                                    dateval=dateval_formatted,
-                                    gridtype=gridname,
-                                )
-                self.log.debug(dateval_formatted)
-                self.log.debug(formatted_pattern)
-                
-                file_tmp = glob(formatted_pattern)
-                if len(file_tmp) != 0 :
-                    # If files are found, store them in the list
-                    self.log.debug(f'File OK {file_tmp}')
-                    all_files.extend(file_tmp)  # Add found files to the results
-                    self.log.debug(f"{gridname} Add file {file_tmp}")
+                if "fcst" in self.directory :
+                    offset=int(self.directory[-1])
+                    date_run=dt.date.fromisoformat(dateval)-dt.timedelta(offset)
+                    formatted_pattern=f"{self.dirmodel}{self.directory}/{self.modele}_{self.daily_pref}_{dateval_formatted}-{dateval_formatted}_{gridname}_fcst-1_R{date_run:%Y%m%d}.nc"
+                    if os.path.exists(formatted_pattern) :
+                        all_files.append(formatted_pattern)  # Add found files to the results
+                    else :
+                        raise NameError(f'File not found {formatted_pattern}')
+
+                elif "pers" in self.directory :
+                    offset=int(self.directory[-1])
+                    date2=dt.date.fromisoformat(dateval)-dt.timedelta(offset)
+                    date_run=dt.date.fromisoformat(dateval)-dt.timedelta(offset-1)
+                    formatted_pattern=f"{self.dirmodel}/nwct/{self.modele}_{self.daily_pref}_{date2:%Y%m%d}-{date2:%Y%m%d}_{gridname}_fcst-1_R{date_run:%Y%m%d}.nc"
+
+                    if os.path.exists(formatted_pattern) :
+                        all_files.append(formatted_pattern)  # Add found files to the results
+                    else :
+                        raise NameError(f'File not found {formatted_pattern}')
+
                 else :
-                    raise NameError(f'There are no {formatted_pattern} files')
+                    formatted_pattern = pattern.format(
+                            dirmodel=self.dirmodel,
+                            modele=self.modele,
+                            daily_pref=self.daily_pref,
+                            dateval=dateval_formatted,
+                            gridtype=gridname,
+                            directory=self.directory
+                            )
+                    file_tmp = glob(formatted_pattern)
+                    
+                    self.log.debug(dateval_formatted)
+                    self.log.debug(formatted_pattern)
+                    
+                    if len(file_tmp) != 0 :
+                        # If files are found, store them in the list
+                        self.log.debug(f'File OK {file_tmp}')
+                        all_files.extend(file_tmp)  # Add found files to the results
+                        self.log.debug(f"{gridname} Add file {file_tmp}")
+                    else :
+                        raise NameError(f'There are no {formatted_pattern} files')
+
         # Return all found files or an empty list if none are found
         return all_files if all_files else None
 
