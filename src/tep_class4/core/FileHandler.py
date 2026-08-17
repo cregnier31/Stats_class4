@@ -50,7 +50,7 @@ class FileHandler:
                     date_run=dt.date.fromisoformat(dateval)-dt.timedelta(offset)
                     formatted_pattern=f"{self.dirmodel}{self.directory}/{self.modele}_{self.daily_pref}_{dateval_formatted}-{dateval_formatted}_{gridname}_fcst-1_R{date_run:%Y%m%d}.nc"
                     if os.path.exists(formatted_pattern) :
-                        all_files.append(formatted_pattern)  # Add found files to the results
+                        all_files.append(formatted_pattern)  # Add found file to all_files list
                     else :
                         raise NameError(f'File not found {formatted_pattern}')
 
@@ -61,7 +61,7 @@ class FileHandler:
                     formatted_pattern=f"{self.dirmodel}/nwct/{self.modele}_{self.daily_pref}_{date2:%Y%m%d}-{date2:%Y%m%d}_{gridname}_fcst-1_R{date_run:%Y%m%d}.nc"
 
                     if os.path.exists(formatted_pattern) :
-                        all_files.append(formatted_pattern)  # Add found files to the results
+                        all_files.append(formatted_pattern)  # Add found file to all_files list
                     else :
                         raise NameError(f'File not found {formatted_pattern}')
 
@@ -76,16 +76,12 @@ class FileHandler:
                             )
                     file_tmp = glob(formatted_pattern)
                     
-                    self.log.debug(dateval_formatted)
-                    self.log.debug(formatted_pattern)
-                    
                     if len(file_tmp) != 0 :
                         # If files are found, store them in the list
-                        self.log.debug(f'File OK {file_tmp}')
                         all_files.extend(file_tmp)  # Add found files to the results
                         self.log.debug(f"{gridname} Add file {file_tmp}")
                     else :
-                        raise NameError(f'There are no {formatted_pattern} files')
+                        raise NameError(f'{dateval_formatted}: There are no {formatted_pattern} files')
 
         # Return all found files or an empty list if none are found
         return all_files if all_files else None
