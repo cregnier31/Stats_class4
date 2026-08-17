@@ -392,7 +392,7 @@ class InputLoader(Loader):
                 cl_typemod = p
                 param_dict['cl_typemod'] = cl_typemod.upper()
                 if cl_typemod not in list_inputtype:
-                    print('input data type not known : ')
+                    print('input data type not known:')
                     print(f'must be {list_inputtype} not {cl_typemod}')
                     sys.exit(1)
             elif o in ['--smoc']:
@@ -585,8 +585,8 @@ class InputLoader(Loader):
             self.lead_int = [0]
 
         # Logger
-        log.debug("Nombre de proc %i" %(nb_proc))
-        log.debug("Type des fichiers d'entree %s " %(cl_typemod))
+        log.debug("Number of proc %i" %(nb_proc))
+        log.debug("Input files type %s " %(cl_typemod))
         log.debug("Schedule %s " %(cl_schedule))
         log.debug("Dates %s %s " %(date1,date2))
         log.debug("Datatype %s " %(cl_data))
@@ -922,6 +922,7 @@ class NmlLoader(Loader):
                 param_dict['lon_max'] = int(param_dict.get('GLOBAL', 'LONMAX'))
                 param_dict['lat_min'] = int(param_dict.get('GLOBAL', 'LATMIN'))
                 param_dict['lat_max'] = int(param_dict.get('GLOBAL', 'LATMAX'))
+
             #==========================================================================
             # Sort model values if necessary
             #==========================================================================
