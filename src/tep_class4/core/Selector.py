@@ -411,7 +411,7 @@ class SelectListModelData(Selector):
 
     def run(self, param_dict, dateval, leadtime, lead_int):
         list = OrderedDict()
-        self.log.debug(f'Param dict {param_dict}')
+        #self.log.debug(f'Param dict {param_dict}')
         param_dict = self.set_gridtype(param_dict)
         self.data_type = param_dict['data_type']
         self.type_run = param_dict['type_run']
@@ -461,8 +461,6 @@ class SelectListModelData(Selector):
         if not list:
             self.log.error("No repertories")
             ll_miss = True
-        else:
-            self.log.debug(f'List input files {list}')
         self.log.debug(f'List input files {list}')
         return list, ll_miss
 
