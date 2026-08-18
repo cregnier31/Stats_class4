@@ -37,13 +37,13 @@ class FileHandler:
         # Results to store all matching files
         all_files = []
         # Iterate over gridtypes and apply the date format logic
+        self.log.debug(self.dateval)
+        self.log.debug(self.directory)
+        self.log.debug(self.modele)
+        self.log.debug(self.daily_pref)
+        self.log.debug(self.dirmodel)
         for i, gridname in enumerate(gridname_list):
-            self.log.debug(self.dateval)
             self.log.debug(gridname)
-            self.log.debug(self.dirmodel)
-            self.log.debug(self.modele)
-            self.log.debug(self.daily_pref)
-            self.log.debug(self.directory)
 
             # Iterate over different date formats and try to find matching files
             for dateval_formatted in date_formats:
