@@ -438,7 +438,7 @@ class SelectListModelData(Selector):
             # Access mapping from YAML
             dirmodel_new, dirmodel_new_next = self.get_directory(directory, dateval, param_dict, leadtime)
             self.log.debug(f"Get directory {dirmodel_new} {dirmodel_new_next}")
-            self.log.debug(f"{self.config} {dirmodel_new} {self.modele} {self.type_run}")
+            self.log.debug(f"{dirmodel_new} {self.modele} {self.type_run}")
             # Handle different type of file
             file_handler = FileHandler(self.config,
                                        dirmodel_new,
