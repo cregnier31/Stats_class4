@@ -153,7 +153,7 @@ class Logger(object):
         # Calculate the MD5 hash of the log name
         hash = hashlib.md5(log_name.encode()).hexdigest()
         self.logname = f'{self.dirlog}{log_name}_{hash}.txt'
-        LOGFORMAT = " %(asctime)s  %(levelname)-8s | %(funcName)s:%(lineno)d | %(message)s"
+        LOGFORMAT = " %(asctime)s  %(levelname)-8s | %(funcName)s | %(filename)s:%(lineno)d | %(message)s"
         self.formatter = logging.Formatter(LOGFORMAT,
                          datefmt='%Y-%m-%d %H:%M:%S',
                 )
