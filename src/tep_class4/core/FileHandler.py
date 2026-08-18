@@ -38,11 +38,13 @@ class FileHandler:
         all_files = []
         # Iterate over gridtypes and apply the date format logic
         for i, gridname in enumerate(gridname_list):
+            self.log.debug(self.dateval)
             self.log.debug(gridname)
             self.log.debug(self.dirmodel)
             self.log.debug(self.modele)
             self.log.debug(self.daily_pref)
             self.log.debug(self.directory)
+
             # Iterate over different date formats and try to find matching files
             for dateval_formatted in date_formats:
                 if "fcst" in self.directory :
@@ -79,7 +81,6 @@ class FileHandler:
                     if len(file_tmp) != 0 :
                         # If files are found, store them in the list
                         all_files.extend(file_tmp)  # Add found files to the results
-                        self.log.debug(f"{gridname} Add file {file_tmp}")
                     else :
                         raise NameError(f'{dateval_formatted}: There are no {formatted_pattern} files')
 
