@@ -66,6 +66,15 @@ class FileHandler:
                         all_files.append(formatted_pattern)  # Add found file to all_files list
                     else :
                         raise NameError(f'File not found {formatted_pattern}')
+                elif 'hdct' in self.directory :
+                    offset=(dt.date.weekday(dt.date.fromisoformat(dateval))-2)%7
+                    date_run=dt.date.fromisoformat(dateval)+dt.timedelta(-offset+14)
+                    formatted_pattern=f"{self.dirmodel}/hdct/{self.modele}_{self.daily_pref}_{dateval_formatted}-{dateval_formatted}_{gridname}_hcst_R{date_run:%Y%m%d}.nc"
+                    #CRUZ TO REMOVE GLO12_ng_1d-m_20260805-20260805_3DU-uo_hcst_R20260819.nc
+                    if os.path.exists(formatted_pattern) :
+                        all_files.append(formatted_pattern)  # Add found file to all_files list
+                    else :
+                        raise NameError(f'File not found {formatted_pattern}')
 
                 else :
                     formatted_pattern = pattern.format(
