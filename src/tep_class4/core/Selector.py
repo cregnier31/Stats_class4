@@ -220,8 +220,6 @@ class SelectListModelData(Selector):
         #lead_new = param_dict['lead_int']
         lead_new2 = param_dict['lead_int2']
         cl_config_use = param_dict['cl_config']
-        self.log.debug(f"Time {time=}")
-        self.log.debug("-----------------------")
         if  time == 'forecast':
             lead_new = [time[0]+time[4]+time[6:8]+element for element in lead_new ]
             lead_fin = lead_new

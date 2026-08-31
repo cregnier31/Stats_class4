@@ -142,7 +142,6 @@ def main(level=2):
                     # Write output file
                     log.debug("=================================================")
                     log.debug(f'Write interp file for day {dateval} {file_out}')
-                    log.debug(tab_results.keys())
                     Writer(log).write_outputnp(file_out,
                                                tab_results,
                                                param_dict,
