@@ -1297,7 +1297,7 @@ class Extract_GODAE(Extractor):
             try:
                 liste_file = [glob(f"{dirdata}/class4*{daterun}*{typedata}*.nc")[0]]
             except IndexError:
-               self.log.error(f'Missing CLASS4 {daterun} {typedata} file')
+               self.log.error(f'Missing CLASS4 {daterun} {typedata} {dirdata}/class4*{daterun}*{typedata}*.nc file')
                liste_file = []
         
         if len(liste_file) == 0 or not liste_file :
