@@ -59,16 +59,19 @@ def define_coords(lon, lat):
     return dict_coords
 
 SYSTEM = "GLONET14"
-SYSTEM = "WENHAI"
+#SYSTEM = "WENHAI"
 #SYSTEM = "GLONET"
 resol = "1deg"
 resol = "0125deg"
-file_in = "/home/onyxia/work/TEP_CLASS4_creation/statics/GLO-MFC_001_030_mdt.nc"
-EDITO="https://minio.dive.edito.eu/project-oceanbench/public/WENHAI/"
+#file_in = "/home/onyxia/work/TEP_CLASS4_creation/statics/GLO-MFC_001_030_mdt.nc"
+file_in = "/data/rd_exchange/cregnier/static/MDT/GLO-MFC_001_030_mdt.nc"
+#"/home/onyxia/work/TEP_CLASS4_creation/statics/GLO-MFC_001_030_mdt.nc"
+#EDITO="https://minio.dive.edito.eu/project-oceanbench/public/WENHAI/"
+#file_out = f"{EDITO}20240904.zarr"
 file_out = f"{EDITO}20240904.zarr"
-path_weight = '../statics/'
-weight_file = f'../statics/GLO-MFC_001_030_mdt_{resol}.p'
-dir_out = "../statics/"
+path_weight = '/data/rd_exchange/cregnier/static/weight/'
+weight_file = f'{path_weight}GLO-MFC_001_030_mdt_{resol}.p'
+dir_out = "/data/rd_exchange/cregnier/static/weight/"
 variable = 'mssh'
 # Interp options
 nbpts_interp = 4

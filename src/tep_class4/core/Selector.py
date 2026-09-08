@@ -667,42 +667,65 @@ class SelectCorio(Selector):
         #log.setLevel(logging.INFO)
         log.setLevel(logging.ERROR)
         ## Nco constructor
-        nco = Nco()
-        il_ind=0
+        #nco = Nco()
         file_out=os.path.basename(fichier)
+        out_path = os.path.join(output_dir, file_out)
+
+        il_ind=0
         for il_it in list_index:
-            file_out2=os.path.basename(fichier).split('.')[0]+'_pf_'+str(il_it)+'.nc'
-            if il_ind == 0 :
-                ## Create file with unlimited dimension
-                options = []
-                options.extend(['-h'])
-                nco.ncks(input=fichier,output=output_dir+file_out, fortran=True ,dimension=str(self.dimprof)+','+str(il_it+1),options=options)
-                nco.ncecat(input=output_dir+file_out,output=output_dir+file_out,fortran=True,options=options)
-                options = []
-                options.extend(['-h','-O','-a',self.dimprof+',record'])
-                nco.ncpdq(input=output_dir+file_out,output=output_dir+file_out,fortran=True,options=options)
-                ## Remove record dimension
-                options = []
-                options.extend(['-h','-O','-a','record'])
-                nco.ncwa(input=output_dir+file_out,output=output_dir+file_out,fortran=True,options=options)
-            else :
-                options = []
-                options.extend(['-h'])
-                log.info("Do ncks")
-                nco.ncks(input=fichier,output=output_dir+file_out2, fortran=True ,append=True,dimension=self.dimprof+','+str(il_it+1),options=options)
-                log.info("Do ncks ok")
-                infiles = [output_dir+file_out,output_dir+file_out2]
-                log.info("Inputfiles :  %s " %(infiles) )
-                ## Concatenation of valid profiles
-                log.info("Do ncrcat")
-                nco.ncrcat(input=infiles, output=output_dir+'test.nc',fortran=True,options=options) 
-                log.info("Do ncrcat OK")
-                ## remove profile
-                os.remove(output_dir+file_out2) 
-                log.info("Do remove OK")
-                os.rename(output_dir+'test.nc',output_dir+file_out)
-                log.info("Do rename OK")
-            il_ind=il_ind+1
+            # Open dataset
+            ds = xr.open_dataset(fichier)
+            # Extract one profile along self.dimprof
+            ds_sel = ds.isel({self.dimprof: il_it})
+
+            if il_ind == 0:
+                # First profile → initialize output dataset
+                ds_concat = ds_sel.expand_dims("record")  # create a record dimension
+            else:
+                # Subsequent profiles → append
+                ds_new = ds_sel.expand_dims("record")
+                ds_concat = xr.concat([ds_concat, ds_new], dim="record")
+            il_ind += 1
+        # Optional: if you want to drop the 'record' dimension (like ncwa)
+        if "record" in ds_concat.dims:
+            ds_concat = ds_concat.squeeze("record", drop=True)
+        # Save final file
+        ds_concat.to_netcdf(out_path, encoding={
+            var: {"zlib": True, "complevel": 4} for var in ds_concat.data_vars
+        })
+
+            #file_out2=os.path.basename(fichier).split('.')[0]+'_pf_'+str(il_it)+'.nc'
+            #if il_ind == 0 :
+            #    ## Create file with unlimited dimension
+            #    options = []
+            #    options.extend(['-h'])
+            #    nco.ncks(input=fichier,output=output_dir+file_out, fortran=True ,dimension=str(self.dimprof)+','+str(il_it+1),options=options)
+            #    nco.ncecat(input=output_dir+file_out,output=output_dir+file_out,fortran=True,options=options)
+            #    options = []
+            #    options.extend(['-h','-O','-a',self.dimprof+',record'])
+            #    nco.ncpdq(input=output_dir+file_out,output=output_dir+file_out,fortran=True,options=options)
+            #    ## Remove record dimension
+            #    options = []
+            #    options.extend(['-h','-O','-a','record'])
+            #    nco.ncwa(input=output_dir+file_out,output=output_dir+file_out,fortran=True,options=options)
+            #else :
+            #    options = []
+            #    options.extend(['-h'])
+            #    log.info("Do ncks")
+            #    nco.ncks(input=fichier,output=output_dir+file_out2, fortran=True ,append=True,dimension=self.dimprof+','+str(il_it+1),options=options)
+            #    log.info("Do ncks ok")
+            #    infiles = [output_dir+file_out,output_dir+file_out2]
+            #    log.info("Inputfiles :  %s " %(infiles) )
+            #    ## Concatenation of valid profiles
+            #    log.info("Do ncrcat")
+            #    nco.ncrcat(input=infiles, output=output_dir+'test.nc',fortran=True,options=options) 
+            #    log.info("Do ncrcat OK")
+            #    ## remove profile
+            #    os.remove(output_dir+file_out2) 
+            #    log.info("Do remove OK")
+            #    os.rename(output_dir+'test.nc',output_dir+file_out)
+            #    log.info("Do rename OK")
+            #il_ind=il_ind+1
 
     def store_pos(self,tab_pos,type_f,file_db):
         logging.basicConfig(format='%(asctime)s %(message)s')

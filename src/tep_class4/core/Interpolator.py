@@ -25,13 +25,10 @@ from timeit import default_timer as timer
 #from dask.distributed import Client, SSHCluster
 from joblib import Parallel, delayed
 import warnings
-
-if sys.version_info[0] >= 3:
-    import pickle
-else:
-    import cPickle
+import pickle
 
 class BroadcastError(Exception):
+
         pass
 
 class Interpolator(object):
@@ -74,7 +71,7 @@ class Interpolator(object):
             raise ValueError("Could not find both latitude and longitude coordinate names.")
 
         return lon_name, lat_name
-        
+
     def getneardepth(self, array, value):
        idx = (np.abs(array-value)).argmin()
        return idx
