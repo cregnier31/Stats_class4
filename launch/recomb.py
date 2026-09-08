@@ -1,5 +1,4 @@
 import subprocess
-from datetime import datetime, timedelta
 
 start_date = "20240904"
 end_date = "20241231"

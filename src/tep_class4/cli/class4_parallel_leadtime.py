@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # vim: set ts=4 sw=4 expandtab:
-import sys
-from os.path import dirname
-import resource
-from timeit import default_timer as timer
-import argparse
-import numpy as np
-from joblib import Parallel, delayed, cpu_count
 """
 ===========================================================================
 TEP CLASS4 Parallel Observation Interpolation
@@ -45,29 +38,40 @@ Date:
 ===========================================================================
 """
 
+import sys
+from os.path import dirname
+import resource
+from timeit import default_timer as timer
+import argparse
+import numpy as np
+from joblib import Parallel, delayed, cpu_count
+
 # Import local modules
 from tep_class4.core.Extractor import Extractor
 from tep_class4.core.Loader import Loader
 from tep_class4.core.Interpolator import Interpolator
+from tep_class4.core.Logger import Logger
 from tep_class4.core.Writer import Writer
 from tep_class4.core.utils import create_dict, create_listdate, create_leadtime, get_nodes
 from tep_class4.core.inputdata_loader import inputdata_loader, read_observations
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
                                            resource.RLIM_INFINITY))
-
 # -----------------------------
 # Helper function for one leadtime
 # -----------------------------
 def process_leadtime(interpolator, file_obs, tuple_obs, weight, indexes,
                      param_dict, obs_data, dateval, keyvalue, log, inner_threads=1):
+    log_proc = Logger(f"TEP_CLASS4_{dateval}").run(param_dict['loglevel'])
+    # Rebuild a logger for this worker
     leadtime, lead_int = keyvalue.split('-')
-    dict_var_in = interpolator.get_modelvalue(param_dict, dateval, leadtime, lead_int)
+    dict_var_in = interpolator.get_modelvalue(param_dict, dateval, leadtime,
+                                              lead_int,log=log_proc)
     start = timer()
-    log.info(f'Work on leadtime {leadtime} length {lead_int} Days')
+    log_proc.debug(f'Work on multiprocess leadtime {leadtime} length {lead_int} Days')
 
     # Skip if output already exists
-    if Writer(log).test_output(file_obs, param_dict, dateval, leadtime, lead_int):
-        log.info(f'Intermediate file exists for {file_obs} leadtime {leadtime}')
+    if Writer(log_proc).test_output(file_obs, param_dict, dateval, leadtime, lead_int):
+        log_proc.info(f'Intermediate file exists for {file_obs} leadtime {leadtime}')
         return None
 
     # Interpolation
@@ -85,11 +89,11 @@ def process_leadtime(interpolator, file_obs, tuple_obs, weight, indexes,
         inner_threads=inner_threads
     )
     # Write output
-    log.debug(f'Write interp file for day {dateval} {file_out}')
-    Writer(log).write_outputnp(file_out, tab_results, param_dict,
+    log_proc.debug(f'Write interp file for day {dateval} {file_out}')
+    Writer(log_proc).write_outputnp(file_out, tab_results, param_dict,
                                dateval, leadtime, lead_int)
     end = timer()
-    log.info(f"~~ Time elapsed to process leadtime {leadtime}: {end - start:.2f}s ~~")
+    log_proc.debug(f"~~ Time elapsed to process leadtime {leadtime}: {end - start:.2f}s ~~")
     return file_out
 
 def main(level=2):
@@ -101,6 +105,7 @@ def main(level=2):
     parser.add_argument("--date1", required=True)
     parser.add_argument("--date2", required=True)
     parser.add_argument("--np_max", required=True)
+    parser.add_argument("--np_threads", required=True)
     parser.add_argument("--data", required=True,  help="Type of data to process")
     parser.add_argument("--typemod", required=True)
     parser.add_argument("--loglevel", type=int, default=2)
@@ -108,6 +113,8 @@ def main(level=2):
     parser.add_argument("--hdct (only hindcast)", action="store_true")
     parser.add_argument("--all (hdct fcst and pers)", action="store_true")
     args = parser.parse_args()
+    print('ok')
+
     # ==================================================================
     #  PART-1 -  Load input parameters
     # ==================================================================
@@ -130,12 +137,14 @@ def main(level=2):
     log.info('========================================================')
     # Create liste date
     list_date = create_listdate(param_dict['date1'],param_dict['date2'])
-    # Create dictionnary
-    list_leadtime = create_leadtime(
-                                param_dict['lead_time'],
-                                param_dict['lead_int'])
-    log.debug(f'{list_leadtime}')
     for selected_var in param_dict['list_variables']:
+        # Create dictionnary
+        list_leadtime = create_leadtime(
+                                        param_dict,
+                                        selected_var,
+                                        )
+        start = timer()
+        log.debug(f'{list_leadtime}')
         param_dict['prefix_data'] = param_dict['prefix_data_all'][selected_var]
         param_dict['data_format'] = param_dict['data_format_all'][selected_var]
         param_dict['data_type'] = selected_var
@@ -161,8 +170,8 @@ def main(level=2):
                 # Query_weight for each observations
                 log.debug(f"Search the weights values in the grid for the observations {file_obs}")
                 log.info(f'Work on observations {file_obs}')
+                #weight, indexes = interpolator.query_weight(obs_data, param_dict, leadtime_grids, log)
                 weight, indexes = interpolator.query_weight(obs_data, param_dict, log)
-                
                 # -----------------------------
                 # Parallel leadtime processing
                 # -----------------------------
@@ -170,9 +179,10 @@ def main(level=2):
                 outer_procs, inner_threads = get_nodes(input_list_files,
                                                        log,
                                                         np_max=param_dict['np_max']) 
-                outer_procs = 7 #int(len(list_leadtime['keyvalues'])/2)
-                inner_threads = 12
-                log.info(f'Number of outer_procs {outer_procs} and innner {inner_threads}')
+                outer_procs = args.np_max #int(len(list_leadtime['keyvalues'])/2)
+                inner_threads = args.np_threads
+                log.info(f"Starting parallel execution {outer_procs=}{inner_threads=}")
+ 
                 # Launch leadtimes in parallel
                 results = Parallel(n_jobs=outer_procs, backend='loky', verbose=1)(
                     delayed(process_leadtime)(
@@ -196,10 +206,9 @@ def main(level=2):
 
             log.info("=================================================")
         # Write output file
-        log.info('Write output file')
+        log.info(f'Write output file {selected_var} {dateval}')
         Writer(log).write_class4_out(param_dict, list_leadtime, list_date)
         log.info('Write ok')
-
 
 # Set the level of logger (log_level = 2)
 # Run the main code

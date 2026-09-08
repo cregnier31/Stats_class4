@@ -1,0 +1,19 @@
+name: py312_env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - xarray
+  - geopy
+  - cartopy
+  - matplotlib
+  - scipy
+  - colorlog
+  - pykdtree
+  - pandas
+  - numpy
+  - netCDF4
+  - seawater 
+  - joblib
+  - pyyaml
+  - filelock

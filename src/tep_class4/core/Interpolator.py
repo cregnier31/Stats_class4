@@ -295,7 +295,7 @@ class Interpolator(object):
                 dataset_in = file
             else:
                 # Open with dask chunks for lazy loading
-                dataset_in = xr.open_dataset(file, decode_times=False, chunks=None)
+                dataset_in = xr.open_dataset(file, decode_times=False)
             if variable not in dataset_in:
                 log.error(f"Missing variable {variable} in {file}")
                 raise KeyError(variable)

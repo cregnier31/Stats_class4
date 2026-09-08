@@ -13,7 +13,6 @@ Developer:
     C. REGNIER
 """
 
-import os
 from os.path import dirname
 import glob
 import re
@@ -30,6 +29,7 @@ import xarray as xr
 from tqdm import tqdm
 from mpi4py import MPI
 from timeit import default_timer as timer
+import numpy as np 
 
 # Import local modules
 import tep_class4.core.cl4errors as cl4err
