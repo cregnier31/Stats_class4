@@ -7,7 +7,7 @@ directory_patterns:
       chl: "{dirmodel}"
       chloro: "{dirmodel}"
       RTR: "{dirmodel}"
-      REA: "{dirmodel}"
+      REA: "{dirmodel}HEBDO/{modele}/"
       config_d: "{dirmodel}"
       PSY4: "{dirmodel}HEBDO/{modele}/{modele_lower}/"
 
@@ -73,7 +73,7 @@ file_handling:
          RTR:
             glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
          default:
-            glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
+            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
          smoc:         
             glob_pattern: "{dirmodel}/{SMOC}_{dateval}*.nc"
          tides:         
@@ -81,7 +81,7 @@ file_handling:
          stokes:         
             glob_pattern: "{dirmodel}/{SMOC}_{dateval}*.nc"
     default:
-        glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}.nc"
+        glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}.nc"
 
   pgncg:
     clim:
@@ -119,9 +119,9 @@ file_handling:
          RTR:
             glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
          default:
-            glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
+            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}*.nc"
     default:
-        glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*_*{gridtype}.nc"
+        glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*_*{gridtype}.nc"
 
 
   pgs:
@@ -130,11 +130,11 @@ file_handling:
     non_clim:
       type_run:
          RTR:
-            glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*{gridtype}*nc"
+            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*{gridtype}*nc"
          OPER:
-            glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*{gridtype}*nc"
+            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*{gridtype}*nc"
          OPER-FCST:
-            glob_pattern: "{dirmodel}/{modele}_{daily_pref}_{dateval}*nc"
+            glob_pattern: "{dirmodel}/{directory}/{modele}_{daily_pref}_{dateval}*nc"
 
   pgs_ai:
     clim:
@@ -142,11 +142,11 @@ file_handling:
     non_clim:
       type_run:
          RTR:
-             glob_pattern: "{dirmodel}/{modele}_{dateval}_{gridtype}*nc"
+             glob_pattern: "{dirmodel}/{directory}/{modele}_{dateval}_{gridtype}*nc"
          OPER:
-             glob_pattern: "{dirmodel}/{modele}_{dateval}_{gridtype}*nc"
+             glob_pattern: "{dirmodel}/{directory}/{modele}_{dateval}_{gridtype}*nc"
     default:
-      glob_pattern: "{dirmodel}/{modele}_{dateval}_{gridtype}*nc"
+      glob_pattern: "{dirmodel}/{directory}/{modele}_{dateval}_{gridtype}*nc"
 
   smoc:
     clim:
