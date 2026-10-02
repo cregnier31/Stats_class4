@@ -645,6 +645,7 @@ class NmlLoader(Loader):
             log.error(f"Configuration file not found {filename}!")
             sys.exit(1)
 
+        print(f'{filename=}')
         param_dict['db'] = db
         param_dict['dirhome'] = os.path.dirname(os.path.realpath(__file__))+'/../'
         param_dict['nml_dir'] = param_dict['dirhome']+'NAMELIST/'
@@ -667,13 +668,19 @@ class NmlLoader(Loader):
                 param_dict['dirmodel_light'] = ''
             try:
                 param_dict['EDITO'] = db.get('input_dir', 'EDITO')
+                param_dict['url_cloud'] = db.get('input_dir', 'url_cloud')
+                param_dict['bucket_name'] = db.get('input_dir', 'bucket_name')
             except Exception:
                 param_dict['EDITO'] = ''
+
             if param_dict['cl_typemod'].lower() == 'pgn':
                 param_dict['dirmodel_pgn'] = db.get('input_dir', 'DATA_IN_PGN')
                 param_dict['dirmodel'] = param_dict['dirmodel_pgn']
             elif param_dict['cl_typemod'].lower() == 'pgs' or param_dict['cl_typemod'].lower() == 'pgs_ai':
-                param_dict['dirmodel_pgs'] = db.get('input_dir', 'DATA_IN_PGS')
+                try:
+                    param_dict['dirmodel_pgs'] = db.get('input_dir', 'DATA_IN_PGS')
+                except Exception:
+                    param_dict['dirmodel_pgs'] = ''
             elif param_dict['cl_typemod'].lower() == 'pgncg':
                 param_dict['dirmodel_pgncg'] = db.get('input_dir', 'DATA_IN_PGN_CG')
             elif param_dict['cl_typemod'].lower() == 'smoc':
@@ -697,7 +704,10 @@ class NmlLoader(Loader):
             if param_dict['cl_typemod'].lower() == 'pgn':
                 param_dict['coordinates'] = db.get('static', 'fic_coordinates')
             elif param_dict['cl_typemod'].lower() == 'pgs' or param_dict['cl_typemod'].lower() == 'pgs_ai':
-                param_dict['coordinates'] = db.get('static', 'fic_coordinates_pgs')
+                try:
+                    param_dict['coordinates'] = db.get('static', 'fic_coordinates_pgs')
+                except Exception:
+                    param_dict['coordinates'] = []
             elif param_dict['cl_typemod'].lower() == 'pgncg':
                 param_dict['coordinates'] = db.get('static', 'fic_coordinates_cg')
             elif param_dict['cl_typemod'].lower() == 'smoc':
@@ -722,28 +732,42 @@ class NmlLoader(Loader):
             except Exception:
                 param_dict['bathy_file'] = ""
             param_dict['cl_msshFile'] = db.get('static','cl_msshFile')
-        
-        if 'static-inputs' in db.sections():
-            param_dict['rp_mssh_shift'] = float(db.get('static-inputs','rp_mssh_shift'))
-            param_dict['maskname'] = db.get('static-inputs','maskname')
+            try:
+                param_dict['area_file'] = db.get('static','areas')
+            except Exception:
+                param_dict['area_file'] = ""
+            
+        if 'static' in db.sections():
+            try:
+                param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
+            except Exception as e:
+                print(e)
+            try:
+                param_dict['maskname'] = db.get('static','maskname')
+            except Exception as e:
+                print(e)
 
         if 'params' in db.sections():
             try:
                 param_dict['data_format_all'] = literal_eval(db.get('params', 'DATA_FMT'))
             except Exception: 
-                param_dict['data_format_all'] = []
+                #param_dict['data_format_all'] = []
+                print("Missing DATA_FMT")
             try:
                 param_dict['prefix_data_all'] = literal_eval(db.get('params', 'PREFIX'))
             except Exception:
-                param_dict['prefix_data_all'] = []
+                print("Missing PREFIX")
+                #param_dict['prefix_data_all'] = []
             try:
                 param_dict['lead_int'] = db.get('params', 'LEAD_INT').split()
             except Exception:
-                param_dict['lead_int'] = ""
+                print("Missing LEAD_INT")
+                #param_dict['lead_int'] = ""
             try:
                 param_dict['lead_int2'] = db.get('params', 'LEAD_INT2').split()
             except:
-                param_dict['lead_int2'] = ""
+                print("Missing LEAD_INT2")
+                #param_dict['lead_int2'] = ""
         
         if 'output_dir' in db.sections():
             base_dir = db.get('output_dir', 'DIRTMP')
@@ -768,7 +792,10 @@ class NmlLoader(Loader):
             param_dict['coloc_rep'] = db.get('output_dir', 'DIRCOLOC')
        
         if 'climato' in db.sections():
-            param_dict['dirclim_cur'] = db.get('climato', 'DIRCLIM_CUR')
+            try:
+                param_dict['dirclim_cur'] = db.get('climato', 'DIRCLIM_CUR')
+            except Exception:
+                print(f"Missing 'DIRCLIM_CUR {filename}")
             try:
                 param_dict['dirclim2'] = db.get('climato', 'DIRCLIM2')
             except Exception:
@@ -779,10 +806,19 @@ class NmlLoader(Loader):
                 param_dict['coord_clim_curr'] = ""
     
         if 'GLOBAL' in db.sections(): 
+            param_dict['conf_type'] = db.get('GLOBAL', 'CONF_TYPE')
             if param_dict['cl_typemod'].lower() == 'pgn':
                 param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_ng'))
+                try:
+                    param_dict['gridtype'] = literal_eval(db.get('GLOBAL', 'grid_ng'))
+                except Exception:
+                    param_dict['gridtype'] = ''
             elif param_dict['cl_typemod'].lower() == 'pgs' or param_dict['cl_typemod'].lower() == 'pgs_ai':
                 param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_sg'))
+                try:
+                    param_dict['gridtype'] = literal_eval(db.get('GLOBAL', 'grid_sg'))
+                except Exception:
+                    param_dict['gridtype'] = ''
             elif param_dict['cl_typemod'].lower() == 'pgncg':
                 param_dict['varname_all'] = literal_eval(db.get('GLOBAL', 'variable_cg'))
             elif param_dict['cl_typemod'].lower() == 'smoc':
@@ -802,7 +838,8 @@ class NmlLoader(Loader):
             try:
                 param_dict['typedata_all'] = literal_eval(db.get('GLOBAL', 'typedata'))
             except Exception:
-                param_dict['typedata_all'] = ''
+                print('typedata_all missing')
+                #param_dict['typedata_all'] = ''
             try:
                 param_dict['good_qc'] = literal_eval(db.get('GLOBAL', 'good_qc'))
             except Exception:
@@ -815,7 +852,7 @@ class NmlLoader(Loader):
                 param_dict['time_centered'] = literal_eval(db.get('GLOBAL', 'time_centered'))
             except Exception:
                 param_dict['time_centered'] = False
-            
+
             if param_dict['data_type_all'] == 'all':
                 try:
                     param_dict['list_variables'] = literal_eval(db.get('GLOBAL', 'list_variables'))
@@ -825,7 +862,7 @@ class NmlLoader(Loader):
             #    param_dict['list_variables'] = ['smoc', 'tides', 'stokes']
             else:
                 param_dict['list_variables'] = [param_dict['data_type_all']]
-            
+
             # param_dict['Design_GODAE_file'] = db.get('GLOBAL', 'Design_GODAE_file')
             param_dict['nb_level'] = int(db.get('GLOBAL', 'LEVELS'))
             param_dict['zoom'] = int(db.get('GLOBAL', 'zoom'))
@@ -953,7 +990,7 @@ class NmlLoader(Loader):
                 param_dict['dirwork'] = param_dict['dirwork']
                 param_dict['diroutput'] = param_dict['diroutput']
                 #if param_dict['prefix_data'] == "L3mCHL": param_dict['dirdata'] = param_dict['dirdata']+ '/'+str(date_ini.year)
-        
+
         param_dict['dirwork'] = param_dict['dirwork']
         param_dict['diroutput'] = param_dict['diroutput']
         param_dict['dirdata_all'] = param_dict['dirdata']

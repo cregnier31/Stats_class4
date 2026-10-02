@@ -480,7 +480,7 @@ class SelectListData(Selector):
         super(Selector)
         self.log = log
 
-    def run(self, param_dict, daterun):
+    def run(self, param_dict, daterun, **args):
         """
          Create list of input data for a defined daterun
          Parameters
@@ -520,7 +520,7 @@ class SelectListData(Selector):
             self.log.debug('              DATE Selection and extraction  %s         ' %(param_dict['prefix_data']))
             self.log.debug(f" Prefix Data {param_dict['prefix_data']}")
             self.log.debug('========================================================')
-            list_files = Extractor(self.log).factory(param_dict['prefix_data']).run_list(param_dict, daterun)
+            list_files = Extractor(self.log).factory(param_dict['prefix_data']).run_list(param_dict, daterun,**args)
         if not list_files:
             self.log.error(f"Missing Obs files {param_dict['prefix_data']}"
                            f" {param_dict['dirdata']} {param_dict['dirwork']}"

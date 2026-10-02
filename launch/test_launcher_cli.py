@@ -26,14 +26,14 @@ def main():
 
     # Use installed CLI entry point instead of raw script path
     command = [
-        "class4",
+        "class4-run",
         f"--config={config}",
         f"--date1={date1}",
         f"--date2={date2}",
         f"--src={srcdata}",
         f"--data={typedata}",
         f"--typemod={typemod}",
-        f"--loglevel={loglevel}",
+        f"--loglevel={loglevel}"
     ] + options.split()
 
     # Print and run

@@ -89,8 +89,8 @@ class Interpolator(object):
                 sys.exit(1)
         else:
             ## Compte weight file
-            self.log.debug("Multiple depths")
-            self.log.debug("Profile case variable")
+            self.log.info("Multiple depths")
+            self.log.debug(f"Profile case variable")
             self.nb_obs, self.nb_profs = np.shape(obs_data.depth)
             ## Compte weight file
             #tab_results['depth'] = obs_data.depth
@@ -98,6 +98,9 @@ class Interpolator(object):
             self.log.debug(f"Nb_profils {self.nb_obs} Nb levels {self.nb_profs}")
             maxdepth =  np.nanmax(obs_data.depth)
             self.log.debug(f'maxdepth {maxdepth}')
+            self.log.info(f'maxdepth {maxdepth}')
+            self.log.info(f'depth_mod {self.depth_mod}')
+
             ind_depth = self.getneardepth(self.depth_mod, maxdepth)
             ind_tot = len(self.depth_mod)
             ## Loop on levels
@@ -240,6 +243,33 @@ class Interpolator(object):
             self.log.debug(f"Time for reading coordinates: {interp_end - interp_start:.2f} seconds")
             return lon, lat, mask_tab, depth_mod 
 
+    def find_lon_lat_names2(self, ds):
+        """
+        Find longitude and latitude coordinate names in an xarray
+        DataArray or Dataset.
+
+        Supports both 1D coordinates (lon(x), lat(y)) and
+        2D coordinates (longitude(y, x), latitude(y, x)).
+        """
+
+        lon_name = next(
+            (name for name in ds.coords if name in self.lonnames),
+            None
+        )
+
+        lat_name = next(
+            (name for name in ds.coords if name in self.latnames),
+            None
+        )
+
+        if lon_name is None or lat_name is None:
+            raise ValueError(
+                f"Could not find both latitude and longitude coordinates. "
+                f"Available coordinates: {list(ds.coords)}"
+            )
+
+        return lon_name, lat_name
+
     def find_lon_lat_names(self, ds):
         coords = ds.coords.keys()
         lon_name = next((name for name in coords if name in self.lonnames), None)
@@ -249,24 +279,55 @@ class Interpolator(object):
             raise ValueError("Could not find both latitude and longitude coordinate names.")
 
         return lon_name, lat_name
-        
+
     def getneardepth(self, array, value):
        idx = (np.abs(array-value)).argmin()
        return idx
 
-    def getnearpos(self, array, value):
-       if array == 0 :
-           idx1 = 0
-           idx2 = 0
-       else:
-          idx = (np.abs(array-value)).argmin()
-          if value[idx] >= array:
-             idx1 = idx - 1
-             idx2 = idx
-          else:
-             idx1 = idx
-             idx2 = idx + 1
-       return idx1, idx2
+    def getnearpos(self, depth, depth_array):
+        depth_array = np.asarray(depth_array)
+        depth = float(depth)
+        # Exact surface case
+        if depth == 0:
+            return 0, 0
+
+        # Find first model level >= requested depth
+        idx2 = np.searchsorted(depth_array, depth, side="left")
+        idx1 = idx2 - 1
+
+        # Requested depth is above the first model level
+        if idx2 == 0:
+            return 0, 1
+
+        # Requested depth is below the last model level
+        if idx2 == len(depth_array):
+            return len(depth_array) - 2, len(depth_array) - 1
+
+        return idx1, idx2
+
+    def getnearposold(self, depth, depth_array):
+        # Convert xarray DataArray to NumPy array
+        depth_array = np.asarray(depth_array)
+        depth = float(depth)
+
+        if depth == 0 :
+            return 0, 0
+        else:
+            idx = (np.abs(depth_array - depth)).argmin()
+
+            if depth >= depth_array[idx]:
+                idx1 = max(idx - 1, 0)
+                idx2 = idx
+            else:
+                idx1 = idx
+                idx2 = min(idx + 1, len(depth_array) - 1)
+        #if value[idx] >= array:
+        #     idx1 = idx - 1
+        #     idx2 = idx
+        #  else:
+        #     idx1 = idx
+        #     idx2 = idx + 1
+        return idx1, idx2
 
     def getweight(self, depth1, depth2, depth):
         dist_tot = abs(depth2 - depth1)
@@ -416,7 +477,7 @@ class Interpolator(object):
 
     def interp_class4(self, obs_data , model_data,
                         variable, param_dict,
-                        datevalue=None, leadtime=None,inner_threads=1):
+                        datevalue=None, leadtime=None,inner_threads=1, mask_tab=None):
         """
         Read and Interp data files
         Read input file, compute coloc value and interp with KDtree
@@ -442,16 +503,25 @@ class Interpolator(object):
         if 'qc' in param_dict.keys():
             tab_results['qc'] = param_dict['qc']
         # Get lon_mod / lat_mod
-        lon_name, lat_name = self.find_lon_lat_names(model_data)
+
+        lon_name, lat_name = self.find_lon_lat_names2(model_data)
         lon_mod = model_data[lon_name].values
         lat_mod = model_data[lat_name].values
+        self.depth_mod = np.array(model_data.depth)
+        self.log.debug(f"{self.depth_mod=}")
+
+        #self.depth_mod = 
         #print(list(model_data.data_vars))
-        if param_dict['cl_typemod'].lower() == "pgs" or param_dict['cl_typemod'].lower() == "pgs_ai":
-            self.log.debug("PGS coordinates")    
-            lon_mod, lat_mod, mask_tab, depth_mod = inputdata_loader(self.log).factory('PGS_coords').\
-                read_pos(param_dict['coordinates'])
-        if 'depth' in list(model_data.data_vars):
+        #if param_dict['cl_typemod'].lower() == "pgs" or param_dict['cl_typemod'].lower() == "pgs_ai":
+        #    self.log.debug("PGS coordinates") 
+        #    lon_mod, lat_mod, mask_tab, depth_mod = inputdata_loader(self.log).factory('PGS_coords').\
+        #        read_pos(param_dict['coordinates'])
+        #if 'depth' in list(model_data.data_vars):
+        if 'depth' in model_data.coords:
             depth_mod = model_data['depth'].values
+        else:
+            # Surface case
+            depth_mod = 0.5
         #ll_singleobs = False
         same_grid = False
         ll_light = False
@@ -460,22 +530,33 @@ class Interpolator(object):
         ll_nan = False
         ll_uniq = False
         is_2D = False
-        if len(np.unique(obs_data.depth)) == 1 or len(np.shape(obs_data.depth))==1 :
+        obs_array = np.squeeze(np.asarray(obs_data.obs_value))
+        depth_array = np.squeeze(np.asarray(obs_data.depth))
+
+        if len(np.unique(obs_data.depth)) == 1 or len(np.shape(obs_data.depth))== 1 :
             is_2D = True
             nb_obs = np.shape(obs_data.depth)[0]
-            self.log.debug(f"Dimensions obs {nb_obs}")
+            self.log.debug(f"{variable=}")
+            self.log.debug(f"Dimensions obs {nb_obs} {variable=}")
+            self.log.debug(f"Profondeurs obs {(np.unique(obs_data.depth))}")
+            self.log.debug(f"Dimensions np.shape{obs_data.obs_value}")
+
             if len(variable)==1 :
-                reshaped_obs = obs_data.obs_value.reshape((*obs_data.obs_value.shape, 1, 1))
-                tab_results['depth'] = np.expand_dims(obs_data.depth, axis=0)
+                reshaped_obs = obs_array.reshape((*obs_array.shape, 1, 1))
+                reshape_depth = depth_array.reshape((*depth_array.shape, 1, 1))
+            #    #reshaped_obs = obs_data.obs_value.reshape((*obs_data.obs_value.shape, 1, 1))
+            #    tab_results['depth'] = np.expand_dims(obs_data.depth, axis=0)
             else:
                 reshaped_obs = obs_data.obs_value.reshape((*obs_data.obs_value.shape, 1))
-                tab_results['depth'] = np.expand_dims(obs_data.depth, axis=1)
-            
+            #    reshaped_obs = obs_array.reshape((*obs_array.obs_value.shape, 1))
+                reshape_depth = np.expand_dims(obs_data.depth, axis=1)
             tab_results['observation'] = reshaped_obs
+            tab_results['depth'] = reshape_depth
+
             #ll_singleobs = True
             ll_uniq = True
             #tab_results[leadtime] = {}
-            self.log.debug("Uniq depth for all the observations")
+            self.log.debug(f"Uniq depth for all the observations")
             if ~np.isnan(obs_data.lon).all() and ~np.isnan(obs_data.lat).all():
                 self.log.debug("Compute tree")
                 TreeObj = interp_KDtree(self.log) #level=self.log.level)
@@ -490,7 +571,18 @@ class Interpolator(object):
                     depthval =  obs_data.depth[0,0]
                 else:
                     self.log.error("Case not known")
-                self.log.debug(f"Interp 2D {variable=} {depthval}")
+
+                #indexes = indexes.astype(np.int64)
+                #indexes[indexes == 4294967295] = -1
+                # Identify valid neighbors
+                #valid = indexes >= 0
+                # Keep the same shape: (n_obs, n_neighbors)
+                # Invalid neighbors get zero weight
+                #weights = np.where(valid, weights, 0.0)
+                # Safe index for NumPy indexing
+                #indexes_safe = np.where(valid, indexes, 0)
+
+                self.log.debug(f"Interp 2D {variable=} {depthval} {len(variable)}")
                 array_results = np.full(
                                         shape=(nb_obs, len(variable), 1),
                                         #fill_value=netCDF4.default_fillvals['f4'],
@@ -510,25 +602,28 @@ class Interpolator(object):
                                                    #missing_value=self.missing_value,
                                                    missing_value=np.nan,
                                                    same_grid=same_grid)
-                    self.log.debug(f"Interp value {interp_values[0:20]}{var}")
+                    self.log.debug(f"Interp value {interp_values[0:100]}{var}")
+                    self.log.debug(f"Obs {reshaped_obs[0:100]}")
                     array_results[:, var, 0] = interp_values
-                tab_results[leadtime] = array_results
+                #tab_results[leadtime] = array_results
 
             else:
                 self.log.error("Missing lon/lat")
                 sys.exit(1)
         else:
             self.log.debug("Multiple depths")
-            self.log.debug("Profile case variable")
+            self.log.info("Profile case variable")
             nb_obs, nb_profs = np.shape(obs_data.depth)
             ll_case2 = True
             ## Compte weight file
             tab_results['depth'] = obs_data.depth
             tab_results['observation'] =  obs_data.obs_value
-            self.log.debug(f"Nb_profils {nb_obs} Nb levels {nb_profs}")
+            self.log.info(f"Nb_profils {nb_obs} Nb levels {nb_profs}")
             maxdepth =  np.nanmax(obs_data.depth)
-            self.log.debug(f'maxdepth {maxdepth}')
+            self.log.info(f'maxdepth {maxdepth}')
+            self.log.info(f'depth_mod =  {depth_mod}')
             ind_depth = self.getneardepth(depth_mod, maxdepth)
+            self.log.debug(f'{ind_depth=}')
             ind_tot = len(depth_mod)
             ## Loop on levels
             if ind_depth < ind_tot-2:
@@ -546,6 +641,9 @@ class Interpolator(object):
             nb_compute = len(obs_data.lon)
             self.log.debug(f'Dimensions {nb_compute}')
             num_cores = -1
+            print(np.shape(mask_tab))
+            print(ind_max)
+
             # Compute weight
             # Implement lon/lat = 0 for all the values:
             with Parallel(n_jobs=num_cores, prefer="threads", verbose=1, backend='threading') as parallel:
@@ -555,7 +653,7 @@ class Interpolator(object):
             tab_weight = np.asarray(weight)
             tab_indexes = np.asarray(indexes)
             end = timer()
-            self.log.debug('~~~~~~~~ Time elapsed compute weight on levels: %s %s' %
+            self.log.info('~~~~~~~~ Time elapsed compute weight on levels: %s %s' %
                             (str(end - start), " seconds ~~~~~~~~~~~~"))
             self.log.debug(f"{obs_data.depth=} {ind_max=} ")
             self.log.debug(f"{tab_indexes=}")
@@ -584,10 +682,11 @@ class Interpolator(object):
                                                fillvalue=self.missing_value, data_file='',
                                                ll_uniq=ll_uniq, ll_nan=ll_nan, ll_case2=ll_case2,
                                                inner_threads=inner_threads)
-            tab_results[leadtime] = array_results
-        
+            #tab_results[leadtime] = array_results
+        tab_results['model'] = array_results
+
         return tab_results, is_2D
-        
+ 
     def read_and_interp(self, data_file, tuple_obs, weight, indexes, param_dict, obs_data, dict_var, date=None, leadtime=None, lead_int=None, inner_threads=1):
         """
         Read and Interp data files
@@ -1249,7 +1348,7 @@ class Interpolator(object):
 
     def interp_2D(self, weight, inds, var_in, nbpts_interp, variable, param_dict,\
             depth=0, time=0, key=None, fillvalue=None, nblon=None, nblat=None,
-            lon_mod=None, lat_mod=None, missing_value=np.nan, same_grid=False):
+            lon_mod=None, lat_mod=None, missing_value=np.nan, same_grid=False, depthmax=1.0):
         """
         -------------------
         2D interpolator
@@ -1274,18 +1373,25 @@ class Interpolator(object):
 
         ll_single = False
         #ll_nan = False
-        if depth > 0.5 :
+        if depth > depthmax :
             # Find the 2 points that enclose the depth value
+            self.log.debug('Find the 2 points that enclose the depth value')
             ndepths, nlats, nlons = np.shape(var_in)
+            self.log.debug(f'{ndepths=} {nlats=} {nlons=}')
             #nlons, nlats, ndepths, depth_mod = self.read_dims(dataset_in)
             ind_depth1, ind_depth2 = self.getnearpos(depth, self.depth_mod)
+            self.log.debug(f"Prof model {self.depth_mod}")
+            self.log.debug(f"Value prof {depth}")
+            self.log.debug(f"Values Prof model {self.depth_mod[ind_depth1]}  {self.depth_mod[ind_depth2]}")
+
+            self.log.debug(f'{ind_depth1=} {ind_depth2=}')
             w1, w2 = self.getweight(self.depth_mod[ind_depth1], self.depth_mod[ind_depth2], depth)
             self.log.debug(f"Index of depth value {ind_depth1} {ind_depth2} {self.depth_mod[ind_depth1]} {self.depth_mod[ind_depth2]}")
             self.log.debug(f"weight {w1} {w2}")
+            self.log.debug(f"{type(w1)} {type(w2)}")
         else:
             # Surface case
             ll_single = True
-            
         # Apply MSSH correction if needed
         if variable in self.list_ssh : #or param_dict['data_type'] == "SLA":
             cl_msshFile = param_dict['cl_msshFile']
@@ -1295,7 +1401,7 @@ class Interpolator(object):
             dataset_mssh = xr.open_dataset(cl_msshFile)
             tab_mssh = dataset_mssh['mssh'].values
             self.log.info(f"Compute sla equiv with shift {rp_mssh_shift} {cl_msshFile}")
-        var_data = var_in
+        var_data = np.array(var_in)
         if var_data.ndim == 3:
             var_data = var_data[time] if ll_single else (var_data[ind_depth1], var_data[ind_depth2])
         elif var_data.ndim == 4:
@@ -1309,12 +1415,14 @@ class Interpolator(object):
         # Handle same grid case
         if same_grid:
             return np.array(var_data).flatten(), False
+        #weight_sum = np.sum(weight, axis=1)
         # Interpolation
         if np.isnan(inds).all():
             tab_interp = np.full(len(inds), np.nan)
+           # tab_interp = np.full(len(weight_sum), np.nan)
             self.log.error("All missing values for indexes in interp_2D")
             return tab_interp, True
-
+        #valid_obs = weight_sum > 0
         #flat_func = lambda x: np.array(x).flatten()[inds]
         if nbpts_interp > 1:
             if ll_single:
@@ -1322,8 +1430,29 @@ class Interpolator(object):
                     var_data = np.transpose(var_data)
                 tab_interp = np.sum(weight * flat_func(var_data), axis=1) / np.sum(weight, axis=1)
             else:
+                #values1 = flat_func(var_data[0])
+                #values2 = flat_func(var_data[1])
+                #interp1 = np.full(len(weight_sum), np.nan)
+                #interp2 = np.full(len(weight_sum), np.nan)
+                #interp1[valid_obs] = ( np.sum(weight[valid_obs] * values1[valid_obs],axis=1) / weight_sum[valid_obs])
+                #interp2[valid_obs] = ( np.sum(weight[valid_obs] * values2[valid_obs],axis=1) / weight_sum[valid_obs])
+                #tab_interp[valid_obs] = ( w1[valid_obs] * interp1[valid_obs]+ w2[valid_obs] * interp2[valid_obs])
+                print(' weight')
+                print(type(weight))
+                print(np.shape(weight))
+                print("Var 0 and 1")
+                print(type(var_data[0]))
+                print(type(var_data[1]))
+                print(np.shape(var_data[0]))
+                print(np.shape(var_data[1]))
                 interp1 = np.sum(weight * flat_func(var_data[0]), axis=1) / np.sum(weight, axis=1)
                 interp2 = np.sum(weight * flat_func(var_data[1]), axis=1) / np.sum(weight, axis=1)
+                print(' weight w1 w2')
+                print(type(w1))
+                print(type(w2))
+                print(np.shape(w1))
+                print(np.shape(w2))
+                print('-----------')
                 tab_interp = w1 * interp1 + w2 * interp2
         else:
             tab_interp = flat_func(var_data) if ll_single else w1 * flat_func(var_data[0]) + w2 * flat_func(var_data[1])
@@ -1440,10 +1569,9 @@ class Interpolator(object):
                 self.log.debug(f'Size var_in {var_in.shape if hasattr(var_in, "shape") else "dask"}')
                 self.log.debug(f'Index max {ind_max}')
                 self.log.debug(f'nbpts_interp {nbpts_interp}')
-                
-                #num_cores = -1
-                num_cores = inner_threads
-                self.log.debug(f'Compute compute_3D_weight_origin')
+                num_cores = -1
+                #num_cores = inner_threads
+                self.log.info(f'Compute compute_3D_weight_origin')
                 results = Parallel(n_jobs=num_cores, prefer="threads", backend='threading')(
                     delayed(self.compute_3D_weight_origin)(ind, var_in, inds, weight, ind_max, nbpts_interp)
                     for ind in range(ind_max)
@@ -1460,9 +1588,9 @@ class Interpolator(object):
             self.log.debug(f'{np.shape(values_interp)}')
             nprof, nlevel = np.shape(tab_interp_tmp)
             for ind_prof in range (nb_obs):
-                self.log.debug(f'{ind_prof}/{nb_obs}')
+                self.log.info(f'{ind_prof}/{nb_obs}')
                 profondeur = depth[ind_prof, :]
-                self.log.debug(f'Depth {profondeur}')
+                self.log.info(f'Depth {profondeur}')
                 tab_mod_ma = tab_interp_tmp[:,ind_prof]
                 self.log.debug(f'Model Value {tab_mod_ma=}')
                 self.log.debug(f"{len(depth_mod[0:ind_max])}")

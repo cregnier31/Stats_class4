@@ -450,8 +450,8 @@ class Extract_corio_raw(Extractor):
                     liste_tot.append(out_path)
                 ind+=1
         return liste_tot
-    
-    def run_list(self, param_dict, dateval):
+
+    def run_list(self, param_dict, dateval, **args):
         """
          Create a list of data corresponding to a specific date
          Arguments
@@ -499,15 +499,19 @@ class Extract_corio_raw(Extractor):
             liste_file = liste_all
             self.log.debug(f"Search file {self.datatype} {param_dict['dirdata']}/{YEAR}/*{frame}*{dateval}*nc")
 
-        for file in liste_file:
-            try:
-                filename = os.path.basename(file)
-                if not os.path.exists(param_dict['dirwork']+filename):
-                    shutil.copy(file, param_dict['dirwork']+filename)
-                liste_tot.append(param_dict['dirwork']+filename)
-            except IOError as e:
-                print ("I/O error({0}): {1}".format(e.errno, e.strerror))
-                sys.exit(1)
+        save = args.get("save")
+        if save:
+            for file in liste_file:
+                try:
+                    filename = os.path.basename(file)
+                    if not os.path.exists(param_dict['dirwork']+filename):
+                        shutil.copy(file, param_dict['dirwork']+filename)
+                    liste_tot.append(param_dict['dirwork']+filename)
+                except IOError as e:
+                    print ("I/O error({0}): {1}".format(e.errno, e.strerror))
+                    sys.exit(1)
+        else:
+            return liste_file
         return liste_tot
 
 
@@ -696,8 +700,8 @@ class Extract_UVDrifters_filtr(Extractor):
                 except Exception as e:
                     errors.append(f"Var {var_name} attr {attr}: {e}")
         return errors
- 
- 
+
+
     def check_netcdf_valid(self, filename, timeout=10, log=None):
         start = time.time()
         while True:
@@ -753,7 +757,7 @@ class Extract_UVDrifters_filtr(Extractor):
                     current_test = nc_file['CURRENT_TEST'].values
                 else:
                     current_test = None
-                
+
                 nc_file.close()
                 nc = Dataset(file, 'r')
                 missing_value =  nc.variables['EWCT_FILTR']._FillValue
@@ -865,7 +869,7 @@ class Extract_UVDrifters_filtr(Extractor):
                     v_filtr_ws = v_filtr_ws[mask]
                     u_filtr_ws_qc = u_filtr_ws_qc[mask]
                     v_filtr_ws_qc = v_filtr_ws_qc[mask]
-                
+
                 nc_fid_rewrite.variables['latitude'][:] = lat_obs
                 nc_fid_rewrite.variables['longitude'][:] = lon_obs
                 nc_fid_rewrite.variables['obs_time'][:] = time_obs
@@ -914,7 +918,7 @@ class Extract_UVDrifters_filtr(Extractor):
             self.log.debug('Liste file UV drifters {}'.format(liste_file))
             return liste_file, False
 
-    def run_list(self, param_dict, daterun):
+    def run_list(self, param_dict, daterun, save=False):
         liste_tot=[]
         year = daterun[0:4]
         month = daterun[4:6]
@@ -927,25 +931,26 @@ class Extract_UVDrifters_filtr(Extractor):
         nb_fcst = len(param_dict['lead_int'])
         nb_fcst2 = len(param_dict['lead_int2'])
         self.log.debug('Number of forecasts {}'.format(nb_fcst))
-        self.log.info('NEW')
-        for new_file in liste_file :
-            try :
-                file_new = 'class4_' + daterun + '_' + param_dict['cl_conf']\
-                           +  '_' + param_dict['model_type'].lower() + \
-                           '_currents-filtr.nc'
-                ## If missing Read and Rewrite file
-                if not  os.path.exists(param_dict['dirwork']+file_new):
-                    self.log.info(f"Write Filename {param_dict['dirwork']}{file_new}")
-                    self.rewrite(liste_file[0], nb_fcst, nb_fcst2, param_dict['dirwork']+file_new)
-                else:
-                    self.log.info(f"Filename exist {param_dict['dirwork']}{file_new}")
-                    time.sleep(10)
-            except IOError as e:
-                self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-                raise
-        liste_tot.append(param_dict['dirwork']+file_new)
-        return liste_tot
-
+        if save:
+            for new_file in liste_file :
+                try :
+                    file_new = 'class4_' + daterun + '_' + param_dict['cl_conf']\
+                               +  '_' + param_dict['model_type'].lower() + \
+                               '_currents-filtr.nc'
+                    ## If missing Read and Rewrite file
+                    if not  os.path.exists(param_dict['dirwork']+file_new):
+                        self.log.info(f"Write Filename {param_dict['dirwork']}{file_new}")
+                        self.rewrite(liste_file[0], nb_fcst, nb_fcst2, param_dict['dirwork']+file_new)
+                    else:
+                        self.log.info(f"Filename exist {param_dict['dirwork']}{file_new}")
+                        time.sleep(10)
+                except IOError as e:
+                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
+                    raise
+            liste_tot.append(param_dict['dirwork']+file_new)
+            return liste_tot
+        else:
+            return liste_file
 
 class Extract_UVDrifters(Extractor):
 
@@ -1163,7 +1168,7 @@ class Extract_UVDrifters(Extractor):
                 nc_fid.close()
                 nc_file.close()
 
-    def run_list(self,param_dict, daterun):
+    def run_list(self,param_dict, daterun, save=False):
         liste_tot=[]
         year = daterun[0:4]
         month = daterun[4:6]
@@ -1176,19 +1181,22 @@ class Extract_UVDrifters(Extractor):
         nb_fcst = len(param_dict['lead_int'])
         nb_fcst2 = len(param_dict['lead_int2'])
         self.log.debug('Number of forecasts {}'.format(nb_fcst))
-        for new_file in liste_file :
-            try :
-                file_new = 'class4_' + daterun + '_' + param_dict['cl_conf']\
-                           +  '_' + param_dict['model_type'].lower() + \
-                           '_currents.nc'
-                ## Read and Rewrite file
-                self.rewrite(liste_file[0], nb_fcst, nb_fcst2, param_dict['dirwork']+file_new)
-                self.log.debug('Filename {}'.format(param_dict['dirwork']+file_new))
-            except IOError as e:
-                self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
-                raise
-        liste_tot.append(param_dict['dirwork']+file_new)
-        return liste_tot
+        if save:
+            for new_file in liste_file :
+                try :
+                    file_new = 'class4_' + daterun + '_' + param_dict['cl_conf']\
+                               +  '_' + param_dict['model_type'].lower() + \
+                               '_currents.nc'
+                    ## Read and Rewrite file
+                    self.rewrite(liste_file[0], nb_fcst, nb_fcst2, param_dict['dirwork']+file_new)
+                    self.log.debug('Filename {}'.format(param_dict['dirwork']+file_new))
+                except IOError as e:
+                    self.log.error("I/O error({0}): {1}".format(e.errno, e.strerror))
+                    raise
+            liste_tot.append(param_dict['dirwork']+file_new)
+            return liste_tot
+        else:
+            return liste_file
 
 class Extract_MDS_L3_SLA(Extractor):
     """ Extract MDS L3 SLA file """
@@ -1269,7 +1277,6 @@ class Extract_GODAE(Extractor):
         else :
             try:
                 print(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')
-                sys.exit(1)
                 liste_file = [glob(dirdata+'/class4*'+daterun+'*'+typedata+'*.nc')[0]]
             except IndexError:
                self.log.error(f'Missing CLASS4 {daterun} {typedata} file')
@@ -1279,9 +1286,8 @@ class Extract_GODAE(Extractor):
         else:
             self.log.error(f'file is missing for {daterun}')
             return liste_file, True
-    
-    def run_list(self, param_dict, daterun, template=''):
-        
+
+    def run_list(self, param_dict, daterun, template='', **args):
         dirdata = param_dict['dirdata']
         typedata = param_dict['data_type']
         nb_fcst = len(param_dict['lead_int'])
@@ -1291,7 +1297,7 @@ class Extract_GODAE(Extractor):
             and typedata !=  "aice" and typedata !=  "AMSR" and  typedata !=  "current" :
             self.log.error("Data %s not known !!! " %(typedata))
             sys.exit(1)
-        
+        save = args.get("save")
         liste_tot=[]
         self.log.info('Day  %s ' % (daterun))
  
@@ -1304,121 +1310,125 @@ class Extract_GODAE(Extractor):
             except IndexError:
                self.log.error(f'Missing CLASS4 {daterun} {typedata} file')
                liste_file = []
-        
+
         if not liste_file:
             return liste_tot
-        
-        self.log.debug(f'Liste file {liste_file}')
 
-        for new_file in liste_file :
-            try :
-                filename=os.path.basename(new_file)
+        self.log.debug(f'Liste file {liste_file} {save}')
+        if save:
+            for new_file in liste_file :
+                try :
+                    filename=os.path.basename(new_file)
 
-                # Adjust filename
-                if typedata ==  "AMSR" :
-                    filename=re.sub('GL_h5',template,filename)
-                elif typedata !=  "current":
-                    template1 = filename.split("_")
-                    if len(template1) > 5:
-                        template_tmp = "_".join(template1[2:5])
-                    else:
-                        template_tmp = "_".join(template1[2:4])
-                    filename=re.sub(template_tmp, template, filename)
+                    # Adjust filename
+                    if typedata ==  "AMSR" :
+                        filename=re.sub('GL_h5',template,filename)
+                    elif typedata !=  "current":
+                        template1 = filename.split("_")
+                        if len(template1) > 5:
+                            template_tmp = "_".join(template1[2:5])
+                        else:
+                            template_tmp = "_".join(template1[2:4])
+                        filename=re.sub(template_tmp, template, filename)
 
-                out_path = os.path.join(dirtmp, filename)
+                    out_path = os.path.join(dirtmp, filename)
 
-                if typedata not in ["aice", "current"]:
-                    # If it doesn't exist, create it
-                    os.makedirs(dirtmp, exist_ok=True)
+                    if typedata not in ["aice", "current"]:
+                        # If it doesn't exist, create it
+                        os.makedirs(dirtmp, exist_ok=True)
 
-                    # Open dataset
-                    ds = xr.open_dataset(new_file)
-                    
-                    # ---- 1) Handle numfcsts ----
-                    if "numfcsts" in ds.dims:
-                        ds = ds.isel(numfcsts=0, drop=True)
+                        # Open dataset
+                        ds = xr.open_dataset(new_file)
 
-                    # ---- 2) Handle modeljuld + leadtime ----
-                    if "modeljuld" in ds and nb_fcst > 0:
-                        # Expand to add numfcsts dimension
-                        ds = ds.expand_dims({"numfcsts": nb_fcst})
+                        # ---- 1) Handle numfcsts ----
+                        if "numfcsts" in ds.dims:
+                            ds = ds.isel(numfcsts=0, drop=True)
 
-                        # Rename like ncap2 + ncrename steps
-                        if "leadtime" in ds:
-                            ds = ds.rename({"leadtime": "leadtime_new"})
-                        if "modeljuld" in ds:
-                            ds = ds.rename({"modeljuld": "modeljuld_new"})
+                        # ---- 2) Handle modeljuld + leadtime ----
+                        if "modeljuld" in ds and nb_fcst > 0:
+                            # Expand to add numfcsts dimension
+                            ds = ds.expand_dims({"numfcsts": nb_fcst})
 
-                        ds = ds.rename({"modeljuld_new": "modeljuld",
-                                        "leadtime_new": "leadtime"})
-                    else:
-                        self.log.info("no modeljuld !!")
+                            # Rename like ncap2 + ncrename steps
+                            if "leadtime" in ds:
+                                ds = ds.rename({"leadtime": "leadtime_new"})
+                            if "modeljuld" in ds:
+                                ds = ds.rename({"modeljuld": "modeljuld_new"})
 
-                    # ---- 3) Drop unwanted variables ----
-                    drop_vars = ["best_estimate", "forecast", "persistence", "leadtime", "modeljuld"]
-                    if typedata == "SLA":
-                        drop_vars.extend(["altimeter_bias", "mdt_reference", "varname"])
-                    ds = ds.drop_vars([v for v in drop_vars if v in ds.variables], errors="ignore")
+                            ds = ds.rename({"modeljuld_new": "modeljuld",
+                                            "leadtime_new": "leadtime"})
+                        else:
+                            self.log.info("no modeljuld !!")
 
-                    # ---- 4) Save output ----
-                    comp = dict(zlib=True, complevel=4)
-                    encoding = {var: comp for var in ds.data_vars}
-                    ds.to_netcdf(out_path, encoding=encoding)
-                    ds.close()
-                
-                elif typedata == "current":
-                    shutil.copy(os.path.join(dirdata, filename), out_path)
+                        # ---- 3) Drop unwanted variables ----
+                        drop_vars = ["best_estimate", "forecast", "persistence", "leadtime", "modeljuld"]
+                        if typedata == "SLA":
+                            drop_vars.extend(["altimeter_bias", "mdt_reference", "varname"])
+                        ds = ds.drop_vars([v for v in drop_vars if v in ds.variables], errors="ignore")
 
-                else:  # aice
-                    ds = xr.open_dataset(new_file)
-                    drop_vars = ["best_estimate", "forecast", "persistence"]
-                    ds = ds.drop_vars([v for v in drop_vars if v in ds.variables], errors="ignore")
-                    if "obs_time" in ds:
-                        if "units" in ds["obs_time"].attrs:
-                            ds["obs_time"].attrs["units"] = (
-                                ds["obs_time"].attrs["units"]
-                                .replace("Seconds", "seconds")
-                                .replace("utc", "UTC")
-                        )
-                        encoding = {
-                            "obs_time": {
-                            "units": "seconds since 1950-01-01 00:00:00 UTC",
-                            "calendar": "gregorian"
-                            }
-                        }
-                    if "time" in ds:
-                        if "units" in ds["time"].attrs:
-                            ds["time"].attrs["units"] = (
-                                ds["time"].attrs["units"]
-                                .replace("Seconds", "seconds")
-                                .replace("utc", "UTC")
+                        # ---- 4) Save output ----
+                        comp = dict(zlib=True, complevel=4)
+                        encoding = {var: comp for var in ds.data_vars}
+                        ds.to_netcdf(out_path, encoding=encoding)
+                        ds.close()
+
+                    elif typedata == "current":
+                        shutil.copy(os.path.join(dirdata, filename), out_path)
+
+                    else:  # aice
+                        ds = xr.open_dataset(new_file)
+                        drop_vars = ["best_estimate", "forecast", "persistence"]
+                        ds = ds.drop_vars([v for v in drop_vars if v in ds.variables], errors="ignore")
+                        if "obs_time" in ds:
+                            if "units" in ds["obs_time"].attrs:
+                                ds["obs_time"].attrs["units"] = (
+                                    ds["obs_time"].attrs["units"]
+                                    .replace("Seconds", "seconds")
+                                    .replace("utc", "UTC")
                             )
-                        encoding = {
-                            "time": {
+                            encoding = {
+                                "obs_time": {
                                 "units": "seconds since 1950-01-01 00:00:00 UTC",
                                 "calendar": "gregorian"
+                                }
                             }
-                        }
-                    ds.to_netcdf(out_path, encoding=encoding)
-                    ds.close()
-                
-                # ---- 5) AMSR special case ----
-                if typedata == "AMSR":
-                    with netCDF4.Dataset(out_path, "a") as nc:
-                        if "string_length8" not in nc.dimensions:
-                            nc.createDimension("string_length8", 8)
-                        if "numvars" not in nc.dimensions:
-                            nc.createDimension("numvars", 1)
-                        if "varname" not in nc.variables:
-                            var = nc.createVariable("varname", "S1", ("numvars", "string_length8"))
-                            var[:] = netCDF4.stringtochar(np.array([["ileadfra"]], dtype="S8"))
+                        if "time" in ds:
+                            if "units" in ds["time"].attrs:
+                                ds["time"].attrs["units"] = (
+                                    ds["time"].attrs["units"]
+                                    .replace("Seconds", "seconds")
+                                    .replace("utc", "UTC")
+                                )
+                            encoding = {
+                                "time": {
+                                    "units": "seconds since 1950-01-01 00:00:00 UTC",
+                                    "calendar": "gregorian"
+                                }
+                            }
+                        print(f'Save netcdf {out_path}')
+                        ds.to_netcdf(out_path, encoding=encoding)
+                        ds.close()
+                        print('ok')
 
-                self.log.debug(f"Fichier extracted {out_path}")
-                liste_tot.append(out_path)
+                    # ---- 5) AMSR special case ----
+                    if typedata == "AMSR":
+                        with netCDF4.Dataset(out_path, "a") as nc:
+                            if "string_length8" not in nc.dimensions:
+                                nc.createDimension("string_length8", 8)
+                            if "numvars" not in nc.dimensions:
+                                nc.createDimension("numvars", 1)
+                            if "varname" not in nc.variables:
+                                var = nc.createVariable("varname", "S1", ("numvars", "string_length8"))
+                                var[:] = netCDF4.stringtochar(np.array([["ileadfra"]], dtype="S8"))
 
-            except IOError as e:
-                self.log.error(f"I/O error({e.errno}): {e.strerror}")
-                raise
+                    self.log.debug(f"Fichier extracted {out_path}")
+                    liste_tot.append(out_path)
+
+                except IOError as e:
+                    self.log.error(f"I/O error({e.errno}): {e.strerror}")
+                    raise
+        else:
+            return liste_file
 
         return liste_tot
 

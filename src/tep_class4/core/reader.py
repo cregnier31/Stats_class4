@@ -370,7 +370,11 @@ def read_drifter(file):
         sys.exit(1)
     if 'CURRENT_TEST' in variables.keys():
         current_test = ncdata['CURRENT_TEST'].values
-        current_test_qc = ncdata['CURRENT_TEST_QC'].values
+        try:
+            current_test_qc = ncdata['CURRENT_TEST_QC'].values
+        except Exception as e:
+            current_test_qc = None
+            print(e)
     else:
         current_test = None
         current_test_qc = None

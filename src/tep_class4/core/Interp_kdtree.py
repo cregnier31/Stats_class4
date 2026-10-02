@@ -52,6 +52,7 @@ class interp_KDtree(object):
             Compute tree and search weight files
         """
 
+        self.log.debug(f'tree_and_query for interpolation with {nbpts_interp} points')
         if len(X1.shape) > 1:
             X1, Y1 = X1, Y1
             #self.log.debug('Shape 1 > 1')
@@ -139,26 +140,100 @@ class interp_KDtree(object):
                 # --- pykdtree method ---
                 #print('pykdtree method')
                 tree = KDTree(coords)
-                d1, inds_idw1 = tree.query(coords2, k = nbpts_interp, mask = mask)
+                d1, inds_idw1 = tree.query(
+                        coords2,
+                        k = nbpts_interp,
+                        mask = mask)
             else:
                 # --- cKDTree method ---
                 #print('cKDTree method')
                 tree = cKDTree(list(zip(xs, ys, zs)))
                 d1, inds_idw1 = tree.query(list(zip(xt, yt, zt)), k = nbpts_interp)
-            if save :
-                with open(weight_file, 'wb') as f:
-                    pickle.dump(list(zip(d1, inds_idw1)), f, pickle.HIGHEST_PROTOCOL)
-                    f.close
 
+        # ---------------------------------------------------------
+        # Clean invalid KD-tree neighbours
+        # ---------------------------------------------------------
+
+        d1 = np.asarray(d1)
+        inds_idw1 = np.asarray(inds_idw1)
+
+        # Number of available model points
+        n_model_points = coords.shape[0]
+
+        # KD-tree can return an invalid index when no neighbour exists.
+        # Do NOT assume that only 4294967295 is possible.
+        invalid = (
+            (inds_idw1 < 0) |
+            (inds_idw1 >= n_model_points)
+        )
+        if np.sum(invalid) > 0:
+            self.log.error(
+                f"KD-tree: {np.sum(invalid)} invalid neighbours "
+                f"out of {inds_idw1.size}"
+            )
+            valid_neighbor = inds_idw1 < n_model_points
+            self.log.error(
+                f"KD-tree: {np.sum(~valid_neighbor)} invalid neighbours "
+                f"out of {inds_idw1.size}"
+            )
+            bad_neighbor_count = np.sum(~valid_neighbor, axis=1)
+
+            bad_obs = bad_neighbor_count > 0
+
+            self.log.info("Observations:", len(bad_obs))
+            self.log.info("Observations with invalid neighbours:", np.sum(bad_obs))
+            self.log.info("Maximum invalid neighbours for one observation:",
+                          np.max(bad_neighbor_count))
+            bad_indices = np.where(bad_obs)[0]
+            self.log.info("Bad observation indices:", bad_indices)
+            self.log.info("Number of observations with invalid neighbours:",
+                         len(bad_indices))
+            for i in bad_indices:
+                self.log.info(
+                    f"obs index={i}, "
+                    f"lon={lon_out[i]}, "
+                    f"lat={lat_out[i]}, "
+                    f"invalid neighbours={bad_neighbor_count[i]}, "
+                    f"indexes={inds_idw1[i]}, "
+                    f"distances={d1[i]}"
+                )
+            valid_count = np.sum(valid_neighbor, axis=1)
+
+            self.log.info("0 valid neighbours:", np.sum(valid_count == 0))
+            self.log.info("1 valid neighbour :", np.sum(valid_count == 1))
+            self.log.info("2 valid neighbours:", np.sum(valid_count == 2))
+            self.log.info("3 valid neighbours:", np.sum(valid_count == 3))
+            self.log.info("4 valid neighbours:", np.sum(valid_count == 4))
+            sys.exit(1)
+        ## Convert indexes to signed integer
+        #inds_idw1 = inds_idw1.astype(np.int64)
+
+        ## Mark invalid neighbours with -1
+        #inds_idw1[invalid] = -1
+
+        ## Invalid neighbours must have infinite distance
+        #d1 = np.asarray(d1, dtype=float)
+        #d1[invalid] = np.inf
+
+        if save :
+            with open(weight_file, 'wb') as f:
+                pickle.dump(list(zip(d1, inds_idw1)), f, pickle.HIGHEST_PROTOCOL)
+                f.close
 
         return d1, inds_idw1
 
     def get_weight(self, d1, max_weight=1e10):
 
+        d1 = np.asarray(d1, dtype=float)
+        weight = np.zeros_like(d1)
         if np.any(d1 != 0):
+            valid = np.isfinite(d1) & (d1 > 0)
+            weight[valid] = 1.0 / d1[valid]**2
+            # Exact match
+            weight[d1 == 0] = max_weight
             #weight = 1.0 / d1**2
-            weight = np.where(d1 != 0, 1.0 / d1**2, max_weight)
-            #weight = np.where(d1 != 0, 1.0 / d1**2, 0)
+            #weight = np.where(d1 != 0, 1.0 / d1**2, max_weight)
+            ##weight = np.where(d1 != 0, 1.0 / d1**2, 0)
         else:
             # Handle the case when d1 is zero, e.g., set weight to a default value or take alternative action
             weight = np.nan

@@ -11,6 +11,7 @@ from .reader import read_drifter_filt, read_drifter
 from .QCcontrol import QCcontroller
 import seawater as sw
 from .Selector import Selector
+import time as tm
 import xarray as xr
 
 ##############################################################
@@ -311,9 +312,10 @@ class loaderNCcorio_tac(inputdata_loader):
         self.log = log
         self.varname_list = []
         self.list_temp = ['votemper', 'thetao', 'temperature', \
-                          'thetao_glor', 'thetao_cglo', 'thetao_oras',  'thetao_mean']
+                          'thetao_glor', 'thetao_cglo', 'thetao_oras',\
+                          'thetao_mean', 'tos']
         self.list_psal = ['vosaline', 'so', 'salinity',\
-                          'so_glor', 'so_cglo', 'so_oras', 'so_mean']
+                          'so_glor', 'so_cglo', 'so_oras', 'so_mean', 'sos']
         self.list_instemp = ['TEMP', 'TEMP_ADJUSTED']
         self.list_inspsal = ['PSAL', 'PSAL_ADJUSTED']
         self.fillvalue_dep= 99999.
@@ -343,11 +345,17 @@ class loaderNCcorio_tac(inputdata_loader):
         except OSError:
             return True  # File is locked
 
-    def read_pos_and_value(self, filename, param_dict, qc_level=0):
-        self.log.debug(f"Read pos and value {filename} {self.is_file_locked(filename)}")
+    def read_pos_and_value(self, filename,
+                           param_dict,
+                           qc_level=0,
+                           filter_levels=False,
+                           input_var=['']):
+        self.log.debug(f"Read pos and value {filename} {self.is_file_locked(filename)} {filter_levels=}")
         #if not self.is_file_locked(filename):
         #ds = xr.open_dataset(filename)
         ds = xr.open_dataset(filename, engine="netcdf4")
+        
+
         #else:
         #    print(f"File {filename} is currently being used by another process.")
         #    sys.exit(1)
@@ -704,6 +712,10 @@ class loaderNCcorio_tac(inputdata_loader):
             rla_lat[:] = np.nan
             self.log.info(f'Missing values for lat {sum_lat} for {filename}')
         list_mod = param_dict['varname']
+        #print(param_dict['varname'])
+        list_psal = []
+        list_temp = []
+
         if len(set(self.list_psal).intersection(param_dict['varname'])) == 1:
             list_psal =  list(set.intersection(set(self.list_psal), set(param_dict['varname'])))
         if len(set(self.list_temp).intersection(param_dict['varname'])) == 1:
@@ -711,20 +723,58 @@ class loaderNCcorio_tac(inputdata_loader):
         param_dict['ll_PSAL'] = False
         param_dict['ll_TEMP'] = False
         if not ll_psal:
-           list_mod = list(set(list_mod) - set(list_psal))
+            if not list_psal:
+                list_mod = list(set(list_mod))
+            else:
+                list_mod = list(set(list_mod) - set(list_psal))
         else:
-            param_dict['ll_PSAL'] = True
+                param_dict['ll_PSAL'] = True
         if not ll_temp:
-           list_mod = list(set(list_mod) - set(list_temp))
+            list_mod = list(set(list_mod) - set(list_temp))
         else:
-           param_dict['ll_TEMP'] = True
+            param_dict['ll_TEMP'] = True
         param_dict['varname_select'] = list_mod
         if ll_clim_temp_adjust or ll_clim_temp:
             param_dict['LEVITUS_clim'] = rla_clim
 
         ds.close()
         del ds
-
+        if filter_levels:
+            good = rla_qc[:, 0:1, :] == 0
+            self.log.debug(f"TEMP {ll_temp}' PSAL {ll_psal}")
+            # Index of the first good value along the last dimension
+            self.log.debug(f"Dimensions good values {np.shape(good)}")
+            qc_idx = np.argmax(good, axis=2)
+            # Check whether each (profile, variable) has at least one good value
+            has_good = good.any(axis=2)
+            rla_obs = np.squeeze(np.take_along_axis(
+                rla_obs,
+                qc_idx[..., None],
+                axis=2
+            )[..., 0])
+            rla_prof = np.squeeze(np.take_along_axis(
+                rla_prof,
+                qc_idx,
+                axis=1
+            ))
+            tab_dims = np.shape(rla_prof)
+            rla_prof = np.where(rla_prof >= self.fillvalue_dep, np.nan, rla_prof)
+            if len(np.shape(rla_obs)) == 2:
+                rla_obs = rla_obs[:, 0]
+        self.log.debug(f'Dimension obs {len(np.shape(rla_obs))} {len(input_var)=}') 
+        # If only TEMP or PSAL is need
+        if len(np.shape(rla_obs)) > 2 and len(input_var) < 2:
+            if input_var[0] in self.list_temp and 'TEMP' in self.varname_list:
+                indx = self.varname_list.index('TEMP')
+                self.log.debug(f"Extract TEMP {indx}")
+            if input_var[0] in self.list_psal and 'PSAL' in self.varname_list:
+                self.log.debug(f"Extract PSAL")
+                indx = self.varname_list.index('PSAL')
+                self.log.debug(f"Extract TEMP {indx}")
+            rla_obs = rla_obs[:, indx, :]
+            rla_qc = rla_qc[:, indx, :]
+            self.log.debug(f"Dimensions {np.shape(rla_obs)}")
+            self.log.debug(f"Variables of the profile {self.varname_list}")
         return np.float32(rla_lon), np.float32(rla_lat), np.float32(rla_obs),\
                n_profiles, np.float32(rla_prof), rla_qc, tab_dims, param_dict,  _FillValue
 
@@ -936,7 +986,7 @@ class LoaderNCgodae(inputdata_loader):
 
     def __init__(self):
         self.varname = 'observation'
-
+        self.icevarname = ['siconc', 'iceconc']
     def read_pos(self,filename):
         nc = netCDF4.Dataset(filename,'r')
         variable = 'longitude'
@@ -978,11 +1028,186 @@ class LoaderNCgodae(inputdata_loader):
         nc.close()
         return position
 
-    def read_pos_and_value(self, filename, param_dict):
+
+    def read_pos_and_value(self, filename, param_dict, **args):
+
+        param_dict['Design_GODAE_file'] = True
+        input_var = args.get("input_var")
+
+        ds = xr.open_dataset(
+            filename,
+            cache=False
+        )
+        try:
+            # --------------------------------------------------
+            # Find lon/lat
+            # --------------------------------------------------
+            variables = ds.variables
+
+            if 'longitude' in variables:
+                lon_name, lat_name = 'longitude', 'latitude'
+            elif (
+                'lon' in variables
+                and 'lon_20hz' not in variables
+                and 'lon_20_ku' not in variables
+            ):
+                lon_name, lat_name = 'lon', 'lat'
+            elif 'LON' in variables:
+                lon_name, lat_name = 'LON', 'LAT'
+            elif 'Lon' in variables:
+                lon_name, lat_name = 'Lon', 'Lat'
+            elif 'LONGITUDE' in variables:
+                lon_name, lat_name = 'LONGITUDE', 'LATITUDE'
+            elif 'Longitude' in variables:
+                lon_name, lat_name = 'Longitude', 'Latitude'
+            elif 'lon_20hz' in variables:
+                lon_name, lat_name = 'lon_20hz', 'lat_20hz'
+            elif 'lon_20_ku' in variables:
+                lon_name, lat_name = 'lon_20_ku', 'lat_20_ku'
+            else:
+                raise KeyError("Could not find longitude/latitude")
+
+            # --------------------------------------------------
+            # Variables
+            # --------------------------------------------------
+            value = ds[self.varname]
+
+            lon = ds[lon_name]
+            lat = ds[lat_name]
+
+            # --------------------------------------------------
+            # Depth
+            # --------------------------------------------------
+            depth_name = next(
+                (
+                    name for name in
+                    ('depth', 'DEPH', 'pres', 'PRES')
+                    if name in variables
+                ),
+                None
+            )
+
+            if depth_name is not None:
+                depth = ds[depth_name]
+            else:
+                # Create later once value is loaded
+                depth = None
+
+            # --------------------------------------------------
+            # QC
+            # --------------------------------------------------
+            qc = ds['qc'] if 'qc' in variables else np.nan
+
+            # --------------------------------------------------
+            # Dimensions
+            # --------------------------------------------------
+            tab_dims = {}
+
+            if 'numfcsts' in ds.sizes:
+                tab_dims['nb_fcsts'] = ds.sizes['numfcsts']
+
+            if 'numobs' in ds.sizes:
+                tab_dims['nb_obs'] = ds.sizes['numobs']
+
+            if 'numdeps' in ds.sizes:
+                tab_dims['nb_depths'] = ds.sizes['numdeps']
+
+            # --------------------------------------------------
+            # Ice case
+            # --------------------------------------------------
+            if input_var is not None and input_var[0] in self.icevarname:
+                resol = 10
+                seuil = 0.15
+
+                # IMPORTANT:
+                # Ideally use the observation dimension here.
+                value = value.isel(numobs=slice(None, None, resol))
+
+                if 'numobs' in lon.dims:
+                    lon = lon.isel(numobs=slice(None, None, resol))
+
+                if 'numobs' in lat.dims:
+                    lat = lat.isel(numobs=slice(None, None, resol))
+
+                if depth is not None and 'numobs' in depth.dims:
+                    depth = depth.isel(numobs=slice(None, None, resol))
+
+                value = value.load()
+                lon = lon.load()
+                lat = lat.load()
+
+                if depth is not None:
+                    depth = depth.load()
+                if not isinstance(qc, float):
+                    rla_qc = qc.load().values.squeeze()
+                else:
+                    rla_qc = qc
+
+                value_np = np.asarray(value).squeeze()
+
+                mask = (
+                    ~np.isnan(value_np)
+                    & (value_np > seuil)
+                )
+
+                rla_value = value_np[mask]
+                rla_lon = np.asarray(lon).squeeze()[mask]
+                rla_lat = np.asarray(lat).squeeze()[mask]
+
+                if depth is not None:
+                    rla_depth = np.asarray(depth).squeeze()[mask]
+                else:
+                    rla_depth = np.zeros_like(rla_value)
+                if not isinstance(rla_qc, float):
+                    rla_qc = rla_qc[mask]
+
+                tab_dims['nb_obs'] = np.count_nonzero(mask)
+
+            else:
+                # Load only here
+                rla_value = value.load().values
+                rla_lon = lon.load().values
+                rla_lat = lat.load().values
+
+                if depth is not None:
+                    rla_depth = depth.load().values
+                else:
+                    nb_obs, nb_vars, nb_deps = rla_value.shape
+                    rla_depth = np.zeros(
+                        (nb_obs, nb_deps),
+                        dtype=float,
+                        order='F'
+                    )
+                if not isinstance(qc, float):
+                    rla_qc = qc.load().values
+                else:
+                    rla_qc = qc
+            _FillValue = value.attrs.get('_FillValue')
+        finally:
+            ds.close()
+        nb_obs = len(rla_value)
+        param_dict['ll_PSAL'] = True
+        param_dict['ll_TEMP'] = True
+        param_dict['varname_select'] = param_dict['varname']
+        return (
+            rla_lon,
+            rla_lat,
+            rla_value,
+            nb_obs,
+            rla_depth,
+            rla_qc,
+            tab_dims,
+            param_dict,
+            _FillValue
+        )
+
+
+    def read_pos_and_value_old(self, filename, param_dict, **args):
         param_dict['Design_GODAE_file'] = True
         rla_lon, rla_lat, _FillValue, nc = \
          self.generic_read_pos_and_value(filename, self.varname)
         rla_value = nc.variables[self.varname][:]
+        input_var = args.get("input_var")
         #ncdata = xr.open_dataset(filename)
         #variables = ncdata.data_vars
         dimensions = nc.dimensions
@@ -995,7 +1220,7 @@ class LoaderNCgodae(inputdata_loader):
                 tab_dims['nb_obs'] = sizedim
             elif dims == 'numdeps':
                 tab_dims['nb_depths'] = sizedim
-        
+
         if 'depth' in nc.variables.keys():
             rla_depth = nc.variables['depth'][:]
         elif 'DEPH' in nc.variables.keys():
@@ -1018,6 +1243,20 @@ class LoaderNCgodae(inputdata_loader):
         param_dict['ll_TEMP'] = True
         param_dict['varname_select'] = param_dict['varname']
         nc.close()
+        if input_var[0] in self.icevarname:
+            print('Oversampling ice')
+            resol = 10
+            seuil = 0.15
+            indexes = np.where(
+                    (~np.isnan(np.squeeze(rla_value)[::resol])) 
+                    & (np.squeeze(rla_value)[::resol] > seuil))
+            rla_lon = np.squeeze(rla_lon)[indexes]
+            rla_lat = np.squeeze(rla_lat)[indexes]
+            rla_value = np.squeeze(rla_value)[indexes]
+            rla_depth = np.squeeze(rla_depth)[indexes]
+            #rla_qc = np.squeeze(rla_qc)[indexes]
+            tab_dims['nb_obs'] = len(indexes)
+
         return rla_lon, rla_lat, rla_value, nb_obs, rla_depth, rla_qc, tab_dims, param_dict, _FillValue
 
 class PGN_coords_Loader(inputdata_loader):
@@ -1214,7 +1453,7 @@ class LoaderCMEMSDrifter_filtr(inputdata_loader):
      """
         Loader for CMEMS drifters filtered
      """
-     def read_pos_and_value(self, filename, param_dict):
+     def read_pos_and_value(self, filename, param_dict, **args):
         lon, lat, depth, depth_qc, time, u, v, u_filtr, v_filtr, ll_var,\
             u_qc, v_qc, u_filtr_qc, v_filtr_qc, wind_u, wind_v, current_test, current_test_qc,\
             position_qc, time_qc, dc_reference = read_drifter_filt(filename)
@@ -1230,19 +1469,49 @@ class LoaderCMEMSDrifter_filtr(inputdata_loader):
         #        tab_dims['nb_obs'] = sizedim
         #    elif dims == 'numdeps':
         #        tab_dims['nb_depths'] = sizedim
-        mask = lon <= 180
+        #mask = lon <= 180
+        mask = (
+            np.isfinite(lon) &
+            np.isfinite(lat) &
+            (lon <= 180)
+        )
+        list_uo = ['uo', 'u']
+        list_vo = ['vo', 'v']
         lon = lon[mask]
         lat = lat[mask]
         time = time[mask]
+        current_test = current_test[mask]
         u_filtr_qc = u_filtr_qc[mask]
         v_filtr_qc = v_filtr_qc[mask]
         depth = depth[mask]
         u_filtr = u_filtr[mask]
         v_filtr = v_filtr[mask]
+        # Filter with QC
+        ll_filter= True
+        if ll_filter:
+            qc_val = np.where(current_test[:] >= 311)[0]
+            lon = lon[qc_val]
+            lat = lat[qc_val]
+            time = time[qc_val]
+            u_filtr = u_filtr[qc_val]
+            v_filtr = v_filtr[qc_val]
+            u_filtr_qc = u_filtr_qc[qc_val]
+            v_filtr_qc = v_filtr_qc[qc_val]
+            depth = depth[qc_val]
+            print(f'% of good values : {len(qc_val)*100/len(current_test)}')
         nb_obs = len(lon)
-
-        combined_UV = np.stack((np.squeeze(u_filtr), np.squeeze(v_filtr)), axis=1)
-        combined_qc =  np.stack((np.squeeze(u_filtr_qc), np.squeeze(v_filtr_qc)), axis=1)
+        param_dict['varname_select'] = param_dict['varname']
+        input_var = args.get("input_var")
+        if len(input_var) < 2:
+            if input_var[0] in list_uo:
+                combined_UV = [u_filtr]
+                combined_qc =  [u_filtr_qc]
+            if input_var[0] in list_vo:
+                combined_UV = [v_filtr]
+                combined_qc = [v_filtr_qc]
+        else:
+            combined_UV= np.stack((np.squeeze(u_filtr), np.squeeze(v_filtr)), axis=1)
+            combined_qc =  np.stack((np.squeeze(u_filtr_qc), np.squeeze(v_filtr_qc)), axis=1)
         param_dict['varname_select'] = param_dict['varname']
 
         return lon, lat, combined_UV, nb_obs, depth, combined_qc,  tab_dims, param_dict, _FillValue
@@ -1252,13 +1521,28 @@ class LoaderCMEMSDrifter(inputdata_loader):
      """
         Loader for CMEMS drifters
      """
-     def read_pos_and_value(self, filename, param_dict):
+     def read_pos_and_value(self, filename, param_dict, **args):
         lon, lat, depth, depth_qc, time, u, v, ll_var,\
             u_qc, v_qc, wind_u, wind_v, current_test, current_test_qc,\
             position_qc, time_qc, dc_reference = read_drifter(filename)
+        mask = (
+            np.isfinite(lon) &
+            np.isfinite(lat) &
+            (lon <= 180)
+        )
+        lon = lon[mask]
+        lat = lat[mask]
+        u_qc = u_qc[mask]
+        v_qc = v_qc[mask]
+        depth = depth[mask]
+        u = u[mask]
+        v = v[mask]
         nb_obs = len(lon)
         _FillValue = np.nan
         tab_dims = {}
+        list_uo = ['uo', 'u']
+        list_vo = ['vo', 'v']
+
         param_dict['Design_GODAE_file'] = True
         #for dims in dimensions.keys():
         #    sizedim = dimensions[dims].size
@@ -1271,7 +1555,19 @@ class LoaderCMEMSDrifter(inputdata_loader):
         #combined_qc =  np.stack((u_qc, v_qc), axis=1)
         #combined_UV = np.stack((u, v), axis=1)
         param_dict['varname_select'] = param_dict['varname']
-        return lon, lat, [u, v], nb_obs, depth, [u_qc, v_qc], tab_dims, param_dict, _FillValue
+        input_var = args.get("input_var")
+        if len(input_var) < 2:
+            if input_var[0] in list_uo:
+                list_obs = [u]
+                list_qc = [u_qc]
+            if input_var[0] in list_vo:
+                list_obs = [v]
+                list_qc = [v_qc]
+        else:
+            list_obs = [u, v]
+            list_qc = [u_qc, v_qc]
+
+        return lon, lat, list_obs, nb_obs, depth, list_qc, tab_dims, param_dict, _FillValue
         #return lon, lat, combined_UV, nb_obs, depth, combined_qc, tab_dims, param_dict, _FillValue
 
 class SMOC_coords_Loader(inputdata_loader):
