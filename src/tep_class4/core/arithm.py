@@ -62,6 +62,27 @@ def compute_rmsd_3d_by_depth_bins(data1, data2, depth_array, data_qc, depth_bins
     - n_obs_bin: list of valid observation counts per bin
     """
 
+    data1 = ma.masked_where(
+                np.abs(data1) > 1.0e30,
+                    data1,
+    )
+
+    data2 = ma.masked_where(
+                np.abs(data2) > 1.0e30,
+                    data2,
+    )
+    data2 = ma.masked_where(
+                np.abs(data1) > 1.0e30,
+                    data2,
+    )
+    #data1 = ma.masked_where(
+    #    np.isclose(data1, 99999.0),
+    #    data1,
+    #)
+    #data2 = ma.masked_where(
+    #    np.isclose(data2, 99999.0),
+    #    data2,
+    #)
     data1 = ma.masked_invalid(data1)
     data2 = ma.masked_invalid(data2)
     depth_array = ma.masked_invalid(depth_array)
@@ -77,7 +98,6 @@ def compute_rmsd_3d_by_depth_bins(data1, data2, depth_array, data_qc, depth_bins
     cumul_sq_diff_bins = []
     n_obs_bins = []
 
-
     for i in range(len(depth_bins) - 1):
 
         bin_mask = (
@@ -89,47 +109,101 @@ def compute_rmsd_3d_by_depth_bins(data1, data2, depth_array, data_qc, depth_bins
         #bin_mask_2d = np.broadcast_to(bin_mask, data1.shape)
         valid_mask = (
             bin_mask
-            & (~data1.mask)
-            & (~data2.mask)
+            & (~ma.getmaskarray(data1))
+            & (~ma.getmaskarray(data2))
+            & (~ma.getmaskarray(depth_array))
             & qc_mask
         )
         #valid_mask = bin_mask_2d & (~data1.mask) & (~data2.mask) & qc_mask
 
         diff = data1 - data2
-
         valid_diff = ma.masked_where(
             ~valid_mask,
             diff,
         )
-
-        sq_diff = ma.masked_where(
-            ~valid_mask,
-            diff ** 2,
-        )
-
+        #print(f'Max : {np.nanmax(valid_diff)}')
+        #print(f'Min : {np.nanmin(valid_diff)}')
+        #print(f'Mean : {np.nanmean(valid_diff)}')
+        #print(f'Max abs : {np.max(np.abs(valid_diff))}')
         cumul_bias = valid_diff.sum()
-        cumul_sq_diff = sq_diff.sum()
+        cumul_sq_diff = (valid_diff ** 2).sum()
         n_obs = valid_mask.sum()
+        #print(f'Nb obs : {n_obs}')
 
-        bias = (
-            cumul_bias / n_obs
-            if n_obs > 0
-            else np.nan
-        )
+        #print(valid_diff[0:10])
 
-        rmsd = (
-            np.sqrt(cumul_sq_diff / n_obs)
-            if n_obs > 0
-            else np.nan
-        )
+        if n_obs > 0:
+            bias = (cumul_bias / n_obs)
+            rmsd = np.sqrt(cumul_sq_diff / n_obs)
+        else:
+            bias = np.nan
+            rmsd = np.nan
+            cumul_bias = 0.0
+            cumul_sq_diff = 0.0
 
+        #print(f'{depth_bins[i]}-{depth_bins[i+1]}')
+        #print(f'{bias=}')
+        #print(f'{rmsd=}')
+        #print(f'{n_obs=}')
         bias_bins.append(bias)
-        cumul_bias_bins.append(cumul_bias)
-        rmsd_bins.append(rmsd)
-        cumul_sq_diff_bins.append(cumul_sq_diff)
-        n_obs_bins.append(n_obs)
+        cumul_bias_bins.append(float(cumul_bias))
+        rmsd_bins.append(float(rmsd))
+        cumul_sq_diff_bins.append(float(cumul_sq_diff))
+        n_obs_bins.append(int(n_obs))
 
+    # ---------------------------------------------------------
+    # Total over all depth layers
+    # ---------------------------------------------------------
 
+    cumul_bias_total = sum(
+        cumul_bias_bins
+    )
+
+    cumul_sq_diff_total = sum(
+        cumul_sq_diff_bins
+    )
+
+    n_obs_total = sum(
+        n_obs_bins
+    )
+
+    if n_obs_total > 0:
+
+        bias_total = (
+            cumul_bias_total
+            / n_obs_total
+        )
+
+        rmsd_total = np.sqrt(
+            cumul_sq_diff_total
+            / n_obs_total
+        )
+
+    else:
+
+        bias_total = np.nan
+        rmsd_total = np.nan
+
+    # Append total as the last output
+    bias_bins.append(
+        float(bias_total)
+    )
+
+    cumul_bias_bins.append(
+        float(cumul_bias_total)
+    )
+
+    rmsd_bins.append(
+        float(rmsd_total)
+    )
+
+    cumul_sq_diff_bins.append(
+        float(cumul_sq_diff_total)
+    )
+
+    n_obs_bins.append(
+        int(n_obs_total)
+    )
 
     return (
         bias_bins,

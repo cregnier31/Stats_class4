@@ -44,7 +44,8 @@ from tep_class4.core.arithm import (init_array_1D,
                                     init_array_2D_null,
                                     compute_rmsd,
                                     nanrmse,
-                                    init_array_3D_null
+                                    init_array_3D_null,
+                                    compute_rmsd_3d_by_depth_bins
                                     )
 from tep_class4.core.Interpolator import Interpolator
 from tep_class4.core.Writer import Writer
@@ -102,7 +103,7 @@ def main(level=2):
     conf_type = param_dict['conf_type']
     maskname = param_dict['maskname']
     log.info(f"{nb_forecasts=} {nb_leadtimes=}")
-    ObsData = namedtuple("ObsData", ["lon", "lat", "obs_value", "nb_obs", "depth", "dims", "FillValue"])
+    ObsData = namedtuple("ObsData", ["lon", "lat", "obs_value", "nb_obs", "depth", "dims", "FillValue", "qc"])
     interpolator = Interpolator(log, dask=param_dict['dask'])
     # Create polygons
     reg_polygons = build_region_polygons(
@@ -115,7 +116,14 @@ def main(level=2):
     list_temp = ['thetao', 'votemper']
     list_psal = ['so', 'vosaline']
     list_3D = ['profile_PR_PF', 'DRIFTER_filtr']
-    print( param_dict['list_variables'])
+    depth_bins = param_dict['DEPTHS']
+    depth_names = [
+                f"{depth_bins[i]:g}-{depth_bins[i + 1]:g}m"
+                    for i in range(len(depth_bins) - 1)
+    ]
+    depth_names.append(f"0-{depth_bins[-1]:g}m")
+    ndepth = len(depth_bins) - 1
+    n_depth_outputs = len(depth_names)
     log.debug(f'Build regional area {region_names}')
     log.debug(reg_polygons)
 
@@ -144,20 +152,26 @@ def main(level=2):
 
         else:
             if conf_type == "ensemble":
+                log.info('Read mask ensemble')
                 with xr.open_dataset(maskfile) as nc_mask:
                     model_mask = nc_mask[maskname].isel(
                         time_counter=0,
                         ).values.astype(bool)
-                    model_mask = nc_mask[maskname].values.astype(bool)
+                    model_mask = np.squeeze(
+                            nc_mask[maskname].values.astype(bool)
+                    )
                     lon_mask = nc_mask["nav_lon"]
                     lat_mask = nc_mask["nav_lat"]
                     depth_mask = np.array(nc_mask["nav_lev"])
+                    log.info(f'{np.shape(model_mask)}')
             else:
                 with xr.open_dataset(maskfile) as nc_mask:
                     #model_mask = nc_mask[maskname].isel(
                     #    time_counter=0,
                     #    ).values.astype(bool)
-                    model_mask = nc_mask[maskname].values.astype(bool)
+                    model_mask = np.squeeze(
+                        nc_mask[maskname].values.astype(bool)
+                    )
                     #lon_mask = nc_mask["nav_lon"]
                     #lat_mask = nc_mask["nav_lat"]
                     lon_mask = nc_mask["longitude"]
@@ -209,30 +223,58 @@ def main(level=2):
 
             log.info(f'File {input_list_file}')
             N = len(param_dict['lead_int'])
-            (tab_cumul_sq_diff,
-                tab_cumul_bias, tab_n_obs) = (init_array_2D_null(nregions, N) for _ in range(3))
-            n_depth_outputs = 6
-            (tab_cumul_sq_diff3D, tab_cumul_bias_3D, tab_n_obs_3D) = (
-                init_array_3D_null(
-                    nregions,
-                    n_depth_outputs,
-                    N,
+            is_3D = selected_var in list_3D
+
+            if is_3D:
+                (tab_cumul_sq_diff,
+                    tab_cumul_bias, tab_n_obs) = (
+                            init_array_3D_null(nregions, n_depth_outputs, N) 
+                            for _ in range(3)
                 )
-                for _ in range(3)
-            )
-            # Keep daily values for each leadtime
-            tab_rmsd_daily = [
-                [[] for _ in range(N)]
-                for _ in range(nregions)
-            ]
-            tab_bias_daily = [
-                [[] for _ in range(N)]
-                for _ in range(nregions)
-            ]
-            tab_n_obs_daily = [
-                [[] for _ in range(N)]
-                for _ in range(nregions)
-            ]
+                # Daily values:
+                # [region][depth][leadtime]
+                tab_rmsd_daily = [
+                    [
+                        [[] for _ in range(N)]
+                        for _ in range(n_depth_outputs)
+                    ]
+                    for _ in range(nregions)
+                ]
+
+                tab_bias_daily = [
+                    [
+                        [[] for _ in range(N)]
+                        for _ in range(n_depth_outputs)
+                    ]
+                    for _ in range(nregions)
+                ]
+
+                tab_n_obs_daily = [
+                    [
+                        [[] for _ in range(N)]
+                        for _ in range(n_depth_outputs)
+                    ]
+                    for _ in range(nregions)
+                ]
+            else:
+                (tab_cumul_sq_diff,
+                    tab_cumul_bias, tab_n_obs) = (
+                            init_array_2D_null(nregions, N)
+                            for _ in range(3)
+                )
+                # Keep daily values for each leadtime
+                tab_rmsd_daily = [
+                    [[] for _ in range(N)]
+                    for _ in range(nregions)
+                ]
+                tab_bias_daily = [
+                    [[] for _ in range(N)]
+                    for _ in range(nregions)
+                ]
+                tab_n_obs_daily = [
+                    [[] for _ in range(N)]
+                    for _ in range(nregions)
+                ]
             for zarr_file, daterun in zip(input_list_file, list_daterun):
                 log.info('------- Zarr daterun--------------')
                 log.info(f"{zarr_file} {daterun}")
@@ -311,17 +353,20 @@ def main(level=2):
                         read_pos_and_value(data_file[0],
                             param_dict,
                             filter_levels=filter_levels,
-                            input_var = [varname]
+                            input_var = [varname],
+                            selected_var = selected_var,
                         )
                     log.debug(f"Dimensions {np.shape(obs_value)}")
                     log.debug(f"Dimension depth {np.shape(depth)}")
+                    nbs_obs, nbdepth = np.shape(depth)
                     log.debug(f"{filter_levels=}")
                     obs_data = ObsData(lon_obs,
                                        lat_obs,
                                        obs_value,
                                        nb_obs, depth,
                                        tab_dims,
-                                       _FillValue
+                                       _FillValue,
+                                       tab_qc
                     )
                     # Compute ensemble mean
                     log.info('Get model value')
@@ -384,7 +429,7 @@ def main(level=2):
                                                         param_dict,
                                                         datevalue=dateval,
                                                         leadtime=leadtime,
-                                                        mask_tab=None, 
+                                                        mask_tab=model_mask,
                                                         )
                     else:
                         log.info(f"Case {conf_type} model")
@@ -436,16 +481,22 @@ def main(level=2):
                             tab_n_obs_daily[iregion][ind_time].append(0)
 
                             continue
-                        print(np.shape(tab_results["model"]))
                         regional_model = np.asarray(
                             tab_results["model"]
                         )[region_mask]
-                        print(np.shape(tab_results["observation"]))
                         #regional_observation = np.asarray(
                         #    tab_results["observation"]
                         #)[region_mask]
                         regional_observation = \
                                 tab_results["observation"][region_mask]
+                        regional_depth = \
+                                tab_results["depth"][region_mask]
+                        regional_qc = obs_data.qc[region_mask]
+                        print(np.shape(regional_model))
+                        print(np.shape(regional_observation))
+                        print(np.shape(regional_depth))
+                        print(np.shape(regional_qc))
+
                         # Compute results
                         if is_2D:
                             depth_names = None
@@ -479,86 +530,73 @@ def main(level=2):
                             tab_n_obs_daily[iregion][ind_time].append(daily_n_obs)
 
                             log.debug(f'{tab_rmsd_daily[iregion][ind_time]} {tab_bias_daily[iregion][ind_time]}')
-                            log.debug(f"Results RMSD : {iregion} {region_name} {ind_time} {daily_rmsd}")
-                            log.debug(f"Results BIAS : {iregion} {region_name} {ind_time} {daily_bias}")
+                            log.info(f"Results RMSD : {iregion} {region_name} {ind_time} ,  {daily_rmsd}")
+                            log.info(f"Results BIAS : {iregion} {region_name} {ind_time} ,  {daily_bias}")
                             log.debug(f"Cumul RMSD {tab_cumul_sq_diff[iregion][ind_time]}")
                             log.debug(f"Cumul bias daily {daily_cumul_bias} cumul rmsd {daily_cumul_sq_diff}")
                             log.debug(f"Results %: bad value {(nb_bad/len(obs_value))*100}")
                         else:
-                            depth_names = [
-                                            "0-5m",
-                                            "5-100m",
-                                            "100-300m",
-                                            "300-800m",
-                                            "800-2000m",
-                                            "2000-5000m",
-                                            "0-5000m",
-                                        ]
-                            depth_bins = [
-                                0.0,
-                                5.0,
-                                100.0,
-                                300.0,
-                                800.0,
-                                2000.0,
-                                5000.0,
-                            ]
+                            log.info(f"3D stats")
                             (
                                 daily_bias_bins,
                                 daily_cumul_bias_bins,
                                 daily_rmsd_bins,
                                 daily_cumul_sq_diff_bins,
                                 daily_n_obs_bins,
-                            ) = compute_stats_3d_by_depth_bins(
-                                regional_model,
-                                regional_observation,
+                            ) = compute_rmsd_3d_by_depth_bins(
+                                np.squeeze(regional_model),
+                                np.squeeze(regional_observation),
                                 regional_depth,
                                 regional_qc,
                                 depth_bins,
                                 good_qc=0,
                             )
-                            for idepth in range(ndepth):
+                            ndepth = len(depth_bins) - 1
+                            n_depth_outputs = ndepth + 1
+
+                            for idepth in range(n_depth_outputs):
+
                                 daily_bias = daily_bias_bins[idepth]
                                 daily_cumul_bias = daily_cumul_bias_bins[idepth]
                                 daily_rmsd = daily_rmsd_bins[idepth]
-                                daily_cumul_sq_diff = daily_cumul_sq_diff_bins[idepth]
+                                daily_cumul_sq_diff = (
+                                    daily_cumul_sq_diff_bins[idepth]
+                                )
                                 daily_n_obs = daily_n_obs_bins[idepth]
-                                tab_cumul_bias[iregion, idepth, ind_time, ] += daily_cumul_bias
+                                log.info(
+                                    f"RMSD daily depth "
+                                    f"{depth_names[idepth]} "
+                                    f"{daily_rmsd}"
+                                )
+
+                                log.info(
+                                    f"BIAS daily depth "
+                                    f"{depth_names[idepth]} "
+                                    f"{daily_bias}"
+                                )
+                                tab_cumul_bias[iregion, idepth, ind_time,] += daily_cumul_bias
                                 tab_cumul_sq_diff[iregion, idepth, ind_time,] += daily_cumul_sq_diff
-                                tab_n_obs[iregion, idepth, ind_time, ] += daily_n_obs
+                                tab_n_obs[iregion, idepth, ind_time,] += daily_n_obs
                                 tab_bias_daily[iregion][idepth][ind_time].append(daily_bias)
                                 tab_rmsd_daily[iregion][idepth][ind_time].append(daily_rmsd)
                                 tab_n_obs_daily[iregion][idepth][ind_time].append(daily_n_obs)
-                            # Total over all depth layers
-                            idepth_total = ndepth
-                            daily_bias = daily_bias_bins[idepth_total]
-                            daily_cumul_bias = daily_cumul_bias_bins[idepth_total]
-                            daily_rmsd = daily_rmsd_bins[idepth_total]
-                            daily_cumul_sq_diff = daily_cumul_sq_diff_bins[idepth_total]
-                            daily_n_obs = daily_n_obs_bins[idepth_total]
-                            tab_cumul_bias[iregion, idepth_total, ind_time,] += daily_cumul_bias
-                            tab_cumul_sq_diff[iregion, idepth_total, ind_time,] += daily_cumul_sq_diff
-                            tab_n_obs[iregion, idepth_total, ind_time,] += daily_n_obs
-                            tab_bias_daily[iregion][idepth_total][ind_time].append(daily_bias)
-                            tab_rmsd_daily[iregion][idepth_total][ind_time].append(daily_rmsd)
-                            tab_n_obs_daily[iregion][idepth_total][ind_time].append(daily_n_obs)
+    
+            outputname = (f"{param_dict['diroutput']}results_regional_scores_class4_{param_dict['data_type']}"
+                          f"_{param_dict['cl_conf']}_{varname}_forecast_{date1}_{date2}.nc"
+                         )
+            log.info(f"Save results {varname} {outputname}")
 
-    outputname = (f"{param_dict['diroutput']}results_regional_scores_class4_{param_dict['data_type']}"
-                  f"_{param_dict['cl_conf']}_forecast_{date1}_{date2}.nc"
-                 )
-    log.info(f"Save results {outputname}")
-
-    lead_times = param_dict['lead_int']
-    save_metrics_to_netcdf_regional(tab_cumul_sq_diff,
-                           tab_cumul_bias,
-                           tab_n_obs,
-                           tab_bias_daily,
-                           tab_rmsd_daily,
-                           tab_n_obs_daily,
-                           region_names,
-                           lead_times,
-                           outputname,
-                           depth_names=depth_names)
+            lead_times = param_dict['lead_int']
+            save_metrics_to_netcdf_regional(tab_cumul_sq_diff,
+                                   tab_cumul_bias,
+                                   tab_n_obs,
+                                   tab_bias_daily,
+                                   tab_rmsd_daily,
+                                   tab_n_obs_daily,
+                                   region_names,
+                                   lead_times,
+                                   outputname,
+                                   depth_names=depth_names)
 
 # Set the level of logger (log_level = 2)
 # Run the main code

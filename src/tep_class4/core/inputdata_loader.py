@@ -349,13 +349,12 @@ class loaderNCcorio_tac(inputdata_loader):
                            param_dict,
                            qc_level=0,
                            filter_levels=False,
-                           input_var=['']):
+                           input_var=[''],
+                           **args):
         self.log.debug(f"Read pos and value {filename} {self.is_file_locked(filename)} {filter_levels=}")
         #if not self.is_file_locked(filename):
         #ds = xr.open_dataset(filename)
         ds = xr.open_dataset(filename, engine="netcdf4")
-        
-
         #else:
         #    print(f"File {filename} is currently being used by another process.")
         #    sys.exit(1)
@@ -699,12 +698,12 @@ class loaderNCcorio_tac(inputdata_loader):
             if ll_clim_temp_adjust or ll_clim_temp:
                 rla_clim[:, ind, :] = results[f'clim_{varname}']
         # Replace nan by missing value
-        rla_obs = np.where(rla_obs == np.nan, self.fillvalue_dep, rla_obs)
-        rla_qc = np.where(rla_qc == np.nan, self.fillvalue_dep, rla_qc)
-        rla_obs = np.nan_to_num(rla_obs, nan=self.fillvalue_dep)
-        if ll_clim_temp_adjust or ll_clim_temp:
-            rla_clim = np.nan_to_num(rla_clim, nan=self.fillvalue_dep)
-        rla_qc = np.nan_to_num(rla_qc, nan=self.fillvalue_dep)
+        ##rla_obs = np.where(rla_obs == np.nan, self.fillvalue_dep, rla_obs)
+        ##rla_qc = np.where(rla_qc == np.nan, self.fillvalue_dep, rla_qc)
+        ##rla_obs = np.nan_to_num(rla_obs, nan=self.fillvalue_dep)
+        #if ll_clim_temp_adjust or ll_clim_temp:
+        #    rla_clim = np.nan_to_num(rla_clim, nan=self.fillvalue_dep)
+        #rla_qc = np.nan_to_num(rla_qc, nan=self.fillvalue_dep)
         param_dict['qc'] = rla_qc
         ## Filtered unrealistic value with 0 for longitude and latitude
         if sum_lat_2  <  -90.0 or sum_lat_2 > 90.0 or sum_lat_2 == 0.0:
@@ -740,6 +739,7 @@ class loaderNCcorio_tac(inputdata_loader):
         ds.close()
         del ds
         if filter_levels:
+            selected_var = args.get("selected_var")
             good = rla_qc[:, 0:1, :] == 0
             self.log.debug(f"TEMP {ll_temp}' PSAL {ll_psal}")
             # Index of the first good value along the last dimension
@@ -747,20 +747,21 @@ class loaderNCcorio_tac(inputdata_loader):
             qc_idx = np.argmax(good, axis=2)
             # Check whether each (profile, variable) has at least one good value
             has_good = good.any(axis=2)
-            rla_obs = np.squeeze(np.take_along_axis(
-                rla_obs,
-                qc_idx[..., None],
-                axis=2
-            )[..., 0])
-            rla_prof = np.squeeze(np.take_along_axis(
-                rla_prof,
-                qc_idx,
-                axis=1
-            ))
+            if selected_var == 'profile_TS_DB':
+                rla_obs = np.squeeze(np.take_along_axis(
+                    rla_obs,
+                    qc_idx[..., None],
+                    axis=2
+                )[..., 0])
+                rla_prof = np.squeeze(np.take_along_axis(
+                    rla_prof,
+                    qc_idx,
+                    axis=1
+                ))
             tab_dims = np.shape(rla_prof)
             rla_prof = np.where(rla_prof >= self.fillvalue_dep, np.nan, rla_prof)
-            if len(np.shape(rla_obs)) == 2:
-                rla_obs = rla_obs[:, 0]
+            #if len(np.shape(rla_obs)) == 2:
+            #    rla_obs = rla_obs[:, 0]
         self.log.debug(f'Dimension obs {len(np.shape(rla_obs))} {len(input_var)=}') 
         # If only TEMP or PSAL is need
         if len(np.shape(rla_obs)) > 2 and len(input_var) < 2:
