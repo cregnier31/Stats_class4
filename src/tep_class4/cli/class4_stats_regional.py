@@ -476,11 +476,17 @@ def main(level=2):
                         # ------------------------------------------------------
 
                         if n_region == 0:
-                            tab_bias_daily[iregion][ind_time].append(np.nan)
-                            tab_rmsd_daily[iregion][ind_time].append(np.nan)
-                            tab_n_obs_daily[iregion][ind_time].append(0)
-
-                            continue
+                            if is_2D:
+                                tab_bias_daily[iregion][ind_time].append(np.nan)
+                                tab_rmsd_daily[iregion][ind_time].append(np.nan)
+                                tab_n_obs_daily[iregion][ind_time].append(0)
+                                continue
+                            else:
+                                for idepth in range(n_depth_outputs):
+                                    tab_bias_daily[iregion][idepth][ind_time].append(np.nan)
+                                    tab_rmsd_daily[iregion][idepth][ind_time].append(np.nan)
+                                    tab_n_obs_daily[iregion][idepth][ind_time].append(0)
+                                continue
                         regional_model = np.asarray(
                             tab_results["model"]
                         )[region_mask]
@@ -566,13 +572,15 @@ def main(level=2):
                                 log.info(
                                     f"RMSD daily depth "
                                     f"{depth_names[idepth]} "
-                                    f"{daily_rmsd}"
+                                    f"{daily_rmsd=} "
+                                    f"{region_name=}"
                                 )
 
                                 log.info(
                                     f"BIAS daily depth "
                                     f"{depth_names[idepth]} "
-                                    f"{daily_bias}"
+                                    f"{daily_bias=} "
+                                    f"{region_name=}"
                                 )
                                 tab_cumul_bias[iregion, idepth, ind_time,] += daily_cumul_bias
                                 tab_cumul_sq_diff[iregion, idepth, ind_time,] += daily_cumul_sq_diff
