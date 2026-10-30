@@ -115,7 +115,8 @@ def main(level=2):
     SST_treshold = 10
     list_temp = ['thetao', 'votemper']
     list_psal = ['so', 'vosaline']
-    list_3D = ['profile_PR_PF', 'DRIFTER_filtr']
+    list_3D = ['profile_PR_PF']
+    #, 'DRIFTER_filtr']
     depth_bins = param_dict['DEPTHS']
     depth_names = [
                 f"{depth_bins[i]:g}-{depth_bins[i + 1]:g}m"
@@ -224,7 +225,6 @@ def main(level=2):
             log.info(f'File {input_list_file}')
             N = len(param_dict['lead_int'])
             is_3D = selected_var in list_3D
-
             if is_3D:
                 (tab_cumul_sq_diff,
                     tab_cumul_bias, tab_n_obs) = (
@@ -358,6 +358,7 @@ def main(level=2):
                         )
                     log.debug(f"Dimensions {np.shape(obs_value)}")
                     log.debug(f"Dimension depth {np.shape(depth)}")
+                    log.debug(f"Dimension depth {np.shape(tab_qc)}")
                     nbs_obs, nbdepth = np.shape(depth)
                     log.debug(f"{filter_levels=}")
                     obs_data = ObsData(lon_obs,
@@ -416,7 +417,7 @@ def main(level=2):
                                     model_value_day,
                                     dims=["depth", "y", "x"],
                                     coords={
-                                        "depth": depth_mask,
+                                        "depth": depth_mask.values,
                                         "lon": (["y", "x"], lon_mask.values),
                                         "lat": (["y", "x"], lat_mask.values),
                                     },
@@ -493,16 +494,13 @@ def main(level=2):
                         #regional_observation = np.asarray(
                         #    tab_results["observation"]
                         #)[region_mask]
+                        print(np.shape(tab_results["observation"]))
                         regional_observation = \
                                 tab_results["observation"][region_mask]
                         regional_depth = \
                                 tab_results["depth"][region_mask]
                         regional_qc = obs_data.qc[region_mask]
-                        print(np.shape(regional_model))
-                        print(np.shape(regional_observation))
-                        print(np.shape(regional_depth))
-                        print(np.shape(regional_qc))
-
+                        #regional_qc = tab_results["qc"][region_mask]
                         # Compute results
                         if is_2D:
                             depth_names = None
@@ -552,8 +550,8 @@ def main(level=2):
                             ) = compute_rmsd_3d_by_depth_bins(
                                 np.squeeze(regional_model),
                                 np.squeeze(regional_observation),
-                                regional_depth,
-                                regional_qc,
+                                np.squeeze(regional_depth),
+                                np.squeeze(regional_qc),
                                 depth_bins,
                                 good_qc=0,
                             )

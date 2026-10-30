@@ -50,7 +50,7 @@ def main(level=2):
     parser.add_argument("--date2", required=True, help="End date")
     parser.add_argument("--data", required=True,  help="Type of data to process")
     parser.add_argument("--typemod", required=True, help="Type of input model grid pgn :native grids, pgs: catalog interp grid, pgc:coarsed grid.." )
-    parser.add_argument("--cfg", required=True, help="Local config file for setting inputs and outputs")
+    parser.add_argument("--cfg", required=False, help="Local config file for setting inputs and outputs")
     parser.add_argument("--no-recombine", action="store_true",
         help="If set, skip file recombination (default: recombination is performed)")
     parser.add_argument("--loglevel", type=int, default=2, help="Level of debug, default 2 for info 1 for debug")
