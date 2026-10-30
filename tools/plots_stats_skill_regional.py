@@ -5,6 +5,7 @@ import math
 import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
+from glob import glob
 from matplotlib.ticker import MultipleLocator
 
 
@@ -81,14 +82,17 @@ def plot_regional_scores(
     regions = list(
         scores[model_names[0]]["regions"].values
     )
+    print(regions)
+
     if data == "aice":
         regions = ['Full Domain', 'Arctic Ocean', 'Baltic Sea', 'Antarctic Circumpolar', 'North Pacific Ocean', 'North Atlantic Ocean']
 
     for model in model_names[1:]:
 
-        model_regions = list(
-            scores[model]["regions"].values
-        )
+       # model_regions = list(
+       #     scores[model]["regions"].values
+       # )
+        model_regions = regions
 
         if model_regions != regions:
             raise ValueError(
@@ -414,8 +418,14 @@ output_path = "imgs/"
 #results_regional_scores_class4_profile_TS_DB_glo4-ens50_forecast_20240101_20241231.nc
 data = "profile_TS_DB"
 #data = "aice"
-units = "°C"
+data = "DRIFTER_filtr"
+units = "m/s"
 #units = "%"
+#units = "°C"
+varname = 'vo'
+#varname = 'uo'
+#varname = 'thetao'
+#varname = 'iceconc'
 dateval = "20240101_20241231"
 maxlead = 28
 models = [
@@ -426,25 +436,32 @@ models = [
 ]
 #models = [
 #    "glo4-ens50",
+#    "GLO12",
 #]
-listmod="glo4-ens50vsGLO12vsGLONETivsGLOW"
-#listmod="glo4-ens50"
+listmod = "vs".join(models)
+#os.path.join(
+#    input_path,
+#    f"results_regional_scores_class4_{data}_{model}_{varname}_forecast_{dateval}.nc",
+#    glob(f"{input_path}results_regional_scores_class4*_{data}_{model}_*_forecast_{dateval}.nc")[0]
+#    for model in models
+#]
+#)
+#input_files = [
+#    glob(f"{input_path}results_regional_scores_class4*_{data}_{model}_*_forecast_{dateval}.nc")[0]
+#    for model in models
+#]
 input_files = [
-    os.path.join(
-        input_path,
-        f"results_regional_scores_class4_{data}_{model}_forecast_{dateval}.nc",
-    )
+    glob(f"{input_path}results_regional_scores_class4_{data}_{model}_{varname}_forecast_{dateval}.nc")[0]
     for model in models
 ]
-
 output_file = os.path.join(
     output_path,
-    f"regional_scores_rmsd_bias_{dateval}_{listmod}_class4_{data}.png",
+    f"regional_scores_rmsd_bias_{dateval}_{listmod}_class4_{data}_{varname}.png",
 )
 
 title=(
         f"CLASS4 Regional RMSD and Bias - "
-        f"{data} - {dateval}"
+        f"{data} var {varname} - {dateval}"
 )
 # ==========================================================
 # PLOT
