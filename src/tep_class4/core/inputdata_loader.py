@@ -502,7 +502,7 @@ class loaderNCcorio_tac(inputdata_loader):
                 #else:
                 #    var_prof_adjusted_qc = depth_qc
             if DATA_MODE[ind] in [b'A', b'D']:
-                self.log.debug(f'Case 1 Ajusted or Delayed Mode {ind} {DATA_MODE[ind]}')
+                #self.log.debug(f'Case 1 Ajusted or Delayed Mode {ind} {DATA_MODE[ind]}')
                 #val_posqc = position_qc[ind]
                 #val_juldqc = juld_qc[ind]
                 #val_depthqc=((var_prof_adjusted_qc[ind, :] == b'1') |
@@ -1505,16 +1505,18 @@ class LoaderCMEMSDrifter_filtr(inputdata_loader):
         input_var = args.get("input_var")
         if len(input_var) < 2:
             if input_var[0] in list_uo:
-                combined_UV = [u_filtr]
-                combined_qc =  [u_filtr_qc]
+                #combined_UV = [u_filtr]
+                combined_UV = u_filtr.T[np.newaxis, ...]
+                combined_qc = u_filtr_qc.T[np.newaxis, ...]
             if input_var[0] in list_vo:
-                combined_UV = [v_filtr]
-                combined_qc = [v_filtr_qc]
+                #combined_UV = [v_filtr]
+                #combined_qc = [v_filtr_qc]
+                combined_UV = v_filtr.T[np.newaxis, ...]
+                combined_qc = v_filtr_qc.T[np.newaxis, ...]
         else:
-            combined_UV= np.stack((np.squeeze(u_filtr), np.squeeze(v_filtr)), axis=1)
-            combined_qc =  np.stack((np.squeeze(u_filtr_qc), np.squeeze(v_filtr_qc)), axis=1)
+            combined_UV = np.stack((np.squeeze(u_filtr), np.squeeze(v_filtr)), axis=1)
+            combined_qc = np.stack((np.squeeze(u_filtr_qc), np.squeeze(v_filtr_qc)), axis=1)
         param_dict['varname_select'] = param_dict['varname']
-
         return lon, lat, combined_UV, nb_obs, depth, combined_qc,  tab_dims, param_dict, _FillValue
 
 class LoaderCMEMSDrifter(inputdata_loader):

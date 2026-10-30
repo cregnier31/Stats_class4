@@ -97,7 +97,6 @@ def compute_rmsd_3d_by_depth_bins(data1, data2, depth_array, data_qc, depth_bins
     rmsd_bins = []
     cumul_sq_diff_bins = []
     n_obs_bins = []
-
     for i in range(len(depth_bins) - 1):
 
         bin_mask = (

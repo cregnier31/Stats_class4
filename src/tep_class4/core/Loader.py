@@ -699,6 +699,10 @@ class NmlLoader(Loader):
                 param_dict['data_origin'] = db.get('input_dir', 'DATA_ORIGIN')
             except Exception:
                 param_dict['data_origin'] = []
+            try:
+                param_dict['data_class4'] =  db.get('input_dir','DATA_IN_CLASS4')
+            except Exception:
+                param_dict['data_class4'] = []
         if 'static' in db.sections():
             param_dict['dir_static'] = db.get('static', 'dir_static')
             if param_dict['cl_typemod'].lower() == 'pgn':
@@ -736,7 +740,6 @@ class NmlLoader(Loader):
                 param_dict['area_file'] = db.get('static','areas')
             except Exception:
                 param_dict['area_file'] = ""
-            
         if 'static' in db.sections():
             try:
                 param_dict['rp_mssh_shift'] = float(db.get('static','rp_mssh_shift'))
@@ -844,6 +847,10 @@ class NmlLoader(Loader):
                 param_dict['good_qc'] = literal_eval(db.get('GLOBAL', 'good_qc'))
             except Exception:
                 param_dict['good_qc'] = ''
+            try:
+                param_dict['bad_qc'] = literal_eval(db.get('GLOBAL', 'bad_qc'))
+            except Exception:
+                param_dict['bad_qc'] = ''
             try:
                 param_dict['DEPTHS'] = literal_eval(db.get('GLOBAL', 'DEPTHS'))
             except Exception:

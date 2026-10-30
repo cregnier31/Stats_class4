@@ -527,11 +527,13 @@ class Interpolator(object):
         ll_case2 = False
         ll_nan = False
         ll_uniq = False
-        is_2D = False
         obs_array = np.squeeze(np.asarray(obs_data.obs_value))
         depth_array = np.squeeze(np.asarray(obs_data.depth))
+        qc_array = np.squeeze(np.asarray(obs_data.qc))
         is_2D = False
-        if len(np.unique(obs_data.depth)) == 1 or len(np.shape(obs_data.depth))== 1 :
+        self.depth_mod = np.array(model_data.depth)
+
+        if len(np.unique(obs_data.depth)) == 1 and len(np.shape(obs_data.depth))== 1 :
             is_2D = True
             nb_obs = np.shape(obs_data.depth)[0]
             self.log.debug(f"{variable=}")
@@ -540,15 +542,19 @@ class Interpolator(object):
             self.log.debug(f"Dimensions np.shape{obs_data.obs_value}")
             if len(variable)==1 :
                 reshaped_obs = obs_array.reshape((*obs_array.shape, 1, 1))
-                reshape_depth = depth_array.reshape((*depth_array.shape, 1, 1))
+                reshaped_depth = depth_array.reshape((*depth_array.shape, 1, 1))
+                reshaped_qc = obs_data.qc.reshape((*qc_array.shape,1 ,1))
             #    #reshaped_obs = obs_data.obs_value.reshape((*obs_data.obs_value.shape, 1, 1))
             #    tab_results['depth'] = np.expand_dims(obs_data.depth, axis=0)
             else:
                 reshaped_obs = obs_data.obs_value.reshape((*obs_data.obs_value.shape, 1))
+                reshaped_qc = obs_data.qc.reshape((*obs_data.qc.shape, 1))
             #    reshaped_obs = obs_array.reshape((*obs_array.obs_value.shape, 1))
-                reshape_depth = np.expand_dims(obs_data.depth, axis=1)
+                reshaped_depth = np.expand_dims(obs_data.depth, axis=1)
+
             tab_results['observation'] = reshaped_obs
-            tab_results['depth'] = reshape_depth
+            tab_results['depth'] = reshaped_depth
+            tab_results['qc'] = reshaped_qc
 
             #ll_singleobs = True
             ll_uniq = True
@@ -1631,7 +1637,6 @@ class Interpolator(object):
                 self.log.debug('--------------------------------')
             end = timer()
             self.log.debug(f"~~ Time elapsed loops on depth {end - start} s ~~")
-            #self.log.debug(f'Valeurs profile {obs[:]}')
         end_3D= timer()
         self.log.debug(f"~~ Time elapsed interp 3D {end_3D - start_3D} s ~~")
         return values_interp

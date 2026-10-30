@@ -24,10 +24,102 @@ from shapely import contains_xy, Polygon
 from antimeridian import fix_shape
 import time
 import copy
+from .reader import read_qc_CLASS4
 
 __version__ = 0.2
 __date__ = "Octobre 2021"
 __author__ = "C.REGNIER"
+
+from joblib import Parallel, delayed
+
+
+def compute_region_mask(
+    region_name,
+    polygon,
+    obs_lon,
+    obs_lat,
+):
+    region_mask = contains_xy(
+        polygon,
+        obs_lon,
+        obs_lat,
+    )
+
+    n_region = np.count_nonzero(
+        region_mask
+    )
+
+    return (
+        region_name,
+        region_mask,
+        n_region,
+    )
+
+def filter_data(ds, selected_var):
+    results = {}
+    variables = ds.variables
+    icevarname = ['aice']
+    observation = ds['observation']
+    forecast = ds['forecast']
+    lon = ds['longitude']
+    lat = ds['latitude']
+    # --------------------------------------------------
+    # QC
+    # --------------------------------------------------
+    #qc = ds['qc'] if 'qc' in variables else np.nan
+
+    # --------------------------------------------------
+    # Ice case
+    # --------------------------------------------------
+    if selected_var is not None and selected_var in icevarname:
+        resol = 10
+        seuil = 0.15
+        depth = None
+
+        qcval, qcval2 = read_qc_CLASS4(selected_var, ds)
+        qcval = qcval[::resol]
+
+        # IMPORTANT:
+        # Ideally use the observation dimension here.
+        observation = observation.isel(numobs=slice(None, None, resol))
+        observation = observation.load()
+        forecast = forecast.isel(numobs=slice(None, None, resol))
+        if 'numobs' in lon.dims:
+            lon = lon.isel(numobs=slice(None, None, resol))
+        if 'numobs' in lat.dims:
+            lat = lat.isel(numobs=slice(None, None, resol))
+        lon = lon.load()
+        lat = lat.load()
+        #if not isinstance(qc, float):
+        #    rla_qc = qc.load().values.squeeze()
+        #else:
+        #    rla_qc = qc
+        value_np = np.asarray(observation).squeeze()
+        mask = (
+                ~np.isnan(value_np)
+                & (value_np > seuil)
+               )
+        rla_value = value_np[mask]
+        rla_lon = np.asarray(lon).squeeze()[mask]
+        rla_lat = np.asarray(lat).squeeze()[mask]
+        rla_fcst = np.asarray(forecast).squeeze()[mask]
+        if depth is not None:
+            rla_depth = np.asarray(depth).squeeze()[mask]
+        else:
+            rla_depth = np.zeros_like(rla_value)
+
+        if not isinstance(qcval, float):
+            rla_qc = qcval[mask]
+
+        results['nb_obs'] = np.count_nonzero(mask)
+        results['observation'] = rla_value
+        results['longitude'] = rla_lon
+        results['latitude'] = rla_lat
+        results['model_equi'] = rla_fcst
+        results['depth'] = rla_depth
+        results['qc'] = rla_qc
+
+        return results
 
 def build_region_polygons(geojson_file):
     """Create polygons for GeoJSON
