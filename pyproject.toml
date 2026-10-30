@@ -46,7 +46,7 @@ class4-run-parall = "tep_class4.cli.class4_parallel_leadtime_recomb:main"
 class4-zarr  = "tep_class4.cli.class4_zarr:main"
 stats-class4 = "tep_class4.cli.class4_stats:main"
 stats-class4-reg = "tep_class4.cli.class4_stats_regional:main"
-
+stats-class4file-reg = "tep_class4.cli.class4_file_stats_regional:main"
 [tool.hatch.version]
 source = "regex_commit"
 path = "src/tep_class4/version.py"
