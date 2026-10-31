@@ -114,7 +114,7 @@ def plot_all(models, output, variable, date_range, min_obs=1, dpi=180):
                    bbox_to_anchor=(0.08, 0.035), fontsize=12, frameon=True,
                    facecolor='#f0f0f0', edgecolor='#bcbcbc', framealpha=1, borderpad=0.8)
         fig.suptitle(f'CLASS4 regional profile scores — {variable} — {region}\\n{date_range}',
-                     fontsize=14)
+                     fontsize=16, fontweight='bold')
         outfile = output / f'class4_{variable}_{safe_name(region)}_{safe_name(date_range)}_4plots.png'
         fig.savefig(outfile, dpi=dpi, bbox_inches='tight')
         plt.close(fig)
