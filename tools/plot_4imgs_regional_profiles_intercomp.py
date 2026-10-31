@@ -40,15 +40,9 @@ def load_scores(path):
         with np.errstate(divide='ignore', invalid='ignore'):
             rmsd = np.where(count > 0, np.sqrt(np.maximum(sq / count, 0)), np.nan)
             bias = np.where(count > 0, total_bias / count, np.nan)
-        labels = as_labels(ds['leadtime'].values)
-        # Use numeric lead-time coordinates where available; otherwise positions 0, 1, ...
-        try:
-            x = np.asarray(labels, dtype=float)
-            if not np.all(np.isfinite(x)):
-                raise ValueError('non-finite leadtime')
-        except ValueError:
-            x = np.arange(len(labels), dtype=float)
-            print(f'WARNING: nonnumeric leadtime in {path}; using zero-based indices')
+        # Display forecast steps as 1, 2, ..., N (not zero-based indices).
+        # Keep the score arrays in their original order.
+        x = np.arange(1, count.shape[2] + 1, dtype=int)
         return {
             'regions': as_labels(ds['regions'].values),
             'depths': as_labels(ds['depth'].values),
@@ -68,11 +62,13 @@ def plot_all(models, output, variable, date_range, min_obs=1, dpi=180):
     units = '°C' if variable == 'thetao' else 'PSU' if variable == 'so' else ''
     count_figures = 0
 
+    all_leadtimes = sorted(set(int(v) for scores in data.values() for v in scores['x']))
+
     for region in regions:
         ncols = 2
         nrows = 2
-        fig, axes = plt.subplots(nrows, ncols, figsize=(13, 9.5), squeeze=False, sharex=True)
-        fig.subplots_adjust(left=0.10, right=0.98, top=0.89, bottom=0.19, hspace=0.35, wspace=0.25)
+        fig, axes = plt.subplots(nrows, ncols, figsize=(15, 10), squeeze=False, sharex=True)
+        fig.subplots_adjust(left=0.09, right=0.98, top=0.88, bottom=0.22, hspace=0.42, wspace=0.24)
         for j, depth in enumerate(depths):
             ax = axes.flat[j]
             for i, (model, scores) in enumerate(data.items()):
@@ -94,7 +90,12 @@ def plot_all(models, output, variable, date_range, min_obs=1, dpi=180):
             ax.set_ylabel(f'RMSD / mean bias ({units})' if units else 'RMSD / mean bias', fontsize=12)
             ax.tick_params(axis='both', which='major', labelsize=12)
             ax.tick_params(axis='both', which='minor', labelsize=12)
-            ax.set_xticks(sorted(set(float(v) for scores in data.values() for v in scores['x'])))
+            ax.set_xticks(all_leadtimes)
+            ax.set_xlim(0.5, max(all_leadtimes) + 0.5)
+            ax.tick_params(axis='x', labelbottom=True, pad=7)
+            for tick in ax.get_xticklabels():
+                tick.set_rotation(45)
+                tick.set_horizontalalignment('right')
             ax.grid(True, alpha=0.25, linestyle=':')
         for ax in axes.flat[len(depths):]:
             ax.set_visible(False)
@@ -107,9 +108,11 @@ def plot_all(models, output, variable, date_range, min_obs=1, dpi=180):
         ]
         # Separate legends: models below panels, line styles in lower-left.
         fig.legend(handles=model_handles, loc='lower center', ncol=len(model_handles),
-                   bbox_to_anchor=(0.55, 0.045), fontsize=12, frameon=False)
+                   bbox_to_anchor=(0.62, 0.065), fontsize=12, frameon=True,
+                   facecolor='#f0f0f0', edgecolor='#bcbcbc', framealpha=1, borderpad=0.8)
         fig.legend(handles=metric_handles, loc='lower left', ncol=1,
-                   bbox_to_anchor=(0.08, 0.012), fontsize=12, frameon=False)
+                   bbox_to_anchor=(0.08, 0.035), fontsize=12, frameon=True,
+                   facecolor='#f0f0f0', edgecolor='#bcbcbc', framealpha=1, borderpad=0.8)
         fig.suptitle(f'CLASS4 regional profile scores — {variable} — {region}\\n{date_range}',
                      fontsize=14)
         outfile = output / f'class4_{variable}_{safe_name(region)}_{safe_name(date_range)}_4plots.png'
