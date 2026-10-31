@@ -2,7 +2,7 @@
 """Plot regional CLASS4 profile forecast scores, one figure per region.
 
 Each figure has one panel per depth layer, with every model overlaid.
-Solid lines: RMSD. Dashed lines: mean difference (bias).
+Solid lines: RMSD. Dotted lines: mean bias.
 Scores are aggregated from cumulative squared differences / biases / counts.
 """
 import argparse
@@ -62,7 +62,7 @@ def load_scores(path):
 def plot_all(models, output, variable, date_range, min_obs=1, dpi=180):
     data = {name: load_scores(path) for name, path in models.items()}
     regions = list(dict.fromkeys(r for d in data.values() for r in d['regions']))
-    depths = list(dict.fromkeys(z for d in data.values() for z in d['depths']))
+    depths = list(dict.fromkeys(z for d in data.values() for z in d['depths']))[:4]
     output.mkdir(parents=True, exist_ok=True)
     colors = plt.get_cmap('tab10').colors
     units = '°C' if variable == 'thetao' else 'PSU' if variable == 'so' else ''
@@ -70,8 +70,9 @@ def plot_all(models, output, variable, date_range, min_obs=1, dpi=180):
 
     for region in regions:
         ncols = 2
-        nrows = int(np.ceil(len(depths) / ncols))
-        fig, axes = plt.subplots(nrows, ncols, figsize=(15, max(4.5, nrows * 3.7)), squeeze=False)
+        nrows = 2
+        fig, axes = plt.subplots(nrows, ncols, figsize=(13, 9.5), squeeze=False, sharex=True)
+        fig.subplots_adjust(left=0.10, right=0.98, top=0.89, bottom=0.19, hspace=0.35, wspace=0.25)
         for j, depth in enumerate(depths):
             ax = axes.flat[j]
             for i, (model, scores) in enumerate(data.items()):
@@ -85,23 +86,32 @@ def plot_all(models, output, variable, date_range, min_obs=1, dpi=180):
                 rmsd = np.where(valid, scores['rmsd'][ir, iz, :], np.nan)
                 bias = np.where(valid, scores['bias'][ir, iz, :], np.nan)
                 color = colors[i % len(colors)]
-                ax.plot(x, rmsd, color=color, linestyle='-', marker='o', markersize=3, linewidth=1.7)
-                ax.plot(x, bias, color=color, linestyle='--', marker='s', markersize=3, linewidth=1.5)
+                ax.plot(x, rmsd, color=color, linestyle='-', marker='o', markersize=3.5, linewidth=1.8)
+                ax.plot(x, bias, color=color, linestyle=':', marker='s', markersize=3.5, linewidth=1.8)
             ax.axhline(0, color='gray', linewidth=0.8)
-            ax.set_title(str(depth), fontsize=11, fontweight='bold')
-            ax.set_xlabel('Forecast lead time (days)')
-            ax.set_ylabel(f'RMSD / mean difference ({units})' if units else 'RMSD / mean difference')
+            ax.set_title(str(depth), fontsize=12, fontweight='bold')
+            ax.set_xlabel('Forecast lead time (days)', fontsize=12)
+            ax.set_ylabel(f'RMSD / mean bias ({units})' if units else 'RMSD / mean bias', fontsize=12)
+            ax.tick_params(axis='both', which='major', labelsize=12)
+            ax.tick_params(axis='both', which='minor', labelsize=12)
+            ax.set_xticks(sorted(set(float(v) for scores in data.values() for v in scores['x'])))
             ax.grid(True, alpha=0.25, linestyle=':')
         for ax in axes.flat[len(depths):]:
             ax.set_visible(False)
 
-        handles = [Line2D([0], [0], color=colors[i % len(colors)], lw=2, label=model)
-                   for i, model in enumerate(models)]
-        handles += [Line2D([0], [0], color='black', lw=2, ls='-', marker='o', label='RMSD'),
-                    Line2D([0], [0], color='black', lw=2, ls='--', marker='s', label='Mean difference (bias)')]
-        fig.legend(handles=handles, loc='lower center', ncol=min(len(handles), 6), bbox_to_anchor=(0.5, 0.015), fontsize=10)
-        fig.suptitle(f'CLASS4 regional profile scores — {variable} — {region}\n{date_range}', fontsize=15)
-        fig.tight_layout(rect=(0, 0.065, 1, 0.93))
+        model_handles = [Line2D([0], [0], color=colors[i % len(colors)], lw=2.2, label=model)
+                         for i, model in enumerate(models)]
+        metric_handles = [
+            Line2D([0], [0], color='black', lw=2, ls='-', marker='o', label='RMSD'),
+            Line2D([0], [0], color='black', lw=2, ls=':', marker='s', label='Mean bias'),
+        ]
+        # Separate legends: models below panels, line styles in lower-left.
+        fig.legend(handles=model_handles, loc='lower center', ncol=len(model_handles),
+                   bbox_to_anchor=(0.55, 0.045), fontsize=12, frameon=False)
+        fig.legend(handles=metric_handles, loc='lower left', ncol=1,
+                   bbox_to_anchor=(0.08, 0.012), fontsize=12, frameon=False)
+        fig.suptitle(f'CLASS4 regional profile scores — {variable} — {region}\\n{date_range}',
+                     fontsize=14)
         outfile = output / f'class4_{variable}_{safe_name(region)}_{safe_name(date_range)}.png'
         fig.savefig(outfile, dpi=dpi, bbox_inches='tight')
         plt.close(fig)
