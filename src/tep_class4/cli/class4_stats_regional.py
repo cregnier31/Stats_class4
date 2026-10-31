@@ -156,7 +156,7 @@ def main(level=2):
 
         else:
             if conf_type == "ensemble":
-                log.info('Read mask ensemble')
+                log.info(f'Read mask ensemble {maskfile}')
                 with xr.open_dataset(maskfile) as nc_mask:
                     model_mask = nc_mask[maskname].isel(
                         time_counter=0,
@@ -421,7 +421,8 @@ def main(level=2):
                                     model_value_day,
                                     dims=["depth", "y", "x"],
                                     coords={
-                                        "depth": depth_mask.values,
+                                        #"depth": depth_mask.values,
+                                        "depth":np.asarray(depth_mask),
                                         "lon": (["y", "x"], lon_mask.values),
                                         "lat": (["y", "x"], lat_mask.values),
                                     },
