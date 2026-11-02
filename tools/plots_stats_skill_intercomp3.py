@@ -51,7 +51,7 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
         Axes object.
     """
 
-    fig, ax = plt.subplots(figsize=(11, 6.5))
+    fig, ax = plt.subplots(figsize=(12.5, 8))
 
     # -------------------------
     # Colors for each model
@@ -123,8 +123,8 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
         handles=model_handles,
         title="Models",
         loc="lower center",
-        fontsize=12,
-        bbox_to_anchor=(0.57, 0.015),
+        fontsize=10,
+        bbox_to_anchor=(0.44, 0.025),
         ncol=len(scores),
         frameon=True,
         title_fontsize=13,
@@ -165,7 +165,7 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
         handles=stat_handles,
         title="Statistics",
         loc="lower left",
-        bbox_to_anchor=(0.12, 0.015),
+        bbox_to_anchor=(0.19, 0.025),
         fontsize=12,
         title_fontsize=13,
         ncol=2,
@@ -199,10 +199,10 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
     fig.suptitle(
         f"{observation} - Forecast scores intercomparison",
         fontsize=16,
-        y=0.975,
+        y=0.985,
     )
-    fig.text(0.5, 0.925, f"Date: {dateval}",
-             ha="center", va="center", fontsize=10)
+    fig.text(0.5, 0.948, f"Date: {dateval}",
+             ha="center", va="center", fontsize=14)
 
     ax.grid(
         True,
@@ -226,7 +226,7 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
     ax.xaxis.set_major_locator(MultipleLocator(1))
 
    # plt.tight_layout(rect=[0, 0.08, 1, 1])
-    fig.subplots_adjust(bottom=0.23, top=0.84, left=0.12, right=0.97)
+    fig.subplots_adjust(bottom=0.19, top=0.91, left=0.12, right=0.97)
 
     saveimg = (f"imgs/results_scores_"
                f"class4_profile_TS_DB_intercomp_forecast_{dateval}_rmsd_bias2.png"
