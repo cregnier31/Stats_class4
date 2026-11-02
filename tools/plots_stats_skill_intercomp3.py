@@ -164,7 +164,7 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
     ax.legend(
         handles=stat_handles,
         title="Statistics",
-        loc="upper left",
+        loc="lower left",
         fontsize=12,
         #bbox_to_anchor=(0, 0.70),
         frameon=True,
