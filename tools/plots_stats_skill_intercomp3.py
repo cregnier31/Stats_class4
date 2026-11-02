@@ -198,7 +198,7 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
 
     fig.suptitle(
         f"{observation} - Forecast scores intercomparison",
-        fontsize=19,
+        fontsize=16,
         y=0.975,
     )
     fig.text(0.5, 0.925, f"Date: {dateval}",
