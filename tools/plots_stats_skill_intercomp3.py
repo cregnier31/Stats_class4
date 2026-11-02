@@ -3,6 +3,8 @@ import xarray as xr
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 
+DISPLAY_NAMES = {'glow': 'GLONET3', 'GLOW': 'GLONET3'}
+
 def plot_forecast_scores(scores, observation, dateval, label= '°C'):
     """
     Plot RMSD and Bias forecast scores for multiple models.
@@ -49,14 +51,14 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
         Axes object.
     """
 
-    fig, ax = plt.subplots(figsize=(14, 8))
+    fig, ax = plt.subplots(figsize=(11, 6.5))
 
     # -------------------------
     # Colors for each model
     # -------------------------
 
     #colors = plt.cm.tab10(np.linspace(0, 1, len(scores)))
-    colors = ["black", "blue", "green", "red"]
+    colors = ["tab:blue", "tab:green", "tab:red", "tab:orange"]
     max_lead = 0
 
     for color, (model, data) in zip(colors, scores.items()):
@@ -76,7 +78,9 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
             color=color,
             marker="o",
             #s=30,
-            label=f"{model} RMSD",
+            label=f"{DISPLAY_NAMES.get(model, model)} RMSD",
+            linewidth=2,
+            markersize=4,
             zorder=6,
         )
 
@@ -89,9 +93,11 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
             data["bias"],
             color=color,
             marker="s",
-            linestyle="--",
+            linestyle=":",
+            linewidth=2,
+            markersize=3,
             #s=30,
-            label=f"{model} Bias",
+            label=f"{DISPLAY_NAMES.get(model, model)} Bias",
             zorder=6,
         )
 
@@ -109,19 +115,21 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
                 [0],
                 color=color,
                 linewidth=3,
-                label=model,
+                label=DISPLAY_NAMES.get(model, model),
             )
         )
 
     fig.legend(
         handles=model_handles,
         title="Models",
-        loc="upper center",
+        loc="lower center",
         fontsize=12,
-        bbox_to_anchor=(0.5, 0.01),
+        bbox_to_anchor=(0.5, 0.015),
         ncol=len(scores),
         frameon=True,
         title_fontsize=13,
+        facecolor="#f0f0f0",
+        edgecolor="#bcbcbc",
     )
 
     #ax.add_artist(legend_models)
@@ -145,7 +153,7 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
             [0],
             [0],
             color="black",
-            linestyle="--",
+            linestyle=":",
             marker="s",
             linewidth=2,
             markersize=6,
@@ -160,6 +168,8 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
         fontsize=12,
         #bbox_to_anchor=(0, 0.70),
         frameon=True,
+        facecolor="#f0f0f0",
+        edgecolor="#bcbcbc",
     )
 
 
@@ -168,21 +178,27 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
     # -------------------------
 
     ax.set_xlabel(
-            "Leadtime",
-            fontsize=16,
+            "Forecast lead time (days)",
+            fontsize=17,
+            labelpad=10,
     )
     ax.set_ylabel(
             f"{label}",
-            fontsize=16,
+            fontsize=17,
+            labelpad=10,
     )
     ax.tick_params(
         axis="both",
-        labelsize=13,
+        labelsize=15,
+        width=1.3,
+        length=6,
     )
 
     ax.set_title(
         f"{observation} - Forecast scores intercomparison\n"
-        f"Date: {dateval}"
+        f"Date: {dateval}",
+        fontsize=19,
+        pad=16,
     )
 
     ax.grid(
@@ -199,7 +215,7 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
         linewidth=1.5,
     )
     ax.set_xlim(
-        x.min() - 0.5,
+        0.5,
         max_lead + 0.5
     )
 
@@ -207,8 +223,7 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
     ax.xaxis.set_major_locator(MultipleLocator(1))
 
    # plt.tight_layout(rect=[0, 0.08, 1, 1])
-    plt.tight_layout()
-    plt.subplots_adjust(bottom=0.08)
+    fig.subplots_adjust(bottom=0.23, top=0.84, left=0.12, right=0.97)
 
     saveimg = (f"imgs/results_scores_"
                f"class4_profile_TS_DB_intercomp_forecast_{dateval}_rmsd_bias2.png"
