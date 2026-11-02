@@ -55,9 +55,18 @@ def load(path, lead_day, min_obs):
         return [label(v) for v in ds["regions"].values], [label(v) for v in ds["depth"].values], rmsd
 
 
-def plot(region, variable, models_data, date_range, lead_day, output_dir, dpi):
+def plot(region, variable, models_data, date_range, lead_day, output_dir, dpi, max_depth):
     depths = list(dict.fromkeys(d for _, depth_labels, _ in models_data.values()
                                 for d in depth_labels))
+    # Depth labels are typically intervals such as "5-100m". Keep layers
+    # whose lower and upper bounds are both at or below max_depth.
+    def within_depth(label_text):
+        numbers = re.findall(r"\\d+(?:\\.\\d+)?", label_text)
+        if not numbers:
+            raise ValueError(f"Cannot interpret depth label {label_text!r}; specify numeric depth intervals")
+        return max(map(float, numbers)) <= max_depth
+
+    depths = [d for d in depths if within_depth(d)]
     if len(depths) < 3:
         print(f"Skipping {variable} / {region}: radar needs at least 3 depth layers")
         return False
@@ -133,11 +142,13 @@ def main():
     parser.add_argument("--lead-day", type=int, default=10,
                         help="1-based forecast day, default 10")
     parser.add_argument("--variable", choices=("thetao", "so", "both"), default="both")
+    parser.add_argument("--max-depth", type=float, default=800,
+                        help="Maximum depth in meters for radar spokes (default: 800)")
     parser.add_argument("--min-obs", type=int, default=1)
     parser.add_argument("--dpi", type=int, default=250)
     args = parser.parse_args()
-    if min(args.lead_day, args.min_obs) < 1:
-        parser.error("--lead-day and --min-obs must be >= 1")
+    if min(args.lead_day, args.min_obs) < 1 or args.max_depth <= 0:
+        parser.error("--lead-day and --min-obs must be >= 1; --max-depth must be positive")
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     count = 0
@@ -155,7 +166,7 @@ def main():
                                      for r in rlabels))
         for region in regions:
             count += plot(region, variable, models_data, args.date_range,
-                          args.lead_day, args.output_dir, args.dpi)
+                          args.lead_day, args.output_dir, args.dpi, args.max_depth)
     print(f"Generated {count} radar plots in {args.output_dir}")
 
 
