@@ -161,12 +161,14 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
         ),
     ]
 
-    ax.legend(
+    fig.legend(
         handles=stat_handles,
         title="Statistics",
         loc="lower left",
+        bbox_to_anchor=(0.12, 0.015),
         fontsize=12,
-        #bbox_to_anchor=(0, 0.70),
+        title_fontsize=13,
+        ncol=2,
         frameon=True,
         facecolor="#f0f0f0",
         edgecolor="#bcbcbc",
