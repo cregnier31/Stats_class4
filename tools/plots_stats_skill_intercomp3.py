@@ -124,7 +124,7 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
         title="Models",
         loc="lower center",
         fontsize=12,
-        bbox_to_anchor=(0.72, 0.015),
+        bbox_to_anchor=(0.57, 0.015),
         ncol=len(scores),
         frameon=True,
         title_fontsize=13,
@@ -196,12 +196,13 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
         length=6,
     )
 
-    ax.set_title(
-        f"{observation} - Forecast scores intercomparison\n"
-        f"Date: {dateval}",
+    fig.suptitle(
+        f"{observation} - Forecast scores intercomparison",
         fontsize=19,
-        pad=16,
+        y=0.975,
     )
+    fig.text(0.5, 0.925, f"Date: {dateval}",
+             ha="center", va="center", fontsize=13)
 
     ax.grid(
         True,
