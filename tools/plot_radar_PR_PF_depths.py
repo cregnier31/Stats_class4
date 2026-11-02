@@ -61,7 +61,7 @@ def plot(region, variable, models_data, date_range, lead_day, output_dir, dpi, m
     # Depth labels are typically intervals such as "5-100m". Keep layers
     # whose lower and upper bounds are both at or below max_depth.
     def within_depth(label_text):
-        numbers = re.findall(r"\\d+(?:\\.\\d+)?", label_text)
+        numbers = re.findall(r"\d+(?:\.\d+)?", label_text)
         if not numbers:
             raise ValueError(f"Cannot interpret depth label {label_text!r}; specify numeric depth intervals")
         return max(map(float, numbers)) <= max_depth
