@@ -202,7 +202,7 @@ def plot_forecast_scores(scores, observation, dateval, label= '°C'):
         y=0.975,
     )
     fig.text(0.5, 0.925, f"Date: {dateval}",
-             ha="center", va="center", fontsize=13)
+             ha="center", va="center", fontsize=10)
 
     ax.grid(
         True,
