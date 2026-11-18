@@ -371,8 +371,7 @@ class loaderNCcorio_tac(inputdata_loader):
         ll_depth = ll_depth_adj = ll_pres = ll_pres_adj = False
         ll_temp = ll_psal = ll_temp_adj = ll_psal_adj = False
         # Check for the presence of variables
-        ll_depth = 'DEPTH' in ds.variables
-        ll_depth = 'DEPH' in ds.variables
+        ll_depth = 'DEPH' in ds.variables or 'DEPTH' in ds.variables
         ll_depth_adj = 'DEPTH_ADJUSTED' in ds.variables
         ll_pres = 'PRES' in ds.variables
         ll_pres_adj = 'PRES_ADJUSTED' in ds.variables
@@ -387,9 +386,9 @@ class loaderNCcorio_tac(inputdata_loader):
         if 'TMLEV' in variable_names:
             clim_temp = ds['TMLEV'].values
             ll_clim_temp = True
-        if 'TEMP_ADJUSTED' in variable_names:
+        if 'TEMP_ADJUSTED' in variable_names and 'TEMP_ADJUSTED_QC' in variable_names:
             ll_temp_adj = True
-        if 'PSAL_ADJUSTED' in variable_names:
+        if 'PSAL_ADJUSTED' in variable_names and 'PSAL_ADJUSTED_QC' in variable_names:
             ll_psal_adj = True
         if 'SMLEV_ADJUSTED' in variable_names:
             clim_psal_adj = ds['SMLEV_ADJUSTED'].values
@@ -468,14 +467,14 @@ class loaderNCcorio_tac(inputdata_loader):
             self.log.error('PROF not valid with no TEMP and no PSAL or ADJUSTED')
         if not ll_data_mode:
             self.log.error('Missing Data Mode')
-        rla_temp = np.ndarray(shape=(n_profiles, n_profs))
-        rla_psal = np.ndarray(shape=(n_profiles, n_profs))
-        rla_clim_temp = np.ndarray(shape=(n_profiles, n_profs))
-        rla_clim_psal = np.ndarray(shape=(n_profiles, n_profs))
-        rla_prof = np.ndarray(shape=(n_profiles, n_profs))
-        rla_pres = np.ndarray(shape=(n_profiles, n_profs))
-        rla_qc_temp = np.ndarray(shape=(n_profiles, n_profs))
-        rla_qc_psal = np.ndarray(shape=(n_profiles, n_profs))
+        rla_temp = np.full((n_profiles, n_profs), np.nan)
+        rla_psal = np.full((n_profiles, n_profs), np.nan)
+        rla_clim_temp = np.full((n_profiles, n_profs), np.nan)
+        rla_clim_psal = np.full((n_profiles, n_profs), np.nan)
+        rla_prof = np.full((n_profiles, n_profs), np.nan)
+        rla_pres = np.full((n_profiles, n_profs), np.nan)
+        rla_qc_temp = np.full((n_profiles, n_profs), 9.0)
+        rla_qc_psal = np.full((n_profiles, n_profs), 9.0)
         for ind in range(ds['N_PROF'].size):
             nb_pres = 0
             nb_depth = 0
@@ -680,10 +679,18 @@ class loaderNCcorio_tac(inputdata_loader):
             indices_psal = len(np.where(~np.isnan(results['PSAL']))[0])
         if ll_temp and ll_psal:
             pourcent_valid =  (indices_psal*100)/indices_temp
-        rla_obs = np.ndarray(shape=(n_profiles, nb_variables, n_profs))
-        rla_clim = np.ndarray(shape=(n_profiles, nb_variables, n_profs))
-        rla_qc = np.ndarray(shape=(n_profiles, nb_variables, n_profs))
+        rla_obs = np.full((n_profiles, nb_variables, n_profs), np.nan)
+        rla_clim = np.full((n_profiles, nb_variables, n_profs), np.nan)
+        rla_qc = np.full((n_profiles, nb_variables, n_profs), 9.0)
         rl_threshold = 90
+        # Reject invalid source values before potential-temperature conversion.
+        # NetCDF missing values may be decoded to NaN or remain as finite
+        # sentinels (e.g. -999 and 9.969e36).
+        for values, quality in ((rla_temp, rla_qc_temp), (rla_psal, rla_qc_psal)):
+            invalid = (~np.isfinite(values) | (np.abs(values) >= 1e10)
+                       | (values <= -900) | (values == 9999))
+            values[invalid] = np.nan
+            quality[invalid] = 9
         if ll_temp and ll_psal and param_dict['insitu_corr'] and pourcent_valid > rl_threshold:
             self.log.debug("Add Potential correction")
             obs_temp_pot = sw.ptmp(results['PSAL'], results['TEMP'], rla_pres, pr=0)
@@ -704,6 +711,13 @@ class loaderNCcorio_tac(inputdata_loader):
         #if ll_clim_temp_adjust or ll_clim_temp:
         #    rla_clim = np.nan_to_num(rla_clim, nan=self.fillvalue_dep)
         #rla_qc = np.nan_to_num(rla_qc, nan=self.fillvalue_dep)
+        invalid_obs = (~np.isfinite(rla_obs) | (np.abs(rla_obs) >= 1e10)
+                       | (rla_obs <= -900) | (rla_obs == 9999))
+        bad_good_qc = int(np.count_nonzero(invalid_obs & (rla_qc == 0)))
+        if bad_good_qc:
+            self.log.warning("NC_CORIO_TAC: rejecting %d invalid observations marked QC=0", bad_good_qc)
+        rla_obs[invalid_obs] = np.nan
+        rla_qc[invalid_obs] = 9
         param_dict['qc'] = rla_qc
         ## Filtered unrealistic value with 0 for longitude and latitude
         if sum_lat_2  <  -90.0 or sum_lat_2 > 90.0 or sum_lat_2 == 0.0:
