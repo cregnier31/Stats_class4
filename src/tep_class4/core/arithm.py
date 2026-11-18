@@ -4,6 +4,8 @@ import datetime
 from copy import deepcopy
 import numpy.ma as ma
 import netCDF4
+import os
+import logging
 from scipy.stats import binned_statistic_2d
 
 __author__      = "C.REGNIER"
@@ -44,7 +46,7 @@ def init_array_2D(size, size2):
 def init_array_3D(size, size2, size3):
     return np.full((size, size2, size3), netCDF4.default_fillvals['f4'], dtype=float, order='F')
 
-def compute_rmsd_3d_by_depth_bins(data1, data2, depth_array, data_qc, depth_bins, good_qc):
+def compute_rmsd_3d_by_depth_bins(data1, data2, depth_array, data_qc, depth_bins, good_qc, debug=False, log=None):
     """
     Compute RMSD and Bias between data1 and data2 over specified depth bins,
     aggregated across all profiles (not per-profile).
@@ -55,12 +57,17 @@ def compute_rmsd_3d_by_depth_bins(data1, data2, depth_array, data_qc, depth_bins
     - data_qc : ndarray (num_obs, num_depths)
                 QC flags: only values with QC == 0 are used in the statistics
     - depth_bins: list of bin edges (e.g., [0, 5, 100, 300, 600])
+    - debug: log per-bin error diagnostics (also enabled by CLASS4_DEBUG_RMSD=1)
+    - log: optional application logger; defaults to module logger
 
     Returns:
     - rmsd_bin: list of RMSD per depth bin
     - cumul_sq_diff_bin: list of total squared diff per bin
     - n_obs_bin: list of valid observation counts per bin
     """
+
+    debug = debug or os.environ.get('CLASS4_DEBUG_RMSD', '').lower() in ('1', 'true', 'yes', 'on')
+    diagnostic_log = log if log is not None else logging.getLogger(__name__)
 
     data1 = ma.masked_where(
                 np.abs(data1) > 1.0e30,
@@ -140,6 +147,26 @@ def compute_rmsd_3d_by_depth_bins(data1, data2, depth_array, data_qc, depth_bins
             cumul_bias = 0.0
             cumul_sq_diff = 0.0
 
+        if debug:
+            # Use exactly the same valid pairs as the reported RMSD.
+            errors = np.asarray(valid_diff.compressed(), dtype=float)
+            if errors.size:
+                absolute_errors = np.abs(errors)
+                diagnostic_log.info(
+                    "RMSD DEBUG depth %s-%sm: N=%d RMSD=%.6f BIAS=%.6f "
+                    "P95_ABS=%.6f P99_ABS=%.6f MAX_ABS=%.6f N_ABS_GT_5=%d",
+                    depth_bins[i], depth_bins[i + 1], errors.size,
+                    float(np.sqrt(np.mean(errors ** 2))), float(np.mean(errors)),
+                    float(np.percentile(absolute_errors, 95)),
+                    float(np.percentile(absolute_errors, 99)),
+                    float(np.max(absolute_errors)),
+                    int(np.count_nonzero(absolute_errors > 5)),
+                )
+            else:
+                diagnostic_log.info(
+                    "RMSD DEBUG depth %s-%sm: N=0 (no valid pairs)",
+                    depth_bins[i], depth_bins[i + 1],
+                )
         #print(f'{depth_bins[i]}-{depth_bins[i+1]}')
         #print(f'{bias=}')
         #print(f'{rmsd=}')
