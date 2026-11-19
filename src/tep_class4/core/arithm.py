@@ -167,6 +167,26 @@ def compute_rmsd_3d_by_depth_bins(data1, data2, depth_array, data_qc, depth_bins
                     "RMSD DEBUG depth %s-%sm: N=0 (no valid pairs)",
                     depth_bins[i], depth_bins[i + 1],
                 )
+        if debug:
+            # Inspect the largest discrepancies without changing the score.
+            outlier_mask = np.asarray(ma.filled(valid_mask, False), dtype=bool) & (
+                np.asarray(ma.filled(ma.abs(diff) > 5, False), dtype=bool)
+            )
+            outlier_rows, outlier_cols = np.where(outlier_mask)
+            if outlier_rows.size:
+                diagnostic_log.info(
+                    "RMSD DEBUG depth %s-%sm: %d pairs with abs(error)>5; showing first 20",
+                    depth_bins[i], depth_bins[i + 1], outlier_rows.size,
+                )
+            for row, col in zip(outlier_rows[:20], outlier_cols[:20]):
+                diagnostic_log.info(
+                    "RMSD OUTLIER depth_bin=%s-%sm profile=%d level=%d "
+                    "depth=%.3f model=%.6f obs=%.6f qc=%s diff=%.6f",
+                    depth_bins[i], depth_bins[i + 1], int(row), int(col),
+                    float(depth_array[row, col]), float(data1[row, col]),
+                    float(data2[row, col]), str(data_qc[row, col]),
+                    float(diff[row, col]),
+                )
         #print(f'{depth_bins[i]}-{depth_bins[i+1]}')
         #print(f'{bias=}')
         #print(f'{rmsd=}')
