@@ -45,7 +45,8 @@ from tep_class4.core.arithm import (init_array_1D,
                                     compute_rmsd,
                                     nanrmse,
                                     init_array_3D_null,
-                                    compute_rmsd_3d_by_depth_bins
+                                    compute_rmsd_3d_by_depth_bins,
+                                    valid_class4_pairs
                                     )
 from tep_class4.core.Interpolator import Interpolator
 from tep_class4.core.Writer import Writer
@@ -225,6 +226,7 @@ def main(level=2):
             log.info(f'File {input_list_file}')
             N = len(param_dict['lead_int'])
             is_3D = selected_var in list_3D
+            dispersion_samples = {}
             if is_3D:
                 (tab_cumul_sq_diff,
                     tab_cumul_bias, tab_n_obs) = (
@@ -501,6 +503,38 @@ def main(level=2):
                                 tab_results["depth"][region_mask]
                         regional_qc = obs_data.qc[region_mask]
                         #regional_qc = tab_results["qc"][region_mask]
+                        # Collect matched samples by region, depth and leadtime.
+                        # The final quantiles must use the full period distribution.
+                        if is_2D:
+                            pairs = valid_class4_pairs(
+                                np.squeeze(regional_model),
+                                np.squeeze(regional_observation),
+                            )
+                            if pairs[0].size:
+                                dispersion_samples.setdefault(
+                                    (iregion, ind_time), []
+                                ).append(np.column_stack(pairs))
+                        else:
+                            depths = np.ma.asarray(np.squeeze(regional_depth))
+                            model = np.ma.asarray(np.squeeze(regional_model))
+                            obs = np.ma.asarray(np.squeeze(regional_observation))
+                            qc = np.ma.asarray(np.squeeze(regional_qc))
+                            for idepth in range(len(depth_bins) - 1):
+                                in_bin = ((depths >= depth_bins[idepth])
+                                          & (depths < depth_bins[idepth + 1]))
+                                qc_bin = np.ma.masked_where(~in_bin, qc)
+                                model_bin = np.ma.masked_where(~in_bin, model)
+                                obs_bin = np.ma.masked_where(~in_bin, obs)
+                                pair = valid_class4_pairs(
+                                    model_bin, obs_bin, qc=qc_bin,
+                                )
+                                if pair[0].size:
+                                    dispersion_samples.setdefault(
+                                        (iregion, idepth, ind_time), []
+                                    ).append(np.column_stack(pair))
+                                    dispersion_samples.setdefault(
+                                        (iregion, len(depth_bins) - 1, ind_time), []
+                                    ).append(np.column_stack(pair))
                         # Compute results
                         if is_2D:
                             depth_names = None
@@ -602,7 +636,8 @@ def main(level=2):
                                    region_names,
                                    lead_times,
                                    outputname,
-                                   depth_names=depth_names)
+                                   depth_names=depth_names,
+                                   dispersion_samples=dispersion_samples)
 
 # Set the level of logger (log_level = 2)
 # Run the main code
