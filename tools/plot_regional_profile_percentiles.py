@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Regional CLASS4 depth-profile plots from stats_absolute_error NetCDF files.
+"""Regional CLASS4 depth-profile plots from stats_signed_error NetCDF files.
 
 Example:
  python plot_regional_profile_percentiles.py --date1 20241001 --date2 20241231 \
    --systems GLO12 GLONET GLOENS --variables so thetao --leadtime 0
 
-Percentile bands are of |model-observation| (nonnegative), not signed error.
+Percentile bands are of signed (model - observation) error.
 """
 import argparse
 from pathlib import Path
@@ -42,14 +42,14 @@ def depth_midpoints(names):
 
 def load_profile(path, region, leadtime):
     with xr.open_dataset(path) as ds:
-        if 'stats_absolute_error' not in ds:
-            raise ValueError(f'{path}: missing stats_absolute_error (rerun with percentiles enabled)')
+        if 'stats_signed_error' not in ds:
+            raise ValueError(f'{path}: missing stats_signed_error (rerun with percentiles enabled)')
         if region not in ds.regions.values:
             raise ValueError(f'{path}: unknown region {region!r}')
         leads = [str(x) for x in ds.leadtime.values]
         if str(leadtime) not in leads:
             raise ValueError(f'{path}: leadtime {leadtime!r} not in {leads}')
-        profile = ds['stats_absolute_error'].sel(regions=region).isel(leadtime=leads.index(str(leadtime)))
+        profile = ds['stats_signed_error'].sel(regions=region).isel(leadtime=leads.index(str(leadtime)))
         depth, indices = depth_midpoints(ds.depth.values)
         if not len(indices):
             raise ValueError(f'{path}: no depth bins of the form 0-5m')
@@ -95,26 +95,25 @@ def plot_region(args, region, var):
         v = {key: x[valid] for key, x in data.items()}
         ax.axvline(0, color='black', linewidth=1)
         h1, = ax.plot(v['bias'], d, color='darkturquoise', linewidth=2.3, label='Mean bias (model − obs)')
-        h2, = ax.plot(v['q1'], d, color='goldenrod', linewidth=1.3, label='Q1–Q99 |error|')
+        h2, = ax.plot(v['q1'], d, color='goldenrod', linewidth=1.3, label='Q1–Q99 signed error')
         ax.plot(v['q99'], d, color='goldenrod', linewidth=1.3)
-        h3 = ax.fill_betweenx(d, v['q5'], v['q95'], color='royalblue', alpha=.25, label='Q5–Q95 |error|')
-        h4 = ax.fill_betweenx(d, v['q25'], v['q75'], color='royalblue', alpha=.5, label='Q25–Q75 |error|')
+        h3 = ax.fill_betweenx(d, v['q5'], v['q95'], color='royalblue', alpha=.25, label='Q5–Q95 signed error')
+        h4 = ax.fill_betweenx(d, v['q25'], v['q75'], color='royalblue', alpha=.5, label='Q25–Q75 signed error')
         ax.set_title(system, fontweight='bold')
-        ax.set_xlabel(f"Bias / absolute error ({UNITS.get(var, var)})")
+        ax.set_xlabel(f"Model − observation error ({UNITS.get(var, var)})")
         ax.grid(linestyle='--', alpha=.35)
         ax.set_ylim(args.max_depth, 0)
         if args.xlim is not None:
             ax.set_xlim(-args.xlim, args.xlim)
         else:
-            max_q = np.nanmax(v['q99'])
-            max_bias = np.nanmax(np.abs(v['bias']))
-            right = max(max_q, max_bias) * 1.08
-            ax.set_xlim(-max_bias * 1.25 if max_bias > 0 else -right * .1, right)
+            finite = np.concatenate([x[np.isfinite(x)] for x in v.values()])
+            extent = np.max(np.abs(finite)) * 1.08 if finite.size else 1.0
+            ax.set_xlim(-extent, extent) if extent > 0 else ax.set_xlim(-1, 1)
         all_handles = [h1, h2, h3, h4]
         plotted += 1
     axes[0].set_ylabel('Depth (m)')
     fig.suptitle(f"{LABELS.get(var, var)} — {region} — leadtime {args.leadtime}\n"
-                 f"{args.date1}–{args.date2} | percentiles of absolute error", fontweight='bold')
+                 f"{args.date1}–{args.date2} | signed-error percentiles", fontweight='bold')
     if all_handles:
         fig.legend(handles=all_handles, loc='lower center', ncol=2, bbox_to_anchor=(.5, .015))
     fig.tight_layout(rect=(0, .09, 1, .91))
