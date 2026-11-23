@@ -804,43 +804,7 @@ def save_metrics_to_netcdf(tab_cumul_sq_diff,
 #            ),
 #        )
 #
-#    # Period-wide statistics are calculated from individual matched values,
-    # never from averages of daily percentiles.
-    if dispersion_samples is not None:
-        metric_names = [
-            "mean bias (model - obs)", "percentile Q99", "percentile Q1",
-            "percentile Q95", "percentile Q5", "percentile Q75",
-            "percentile Q25", "mean obs", "mean modele",
-            "variance obs", "variance modele", "rmsd (model-obs)",
-        ]
-        shape = tab_n_obs.shape
-        stats = np.full(shape + (len(metric_names),), np.nan, dtype=np.float32)
-        for idx in np.ndindex(shape):
-            chunks = dispersion_samples.get(idx, [])
-            if not chunks:
-                continue
-            pairs = np.concatenate(chunks, axis=0)
-            if not pairs.size:
-                continue
-            model, obs = pairs[:, 0], pairs[:, 1]
-            error = model - obs
-            abs_error = np.abs(error)
-            q = np.percentile(abs_error, [99, 1, 95, 5, 75, 25])
-            stats[idx] = [
-                np.mean(error), *q, np.mean(obs), np.mean(model),
-                np.var(obs), np.var(model), np.sqrt(np.mean(error ** 2)),
-            ]
-        ds = ds.assign_coords(metric_names=("metrics", metric_names))
-        ds["stats_absolute_error"] = (
-            tuple(ds["n_obs"].dims) + ("metrics",), stats
-        )
-        ds["stats_absolute_error"].attrs.update({
-            "description": "Period-wide paired CLASS4 statistics; Q1-Q99 are percentiles of abs(model - observation)",
-            "variance_definition": "population variance (ddof=0)",
-            "sample_selection": "finite model/observation pairs, abs(value)<=1e30, good QC",
-        })
-
-    ds.to_netcdf(output_file)
+#    ds.to_netcdf(output_file)
 
 def mkdir(path):
     '''
@@ -1874,6 +1838,42 @@ def save_metrics_to_netcdf_regional(
     # =========================================================
     # Save
     # =========================================================
+
+    # Period-wide statistics are calculated from individual matched values,
+    # never from averages of daily percentiles.
+    if dispersion_samples is not None:
+        metric_names = [
+            "mean bias (model - obs)", "percentile Q99", "percentile Q1",
+            "percentile Q95", "percentile Q5", "percentile Q75",
+            "percentile Q25", "mean obs", "mean modele",
+            "variance obs", "variance modele", "rmsd (model-obs)",
+        ]
+        shape = tab_n_obs.shape
+        stats = np.full(shape + (len(metric_names),), np.nan, dtype=np.float32)
+        for idx in np.ndindex(shape):
+            chunks = dispersion_samples.get(idx, [])
+            if not chunks:
+                continue
+            pairs = np.concatenate(chunks, axis=0)
+            if not pairs.size:
+                continue
+            model, obs = pairs[:, 0], pairs[:, 1]
+            error = model - obs
+            abs_error = np.abs(error)
+            q = np.percentile(abs_error, [99, 1, 95, 5, 75, 25])
+            stats[idx] = [
+                np.mean(error), *q, np.mean(obs), np.mean(model),
+                np.var(obs), np.var(model), np.sqrt(np.mean(error ** 2)),
+            ]
+        ds = ds.assign_coords(metric_names=("metrics", metric_names))
+        ds["stats_absolute_error"] = (
+            tuple(ds["n_obs"].dims) + ("metrics",), stats
+        )
+        ds["stats_absolute_error"].attrs.update({
+            "description": "Period-wide paired CLASS4 statistics; Q1-Q99 are percentiles of abs(model - observation)",
+            "variance_definition": "population variance (ddof=0)",
+            "sample_selection": "finite model/observation pairs, abs(value)<=1e30, good QC",
+        })
 
     ds.to_netcdf(
         output_file,
