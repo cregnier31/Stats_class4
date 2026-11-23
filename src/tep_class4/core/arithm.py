@@ -46,6 +46,23 @@ def init_array_2D(size, size2):
 def init_array_3D(size, size2, size3):
     return np.full((size, size2, size3), netCDF4.default_fillvals['f4'], dtype=float, order='F')
 
+def valid_class4_pairs(model, observation, qc=None, good_qc=0):
+    """Return finite, paired CLASS4 values, excluding fill values and bad QC."""
+    model = ma.asarray(model)
+    observation = ma.asarray(observation)
+    if model.shape != observation.shape:
+        raise ValueError("Model and observation shapes must match")
+    valid = (~ma.getmaskarray(model) & ~ma.getmaskarray(observation)
+             & np.isfinite(ma.filled(model, np.nan))
+             & np.isfinite(ma.filled(observation, np.nan))
+             & (np.abs(ma.filled(model, np.nan)) <= 1.e30)
+             & (np.abs(ma.filled(observation, np.nan)) <= 1.e30))
+    if qc is not None:
+        valid &= (ma.filled(ma.asarray(qc), -9999) == good_qc)
+    return (np.asarray(model[valid], dtype=np.float64),
+            np.asarray(observation[valid], dtype=np.float64))
+
+
 def compute_rmsd_3d_by_depth_bins(data1, data2, depth_array, data_qc, depth_bins, good_qc, debug=False, log=None):
     """
     Compute RMSD and Bias between data1 and data2 over specified depth bins,
