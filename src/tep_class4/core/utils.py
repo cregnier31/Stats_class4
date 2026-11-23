@@ -1850,6 +1850,7 @@ def save_metrics_to_netcdf_regional(
         ]
         shape = tab_n_obs.shape
         stats = np.full(shape + (len(metric_names),), np.nan, dtype=np.float32)
+        signed_stats = np.full_like(stats, np.nan)
         for idx in np.ndindex(shape):
             chunks = dispersion_samples.get(idx, [])
             if not chunks:
@@ -1861,14 +1862,27 @@ def save_metrics_to_netcdf_regional(
             error = model - obs
             abs_error = np.abs(error)
             q = np.percentile(abs_error, [99, 1, 95, 5, 75, 25])
+            signed_q = np.percentile(error, [99, 1, 95, 5, 75, 25])
             stats[idx] = [
                 np.mean(error), *q, np.mean(obs), np.mean(model),
+                np.var(obs), np.var(model), np.sqrt(np.mean(error ** 2)),
+            ]
+            signed_stats[idx] = [
+                np.mean(error), *signed_q, np.mean(obs), np.mean(model),
                 np.var(obs), np.var(model), np.sqrt(np.mean(error ** 2)),
             ]
         ds = ds.assign_coords(metric_names=("metrics", metric_names))
         ds["stats_absolute_error"] = (
             tuple(ds["n_obs"].dims) + ("metrics",), stats
         )
+        ds["stats_signed_error"] = (
+            tuple(ds["n_obs"].dims) + ("metrics",), signed_stats
+        )
+        ds["stats_signed_error"].attrs.update({
+            "description": "Period-wide paired CLASS4 statistics; Q1-Q99 are percentiles of signed (model - observation)",
+            "variance_definition": "population variance (ddof=0)",
+            "sample_selection": "finite model/observation pairs, abs(value)<=1e30, good QC",
+        })
         ds["stats_absolute_error"].attrs.update({
             "description": "Period-wide paired CLASS4 statistics; Q1-Q99 are percentiles of abs(model - observation)",
             "variance_definition": "population variance (ddof=0)",
