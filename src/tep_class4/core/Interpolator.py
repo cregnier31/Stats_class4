@@ -477,7 +477,9 @@ class Interpolator(object):
 
     def interp_class4(self, obs_data , model_data,
                         variable, param_dict,
-                        datevalue=None, leadtime=None,inner_threads=1, mask_tab=None):
+                        datevalue=None, leadtime=None,
+                        inner_threads=1, mask_tab=None,
+                        data_file=None):
         """
         Read and Interp data files
         Read input file, compute coloc value and interp with KDtree
@@ -683,7 +685,7 @@ class Interpolator(object):
                                                obs = obs_tab,
                                                dateval=datevalue, lon=obs_data.lon, lat=obs_data.lat, light=ll_light,
                                                clim=ll_clim, depth_mod=depth_mod,
-                                               fillvalue=self.missing_value, data_file='',
+                                               fillvalue=self.missing_value, data_file=data_file,
                                                ll_uniq=ll_uniq, ll_nan=ll_nan, ll_case2=ll_case2,
                                                inner_threads=inner_threads)
             #tab_results[leadtime] = array_results
@@ -1019,7 +1021,8 @@ class Interpolator(object):
                                                     clim=ll_clim, depth_mod=self.depth_mod,
                                                     fillvalue=self.missing_value, data_file=data_file,
                                                     ll_uniq=ll_uniq, ll_nan=ll_nan,
-                                                    ll_case2=ll_case2,inner_threads=inner_threads)
+                                                    ll_case2=ll_case2,
+                                                    inner_threads=inner_threads)
                      #except Exception as e:
                      #    self.log.error(f"{param_dict['data_format']} {self.list_insitu} Pb interp 3D, Size obs {np.shape(obs_value[:,var,:])}")
                      #    self.log.error(f"Pb with file {e} {depth} {self.ind_max} {file_input} Obs {data_file}")
@@ -1595,7 +1598,12 @@ class Interpolator(object):
             end = timer()
             self.log.debug(f'~ Time elapsed compute_3D_weight {end - start} s ~')
             tab_interp_tmp = np.array(results)
-            values_interp = fillvalue*np.zeros((nb_obs, nb_profs))
+            #values_interp = fillvalue*np.zeros((nb_obs, nb_profs))
+            values_interp = np.full(
+                        (nb_obs, nb_profs),
+                         fillvalue,
+                         dtype=float,
+                        )
             start = timer()
             self.log.debug(f'{np.shape(values_interp)}')
             nprof, nlevel = np.shape(tab_interp_tmp)
@@ -1616,8 +1624,10 @@ class Interpolator(object):
                     values_interp[ind_prof,:] =  tab_mod_ma[0]
                 else:
                     fixture = Column(tab_mod_ma, depth_mod[0:ind_max])
+                    self.log.debug(f'Profile ind {ind_prof}')
                     self.log.debug('Profondeurs profiles {}'.format(profondeur[0:100]))
                     self.log.debug('Profondeurs modele {}'.format(depth_mod[0:ind_max]))
+                    self.log.debug('Data file {data_file}')
                     self.log.debug(f'non_missing_count: {non_missing_count}')
 
                     if np.any(~np.isnan(tab_mod_ma[:])):
@@ -1639,4 +1649,5 @@ class Interpolator(object):
             self.log.debug(f"~~ Time elapsed loops on depth {end - start} s ~~")
         end_3D= timer()
         self.log.debug(f"~~ Time elapsed interp 3D {end_3D - start_3D} s ~~")
+        ## cregnier
         return values_interp

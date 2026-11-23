@@ -87,7 +87,7 @@ def main(level=2):
     # ==================================================================
     param_dict, log = Loader().factory('INPUT').load(sys.argv[1:], level)
     log.debug('========================================================')
-    log.debug('          Load input options and parameter file         ')
+    log.debug('          Load input options and parameter file test         ')
     log.debug('========================================================')
     # Load db configuration file
     # Load local config
@@ -494,7 +494,6 @@ def main(level=2):
                         #regional_observation = np.asarray(
                         #    tab_results["observation"]
                         #)[region_mask]
-                        print(np.shape(tab_results["observation"]))
                         regional_observation = \
                                 tab_results["observation"][region_mask]
                         regional_depth = \
@@ -541,6 +540,7 @@ def main(level=2):
                             log.debug(f"Results %: bad value {(nb_bad/len(obs_value))*100}")
                         else:
                             log.info(f"3D stats")
+
                             (
                                 daily_bias_bins,
                                 daily_cumul_bias_bins,
@@ -557,7 +557,6 @@ def main(level=2):
                             )
                             ndepth = len(depth_bins) - 1
                             n_depth_outputs = ndepth + 1
-
                             for idepth in range(n_depth_outputs):
 
                                 daily_bias = daily_bias_bins[idepth]

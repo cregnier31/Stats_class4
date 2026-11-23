@@ -417,15 +417,16 @@ input_path = "/sortref/calval/CLASS4_scores/"
 output_path = "imgs/"
 #results_regional_scores_class4_profile_TS_DB_glo4-ens50_forecast_20240101_20241231.nc
 data = "profile_TS_DB"
-#data = "aice"
-data = "DRIFTER_filtr"
-units = "m/s"
-#units = "%"
+data = "aice"
+#data = "DRIFTER_filtr"
+#units = "m/s"
+units = "%"
 #units = "°C"
-varname = 'vo'
+#varname = 'vo'
 #varname = 'uo'
 #varname = 'thetao'
-#varname = 'iceconc'
+varname = 'iceconc'
+varname = 'siconc'
 dateval = "20240101_20241231"
 maxlead = 28
 models = [
@@ -434,10 +435,10 @@ models = [
     "glonet",
     "glow",
 ]
-#models = [
-#    "glo4-ens50",
-#    "GLO12",
-#]
+models = [
+    "glo4-ens50",
+    "GLO12",
+]
 listmod = "vs".join(models)
 #os.path.join(
 #    input_path,
@@ -450,6 +451,8 @@ listmod = "vs".join(models)
 #    glob(f"{input_path}results_regional_scores_class4*_{data}_{model}_*_forecast_{dateval}.nc")[0]
 #    for model in models
 #]
+for model in models:
+    print(f"{input_path}results_regional_scores_class4_{data}_{model}_{varname}_forecast_{dateval}.nc")
 input_files = [
     glob(f"{input_path}results_regional_scores_class4_{data}_{model}_{varname}_forecast_{dateval}.nc")[0]
     for model in models

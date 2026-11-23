@@ -90,7 +90,7 @@ def main(level=2):
     # ==================================================================
     param_dict, log = Loader().factory('INPUT').load(sys.argv[1:], level)
     log.debug('========================================================')
-    log.debug('          Load input options and parameter file         ')
+    log.debug('          Load input options and parameter file test       ')
     log.debug('========================================================')
     # Load db configuration file
     # Load local config
@@ -436,6 +436,7 @@ def main(level=2):
                                                         datevalue=dateval,
                                                         leadtime=leadtime,
                                                         mask_tab=model_mask,
+                                                        data_file=data_file[0]
                                                         )
                     else:
                         log.info(f"Case {conf_type} model")
@@ -578,6 +579,18 @@ def main(level=2):
                             log.debug(f"Results %: bad value {(nb_bad/len(obs_value))*100}")
                         else:
                             log.info(f"3D stats")
+                            log.info("MODEL shape: %s", np.shape(regional_model))
+                            log.info("OBS shape: %s", np.shape(regional_observation))
+                            log.info("DEPTH shape: %s", np.shape(regional_depth))
+                            log.info("QC shape: %s", np.shape(regional_qc))
+
+                            log.info("MODEL range: %s %s",
+                                             np.nanmin(regional_model), np.nanmax(regional_model))
+                            log.info("OBS range: %s %s",
+                                             np.nanmin(regional_observation), np.nanmax(regional_observation))
+
+                            log.info("QC unique values: %s", np.unique(regional_qc))
+                            log.info("DEPTH bins: %s", depth_bins)
                             (
                                 daily_bias_bins,
                                 daily_cumul_bias_bins,
@@ -591,6 +604,7 @@ def main(level=2):
                                 np.squeeze(regional_qc),
                                 depth_bins,
                                 good_qc=0,
+                                log=log,
                             )
                             ndepth = len(depth_bins) - 1
                             n_depth_outputs = ndepth + 1
@@ -623,7 +637,6 @@ def main(level=2):
                                 tab_bias_daily[iregion][idepth][ind_time].append(daily_bias)
                                 tab_rmsd_daily[iregion][idepth][ind_time].append(daily_rmsd)
                                 tab_n_obs_daily[iregion][idepth][ind_time].append(daily_n_obs)
-    
             outputname = (f"{param_dict['diroutput']}results_regional_scores_class4_{param_dict['data_type']}"
                           f"_{param_dict['cl_conf']}_{varname}_forecast_{date1}_{date2}.nc"
                          )
