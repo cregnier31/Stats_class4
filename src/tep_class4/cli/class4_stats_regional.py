@@ -77,6 +77,8 @@ def main(level=2):
     parser.add_argument("--typemod", required=True)
     parser.add_argument("--loglevel", type=int, default=2)
     parser.add_argument("--zarr", action="store_true")
+    parser.add_argument("--no-percentiles", action="store_true",
+                        help="Compute classical scores without collecting percentile samples")
     parser.add_argument("--cfg", required=True, help="Local config file for setting inputs and outputs")
     parser.add_argument("--fcst (only forecasts)", action="store_true")
     parser.add_argument("--hdct (only hindcast)", action="store_true")
@@ -226,7 +228,7 @@ def main(level=2):
             log.info(f'File {input_list_file}')
             N = len(param_dict['lead_int'])
             is_3D = selected_var in list_3D
-            dispersion_samples = {}
+            dispersion_samples = {} if not args.no_percentiles else None
             if is_3D:
                 (tab_cumul_sq_diff,
                     tab_cumul_bias, tab_n_obs) = (
@@ -505,7 +507,7 @@ def main(level=2):
                         #regional_qc = tab_results["qc"][region_mask]
                         # Collect matched samples by region, depth and leadtime.
                         # The final quantiles must use the full period distribution.
-                        if is_2D:
+                        if dispersion_samples is not None and is_2D:
                             pairs = valid_class4_pairs(
                                 np.squeeze(regional_model),
                                 np.squeeze(regional_observation),
@@ -514,7 +516,7 @@ def main(level=2):
                                 dispersion_samples.setdefault(
                                     (iregion, ind_time), []
                                 ).append(np.column_stack(pairs))
-                        else:
+                        elif dispersion_samples is not None:
                             depths = np.ma.asarray(np.squeeze(regional_depth))
                             model = np.ma.asarray(np.squeeze(regional_model))
                             obs = np.ma.asarray(np.squeeze(regional_observation))
