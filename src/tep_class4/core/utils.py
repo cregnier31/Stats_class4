@@ -1423,6 +1423,7 @@ def save_metrics_to_netcdf_regional(
     output_file,
     depth_names=None,
     dispersion_samples=None,
+    percentile_depth_names=None,
 ):
     """
     Save forecast verification metrics to NetCDF.
@@ -1848,7 +1849,14 @@ def save_metrics_to_netcdf_regional(
             "percentile Q25", "mean obs", "mean modele",
             "variance obs", "variance modele", "rmsd (model-obs)",
         ]
+        dims = tuple(ds['n_obs'].dims)
         shape = tab_n_obs.shape
+        if percentile_depth_names is not None and 'depth' in dims:
+            axis = dims.index('depth')
+            shape = shape[:axis] + (len(percentile_depth_names),) + shape[axis + 1:]
+            dims = tuple('depth_percentiles' if d == 'depth' else d for d in dims)
+            ds = ds.assign_coords(depth_percentiles=percentile_depth_names)
+        percentile_counts = np.zeros(shape, dtype=np.int64)
         stats = np.full(shape + (len(metric_names),), np.nan, dtype=np.float32)
         signed_stats = np.full_like(stats, np.nan)
         for idx in np.ndindex(shape):
@@ -1858,6 +1866,7 @@ def save_metrics_to_netcdf_regional(
             pairs = np.concatenate(chunks, axis=0)
             if not pairs.size:
                 continue
+            percentile_counts[idx] = len(pairs)
             model, obs = pairs[:, 0], pairs[:, 1]
             error = model - obs
             abs_error = np.abs(error)
@@ -1873,11 +1882,12 @@ def save_metrics_to_netcdf_regional(
             ]
         ds = ds.assign_coords(metric_names=("metrics", metric_names))
         ds["stats_absolute_error"] = (
-            tuple(ds["n_obs"].dims) + ("metrics",), stats
+            dims + ("metrics",), stats
         )
         ds["stats_signed_error"] = (
-            tuple(ds["n_obs"].dims) + ("metrics",), signed_stats
+            dims + ("metrics",), signed_stats
         )
+        ds["n_obs_percentiles"] = (dims, percentile_counts)
         ds["stats_signed_error"].attrs.update({
             "description": "Period-wide paired CLASS4 statistics; Q1-Q99 are percentiles of signed (model - observation)",
             "variance_definition": "population variance (ddof=0)",
