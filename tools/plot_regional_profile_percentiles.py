@@ -50,7 +50,7 @@ def load_profile(path, region, leadtime):
         if str(leadtime) not in leads:
             raise ValueError(f'{path}: leadtime {leadtime!r} not in {leads}')
         profile = ds['stats_signed_error'].sel(regions=region).isel(leadtime=leads.index(str(leadtime)))
-        depth, indices = depth_midpoints(ds.depth.values)
+        depth, indices = depth_midpoints(ds.depth.values[:-1])
         if not len(indices):
             raise ValueError(f'{path}: no depth bins of the form 0-5m')
         names = [str(x) for x in ds.metric_names.values]
