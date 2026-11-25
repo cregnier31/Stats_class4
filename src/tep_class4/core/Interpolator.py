@@ -650,7 +650,7 @@ class Interpolator(object):
             num_cores = -1
             # Compute weight
             # Implement lon/lat = 0 for all the values:
-            with Parallel(n_jobs=num_cores, prefer="threads", verbose=1, backend='threading') as parallel:
+            with Parallel(n_jobs=num_cores, prefer="threads", verbose=0, backend='threading') as parallel:
                 weight, indexes  = zip(*parallel(delayed(self.compute_weight)(ind,TreeObj,lon_mod,lat_mod,np.array(obs_data.lon),\
                                     np.array(obs_data.lat), nb_ptsinterp,\
                                     mask_tab[ind,:,:]) for ind in range(ind_max)))
