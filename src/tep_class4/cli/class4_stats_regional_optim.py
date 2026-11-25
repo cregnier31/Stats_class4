@@ -33,6 +33,8 @@ import pandas as pd
 import netCDF4
 from collections import namedtuple, OrderedDict, defaultdict
 from copy import deepcopy
+from itertools import islice
+from joblib import Parallel, delayed, parallel_config
 import time as tm
 import dask
 from pathlib import Path
@@ -64,6 +66,21 @@ resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
                                            resource.RLIM_INFINITY))
 
 
+def _interpolate_forecast(task, log, interpolator=None):
+    """Isolate mutable interpolation state in each parallel task."""
+    ind_time, dateval, cache_key, obs_data, model_data, varname, params, leadtime, model_mask, data_file = task
+    if interpolator is None:
+        interpolator = Interpolator(log, dask=params['dask'])
+    tick = tm.perf_counter()
+    kwargs = dict(datevalue=dateval, leadtime=leadtime, mask_tab=model_mask)
+    if data_file is not None:
+        kwargs['data_file'] = data_file
+    tab_results, is_2D = interpolator.interp_class4(
+        obs_data, model_data, [varname], params, **kwargs)
+    return (ind_time, cache_key, obs_data, tab_results, is_2D,
+            params.get('LEVITUS_clim'), tm.perf_counter() - tick)
+
+
 def main(level=2):
     """
     Main TEP CLASS4 function
@@ -84,12 +101,18 @@ def main(level=2):
     parser.add_argument("--fcst (only forecasts)", action="store_true")
     parser.add_argument("--hdct (only hindcast)", action="store_true")
     parser.add_argument("--all (hdct fcst and pers)", action="store_true")
+    parser.add_argument('--workers', type=int, default=1,
+                        help='Concurrent forecast interpolation processes (default: 1)')
     args = parser.parse_args()
+    if args.workers < 1:
+        parser.error('--workers must be >= 1')
 
     # ==================================================================
     #  PART-1 -  Load input parameters
     # ==================================================================
-    param_dict, log = Loader().factory('INPUT').load(sys.argv[1:], level)
+    param_dict, log = Loader().factory('INPUT').load([arg for i, arg in enumerate(sys.argv[1:])
+        if not arg.startswith('--workers=') and arg != '--workers'
+        and not (i > 0 and sys.argv[i] == '--workers')], level)
     log.debug('========================================================')
     log.debug('          Load input options and parameter file test       ')
     log.debug('========================================================')
@@ -346,159 +369,170 @@ def main(level=2):
                         log.info(f'Read model ok')
                     combined_list = []
                     leadtime = param_dict['lead_time'][0]
-                    for ind_time, lead_day in enumerate(param_dict['lead_int']):
-                        dateval = list_dates[ind_time]
-                        target_date = pd.to_datetime(dateval)
-                        log.info(
-                                 f"Selection of input data {param_dict['data_format']} "
-                                 #f"{param_dict['data_type']} \n"
-                                 f"For {dateval=} \n"
-                                 f"Leadtime {ind_time} / {N}"
-                                )
-                        log.info('=================================================')
-                        tick = tm.perf_counter()
-                        cache_key = str(dateval)
-                        cached = obs_cache.get(cache_key)
-                        if cached is not None:
-                            cache_hits += 1
-                            obs_cache.move_to_end(cache_key)
-                            param_dict.pop('LEVITUS_clim', None)
-                            data_file, obs_data, obs_state = deepcopy(cached)
-                            param_dict.update(obs_state)
-                            timings['Observation cache hits'] += tm.perf_counter() - tick
-                        else:
-                            cache_misses += 1
-                            data_file, ll_miss = global_input.run(param_dict, dateval, save=False)
-                            timings['Observation selection'] += tm.perf_counter() - tick
-                            if ll_miss:
-                                log.info(f'File is missing for the observation {dateval}')
-                                for iregion in range(nregions):
-                                    tab_bias_daily[iregion][ind_time].append(np.nan)
-                                    tab_rmsd_daily[iregion][ind_time].append(np.nan)
-                                    tab_n_obs_daily[iregion][ind_time].append(0)
-                                continue
-                            tick = tm.perf_counter()
-                            log.info(f'{data_file=}')
-                            t0 = tm.perf_counter()
-                            # Read input obs value
-                            log.debug(f"Format of the data {param_dict['data_format']}")
-                            log.debug(f"Read pos and value : {param_dict['data_format']}")
-                            param_dict.pop('LEVITUS_clim', None)
-                            lon_obs, lat_obs, obs_value, nb_obs, depth, \
-                                tab_qc, tab_dims, param_dict, _FillValue = \
-                                inputdata_loader(log).factory(param_dict['data_format']).\
-                                read_pos_and_value(data_file[0],
-                                    param_dict,
-                                    filter_levels=filter_levels,
-                                    input_var = [varname],
-                                    selected_var = selected_var,
-                                )
-                            log.debug(f"Dimensions {np.shape(obs_value)}")
-                            log.debug(f"Dimension depth {np.shape(depth)}")
-                            log.debug(f"Dimension depth {np.shape(tab_qc)}")
-                            nbs_obs, nbdepth = np.shape(depth)
-                            log.debug(f"{filter_levels=}")
-                            obs_data = ObsData(lon_obs,
-                                               lat_obs,
-                                               obs_value,
-                                               nb_obs, depth,
-                                               tab_dims,
-                                               _FillValue,
-                                               tab_qc
-                            )
-                            obs_cache[cache_key] = deepcopy((data_file, obs_data, {k: param_dict[k] for k in ('qc', 'LEVITUS_clim', 'varname_select', 'll_TEMP', 'll_PSAL', 'Design_GODAE_file') if k in param_dict}))
-                            if len(obs_cache) > cache_limit:
-                                obs_cache.popitem(last=False)
-                            timings['Observation loading'] += tm.perf_counter() - tick
-                        # Compute ensemble mean
-                        log.info('Get model value')
-                        t0 = tm.perf_counter()
-                        if conf_type == "ensemble":
-                            dirout = f"{param_dict['diroutput']}"
-                            output_file = (
-                                    f"{dirout}"
-                                    f"{param_dict['cl_conf']}_ensmean_{varname}_"
-                                    f"leadtime_{ind_time:03d}_{daterun}.npy"
-                            )
-                            if Path(output_file).exists():
-                                log.info(f"Loading existing file: {output_file}")
-                                model_value_day = np.load(output_file)
-                            else:
-                                log.info(f"Computing and saving: {output_file}")
-                                (model_value_day,) = dask.compute(
-                                    model_value.isel(time=ind_time)
-                                )
-                                np.save(output_file, model_value_day)
-                                # save dask file
-                                log.info(f"Save {varname}_leadtime{ind_time}_{daterun}")
+                    def prepare_forecasts():
+                        nonlocal param_dict, cache_hits, cache_misses
+                        for ind_time, lead_day in enumerate(param_dict['lead_int']):
+                            dateval = list_dates[ind_time]
+                            target_date = pd.to_datetime(dateval)
                             log.info(
-                                f"Dask computation of all "
-                                f"{tm.perf_counter() - t0:.2f} s"
-                            )
-                            log.info('Apply mask')
-                            # Apply mask
-                            model_value_day = np.squeeze(np.where(
-                                model_mask,
-                                model_value_day,
-                                np.nan,
-                            ))
-                            if model_value_day.ndim == 2:
-                                model_data = xr.DataArray(
-                                    model_value_day,
-                                    dims=["y", "x"],
-                                    coords={
-                                        "lon": (["y", "x"], lon_mask.values),
-                                        "lat": (["y", "x"], lat_mask.values),
-                                    },
-                                    name="model_data",
+                                     f"Selection of input data {param_dict['data_format']} "
+                                     #f"{param_dict['data_type']} \n"
+                                     f"For {dateval=} \n"
+                                     f"Leadtime {ind_time} / {N}"
+                                    )
+                            log.info('=================================================')
+                            tick = tm.perf_counter()
+                            cache_key = str(dateval)
+                            cached = obs_cache.get(cache_key)
+                            if cached is not None:
+                                cache_hits += 1
+                                obs_cache.move_to_end(cache_key)
+                                param_dict.pop('LEVITUS_clim', None)
+                                data_file, obs_data, obs_state = deepcopy(cached)
+                                param_dict.update(obs_state)
+                                timings['Observation cache hits'] += tm.perf_counter() - tick
+                            else:
+                                cache_misses += 1
+                                data_file, ll_miss = global_input.run(param_dict, dateval, save=False)
+                                timings['Observation selection'] += tm.perf_counter() - tick
+                                if ll_miss:
+                                    log.info(f'File is missing for the observation {dateval}')
+                                    for iregion in range(nregions):
+                                        tab_bias_daily[iregion][ind_time].append(np.nan)
+                                        tab_rmsd_daily[iregion][ind_time].append(np.nan)
+                                        tab_n_obs_daily[iregion][ind_time].append(0)
+                                    continue
+                                tick = tm.perf_counter()
+                                log.info(f'{data_file=}')
+                                t0 = tm.perf_counter()
+                                # Read input obs value
+                                log.debug(f"Format of the data {param_dict['data_format']}")
+                                log.debug(f"Read pos and value : {param_dict['data_format']}")
+                                param_dict.pop('LEVITUS_clim', None)
+                                lon_obs, lat_obs, obs_value, nb_obs, depth, \
+                                    tab_qc, tab_dims, param_dict, _FillValue = \
+                                    inputdata_loader(log).factory(param_dict['data_format']).\
+                                    read_pos_and_value(data_file[0],
+                                        param_dict,
+                                        filter_levels=filter_levels,
+                                        input_var = [varname],
+                                        selected_var = selected_var,
+                                    )
+                                log.debug(f"Dimensions {np.shape(obs_value)}")
+                                log.debug(f"Dimension depth {np.shape(depth)}")
+                                log.debug(f"Dimension depth {np.shape(tab_qc)}")
+                                nbs_obs, nbdepth = np.shape(depth)
+                                log.debug(f"{filter_levels=}")
+                                obs_data = ObsData(lon_obs,
+                                                   lat_obs,
+                                                   obs_value,
+                                                   nb_obs, depth,
+                                                   tab_dims,
+                                                   _FillValue,
+                                                   tab_qc
                                 )
-                            elif model_value_day.ndim == 3:
-                                # 3D: (depth, y, x)
-                                model_data = xr.DataArray(
+                                obs_cache[cache_key] = deepcopy((data_file, obs_data, {k: param_dict[k] for k in ('qc', 'LEVITUS_clim', 'varname_select', 'll_TEMP', 'll_PSAL', 'Design_GODAE_file') if k in param_dict}))
+                                if len(obs_cache) > cache_limit:
+                                    obs_cache.popitem(last=False)
+                                timings['Observation loading'] += tm.perf_counter() - tick
+                            # Compute ensemble mean
+                            log.info('Get model value')
+                            t0 = tm.perf_counter()
+                            if conf_type == "ensemble":
+                                dirout = f"{param_dict['diroutput']}"
+                                output_file = (
+                                        f"{dirout}"
+                                        f"{param_dict['cl_conf']}_ensmean_{varname}_"
+                                        f"leadtime_{ind_time:03d}_{daterun}.npy"
+                                )
+                                if Path(output_file).exists():
+                                    log.info(f"Loading existing file: {output_file}")
+                                    model_value_day = np.load(output_file)
+                                else:
+                                    log.info(f"Computing and saving: {output_file}")
+                                    (model_value_day,) = dask.compute(
+                                        model_value.isel(time=ind_time)
+                                    )
+                                    np.save(output_file, model_value_day)
+                                    # save dask file
+                                    log.info(f"Save {varname}_leadtime{ind_time}_{daterun}")
+                                log.info(
+                                    f"Dask computation of all "
+                                    f"{tm.perf_counter() - t0:.2f} s"
+                                )
+                                log.info('Apply mask')
+                                # Apply mask
+                                model_value_day = np.squeeze(np.where(
+                                    model_mask,
+                                    model_value_day,
+                                    np.nan,
+                                ))
+                                if model_value_day.ndim == 2:
+                                    model_data = xr.DataArray(
                                         model_value_day,
-                                        dims=["depth", "y", "x"],
+                                        dims=["y", "x"],
                                         coords={
-                                            #"depth": depth_mask.values,
-                                            "depth":np.asarray(depth_mask),
                                             "lon": (["y", "x"], lon_mask.values),
                                             "lat": (["y", "x"], lat_mask.values),
                                         },
                                         name="model_data",
+                                    )
+                                elif model_value_day.ndim == 3:
+                                    # 3D: (depth, y, x)
+                                    model_data = xr.DataArray(
+                                            model_value_day,
+                                            dims=["depth", "y", "x"],
+                                            coords={
+                                                #"depth": depth_mask.values,
+                                                "depth":np.asarray(depth_mask),
+                                                "lon": (["y", "x"], lon_mask.values),
+                                                "lat": (["y", "x"], lat_mask.values),
+                                            },
+                                            name="model_data",
+                                    )
+                                timings['Model loading'] += tm.perf_counter() - t0
+                                prepared_model = model_data
+                                prepared_file = data_file[0]
+                            else:
+                                log.info(f"Case {conf_type} model")
+                                (model_value_day,) = dask.compute(
+                                    model_value.isel(time=ind_time)
                                 )
-                            timings['Model loading'] += tm.perf_counter() - t0
-                            tick = tm.perf_counter()
-                            tab_results, is_2D = \
-                                interpolator.interp_class4(obs_data,
-                                                            model_data,
-                                                            [varname],
-                                                            param_dict,
-                                                            datevalue=dateval,
-                                                            leadtime=leadtime,
-                                                            mask_tab=model_mask,
-                                                            data_file=data_file[0]
-                                                            )
-                        else:
-                            log.info(f"Case {conf_type} model")
-                            (model_value_day,) = dask.compute(
-                                model_value.isel(time=ind_time)
-                            )
-                            log.info(
-                                f"Dask computation of all "
-                                f"{tm.perf_counter() - t0:.2f} s"
-                            )
-                            timings['Model loading'] += tm.perf_counter() - t0
-                            tick = tm.perf_counter()
-                            tab_results, is_2D = \
-                                interpolator.interp_class4(obs_data,
-                                                            model_value_day,
-                                                            [varname],
-                                                            param_dict,
-                                                            datevalue=dateval,
-                                                            leadtime=leadtime,
-                                                            mask_tab=model_mask)
+                                log.info(
+                                    f"Dask computation of all "
+                                    f"{tm.perf_counter() - t0:.2f} s"
+                                )
+                                timings['Model loading'] += tm.perf_counter() - t0
+                                prepared_model = model_value_day
+                                prepared_file = None
+                            yield (ind_time, dateval, cache_key, obs_data,
+                                   prepared_model, varname, deepcopy(param_dict),
+                                   leadtime, model_mask, prepared_file)
 
-                        timings['Interpolation'] += tm.perf_counter() - tick
-                        clim = param_dict.get('LEVITUS_clim')
+                    def interpolated_forecasts():
+                        tasks = prepare_forecasts()
+                        if args.workers == 1:
+                            for task in tasks:
+                                yield _interpolate_forecast(task, log, interpolator)
+                        else:
+                            # Keep only one bounded batch of full model fields in memory.
+                            # Workers never write shared regional accumulators.
+                            with parallel_config(backend='loky', inner_max_num_threads=1):
+                                with Parallel(n_jobs=args.workers, batch_size=1,
+                                              pre_dispatch=args.workers) as parallel:
+                                    while True:
+                                        batch = list(islice(tasks, args.workers))
+                                        if not batch:
+                                            break
+                                        tick = tm.perf_counter()
+                                        results = parallel(delayed(_interpolate_forecast)(task, log)
+                                                           for task in batch)
+                                        timings['Parallel interpolation wall'] += tm.perf_counter() - tick
+                                        del batch
+                                        yield from results
+
+                    for ind_time, cache_key, obs_data, tab_results, is_2D, clim, interp_seconds in interpolated_forecasts():
+                        timings['Interpolation worker time' if args.workers > 1 else 'Interpolation'] += interp_seconds
                         if clim is not None and np.shape(clim) != np.shape(tab_results['observation']):
                             log.warning('Climatology shape does not match observations; skipping ACC')
                             clim = None
@@ -539,9 +573,15 @@ def main(level=2):
 
                             if n_region == 0:
                                 if is_2D:
-                                    tab_bias_daily[iregion][ind_time].append(np.nan)
-                                    tab_rmsd_daily[iregion][ind_time].append(np.nan)
-                                    tab_n_obs_daily[iregion][ind_time].append(0)
+                                    if is_3D:
+                                        for idepth in range(n_depth_outputs):
+                                            tab_bias_daily[iregion][idepth][ind_time].append(np.nan)
+                                            tab_rmsd_daily[iregion][idepth][ind_time].append(np.nan)
+                                            tab_n_obs_daily[iregion][idepth][ind_time].append(0)
+                                    else:
+                                        tab_bias_daily[iregion][ind_time].append(np.nan)
+                                        tab_rmsd_daily[iregion][ind_time].append(np.nan)
+                                        tab_n_obs_daily[iregion][ind_time].append(0)
                                     continue
                                 else:
                                     for idepth in range(n_depth_outputs):
