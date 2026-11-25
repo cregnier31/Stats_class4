@@ -795,7 +795,7 @@ class loaderNCcorio_tac(inputdata_loader):
             rla_qc = rla_qc[:, indx, :]
             self.log.debug(f"Dimensions {np.shape(rla_obs)}")
             self.log.debug(f"Variables of the profile {self.varname_list}")
-        if not filter_levels and rla_clim.shape == rla_obs.shape:
+        if rla_clim.shape == rla_obs.shape:
             param_dict['LEVITUS_clim'] = rla_clim
         return np.float32(rla_lon), np.float32(rla_lat), np.float32(rla_obs),\
                n_profiles, np.float32(rla_prof), rla_qc, tab_dims, param_dict,  _FillValue
