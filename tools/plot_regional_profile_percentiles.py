@@ -50,16 +50,18 @@ def load_profile(path, region, leadtime):
         if str(leadtime) not in leads:
             raise ValueError(f'{path}: leadtime {leadtime!r} not in {leads}')
         profile = ds['stats_signed_error'].sel(regions=region).isel(leadtime=leads.index(str(leadtime)))
-        depth, indices = depth_midpoints(ds.depth.values[:-1])
+        depth_dim = 'depth_percentiles' if 'depth_percentiles' in profile.dims else 'depth'
+        count_var = 'n_obs_percentiles' if 'n_obs_percentiles' in ds else 'n_obs'
+        depth, indices = depth_midpoints(ds[depth_dim].values[:-1])
         if not len(indices):
             raise ValueError(f'{path}: no depth bins of the form 0-5m')
         names = [str(x) for x in ds.metric_names.values]
         missing = [name for name in METRICS.values() if name not in names]
         if missing:
             raise ValueError(f'{path}: missing metrics {missing}')
-        matrix = np.asarray(profile.values)[indices, :]
+        matrix = np.asarray(profile.transpose(depth_dim, 'metrics').values)[indices, :]
         series = {key: matrix[:, names.index(label)] for key, label in METRICS.items()}
-        counts = np.asarray(ds['n_obs'].sel(regions=region).isel(leadtime=leads.index(str(leadtime))).values)[indices]
+        counts = np.asarray(ds[count_var].sel(regions=region).isel(leadtime=leads.index(str(leadtime))).values)[indices]
     order = np.argsort(depth)
     return depth[order], {key: val[order] for key, val in series.items()}, counts[order]
 
