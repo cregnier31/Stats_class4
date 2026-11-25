@@ -27,6 +27,7 @@ from os.path import dirname
 import resource
 from timeit import default_timer as timer
 import argparse
+import logging
 import xarray as xr
 import numpy as np
 import pandas as pd
@@ -318,9 +319,8 @@ def main(level=2):
             region_cache = OrderedDict()
             cache_limit = max(1, N + 2)
             for zarr_file, daterun in zip(input_list_file, list_daterun):
-                log.info('------- Zarr daterun--------------')
-                log.info(f"{zarr_file} {daterun}")
-                log.info('----------------------------------')
+                log.info('Processing %s initialization %s', varname, daterun)
+                log.debug('Zarr file: %s', zarr_file)
                 # Generate forecast date for observations
                 list_dates = generate_nbdateslist(daterun, nb_forecasts)
                 log.debug(f'List of forecast dates {list_dates}')
@@ -347,14 +347,14 @@ def main(level=2):
                     #else:
                     #    log.error("Variable not known {gridtype}")
                     #    sys.exit(1)
-                    log.info(
+                    log.debug(
                         f"Zarr opened: "
                         f"time={ds.sizes.get('time')}, "
                         f"ens={ds.sizes.get('ens')}, "
                         f"variable={varname}"
                     )
                     if conf_type == "ensemble":
-                        log.info(f"Compute ensemble mean")
+                        log.debug("Compute ensemble mean")
                         # Compute ensemble mean
                         model_value = get_surface_ensemble_mean(
                             ds,
@@ -366,7 +366,7 @@ def main(level=2):
                             ds[varname]
                             .astype(np.float32)
                         )
-                        log.info(f'Read model ok')
+                        log.debug('Read model ok')
                     combined_list = []
                     leadtime = param_dict['lead_time'][0]
                     def prepare_forecasts():
@@ -374,13 +374,7 @@ def main(level=2):
                         for ind_time, lead_day in enumerate(param_dict['lead_int']):
                             dateval = list_dates[ind_time]
                             target_date = pd.to_datetime(dateval)
-                            log.info(
-                                     f"Selection of input data {param_dict['data_format']} "
-                                     #f"{param_dict['data_type']} \n"
-                                     f"For {dateval=} \n"
-                                     f"Leadtime {ind_time} / {N}"
-                                    )
-                            log.info('=================================================')
+                            log.info('Lead time %s/%s - Date %s', ind_time, N - 1, dateval)
                             tick = tm.perf_counter()
                             cache_key = str(dateval)
                             cached = obs_cache.get(cache_key)
@@ -403,7 +397,7 @@ def main(level=2):
                                         tab_n_obs_daily[iregion][ind_time].append(0)
                                     continue
                                 tick = tm.perf_counter()
-                                log.info(f'{data_file=}')
+                                log.debug(f'{data_file=}')
                                 t0 = tm.perf_counter()
                                 # Read input obs value
                                 log.debug(f"Format of the data {param_dict['data_format']}")
@@ -436,7 +430,7 @@ def main(level=2):
                                     obs_cache.popitem(last=False)
                                 timings['Observation loading'] += tm.perf_counter() - tick
                             # Compute ensemble mean
-                            log.info('Get model value')
+                            log.debug('Get model value')
                             t0 = tm.perf_counter()
                             if conf_type == "ensemble":
                                 dirout = f"{param_dict['diroutput']}"
@@ -446,21 +440,21 @@ def main(level=2):
                                         f"leadtime_{ind_time:03d}_{daterun}.npy"
                                 )
                                 if Path(output_file).exists():
-                                    log.info(f"Loading existing file: {output_file}")
+                                    log.debug(f"Loading existing file: {output_file}")
                                     model_value_day = np.load(output_file)
                                 else:
-                                    log.info(f"Computing and saving: {output_file}")
+                                    log.debug(f"Computing and saving: {output_file}")
                                     (model_value_day,) = dask.compute(
                                         model_value.isel(time=ind_time)
                                     )
                                     np.save(output_file, model_value_day)
                                     # save dask file
-                                    log.info(f"Save {varname}_leadtime{ind_time}_{daterun}")
-                                log.info(
+                                    log.debug(f"Save {varname}_leadtime{ind_time}_{daterun}")
+                                log.debug(
                                     f"Dask computation of all "
                                     f"{tm.perf_counter() - t0:.2f} s"
                                 )
-                                log.info('Apply mask')
+                                log.debug('Apply mask')
                                 # Apply mask
                                 model_value_day = np.squeeze(np.where(
                                     model_mask,
@@ -494,11 +488,11 @@ def main(level=2):
                                 prepared_model = model_data
                                 prepared_file = data_file[0]
                             else:
-                                log.info(f"Case {conf_type} model")
+                                log.debug(f"Case {conf_type} model")
                                 (model_value_day,) = dask.compute(
                                     model_value.isel(time=ind_time)
                                 )
-                                log.info(
+                                log.debug(
                                     f"Dask computation of all "
                                     f"{tm.perf_counter() - t0:.2f} s"
                                 )
@@ -562,7 +556,7 @@ def main(level=2):
                                     region_cache.popitem(last=False)
                             timings['Regional selection'] += tm.perf_counter() - tick
                             n_region = np.count_nonzero(region_mask)
-                            log.info(
+                            log.debug(
                                 f"********************************"
                                 f"Region {iregion} {region_name}: "
                                 f"{n_region} observations"
@@ -595,7 +589,7 @@ def main(level=2):
                             #regional_observation = np.asarray(
                             #    tab_results["observation"]
                             #)[region_mask]
-                            print(np.shape(tab_results["observation"]))
+                            log.debug("Observation shape: %s", np.shape(tab_results["observation"]))
                             regional_observation = \
                                     tab_results["observation"][region_mask]
                             regional_depth = \
@@ -689,25 +683,27 @@ def main(level=2):
                                 tab_n_obs_daily[iregion][ind_time].append(daily_n_obs)
 
                                 log.debug(f'{tab_rmsd_daily[iregion][ind_time]} {tab_bias_daily[iregion][ind_time]}')
-                                log.info(f"Results RMSD : {iregion} {region_name} {ind_time} ,  {daily_rmsd}")
-                                log.info(f"Results BIAS : {iregion} {region_name} {ind_time} ,  {daily_bias}")
+                                log.debug(f"Results RMSD : {iregion} {region_name} {ind_time} ,  {daily_rmsd}")
+                                log.debug(f"Results BIAS : {iregion} {region_name} {ind_time} ,  {daily_bias}")
                                 log.debug(f"Cumul RMSD {tab_cumul_sq_diff[iregion][ind_time]}")
                                 log.debug(f"Cumul bias daily {daily_cumul_bias} cumul rmsd {daily_cumul_sq_diff}")
-                                log.debug(f"Results %: bad value {(nb_bad/len(obs_value))*100}")
+                                if log.isEnabledFor(logging.DEBUG) and len(obs_data.lon):
+                                    log.debug("Results %%: bad value %s", nb_bad / len(obs_data.lon) * 100)
                             else:
-                                log.info(f"3D stats")
-                                log.info("MODEL shape: %s", np.shape(regional_model))
-                                log.info("OBS shape: %s", np.shape(regional_observation))
-                                log.info("DEPTH shape: %s", np.shape(regional_depth))
-                                log.info("QC shape: %s", np.shape(regional_qc))
+                                log.debug(f"3D stats")
+                                log.debug("MODEL shape: %s", np.shape(regional_model))
+                                log.debug("OBS shape: %s", np.shape(regional_observation))
+                                log.debug("DEPTH shape: %s", np.shape(regional_depth))
+                                log.debug("QC shape: %s", np.shape(regional_qc))
 
-                                log.info("MODEL range: %s %s",
-                                                 np.nanmin(regional_model), np.nanmax(regional_model))
-                                log.info("OBS range: %s %s",
-                                                 np.nanmin(regional_observation), np.nanmax(regional_observation))
+                                if log.isEnabledFor(logging.DEBUG):
+                                    log.debug("MODEL range: %s %s",
+                                                     np.nanmin(regional_model), np.nanmax(regional_model))
+                                    log.debug("OBS range: %s %s",
+                                                     np.nanmin(regional_observation), np.nanmax(regional_observation))
 
-                                log.info("QC unique values: %s", np.unique(regional_qc))
-                                log.info("DEPTH bins: %s", depth_bins)
+                                    log.debug("QC unique values: %s", np.unique(regional_qc))
+                                log.debug("DEPTH bins: %s", depth_bins)
                                 (
                                     daily_bias_bins,
                                     daily_cumul_bias_bins,
@@ -735,14 +731,14 @@ def main(level=2):
                                         daily_cumul_sq_diff_bins[idepth]
                                     )
                                     daily_n_obs = daily_n_obs_bins[idepth]
-                                    log.info(
+                                    log.debug(
                                         f"RMSD daily depth "
                                         f"{depth_names[idepth]} "
                                         f"{daily_rmsd=} "
                                         f"{region_name=}"
                                     )
 
-                                    log.info(
+                                    log.debug(
                                         f"BIAS daily depth "
                                         f"{depth_names[idepth]} "
                                         f"{daily_bias=} "
