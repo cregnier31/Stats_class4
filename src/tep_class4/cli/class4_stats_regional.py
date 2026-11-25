@@ -121,6 +121,13 @@ def main(level=2):
     list_3D = ['profile_PR_PF']
     #, 'DRIFTER_filtr']
     depth_bins = param_dict['DEPTHS']
+    percentile_depth_bins = [0, 1, 5, 10, 20, 30, 40, 50, 70, 100, 200, 300,
+                             400, 500, 600, 700, 800, 900, 1000, 1200, 1400,
+                             1600, 1900, 2300, 2600, 2900, 3300, 3600, 4000,
+                             4400, 4800, 5200, 5600]
+    percentile_depth_names = [f'{lo:g}-{hi:g}m' for lo, hi in
+                              zip(percentile_depth_bins[:-1], percentile_depth_bins[1:])]
+    percentile_depth_names.append(f'0-{percentile_depth_bins[-1]:g}m')
     depth_names = [
                 f"{depth_bins[i]:g}-{depth_bins[i + 1]:g}m"
                     for i in range(len(depth_bins) - 1)
@@ -523,9 +530,9 @@ def main(level=2):
                             model = np.ma.asarray(np.squeeze(regional_model))
                             obs = np.ma.asarray(np.squeeze(regional_observation))
                             qc = np.ma.asarray(np.squeeze(regional_qc))
-                            for idepth in range(len(depth_bins) - 1):
-                                in_bin = ((depths >= depth_bins[idepth])
-                                          & (depths < depth_bins[idepth + 1]))
+                            for idepth in range(len(percentile_depth_bins) - 1):
+                                in_bin = ((depths >= percentile_depth_bins[idepth])
+                                          & (depths < percentile_depth_bins[idepth + 1]))
                                 qc_bin = np.ma.masked_where(~in_bin, qc)
                                 model_bin = np.ma.masked_where(~in_bin, model)
                                 obs_bin = np.ma.masked_where(~in_bin, obs)
@@ -537,7 +544,7 @@ def main(level=2):
                                         (iregion, idepth, ind_time), []
                                     ).append(np.column_stack(pair))
                                     dispersion_samples.setdefault(
-                                        (iregion, len(depth_bins) - 1, ind_time), []
+                                        (iregion, len(percentile_depth_bins) - 1, ind_time), []
                                     ).append(np.column_stack(pair))
                         # Compute results
                         if is_2D:
@@ -653,7 +660,8 @@ def main(level=2):
                                    lead_times,
                                    outputname,
                                    depth_names=depth_names,
-                                   dispersion_samples=dispersion_samples)
+                                   dispersion_samples=dispersion_samples,
+                                   percentile_depth_names=percentile_depth_names if is_3D else None)
 
 # Set the level of logger (log_level = 2)
 # Run the main code
