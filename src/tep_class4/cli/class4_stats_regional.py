@@ -236,6 +236,7 @@ def main(level=2):
             N = len(param_dict['lead_int'])
             is_3D = selected_var in list_3D
             dispersion_samples = {} if not args.no_percentiles else None
+            anomaly_sums = {} if dispersion_samples is not None else None
             if is_3D:
                 (tab_cumul_sq_diff,
                     tab_cumul_bias, tab_n_obs) = (
@@ -358,6 +359,7 @@ def main(level=2):
                     # Read input obs value
                     log.debug(f"Format of the data {param_dict['data_format']}")
                     log.debug(f"Read pos and value : {param_dict['data_format']}")
+                    param_dict.pop('LEVITUS_clim', None)
                     lon_obs, lat_obs, obs_value, nb_obs, depth, \
                         tab_qc, tab_dims, param_dict, _FillValue = \
                         inputdata_loader(log).factory(param_dict['data_format']).\
@@ -463,6 +465,10 @@ def main(level=2):
                                                         leadtime=leadtime,
                                                         mask_tab=model_mask)
 
+                    clim = param_dict.get('LEVITUS_clim')
+                    if clim is not None and np.shape(clim) != np.shape(tab_results['observation']):
+                        log.warning('Climatology shape does not match observations; skipping ACC')
+                        clim = None
                     # Loop over regions
                     obs_lon = np.asarray(tab_results["lon"])
                     obs_lat = np.asarray(tab_results["lat"])
@@ -530,6 +536,7 @@ def main(level=2):
                             model = np.ma.asarray(np.squeeze(regional_model))
                             obs = np.ma.asarray(np.squeeze(regional_observation))
                             qc = np.ma.asarray(np.squeeze(regional_qc))
+                            regional_clim = None if clim is None else np.ma.asarray(np.squeeze(clim[region_mask]))
                             for idepth in range(len(percentile_depth_bins) - 1):
                                 in_bin = ((depths >= percentile_depth_bins[idepth])
                                           & (depths < percentile_depth_bins[idepth + 1]))
@@ -539,6 +546,24 @@ def main(level=2):
                                 pair = valid_class4_pairs(
                                     model_bin, obs_bin, qc=qc_bin,
                                 )
+                                if regional_clim is not None:
+                                    clim_bin = np.ma.masked_where(~in_bin, regional_clim)
+                                    c = np.ma.filled(clim_bin.astype(float), np.nan)
+                                    valid = np.isfinite(c) & (np.abs(c) <= 1.e30)
+                                    m = np.ma.masked_where(~valid, model_bin)
+                                    o = np.ma.masked_where(~valid, obs_bin)
+                                    # Subtract climatology only after applying the original pair mask.
+                                    mv = np.ma.filled(m.astype(float), np.nan)
+                                    ov = np.ma.filled(o.astype(float), np.nan)
+                                    good = (valid & np.isfinite(mv) & np.isfinite(ov)
+                                            & (np.abs(mv) <= 1.e30) & (np.abs(ov) <= 1.e30)
+                                            & (np.ma.filled(qc_bin, -9999) == 0))
+                                    pa, ra = mv[good] - c[good], ov[good] - c[good]
+                                    sums = np.array([len(pa), np.dot(pa, ra),
+                                                     np.dot(pa, pa), np.dot(ra, ra)], dtype=float)
+                                    for k in (idepth, len(percentile_depth_bins) - 1):
+                                        key = (iregion, k, ind_time)
+                                        anomaly_sums.setdefault(key, np.zeros(4))[:] += sums
                                 if pair[0].size:
                                     dispersion_samples.setdefault(
                                         (iregion, idepth, ind_time), []
@@ -661,7 +686,8 @@ def main(level=2):
                                    outputname,
                                    depth_names=depth_names,
                                    dispersion_samples=dispersion_samples,
-                                   percentile_depth_names=percentile_depth_names if is_3D else None)
+                                   percentile_depth_names=percentile_depth_names if is_3D else None,
+                                   anomaly_sums=anomaly_sums)
 
 # Set the level of logger (log_level = 2)
 # Run the main code
