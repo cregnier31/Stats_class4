@@ -1424,6 +1424,7 @@ def save_metrics_to_netcdf_regional(
     depth_names=None,
     dispersion_samples=None,
     percentile_depth_names=None,
+    anomaly_sums=None,
 ):
     """
     Save forecast verification metrics to NetCDF.
@@ -1859,6 +1860,15 @@ def save_metrics_to_netcdf_regional(
         percentile_counts = np.zeros(shape, dtype=np.int64)
         stats = np.full(shape + (len(metric_names),), np.nan, dtype=np.float32)
         signed_stats = np.full_like(stats, np.nan)
+        skill_metric_names = [
+            'number of data values', 'mean of reference', 'mean squared reference',
+            'mean of product', 'mean squared product', 'mean squared error',
+            'anomaly correlation', 'mean absolute error', 'explained variance',
+            'pearson correlation', 'number of anomaly data values',
+        ]
+        skill_stats = np.full(shape + (len(skill_metric_names),), np.nan, dtype=np.float64)
+        skill_stats[..., 0] = 0
+        skill_stats[..., 10] = 0
         for idx in np.ndindex(shape):
             chunks = dispersion_samples.get(idx, [])
             if not chunks:
@@ -1870,6 +1880,14 @@ def save_metrics_to_netcdf_regional(
             model, obs = pairs[:, 0], pairs[:, 1]
             error = model - obs
             abs_error = np.abs(error)
+            vr, vp = np.var(obs), np.var(model)
+            pearson = np.corrcoef(model, obs)[0, 1] if len(pairs) > 1 and vr > 0 and vp > 0 else np.nan
+            ev = 1.0 - np.var(error) / vr if vr > 0 else np.nan
+            na, cross, ss_p, ss_r = (anomaly_sums or {}).get(idx, (0, 0, 0, 0))
+            acc = np.clip(cross / (np.sqrt(ss_p) * np.sqrt(ss_r)), -1, 1) if na > 1 and ss_p > 0 and ss_r > 0 else np.nan
+            skill_stats[idx] = [len(pairs), np.mean(obs), np.mean(obs**2),
+                                np.mean(model), np.mean(model**2), np.mean(error**2),
+                                acc, np.mean(abs_error), ev, pearson, na]
             q = np.percentile(abs_error, [99, 1, 95, 5, 75, 25])
             signed_q = np.percentile(error, [99, 1, 95, 5, 75, 25])
             stats[idx] = [
@@ -1888,6 +1906,15 @@ def save_metrics_to_netcdf_regional(
             dims + ("metrics",), signed_stats
         )
         ds["n_obs_percentiles"] = (dims, percentile_counts)
+        ds = ds.assign_coords(skill_metric_names=("skill_metrics", skill_metric_names))
+        ds["stats_skill"] = (dims + ("skill_metrics",), skill_stats)
+        ds["stats_skill"].attrs.update({
+            "reference": "observation", "product": "model",
+            "anomaly_correlation": "uncentered correlation of model and observation departures from common collocated climatology",
+            "pearson_correlation": "sample-centered correlation of model and observation",
+            "explained_variance": "1 - variance(model-obs)/variance(obs)",
+            "sample_selection": "same valid pairs as percentiles; ACC additionally requires valid climatology",
+        })
         ds["stats_signed_error"].attrs.update({
             "description": "Period-wide paired CLASS4 statistics; Q1-Q99 are percentiles of signed (model - observation)",
             "variance_definition": "population variance (ddof=0)",
