@@ -694,7 +694,7 @@ class loaderNCcorio_tac(inputdata_loader):
         if ll_temp and ll_psal and param_dict['insitu_corr'] and pourcent_valid > rl_threshold:
             self.log.debug("Add Potential correction")
             obs_temp_pot = sw.ptmp(results['PSAL'], results['TEMP'], rla_pres, pr=0)
-            if ll_clim_temp_adjust or ll_clim_temp:
+            if 'clim_TEMP' in results and 'clim_PSAL' in results:
                 obs_clim_temp_pot = sw.ptmp(results['clim_PSAL'], results['clim_TEMP'], rla_pres, pr=0)
                 results['clim_TEMP'] = obs_clim_temp_pot
             results['TEMP'] = obs_temp_pot
@@ -702,7 +702,7 @@ class loaderNCcorio_tac(inputdata_loader):
         for ind, varname in enumerate(self.varname_list):
             rla_obs[:, ind, :] =  results[varname]
             rla_qc[:, ind, :] =  results_qc[varname]
-            if ll_clim_temp_adjust or ll_clim_temp:
+            if f'clim_{varname}' in results:
                 rla_clim[:, ind, :] = results[f'clim_{varname}']
         # Replace nan by missing value
         ##rla_obs = np.where(rla_obs == np.nan, self.fillvalue_dep, rla_obs)
@@ -747,8 +747,12 @@ class loaderNCcorio_tac(inputdata_loader):
         else:
             param_dict['ll_TEMP'] = True
         param_dict['varname_select'] = list_mod
-        if ll_clim_temp_adjust or ll_clim_temp:
-            param_dict['LEVITUS_clim'] = rla_clim
+        param_dict.pop('LEVITUS_clim', None)
+        invalid_clim = (~np.isfinite(rla_clim) | (np.abs(rla_clim) >= 1e10)
+                        | (rla_clim <= -900) | (rla_clim == 9999))
+        rla_clim[invalid_clim] = np.nan
+        if 'clim_TEMP' in results and 'clim_PSAL' not in results and ll_temp and ll_psal:
+            rla_clim[:, self.varname_list.index('TEMP'), :] = np.nan
 
         ds.close()
         del ds
@@ -787,9 +791,12 @@ class loaderNCcorio_tac(inputdata_loader):
                 indx = self.varname_list.index('PSAL')
                 self.log.debug(f"Extract TEMP {indx}")
             rla_obs = rla_obs[:, indx, :]
+            rla_clim = rla_clim[:, indx, :]
             rla_qc = rla_qc[:, indx, :]
             self.log.debug(f"Dimensions {np.shape(rla_obs)}")
             self.log.debug(f"Variables of the profile {self.varname_list}")
+        if not filter_levels and rla_clim.shape == rla_obs.shape:
+            param_dict['LEVITUS_clim'] = rla_clim
         return np.float32(rla_lon), np.float32(rla_lat), np.float32(rla_obs),\
                n_profiles, np.float32(rla_prof), rla_qc, tab_dims, param_dict,  _FillValue
 
