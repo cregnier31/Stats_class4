@@ -371,7 +371,6 @@ def main(level=2):
                     log.debug(f"Dimensions {np.shape(obs_value)}")
                     log.debug(f"Dimension depth {np.shape(depth)}")
                     log.debug(f"Dimension depth {np.shape(tab_qc)}")
-                    nbs_obs, nbdepth = np.shape(depth)
                     log.debug(f"{filter_levels=}")
                     obs_data = ObsData(lon_obs,
                                        lat_obs,
