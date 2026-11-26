@@ -104,7 +104,11 @@ def main(level=2):
     parser.add_argument("--all (hdct fcst and pers)", action="store_true")
     parser.add_argument('--workers', type=int, default=1,
                         help='Concurrent forecast interpolation processes (default: 1)')
+    parser.add_argument('--cache-size', type=int, default=4,
+                        help='Maximum cached observation dates (0 disables caching)')
     args = parser.parse_args()
+    if args.cache_size < 0:
+        parser.error('--cache-size must be >= 0')
     if args.workers < 1:
         parser.error('--workers must be >= 1')
 
@@ -112,8 +116,9 @@ def main(level=2):
     #  PART-1 -  Load input parameters
     # ==================================================================
     param_dict, log = Loader().factory('INPUT').load([arg for i, arg in enumerate(sys.argv[1:])
-        if not arg.startswith('--workers=') and arg != '--workers'
-        and not (i > 0 and sys.argv[i] == '--workers')], level)
+        if not arg.startswith(('--workers=', '--cache-size='))
+        and arg not in ('--workers', '--cache-size')
+        and not (i > 0 and sys.argv[i] in ('--workers', '--cache-size'))], level)
     log.debug('========================================================')
     log.debug('          Load input options and parameter file test       ')
     log.debug('========================================================')
@@ -317,8 +322,9 @@ def main(level=2):
                 ]
             obs_cache = OrderedDict()
             region_cache = OrderedDict()
-            cache_limit = max(1, N + 2)
+            cache_limit = args.cache_size
             for zarr_file, daterun in zip(input_list_file, list_daterun):
+                init_started = tm.perf_counter()
                 log.info('Processing %s initialization %s', varname, daterun)
                 log.debug('Zarr file: %s', zarr_file)
                 # Generate forecast date for observations
@@ -425,12 +431,13 @@ def main(level=2):
                                                    _FillValue,
                                                    tab_qc
                                 )
-                                obs_cache[cache_key] = deepcopy((data_file, obs_data, {k: param_dict[k] for k in ('qc', 'LEVITUS_clim', 'varname_select', 'll_TEMP', 'll_PSAL', 'Design_GODAE_file') if k in param_dict}))
+                                if cache_limit:
+                                    obs_cache[cache_key] = deepcopy((data_file, obs_data, {k: param_dict[k] for k in ('qc', 'LEVITUS_clim', 'varname_select', 'll_TEMP', 'll_PSAL', 'Design_GODAE_file') if k in param_dict}))
                                 if len(obs_cache) > cache_limit:
                                     obs_cache.popitem(last=False)
                                 timings['Observation loading'] += tm.perf_counter() - tick
                             # Compute ensemble mean
-                            log.debug('Get model value')
+                            log.info('Loading model for lead %s', ind_time)
                             t0 = tm.perf_counter()
                             if conf_type == "ensemble":
                                 dirout = f"{param_dict['diroutput']}"
@@ -499,15 +506,24 @@ def main(level=2):
                                 timings['Model loading'] += tm.perf_counter() - t0
                                 prepared_model = model_value_day
                                 prepared_file = None
+                            log.info('Model loading completed for lead %s in %.2f s', ind_time, tm.perf_counter() - t0)
                             yield (ind_time, dateval, cache_key, obs_data,
-                                   prepared_model, varname, deepcopy(param_dict),
+                                   prepared_model, varname, param_dict if args.workers == 1 else deepcopy(param_dict),
                                    leadtime, model_mask, prepared_file)
+                            del prepared_model, model_value_day
+                            if conf_type == 'ensemble':
+                                del model_data
 
                     def interpolated_forecasts():
                         tasks = prepare_forecasts()
                         if args.workers == 1:
                             for task in tasks:
-                                yield _interpolate_forecast(task, log, interpolator)
+                                log.info('Starting interpolation for lead %s', task[0])
+                                result = _interpolate_forecast(task, log, interpolator)
+                                del task
+                                log.info('Interpolation completed in %.2f s', result[-1])
+                                yield result
+                                del result
                         else:
                             # Keep only one bounded batch of full model fields in memory.
                             # Workers never write shared regional accumulators.
@@ -519,17 +535,22 @@ def main(level=2):
                                         if not batch:
                                             break
                                         tick = tm.perf_counter()
+                                        log.info('Starting parallel interpolation for leads %s', [task[0] for task in batch])
                                         results = parallel(delayed(_interpolate_forecast)(task, log)
                                                            for task in batch)
                                         timings['Parallel interpolation wall'] += tm.perf_counter() - tick
                                         del batch
+                                        log.info('Parallel interpolation completed in %.2f s', tm.perf_counter() - tick)
                                         yield from results
+                                        del results
 
                     for ind_time, cache_key, obs_data, tab_results, is_2D, clim, interp_seconds in interpolated_forecasts():
                         timings['Interpolation worker time' if args.workers > 1 else 'Interpolation'] += interp_seconds
                         if clim is not None and np.shape(clim) != np.shape(tab_results['observation']):
                             log.warning('Climatology shape does not match observations; skipping ACC')
                             clim = None
+                        log.info('Computing regional statistics for lead %s', ind_time)
+                        regional_started = tm.perf_counter()
                         # Loop over regions
                         obs_lon = np.asarray(tab_results["lon"])
                         obs_lat = np.asarray(tab_results["lat"])
@@ -542,18 +563,21 @@ def main(level=2):
                             # Select observations belonging to this region
                             # ------------------------------------------------------
                             tick = tm.perf_counter()
-                            mask_key = (cache_key, iregion)
-                            cached_mask = region_cache.get(mask_key)
-                            if (cached_mask is not None
-                                    and np.array_equal(cached_mask[0], obs_lon, equal_nan=True)
-                                    and np.array_equal(cached_mask[1], obs_lat, equal_nan=True)):
-                                region_mask = cached_mask[2]
-                                region_cache.move_to_end(mask_key)
-                            else:
-                                region_mask = contains_xy(polygon, obs_lon, obs_lat)
-                                region_cache[mask_key] = (obs_lon.copy(), obs_lat.copy(), region_mask)
-                                if len(region_cache) > cache_limit * nregions:
-                                    region_cache.popitem(last=False)
+                            cached_region = region_cache.get(cache_key)
+                            if (cached_region is None
+                                    or not np.array_equal(cached_region[0], obs_lon, equal_nan=True)
+                                    or not np.array_equal(cached_region[1], obs_lat, equal_nan=True)):
+                                cached_region = (obs_lon.copy(), obs_lat.copy(), {})
+                                if cache_limit:
+                                    region_cache[cache_key] = cached_region
+                                    if len(region_cache) > cache_limit:
+                                        region_cache.popitem(last=False)
+                            if cache_limit:
+                                region_cache.move_to_end(cache_key)
+                            masks = cached_region[2]
+                            if iregion not in masks:
+                                masks[iregion] = contains_xy(polygon, obs_lon, obs_lat)
+                            region_mask = masks[iregion]
                             timings['Regional selection'] += tm.perf_counter() - tick
                             n_region = np.count_nonzero(region_mask)
                             log.debug(
@@ -751,8 +775,12 @@ def main(level=2):
                                     tab_rmsd_daily[iregion][idepth][ind_time].append(daily_rmsd)
                                     tab_n_obs_daily[iregion][idepth][ind_time].append(daily_n_obs)
                             timings['Classical statistics'] += tm.perf_counter() - tick
+                        log.info('Regional statistics completed for lead %s in %.2f s', ind_time, tm.perf_counter() - regional_started)
                 finally:
                     ds.close()
+                    log.info('Initialization %s elapsed %.2f s; main process peak RSS %.1f MiB',
+                             daterun, tm.perf_counter() - init_started,
+                             resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024)
             outputname = (f"{param_dict['diroutput']}results_regional_scores_class4_optim_{param_dict['data_type']}"
                           f"_{param_dict['cl_conf']}_{varname}_forecast_{date1}_{date2}.nc"
                          )
