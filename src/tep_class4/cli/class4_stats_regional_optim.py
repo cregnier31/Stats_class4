@@ -184,8 +184,14 @@ def main(level=2):
                     if dim in mask.dims
                 }
                 model_mask = mask.isel(indexers).values.astype(bool)
-                lon_mask = nc_mask["nav_lon" if "nav_lon" in nc_mask else "lon"].load()
-                lat_mask = nc_mask["nav_lat" if "nav_lat" in nc_mask else "lat"].load()
+                lon_name = next((name for name in ("nav_lon", "lon", "longitude")
+                                 if name in nc_mask.variables), None)
+                lat_name = next((name for name in ("nav_lat", "lat", "latitude")
+                                 if name in nc_mask.variables), None)
+                if lon_name is None or lat_name is None:
+                    raise ValueError(f"Missing horizontal coordinates in {maskfile}")
+                lon_mask = nc_mask[lon_name].load()
+                lat_mask = nc_mask[lat_name].load()
                 if lon_mask.ndim == 1 and lat_mask.ndim == 1:
                     lon2d, lat2d = np.meshgrid(lon_mask.values, lat_mask.values)
                     lon_mask = xr.DataArray(lon2d, dims=("y", "x"))
