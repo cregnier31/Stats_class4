@@ -186,6 +186,10 @@ def main(level=2):
                 model_mask = mask.isel(indexers).values.astype(bool)
                 lon_mask = nc_mask["nav_lon" if "nav_lon" in nc_mask else "lon"].load()
                 lat_mask = nc_mask["nav_lat" if "nav_lat" in nc_mask else "lat"].load()
+                if lon_mask.ndim == 1 and lat_mask.ndim == 1:
+                    lon2d, lat2d = np.meshgrid(lon_mask.values, lat_mask.values)
+                    lon_mask = xr.DataArray(lon2d, dims=("y", "x"))
+                    lat_mask = xr.DataArray(lat2d, dims=("y", "x"))
                 if conf_type == "ensemble":
                     depth_mask = nc_mask["nav_lev" if "nav_lev" in nc_mask else "depth"].load()
 
