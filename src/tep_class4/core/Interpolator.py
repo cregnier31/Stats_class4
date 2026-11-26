@@ -440,6 +440,18 @@ class Interpolator(object):
 
         return nlon, nlat
 
+    def compute_profile_weights(self, tree, lon_mod, lat_mod, lon_obs,
+                                lat_obs, nb_ptsinterp, mask_tab, ind_max):
+        """Reuse horizontal neighbours across levels (mask currently unused)."""
+        if ind_max < 1:
+            raise ValueError("At least one model level is required")
+        weight, indexes = self.compute_weight(
+            0, tree, lon_mod, lat_mod, np.asarray(lon_obs),
+            np.asarray(lat_obs), nb_ptsinterp, mask_tab[0, :, :])
+        weight, indexes = np.asarray(weight), np.asarray(indexes)
+        return (np.broadcast_to(weight, (ind_max,) + weight.shape),
+                np.broadcast_to(indexes, (ind_max,) + indexes.shape))
+
     def compute_weight(self, ind, TreeObj, lon_mod, lat_mod, lon_obs, lat_obs,nb_ptsinterp, mask):
         if np.isnan(lon_obs).all() and np.isnan(lat_obs).all():
             length = len(lon_obs)  # Assuming lon_obs and lat_obs are the same length
@@ -641,21 +653,11 @@ class Interpolator(object):
             self.log.debug(f'maxdepth {maxdepth} maxind {ind_max} nearest depth model {depth_mod[ind_depth]}')
             ## Compute weight
             TreeObj = interp_KDtree(self.log)
-            tab_weight = np.nan*np.zeros((nb_obs,nb_ptsinterp,ind_max),dtype=float)
-            tab_indexes = np.ndarray(shape=(nb_obs, nb_ptsinterp,ind_max), dtype=int, order='F')
             start = timer()
-            ## Parallelize Loop on levels
-            nb_compute = len(obs_data.lon)
-            self.log.debug(f'Dimensions {nb_compute}')
-            num_cores = -1
-            # Compute weight
-            # Implement lon/lat = 0 for all the values:
-            with Parallel(n_jobs=num_cores, prefer="threads", verbose=0, backend='threading') as parallel:
-                weight, indexes  = zip(*parallel(delayed(self.compute_weight)(ind,TreeObj,lon_mod,lat_mod,np.array(obs_data.lon),\
-                                    np.array(obs_data.lat), nb_ptsinterp,\
-                                    mask_tab[ind,:,:]) for ind in range(ind_max)))
-            tab_weight = np.asarray(weight)
-            tab_indexes = np.asarray(indexes)
+            tab_weight, tab_indexes = self.compute_profile_weights(
+                TreeObj, lon_mod, lat_mod, obs_data.lon, obs_data.lat,
+                nb_ptsinterp, mask_tab, ind_max)
+            weight = tab_weight
             end = timer()
             self.log.info('~~~~~~~~ Time elapsed compute weight on levels: %s %s' %
                             (str(end - start), " seconds ~~~~~~~~~~~~"))
@@ -1486,7 +1488,7 @@ class Interpolator(object):
 
     def compute_3D_weight_origin(self, ind, var_in, inds,\
                        weight, ind_max, nbpts_interp):
-        var_in = np.array(var_in)
+        var_in = np.asarray(var_in)
         start_comp = timer()
         tab_ind = inds[ind,:,:]
         #print(f"Indice {ind}")
@@ -1588,6 +1590,7 @@ class Interpolator(object):
                 num_cores = -1
                 #num_cores = inner_threads
                 self.log.debug(f'Compute compute_3D_weight_origin')
+                var_in = np.asarray(var_in)
                 results = Parallel(n_jobs=num_cores, prefer="threads", backend='threading')(
                     delayed(self.compute_3D_weight_origin)(ind, var_in, inds, weight, ind_max, nbpts_interp)
                     for ind in range(ind_max)
