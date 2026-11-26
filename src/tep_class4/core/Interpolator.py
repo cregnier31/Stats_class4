@@ -545,7 +545,7 @@ class Interpolator(object):
         depth_array = np.squeeze(np.asarray(obs_data.depth))
         qc_array = np.squeeze(np.asarray(obs_data.qc))
         is_2D = False
-        self.depth_mod = np.array(model_data.depth)
+        self.depth_mod = np.array(depth_mod)
         if len(np.unique(obs_data.depth)) == 1 or len(np.shape(obs_data.depth))== 1 :
             is_2D = True
             nb_obs = np.shape(obs_data.depth)[0]
