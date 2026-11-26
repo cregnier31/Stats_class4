@@ -143,23 +143,18 @@ def main(level=2):
         # Read mask value
         maskfile = param_dict['coordinates']
         if selected_var not in list_3D:
-            if conf_type == "ensemble":
-                with xr.open_dataset(maskfile) as nc_mask:
-                    model_mask = nc_mask[maskname].isel(
-                        time_counter=0,
-                        nav_lev=0,
-                        ).values.astype(bool)
-                    lon_mask = nc_mask["nav_lon"]
-                    lat_mask = nc_mask["nav_lat"]
-                    depth_mask = nc_mask["nav_lev"]
-            else:
-                with xr.open_dataset(maskfile) as nc_mask:
-                    model_mask = nc_mask[maskname].isel(
-                    #    time_counter=0,
-                        nav_lev=0,
-                        ).values.astype(bool)
-                    lon_mask = nc_mask["nav_lon"]
-                    lat_mask = nc_mask["nav_lat"]
+            with xr.open_dataset(maskfile) as nc_mask:
+                mask = nc_mask[maskname]
+                indexers = {
+                    dim: 0
+                    for dim in ("time_counter", "time", "nav_lev", "depth")
+                    if dim in mask.dims
+                }
+                model_mask = mask.isel(indexers).values.astype(bool)
+                lon_mask = nc_mask["nav_lon" if "nav_lon" in nc_mask else "lon"].load()
+                lat_mask = nc_mask["nav_lat" if "nav_lat" in nc_mask else "lat"].load()
+                if conf_type == "ensemble":
+                    depth_mask = nc_mask["nav_lev" if "nav_lev" in nc_mask else "depth"].load()
 
         else:
             if conf_type == "ensemble":
