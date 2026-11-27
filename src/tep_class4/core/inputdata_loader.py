@@ -756,7 +756,34 @@ class loaderNCcorio_tac(inputdata_loader):
 
         ds.close()
         del ds
-        if filter_levels:
+        if filter_levels and args.get("selected_var") == "profile_TS_DB" and len(input_var) == 1:
+            # Select the requested variable before finding its first valid level.
+            requested = ("TEMP" if input_var[0] in self.list_temp else
+                         "PSAL" if input_var[0] in self.list_psal else None)
+            if requested is None:
+                raise ValueError(f"Unsupported TS_DB variable: {input_var[0]}")
+            if requested in self.varname_list:
+                indx = self.varname_list.index(requested)
+                values = rla_obs[:, indx, :]
+                quality = rla_qc[:, indx, :]
+                good = ((quality == 0) & np.isfinite(values)
+                        & np.isfinite(rla_prof) & (rla_prof >= 0)
+                        & (rla_prof < self.fillvalue_dep))
+                has_good = good.any(axis=1)
+                level = good.argmax(axis=1)
+                rows = np.arange(n_profiles)
+                rla_obs = np.where(has_good, values[rows, level], np.nan)
+                rla_qc = np.where(has_good, quality[rows, level], 9)
+                rla_clim = np.where(has_good, rla_clim[rows, indx, level], np.nan)
+                rla_prof = np.where(has_good, rla_prof[rows, level], np.nan)
+            else:
+                rla_obs = np.full(n_profiles, np.nan)
+                rla_qc = np.full(n_profiles, 9)
+                rla_clim = np.full(n_profiles, np.nan)
+                rla_prof = np.full(n_profiles, np.nan)
+            tab_dims = rla_prof.shape
+            param_dict['qc'] = rla_qc
+        elif filter_levels:
             selected_var = args.get("selected_var")
             good = rla_qc[:, 0:1, :] == 0
             self.log.debug(f"TEMP {ll_temp}' PSAL {ll_psal}")
