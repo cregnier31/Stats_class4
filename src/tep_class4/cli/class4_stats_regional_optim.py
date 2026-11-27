@@ -53,6 +53,7 @@ from tep_class4.core.arithm import (init_array_1D,
                                     valid_class4_pairs
                                     )
 from tep_class4.core.Interpolator import Interpolator
+from tep_class4.core.Interp_kdtree import interp_KDtree
 from tep_class4.core.Writer import Writer
 from tep_class4.core.utils import create_dict, save_metrics_to_netcdf_regional
 from tep_class4.core.utils import (generate_date_list,
@@ -80,6 +81,31 @@ def _interpolate_forecast(task, log, interpolator=None):
         obs_data, model_data, [varname], params, **kwargs)
     return (ind_time, cache_key, obs_data, tab_results, is_2D,
             params.get('LEVITUS_clim'), tm.perf_counter() - tick)
+
+
+def _current_climatology(log, params, obs, varname, dateval):
+    """Interpolate the validity month's current field at paired drifter positions."""
+    files = sorted(Path(params['dirclim_cur']).glob('*_monthlymeans.nc'))
+    if len(files) != 1:
+        raise ValueError(f"Expected one monthly current climatology, found {files}")
+    component = {'uo': 'U', 'u': 'U', 'vo': 'V', 'v': 'V'}[varname]
+    month = pd.to_datetime(str(dateval)).month - 1
+    with xr.open_dataset(files[0], decode_times=False) as ds:
+        lon, lat = ds['Lon'].values, ds['Lat'].values
+        field = ds[component].isel(time=month).transpose('latitude', 'longitude').values
+    result = np.full(obs.nb_obs, np.nan)
+    x, y = np.asarray(obs.lon).reshape(-1), np.asarray(obs.lat).reshape(-1)
+    good = np.isfinite(x) & np.isfinite(y)
+    if good.any():
+        tree = interp_KDtree(log)
+        k = params['nb_points']
+        distances, indices = tree.tree_and_query(
+            lon, lat, x[good, None], y[good, None], k, weight_file='', save=False)
+        weights = tree.get_weight(distances)
+        result[good] = Interpolator(log, dask=params['dask']).interp_2D(
+            weights, indices, field, k, component, params,
+            depth=0, nblon=len(lon), nblat=len(lat), missing_value=np.nan)
+    return result.reshape(-1, 1, 1)
 
 
 def main(level=2):
@@ -275,6 +301,8 @@ def main(level=2):
             is_3D = selected_var in list_3D
             dispersion_samples = {} if not args.no_percentiles else None
             anomaly_sums = {} if dispersion_samples is not None else None
+            is_drifter = selected_var in ('DRIFTER', 'DRIFTER_filtr')
+            current_samples = {} if is_drifter and dispersion_samples is not None else None
             if is_3D:
                 (tab_cumul_sq_diff,
                     tab_cumul_bias, tab_n_obs) = (
@@ -427,6 +455,12 @@ def main(level=2):
                                 log.debug(f"Dimension depth {np.shape(depth)}")
                                 log.debug(f"Dimension depth {np.shape(tab_qc)}")
                                 log.debug(f"{filter_levels=}")
+                                if is_drifter:
+                                    obs_value = np.ma.filled(np.ma.asarray(obs_value, dtype=float), np.nan).reshape(-1)
+                                    tab_qc = np.ma.filled(np.ma.asarray(tab_qc, dtype=float), -9999).reshape(-1)
+                                    depth = np.ma.filled(np.ma.asarray(depth, dtype=float), np.nan).reshape(-1)
+                                    if not nb_obs:
+                                        continue
                                 obs_data = ObsData(lon_obs,
                                                    lat_obs,
                                                    obs_value,
@@ -435,6 +469,8 @@ def main(level=2):
                                                    _FillValue,
                                                    tab_qc
                                 )
+                                if current_samples is not None:
+                                    param_dict['LEVITUS_clim'] = _current_climatology(log, param_dict, obs_data, varname, dateval)
                                 if cache_limit:
                                     obs_cache[cache_key] = deepcopy((data_file, obs_data, {k: param_dict[k] for k in ('qc', 'LEVITUS_clim', 'varname_select', 'll_TEMP', 'll_PSAL', 'Design_GODAE_file') if k in param_dict}))
                                 if len(obs_cache) > cache_limit:
@@ -636,6 +672,21 @@ def main(level=2):
                                     dispersion_samples.setdefault(
                                         (iregion, ind_time), []
                                     ).append(np.column_stack(pairs))
+                                if current_samples is not None and clim is not None:
+                                    m = np.ma.filled(np.ma.asarray(regional_model, dtype=float), np.nan).reshape(-1)
+                                    o = np.ma.filled(np.ma.asarray(regional_observation, dtype=float), np.nan).reshape(-1)
+                                    c = np.asarray(clim[region_mask]).reshape(-1)
+                                    q = np.asarray(regional_qc).reshape(-1)
+                                    good = (np.isfinite(m) & np.isfinite(o) & np.isfinite(c)
+                                            & (np.abs(m) <= 1.e30) & (np.abs(o) <= 1.e30)
+                                            & (np.abs(c) <= 1.e30) & (q == 1))
+                                    m, o, c = m[good], o[good], c[good]
+                                    key = (iregion, ind_time)
+                                    if m.size:
+                                        current_samples.setdefault(key, []).append(np.column_stack((m, o, c)))
+                                        pa, ra = m-c, o-c
+                                        anomaly_sums.setdefault(key, np.zeros(4))[:] += [
+                                            len(pa), np.dot(pa, ra), np.dot(pa, pa), np.dot(ra, ra)]
                             elif dispersion_samples is not None:
                                 depths = np.ma.asarray(np.squeeze(regional_depth))
                                 model = np.ma.asarray(np.squeeze(regional_model))
@@ -792,7 +843,7 @@ def main(level=2):
 
             lead_times = param_dict['lead_int']
             tick = tm.perf_counter()
-            save_metrics_to_netcdf_regional(tab_cumul_sq_diff,
+            output_ds = save_metrics_to_netcdf_regional(tab_cumul_sq_diff,
                                    tab_cumul_bias,
                                    tab_n_obs,
                                    tab_rmsd_daily,
@@ -805,6 +856,30 @@ def main(level=2):
                                    dispersion_samples=dispersion_samples,
                                    percentile_depth_names=percentile_depth_names if is_3D else None,
                                    anomaly_sums=anomaly_sums)
+            if current_samples is not None:
+                names = ['bias', 'rmsd', 'mae', 'pearson', 'explained_variance',
+                         'q1', 'q5', 'q25', 'q75', 'q95', 'q99']
+                scores = np.full((nregions, N, 2, len(names)), np.nan)
+                counts = np.zeros((nregions, N), dtype=np.int64)
+                for key, chunks in current_samples.items():
+                    m, o, c = np.concatenate(chunks).T
+                    counts[key] = len(o)
+                    vr = np.var(o)
+                    for i, product in enumerate((m, c)):
+                        error = product-o
+                        pearson = np.corrcoef(product, o)[0, 1] if len(o)>1 and vr>0 and np.var(product)>0 else np.nan
+                        scores[key + (i,)] = [
+                            np.mean(error), np.sqrt(np.mean(error**2)), np.mean(np.abs(error)),
+                            pearson, 1-np.var(error)/vr if vr>0 else np.nan,
+                            *np.percentile(error, [1, 5, 25, 75, 95, 99])]
+                output_ds = output_ds.assign_coords(
+                    current_product=['model', 'climatology'], current_metric=names)
+                output_ds['current_common_scores'] = (
+                    ('regions', 'leadtime', 'current_product', 'current_metric'), scores)
+                output_ds['current_common_count'] = (('regions', 'leadtime'), counts)
+                output_ds['current_common_scores'].attrs['sample_selection'] = (
+                    'Common finite model, observation and climatology values; drifter QC=1; signed error quantiles')
+                output_ds.to_netcdf(outputname, mode='w')
             timings['NetCDF writing'] += tm.perf_counter() - tick
     elapsed = tm.perf_counter() - started
     log.info('Performance report: %.2f s total; cache hits=%d misses=%d', elapsed, cache_hits, cache_misses)
